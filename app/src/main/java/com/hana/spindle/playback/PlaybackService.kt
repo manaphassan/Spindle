@@ -1,22 +1,20 @@
 package com.hana.spindle.playback
 
-import android.content.Intent
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
+import com.hana.spindle.SpindleApp
 
 @UnstableApi
 class PlaybackService : MediaSessionService() {
 
-    private var player: ExoPlayer? = null
     private var mediaSession: MediaSession? = null
 
     override fun onCreate() {
         super.onCreate()
-        val exoPlayer = ExoPlayer.Builder(this).build()
-        player = exoPlayer
-        mediaSession = MediaSession.Builder(this, exoPlayer).build()
+        val app = application as SpindleApp
+        val player = app.audioEngine.exoPlayer
+        mediaSession = MediaSession.Builder(this, player).build()
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? {
@@ -25,7 +23,6 @@ class PlaybackService : MediaSessionService() {
 
     override fun onDestroy() {
         mediaSession?.run {
-            player.release()
             release()
             mediaSession = null
         }

@@ -19,6 +19,10 @@ class SpindleApp : Application() {
         com.hana.spindle.data.MusicScanner(this, database.songDao())
     }
 
+    val audioEngine: com.hana.spindle.playback.AudioEngine by lazy {
+        com.hana.spindle.playback.AudioEngine(this)
+    }
+
     companion object {
         const val PLAYBACK_CHANNEL_ID = "spindle_playback_channel"
         lateinit var instance: SpindleApp

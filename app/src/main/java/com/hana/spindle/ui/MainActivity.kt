@@ -11,17 +11,21 @@ import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.hana.spindle.SpindleApp
 import com.hana.spindle.databinding.ActivityMainBinding
+import com.hana.spindle.playback.AudioEngine
 import com.hana.spindle.theme.ThemeManager
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var themeManager: ThemeManager
+    private lateinit var audioEngine: AudioEngine
 
-    private var isPlaying = false
     private var isSideA = true
 
     // Battery Receiver for WM-2 Hardware LED
@@ -47,11 +51,15 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        val app = application as SpindleApp
         themeManager = ThemeManager(this)
+        audioEngine = app.audioEngine
 
         setupThemeObservation()
+        setupAudioPlaybackObservation()
         setupControls()
         setupCassetteFlip()
+        triggerBackgroundScan(app)
     }
 
     override fun onResume() {
@@ -74,31 +82,44 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun setupAudioPlaybackObservation() {
+        lifecycleScope.launch {
+            audioEngine.playbackState.collectLatest { state ->
+                binding.wm2ChassisView.isPlaying = state.isPlaying
+                binding.cassetteView.isPlaying = state.isPlaying
+                binding.cassetteView.progress = state.progress
+
+                state.currentSong?.let { song ->
+                    binding.cassetteView.trackTitle = song.title
+                    binding.cassetteView.artistName = song.artist
+                }
+
+                binding.btnPlayPause.text = if (state.isPlaying) "|| PAUSE" else "> PLAY"
+                binding.tvCurrentTime.text = formatTime(state.currentPositionMs)
+                binding.tvTotalDuration.text = formatTime(state.durationMs)
+            }
+        }
+    }
+
     private fun setupControls() {
-        // Toggle Play/Pause on WM-2 pill levers & bottom button
-        val togglePlayAction = {
-            isPlaying = !isPlaying
-            binding.wm2ChassisView.isPlaying = isPlaying
-            binding.cassetteView.isPlaying = isPlaying
-            binding.btnPlayPause.text = if (isPlaying) "|| PAUSE" else "> PLAY"
+        binding.wm2ChassisView.onPlayClicked = {
+            audioEngine.togglePlayPause()
         }
 
-        binding.wm2ChassisView.onPlayClicked = togglePlayAction
         binding.wm2ChassisView.onStopClicked = {
-            isPlaying = false
-            binding.wm2ChassisView.isPlaying = false
-            binding.cassetteView.isPlaying = false
-            binding.btnPlayPause.text = "> PLAY"
+            audioEngine.pause()
         }
 
-        binding.btnPlayPause.setOnClickListener { togglePlayAction() }
+        binding.btnPlayPause.setOnClickListener {
+            audioEngine.togglePlayPause()
+        }
 
         binding.btnPrev.setOnClickListener {
-            Toast.makeText(this, "Previous Track", Toast.LENGTH_SHORT).show()
+            audioEngine.playPrevious()
         }
 
         binding.btnNext.setOnClickListener {
-            Toast.makeText(this, "Next Track", Toast.LENGTH_SHORT).show()
+            audioEngine.playNext()
         }
 
         binding.btnEject.setOnClickListener {
@@ -106,11 +127,17 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.wm2ChassisView.onPrevClicked = {
-            binding.btnPrev.performClick()
+            audioEngine.playPrevious()
         }
 
         binding.wm2ChassisView.onNextClicked = {
-            binding.btnNext.performClick()
+            audioEngine.playNext()
+        }
+    }
+
+    private fun triggerBackgroundScan(app: SpindleApp) {
+        lifecycleScope.launch {
+            app.musicScanner.scanAll()
         }
     }
 
@@ -139,6 +166,12 @@ class MainActivity : AppCompatActivity() {
                 start()
             }
         }
+    }
+
+    private fun formatTime(millis: Long): String {
+        val minutes = TimeUnit.MILLISECONDS.toMinutes(millis)
+        val seconds = TimeUnit.MILLISECONDS.toSeconds(millis) - TimeUnit.MINUTES.toSeconds(minutes)
+        return String.format(Locale.US, "%02d:%02d", minutes, seconds)
     }
 
     override fun onNewIntent(intent: Intent) {
