@@ -36,46 +36,39 @@ class RadioStreamEngine(context: Context) {
         val PRESET_STATIONS = listOf(
             RadioStation(
                 frequencyMhz = 88.5f,
-                callsign = "LOFI",
-                rdsName = "LOFI CHILL BEATS TO RELAX/STUDY",
+                callsign = "LO-FI",
+                rdsName = "LO-FI RADIO • CHILL BEATS TO RELAX / STUDY",
                 genre = "Chillhop / Beats",
                 streamUrl = "https://stream.zeno.fm/f3wvbbqmdg8uv"
             ),
             RadioStation(
-                frequencyMhz = 91.5f,
-                callsign = "JAZZ",
-                rdsName = "SMOOTH JAZZ AUDIOPHILE FM",
-                genre = "Audiophile Jazz",
-                streamUrl = "https://streaming.positivity.radio/pr/smoothjazz/icecast.audio"
+                frequencyMhz = 93.2f,
+                callsign = "ANIMEFM",
+                rdsName = "ANIMEFM RADIO • 24/7 ANIME OST & J-POP",
+                genre = "Anime & J-Pop",
+                streamUrl = "https://listen.moe/stream"
             ),
             RadioStation(
-                frequencyMhz = 94.3f,
-                callsign = "CLASSIC",
-                rdsName = "CLASSICAL SYMPHONIC FM",
-                genre = "Classical Orchestra",
-                streamUrl = "http://stream.srg-ssr.ch/m/rsc_de/mp3_128"
-            ),
-            RadioStation(
-                frequencyMhz = 98.2f,
-                callsign = "BEIJING",
-                rdsName = "PEOPLE'S CENTRAL BROADCASTING STATION--VOICE OF CHINA",
-                genre = "News & Culture",
-                streamUrl = "http://stream.live.vc.bbcmedia.co.uk/bbc_world_service"
-            ),
-            RadioStation(
-                frequencyMhz = 101.1f,
-                callsign = "80S RETRO",
-                rdsName = "RETRO SYNTHWAVE 80S - NIGHTDRIVE",
-                genre = "Synthwave / Cyberpunk",
+                frequencyMhz = 98.6f,
+                callsign = "INITIAL D",
+                rdsName = "INITIAL D WORLD RADIO • EUROBEAT SPEEDWAY",
+                genre = "Eurobeat / High Octane",
                 streamUrl = "https://stream.nightride.fm/nightride.m4a"
+            ),
+            RadioStation(
+                frequencyMhz = 104.2f,
+                callsign = "CITYPOP",
+                rdsName = "CITYPOP RADIO • 80S TOKYO GROOVE & VAPOR",
+                genre = "City Pop / 80s Groove",
+                streamUrl = "https://play.streamafrica.net/japancitypop"
             )
         )
     }
 
     private val _radioState = MutableStateFlow(
         RadioPlaybackState(
-            currentStation = PRESET_STATIONS[3], // 98.2 MHz default matching wireframe
-            currentFrequency = 98.2f
+            currentStation = PRESET_STATIONS[0],
+            currentFrequency = 88.5f
         )
     )
     val radioState: StateFlow<RadioPlaybackState> = _radioState.asStateFlow()
@@ -110,14 +103,12 @@ class RadioStreamEngine(context: Context) {
                     }
 
                     override fun onPlaybackStateChanged(playbackState: Int) {
-                        val isBuffering = (playbackState == Player.STATE_BUFFERING)
+                        val isBuffering = (playbackState == Player.STATE_BUFFERING) && exoPlayer.playWhenReady
                         _radioState.value = _radioState.value.copy(isBuffering = isBuffering)
                     }
 
                     override fun onPlayerError(error: PlaybackException) {
-                        // Attempt reconnect after brief delay
-                        exoPlayer.prepare()
-                        exoPlayer.play()
+                        _radioState.value = _radioState.value.copy(isPlaying = false, isBuffering = false)
                     }
                 })
             }
@@ -134,14 +125,15 @@ class RadioStreamEngine(context: Context) {
             playStation(matchingStation)
         } else {
             // Static / White Noise or silence between stations
-            exoPlayer.pause()
+            pause()
         }
     }
 
     fun playStation(station: RadioStation) {
         _radioState.value = _radioState.value.copy(
             currentStation = station,
-            currentFrequency = station.frequencyMhz
+            currentFrequency = station.frequencyMhz,
+            isBuffering = true
         )
         val mediaItem = MediaItem.fromUri(station.streamUrl)
         exoPlayer.setMediaItem(mediaItem)
@@ -150,19 +142,16 @@ class RadioStreamEngine(context: Context) {
     }
 
     fun togglePlayPause() {
-        if (exoPlayer.isPlaying) {
-            exoPlayer.pause()
+        if (exoPlayer.isPlaying || _radioState.value.isBuffering) {
+            pause()
         } else {
-            if (exoPlayer.mediaItemCount == 0) {
-                _radioState.value.currentStation?.let { playStation(it) }
-            } else {
-                exoPlayer.play()
-            }
+            _radioState.value.currentStation?.let { playStation(it) }
         }
     }
 
     fun pause() {
-        exoPlayer.pause()
+        exoPlayer.stop()
+        _radioState.value = _radioState.value.copy(isPlaying = false, isBuffering = false)
     }
 
     fun setVolume(volume: Float) {

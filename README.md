@@ -88,13 +88,18 @@ Modern smartphones are overloaded with algorithmic distractions, background trac
 
 ### 2. 📻 Braun / Dieter Rams Neumorphic Online FM Radio
 - **Swipe-to-Tune**: Swiping right from the home deck slides seamlessly into the Dieter Rams-inspired matte ivory radio tuner.
-- **Concentric Acoustic Speaker Grille**: Hardware-accelerated custom view rendering 7 concentric perforation rings with realistic acoustic recess shadows.
-- **3D Cylindrical Tuning Roller**: Tactile ribbed thumbwheel with moving calibrated frequency scale (`87.5 - 108.0 MHz`), red stationary cursor, and detent vibrations when passing stations.
+- **Concentric Acoustic Speaker Grille**: Hardware-accelerated custom view rendering concentric perforation rings with realistic acoustic recess shadows, beautifully centered and fully visible.
+- **3D Cylindrical Tuning Roller**: Tactile ribbed thumbwheel with moving calibrated frequency scale (`87.5 - 108.0 MHz`), red stationary cursor, and detent vibrations when passing stations. Tap the dial meter or LCD panel at any time to instantly toggle play and stop.
 - **Backlit Vintage LCD Panel**: Mint-green LCD display showing frequency, station RDS marquee, and live stream connection status.
-- **Curated Live Streams**: Low-latency ExoPlayer stream engine tuned to audiophile streams (Lo-Fi Chillhop, Smooth Jazz, Classical Symphonic, International News, 80s Synthwave).
+- **4 Starter Live Streams**: Direct one-tap auto-play and stop presets for:
+  - **Lo-Fi Radio** (`88.5 MHz`)
+  - **AnimeFM Radio** (`93.2 MHz`)
+  - **Initial D World Radio** (`98.6 MHz`)
+  - **CityPop Radio** (`104.2 MHz`)
 
-### 3. 🎚️ Dark Audiophile DJ Mixer EQ Console
-- **Obsidian Hardware Chassis**: Overhauled EQ workstation modeled after professional rotary club mixers.
+### 3. 🎚️ Dark Audiophile DJ Mixer EQ Console (Settings)
+- **Centralized Settings Access**: Easily opened from the dedicated **⚙️ Settings** icon in the Spindle App Listing header.
+- **Obsidian Hardware Chassis**: Modeled after professional rotary club mixers, consolidating cassette themes, hardware EQ, storage scanning, and Bluetooth telemetry.
 - **Studio Rotary Potentiometers**: 3 tactile knobs for `LOW`, `MID`, and `HI` with 11 perimeter detent dots and glowing mint-emerald notches (`#00E676`). Directly modulates Android's hardware `Equalizer` on the active audio session.
 - **Filter Knob & BassBoost**: Dedicated rotary controller adjusting Android hardware `BassBoost` depth (0–1000).
 - **12-Segment Stereo dB LED VU Meter**: Calibrated from `00` down to `-22 dB` with dynamic 15 FPS ballistics reacting in real time to audio peaks.

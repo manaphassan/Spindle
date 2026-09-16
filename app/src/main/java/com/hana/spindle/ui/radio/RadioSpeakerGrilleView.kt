@@ -47,13 +47,14 @@ class RadioSpeakerGrilleView @JvmOverloads constructor(
         holeCenters.clear()
         val cx = w * 0.5f
         val cy = h * 0.5f
-        holeRadius = w * 0.016f
+        val minDim = kotlin.math.min(w, h).toFloat()
+        holeRadius = minDim * 0.017f
 
         // Center hole
         holeCenters.add(PointF(cx, cy))
 
-        // 7 Concentric Rings (Braun T3/TP1 proportion)
-        val maxRadius = w * 0.44f
+        // 7 Concentric Rings (Braun T3/TP1 proportion, safely uncropped)
+        val maxRadius = minDim * 0.45f
         val ringCounts = intArrayOf(8, 14, 20, 26, 32, 38, 44)
         val ringStep = maxRadius / ringCounts.size
 

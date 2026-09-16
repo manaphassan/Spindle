@@ -31,9 +31,13 @@ class RadioTuningDialView @JvmOverloads constructor(
         }
 
     var onFrequencyChanged: ((Float) -> Unit)? = null
+    var onDialClicked: (() -> Unit)? = null
 
     // Touch tracking
     private var lastTouchX = 0f
+    private var startTouchX = 0f
+    private var startTouchY = 0f
+    private var hasMovedSignificantly = false
     private var isDragging = false
     private var lastHapticStep = -1
 
@@ -171,10 +175,18 @@ class RadioTuningDialView @JvmOverloads constructor(
         canvas.drawLine(centerX, 4f, centerX, h - 4f, cursorPaint)
     }
 
+    override fun performClick(): Boolean {
+        super.performClick()
+        return true
+    }
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
                 lastTouchX = event.x
+                startTouchX = event.x
+                startTouchY = event.y
+                hasMovedSignificantly = false
                 isDragging = true
                 parent.requestDisallowInterceptTouchEvent(true)
                 return true
@@ -182,6 +194,9 @@ class RadioTuningDialView @JvmOverloads constructor(
 
             MotionEvent.ACTION_MOVE -> {
                 if (isDragging) {
+                    if (kotlin.math.abs(event.x - startTouchX) > 12f || kotlin.math.abs(event.y - startTouchY) > 12f) {
+                        hasMovedSignificantly = true
+                    }
                     val dx = event.x - lastTouchX
                     lastTouchX = event.x
 
@@ -205,7 +220,17 @@ class RadioTuningDialView @JvmOverloads constructor(
                 }
             }
 
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+            MotionEvent.ACTION_UP -> {
+                isDragging = false
+                parent.requestDisallowInterceptTouchEvent(false)
+                if (!hasMovedSignificantly) {
+                    onDialClicked?.invoke()
+                    performClick()
+                }
+                return true
+            }
+
+            MotionEvent.ACTION_CANCEL -> {
                 isDragging = false
                 parent.requestDisallowInterceptTouchEvent(false)
                 return true

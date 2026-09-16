@@ -13,6 +13,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.SeekBar
+import androidx.activity.OnBackPressedCallback
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
@@ -63,36 +64,61 @@ class DrawerFragment : Fragment() {
         themeManager = app.themeManager
         appListLoader = AppListLoader(requireContext())
 
-        setupTabs()
+        setupSettingsNavigation()
         setupAppDrawer()
         setupAudioMetrics(app)
         setupThemeSelector()
         setupDjConsole(app)
+        setupLibraryRescan(app)
     }
 
-    private fun setupTabs() {
-        binding.tabApps.setOnClickListener { selectTab(0) }
-        binding.tabMetrics.setOnClickListener { selectTab(1) }
-        binding.tabEqThemes.setOnClickListener { selectTab(2) }
+    private fun setupSettingsNavigation() {
+        binding.btnSettings.setOnClickListener {
+            showSettings(true)
+        }
+
+        binding.btnBackFromSettings.setOnClickListener {
+            showSettings(false)
+        }
+
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (binding.containerSettings.visibility == View.VISIBLE) {
+                    showSettings(false)
+                } else {
+                    isEnabled = false
+                    requireActivity().onBackPressedDispatcher.onBackPressed()
+                    isEnabled = true
+                }
+            }
+        })
     }
 
-    private fun selectTab(index: Int) {
-        val activeColor = ContextCompat.getColor(requireContext(), R.color.wm2_red)
-        val inactiveColor = ContextCompat.getColor(requireContext(), R.color.surface_elevated)
-        val activeText = ContextCompat.getColor(requireContext(), R.color.white)
-        val inactiveText = ContextCompat.getColor(requireContext(), R.color.text_secondary)
+    private fun showSettings(show: Boolean) {
+        binding.containerApps.visibility = if (show) View.GONE else View.VISIBLE
+        binding.containerSettings.visibility = if (show) View.VISIBLE else View.GONE
+    }
 
-        binding.tabApps.backgroundTintList = ColorStateList.valueOf(if (index == 0) activeColor else inactiveColor)
-        binding.tabApps.setTextColor(if (index == 0) activeText else inactiveText)
-        binding.containerApps.visibility = if (index == 0) View.VISIBLE else View.GONE
+    private fun setupLibraryRescan(app: SpindleApp) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val count = app.database.songDao().getSongCount()
+            binding.tvSongCount.text = "$count tracks indexed in local database"
+        }
 
-        binding.tabMetrics.backgroundTintList = ColorStateList.valueOf(if (index == 1) activeColor else inactiveColor)
-        binding.tabMetrics.setTextColor(if (index == 1) activeText else inactiveText)
-        binding.containerMetrics.visibility = if (index == 1) View.VISIBLE else View.GONE
+        binding.btnRescanLibrary.setOnClickListener {
+            binding.btnRescanLibrary.isEnabled = false
+            binding.btnRescanLibrary.text = "SCANNING STORAGE..."
+            binding.tvScanProgress.text = "Crawling storage and indexing metadata..."
 
-        binding.tabEqThemes.backgroundTintList = ColorStateList.valueOf(if (index == 2) activeColor else inactiveColor)
-        binding.tabEqThemes.setTextColor(if (index == 2) activeText else inactiveText)
-        binding.containerEqThemes.visibility = if (index == 2) View.VISIBLE else View.GONE
+            viewLifecycleOwner.lifecycleScope.launch {
+                app.musicScanner.scanAll()
+                val count = app.database.songDao().getSongCount()
+                binding.tvSongCount.text = "$count tracks indexed in local database"
+                binding.btnRescanLibrary.text = "RESCAN MUSIC STORAGE"
+                binding.btnRescanLibrary.isEnabled = true
+                binding.tvScanProgress.text = "Scan complete • $count tracks ready"
+            }
+        }
     }
 
     private fun setupAppDrawer() {

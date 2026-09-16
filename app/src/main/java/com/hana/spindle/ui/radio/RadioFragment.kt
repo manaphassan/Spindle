@@ -5,14 +5,10 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.SeekBar
-import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import com.hana.spindle.ui.MainActivity
 import com.hana.spindle.SpindleApp
 import com.hana.spindle.databinding.FragmentRadioBinding
 import com.hana.spindle.playback.RadioStreamEngine
@@ -37,8 +33,7 @@ class RadioFragment : Fragment() {
             binding.btnPreset0,
             binding.btnPreset1,
             binding.btnPreset2,
-            binding.btnPreset3,
-            binding.btnPreset4
+            binding.btnPreset3
         )
     }
 
@@ -53,18 +48,10 @@ class RadioFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        setupTopBar()
         setupPresets()
         setupTuningDial()
         setupSkipButtons()
-        setupBottomControls()
         observeState()
-    }
-
-    private fun setupTopBar() {
-        binding.btnRadioBack.setOnClickListener {
-            (activity as? MainActivity)?.navigateToPlayer()
-        }
     }
 
     private fun setupPresets() {
@@ -74,20 +61,28 @@ class RadioFragment : Fragment() {
                 val station = stations[i]
                 presetButtons[i].text = station.callsign
                 presetButtons[i].setOnClickListener {
-                    radioEngine.playStation(station)
-                    binding.tuningDialView.currentFreq = station.frequencyMhz
+                    val current = radioEngine.radioState.value.currentStation
+                    val isAudioActive = radioEngine.radioState.value.isPlaying || radioEngine.radioState.value.isBuffering
+                    if (current?.frequencyMhz == station.frequencyMhz && isAudioActive) {
+                        radioEngine.pause()
+                    } else {
+                        radioEngine.playStation(station)
+                        binding.tuningDialView.currentFreq = station.frequencyMhz
+                    }
                 }
             }
-        }
-
-        binding.btnStationList.setOnClickListener {
-            Toast.makeText(requireContext(), "FM Tuner: 5 audiophile online streams calibrated", Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun setupTuningDial() {
         binding.tuningDialView.onFrequencyChanged = { freq ->
             radioEngine.tuneTo(freq)
+        }
+        binding.tuningDialView.onDialClicked = {
+            radioEngine.togglePlayPause()
+        }
+        binding.cardLcd.setOnClickListener {
+            radioEngine.togglePlayPause()
         }
     }
 
@@ -99,29 +94,6 @@ class RadioFragment : Fragment() {
         binding.btnTuneNext.setOnClickListener {
             radioEngine.seekNextStation()
             binding.tuningDialView.currentFreq = radioEngine.radioState.value.currentFrequency
-        }
-    }
-
-    private fun setupBottomControls() {
-        binding.btnRadioMute.setOnClickListener {
-            val isMuted = radioEngine.toggleMute()
-            binding.btnRadioMute.alpha = if (isMuted) 0.4f else 1.0f
-        }
-
-        binding.seekRadioVolume.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                if (fromUser) {
-                    radioEngine.setVolume(progress / 100f)
-                }
-            }
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
-        })
-
-        binding.btnRadioFavorite.setOnClickListener {
-            val station = radioEngine.radioState.value.currentStation
-            val name = station?.callsign ?: "Current Station"
-            Toast.makeText(requireContext(), "★ Saved $name to favorites", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -151,10 +123,14 @@ class RadioFragment : Fragment() {
         binding.tvRadioStreamStatus.text = when {
             state.isBuffering -> "BUFFERING..."
             state.isPlaying -> "ıll LIVE IN"
-            else -> "STANDBY"
+            else -> "■ STOPPED"
         }
         binding.tvRadioStreamStatus.setTextColor(
-            if (state.isPlaying) Color.parseColor("#2D5A27") else Color.parseColor("#71717A")
+            when {
+                state.isPlaying -> Color.parseColor("#2D5A27")
+                state.isBuffering -> Color.parseColor("#B45309")
+                else -> Color.parseColor("#71717A")
+            }
         )
 
         // Highlight active preset button
@@ -164,17 +140,14 @@ class RadioFragment : Fragment() {
             presetButtons[i].setTextColor(
                 if (isCurrent) Color.parseColor("#EF4444") else Color.parseColor("#52525B")
             )
+            presetButtons[i].backgroundTintList = android.content.res.ColorStateList.valueOf(
+                if (isCurrent && state.isPlaying) Color.parseColor("#FFFFFF") else Color.parseColor("#EDEDF2")
+            )
         }
 
         // Sync tuning dial indicator if not dragging
         if (binding.tuningDialView.currentFreq != state.currentFrequency) {
             binding.tuningDialView.currentFreq = state.currentFrequency
-        }
-
-        // Sync volume seekbar
-        val volInt = (state.volume * 100).toInt()
-        if (binding.seekRadioVolume.progress != volInt) {
-            binding.seekRadioVolume.progress = volInt
         }
     }
 
