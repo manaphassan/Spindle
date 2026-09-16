@@ -16,17 +16,19 @@ import java.util.concurrent.TimeUnit
 
 /**
  * Hardware-accelerated Custom View rendering the flagship Retro Vertical Tape Recorder Deck.
- * Faithfully replicates the classic industrial cassette recorder interface:
+ * Faithfully replicates the classic industrial cassette recorder interface from the reference design:
  *
  * 1. Dark matte industrial chassis with 4 corner Torx/hex screw wells.
- * 2. Vertical smoky acrylic cassette tape with kinetic differential dual reels (SpindleKinematics),
- *    silver multi-tooth gear hubs, center black axle caps, and signature curved orange calibration notches.
- * 3. Top-left 7-segment digital LED clock displaying the real-time device system time.
- * 4. Left column track details (Song Title with marquee scrolling, and Artist • Duration) positioned
- *    between the clock and the bottom Spindle branding.
- * 5. Bottom-left retro SPINDLE typography (replacing MIUI RECORDER).
- * 6. 12-LED horizontal song progress bar directly above the bottom keys with interactive touch-seeking.
- * 7. 4 tactile beveled mechanical buttons: REW, FWD, PLAY (with illuminated jewel indicator), and EJECT.
+ * 2. Deep recessed cassette slot holding the cassette shell.
+ * 3. Clear transparent acrylic window panel exposing the spooled brown magnetic tape pack,
+ *    silver multi-tooth gear hubs, center black axle caps, and spinning curved orange calibration notches.
+ * 4. Top-left 7-segment digital LED clock displaying actual real-time device system time,
+ *    oriented vertically (-90° rotation) reading from bottom to top.
+ * 5. Left column track details (Song Title with marquee scrolling, and Artist • Duration)
+ *    oriented vertically (-90° rotation) running along the cassette spine.
+ * 6. Bottom-left retro SPINDLE branding (replacing MIUI RECORDER), oriented vertically (-90° rotation).
+ * 7. 12-LED horizontal song progress bar directly above the bottom keys with interactive touch-seeking.
+ * 8. 4 tactile beveled mechanical buttons: REW, FWD, PLAY (mutted/depressed when playing, no red circle), and EJECT.
  *
  * Designed with zero object allocations in onDraw() for continuous 60fps rendering on low-RAM DAPs.
  */
@@ -106,6 +108,9 @@ class VerticalDeckView @JvmOverloads constructor(
     // Pre-allocated Paints (Zero allocation in onDraw)
     private val chassisPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val chassisBevelPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val slotBevelPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val slotShadowPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+
     private val screwWellPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val screwHeadPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val screwHighlightPaint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -113,8 +118,12 @@ class VerticalDeckView @JvmOverloads constructor(
 
     private val cassetteShellPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val cassetteBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val cassetteInnerShadowPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val cassetteCutoutPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val cassetteGuidePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+    private val windowPanelPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val windowPanelBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val windowGlassHighlightPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val centerWindowPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val centerWindowBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
@@ -147,17 +156,20 @@ class VerticalDeckView @JvmOverloads constructor(
     private val buttonBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val buttonIconPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val buttonLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val playJewelPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val playJewelGlowPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val buttonMutedIconPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val buttonMutedLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
     // Pre-allocated Geometries
     private val chassisRect = RectF()
+    private val cassetteSlotRect = RectF()
     private val cassetteRect = RectF()
+    private val transparentPanelRect = RectF()
     private val centerWindowRect = RectF()
     private val headCavityRect = RectF()
     private val ledBarRect = RectF()
     private val tempRectF = RectF()
     private val tempSegmentRect = RectF()
+    private val trapPath = Path()
 
     private val btnRewRect = RectF()
     private val btnFwdRect = RectF()
@@ -178,59 +190,84 @@ class VerticalDeckView @JvmOverloads constructor(
 
     private fun updatePaints() {
         chassisPaint.apply {
-            color = Color.parseColor("#16181B") // Dark matte industrial casing
+            color = Color.parseColor("#17181C") // Industrial dark matte faceplate
             style = Paint.Style.FILL
         }
         chassisBevelPaint.apply {
-            color = Color.parseColor("#262930")
+            color = Color.parseColor("#282B33")
             style = Paint.Style.STROKE
             strokeWidth = 3f
         }
+        slotBevelPaint.apply {
+            color = Color.parseColor("#22252C")
+            style = Paint.Style.STROKE
+            strokeWidth = 2.5f
+        }
+        slotShadowPaint.apply {
+            color = Color.parseColor("#090A0D") // Deep recessed cassette slot cavity
+            style = Paint.Style.FILL
+        }
+
         screwWellPaint.apply {
-            color = Color.parseColor("#0C0D0F")
+            color = Color.parseColor("#0B0C0F")
             style = Paint.Style.FILL
         }
         screwHeadPaint.apply {
-            color = Color.parseColor("#2E313A")
+            color = Color.parseColor("#2B2E37")
             style = Paint.Style.FILL
         }
         screwHighlightPaint.apply {
-            color = Color.parseColor("#4B505E")
+            color = Color.parseColor("#4A4F5D")
             style = Paint.Style.STROKE
             strokeWidth = 2f
         }
         screwGroovePaint.apply {
-            color = Color.parseColor("#121317")
+            color = Color.parseColor("#101115")
             style = Paint.Style.STROKE
             strokeWidth = 2.5f
             strokeCap = Paint.Cap.ROUND
         }
 
         cassetteShellPaint.apply {
-            color = Color.parseColor("#131418") // Smoky acrylic dark cassette body
+            color = Color.parseColor("#15171C") // Dark smoky acrylic cassette shell body
             style = Paint.Style.FILL
         }
         cassetteBorderPaint.apply {
-            color = Color.parseColor("#282B33")
+            color = Color.parseColor("#2A2D36")
             style = Paint.Style.STROKE
-            strokeWidth = 2.5f
+            strokeWidth = 2f
         }
-        cassetteInnerShadowPaint.apply {
-            color = Color.parseColor("#08090B")
+        cassetteCutoutPaint.apply {
+            color = Color.parseColor("#0B0C0F")
             style = Paint.Style.FILL
         }
         cassetteGuidePaint.apply {
-            color = Color.parseColor("#22242B")
+            color = Color.parseColor("#20232B")
             style = Paint.Style.STROKE
             strokeWidth = 1.5f
         }
 
+        // Large transparent acrylic window panel
+        windowPanelPaint.apply {
+            color = Color.parseColor("#101115") // Transparent panel cavity showing hubs & reels
+            style = Paint.Style.FILL
+        }
+        windowPanelBorderPaint.apply {
+            color = Color.parseColor("#252831")
+            style = Paint.Style.STROKE
+            strokeWidth = 2f
+        }
+        windowGlassHighlightPaint.apply {
+            color = Color.argb(20, 255, 255, 255)
+            style = Paint.Style.FILL
+        }
+
         centerWindowPaint.apply {
-            color = Color.parseColor("#0C0D0F")
+            color = Color.parseColor("#08090C")
             style = Paint.Style.FILL
         }
         centerWindowBorderPaint.apply {
-            color = Color.parseColor("#1F2128")
+            color = Color.parseColor("#1A1C22")
             style = Paint.Style.STROKE
             strokeWidth = 2f
         }
@@ -250,19 +287,19 @@ class VerticalDeckView @JvmOverloads constructor(
         }
 
         hubRimPaint.apply {
-            color = Color.parseColor("#CBD5E1") // Silver/chrome metallic hub teeth
+            color = Color.parseColor("#CCD4DF") // Silver/chrome metallic hub teeth
             style = Paint.Style.FILL
         }
         hubTeethPaint.apply {
-            color = Color.parseColor("#94A3B8")
+            color = Color.parseColor("#8E97A6")
             style = Paint.Style.FILL
         }
         hubInnerCapPaint.apply {
-            color = Color.parseColor("#1E2127")
+            color = Color.parseColor("#1A1C22")
             style = Paint.Style.FILL
         }
         hubCenterPipPaint.apply {
-            color = Color.parseColor("#0C0D0F")
+            color = Color.parseColor("#0A0B0E")
             style = Paint.Style.FILL
         }
         orangeNotchPaint.apply {
@@ -271,7 +308,7 @@ class VerticalDeckView @JvmOverloads constructor(
         }
 
         clockGhostPaint.apply {
-            color = Color.parseColor("#1C1E24") // Faint unlit 88:88 background segments
+            color = Color.parseColor("#1C1E24") // Faint unlit ghost 88:88 segments
             style = Paint.Style.FILL
         }
         clockLitPaint.apply {
@@ -284,18 +321,18 @@ class VerticalDeckView @JvmOverloads constructor(
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
         }
         artistTextPaint.apply {
-            color = Color.parseColor("#94A3B8")
+            color = Color.parseColor("#8E929E")
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
         }
         spindleLogoPaint.apply {
-            color = Color.parseColor("#8E929E")
+            color = Color.parseColor("#7E828E")
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
-            letterSpacing = 0.18f
+            letterSpacing = 0.20f
         }
         spindleSubtextPaint.apply {
-            color = Color.parseColor("#5A5E6B")
-            typeface = Typeface.create(Typeface.MONOSPACE, Typeface.NORMAL)
-            letterSpacing = 0.08f
+            color = Color.parseColor("#505460")
+            typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+            letterSpacing = 0.10f
         }
 
         ledInactivePaint.apply {
@@ -322,7 +359,7 @@ class VerticalDeckView @JvmOverloads constructor(
             style = Paint.Style.FILL
         }
         buttonPressedPaint.apply {
-            color = Color.parseColor("#141519")
+            color = Color.parseColor("#121316") // Muted sunken depressed button
             style = Paint.Style.FILL
         }
         buttonHighlightPaint.apply {
@@ -347,13 +384,17 @@ class VerticalDeckView @JvmOverloads constructor(
             textAlign = Paint.Align.CENTER
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
         }
-        playJewelPaint.apply {
-            color = Color.parseColor("#EF4444") // Red illuminated recording/play diode
+        buttonMutedIconPaint.apply {
+            color = Color.parseColor("#717482") // Muted icon when pressed/latched
             style = Paint.Style.FILL
+            textAlign = Paint.Align.CENTER
+            typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
         }
-        playJewelGlowPaint.apply {
-            color = Color.argb(120, 239, 68, 68)
+        buttonMutedLabelPaint.apply {
+            color = Color.parseColor("#5A5D6B") // Muted label when pressed/latched
             style = Paint.Style.FILL
+            textAlign = Paint.Align.CENTER
+            typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
         }
     }
 
@@ -363,50 +404,67 @@ class VerticalDeckView @JvmOverloads constructor(
 
         chassisRect.set(0f, 0f, w.toFloat(), h.toFloat())
 
-        // 1. Cassette Shell Body: Fills from 2% to 77.5% height
-        val cassetteMarginH = w * 0.035f
-        cassetteRect.set(
-            cassetteMarginH,
+        // Cassette Compartment Slot: Fills from 2.0% to 77.5% height
+        val slotMarginH = w * 0.030f
+        cassetteSlotRect.set(
+            slotMarginH,
             h * 0.020f,
-            w - cassetteMarginH,
+            w - slotMarginH,
             h * 0.775f
         )
 
-        // Center window connecting top and bottom reels (shifted right to leave ample room for left column text)
-        val reelCenterX = cassetteRect.left + cassetteRect.width() * 0.55f
-        val winW = cassetteRect.width() * 0.39f
-        val winH = cassetteRect.height() * 0.74f
-        centerWindowRect.set(
-            reelCenterX - winW * 0.5f,
-            cassetteRect.centerY() - winH * 0.5f,
-            reelCenterX + winW * 0.5f,
-            cassetteRect.centerY() + winH * 0.5f
+        // Cassette Shell inside the slot
+        val shellInset = w * 0.008f
+        cassetteRect.set(
+            cassetteSlotRect.left + shellInset,
+            cassetteSlotRect.top + shellInset,
+            cassetteSlotRect.right - shellInset,
+            cassetteSlotRect.bottom - shellInset
         )
 
+        val cw = cassetteRect.width()
+        val ch = cassetteRect.height()
+
+        // Center Transparent Acrylic Window Panel (Framing both spools)
+        val winLeft = cassetteRect.left + cw * 0.26f
+        val winRight = cassetteRect.left + cw * 0.69f
+        val winTop = cassetteRect.top + ch * 0.055f
+        val winBottom = cassetteRect.bottom - ch * 0.055f
+        centerWindowRect.set(winLeft, winTop, winRight, winBottom)
+
+        // Reels Center Coordinates (Centered horizontally inside the central window panel)
+        val reelCenterX = centerWindowRect.centerX()
+        topHubCenter.set(reelCenterX, centerWindowRect.top + centerWindowRect.height() * 0.26f)
+        bottomHubCenter.set(reelCenterX, centerWindowRect.top + centerWindowRect.height() * 0.65f)
+
+        baseHubDimension = centerWindowRect.width() * 0.88f
+        hubOuterRadius = baseHubDimension * 0.33f
+
         // Head opening on the right side of cassette
-        val headW = w * 0.06f
-        val headH = h * 0.18f
+        val headLeft = cassetteRect.right - cw * 0.09f
+        val headRight = cassetteRect.right - cw * 0.02f
+        val headH = ch * 0.16f
         headCavityRect.set(
-            cassetteRect.right - headW,
+            headLeft,
             cassetteRect.centerY() - headH * 0.5f,
-            cassetteRect.right,
+            headRight,
             cassetteRect.centerY() + headH * 0.5f
         )
 
-        // Reels Center Coordinates (Vertical Cassette)
-        topHubCenter.set(reelCenterX, cassetteRect.top + cassetteRect.height() * 0.27f)
-        bottomHubCenter.set(reelCenterX, cassetteRect.top + cassetteRect.height() * 0.63f)
+        // Pre-compute right trapezoid contour
+        trapPath.reset()
+        trapPath.moveTo(cassetteRect.left + cw * 0.72f, cassetteRect.top + ch * 0.030f)
+        trapPath.lineTo(cassetteRect.right - cw * 0.035f, cassetteRect.top + ch * 0.14f)
+        trapPath.lineTo(cassetteRect.right - cw * 0.035f, cassetteRect.bottom - ch * 0.14f)
+        trapPath.lineTo(cassetteRect.left + cw * 0.72f, cassetteRect.bottom - ch * 0.030f)
 
-        baseHubDimension = cassetteRect.width() * 0.30f
-        hubOuterRadius = baseHubDimension * 0.40f
-
-        // Text Sizing
-        titleTextPaint.textSize = w * 0.040f
-        artistTextPaint.textSize = w * 0.029f
+        // Text Sizing for vertical left column
+        titleTextPaint.textSize = w * 0.035f
+        artistTextPaint.textSize = w * 0.024f
         spindleLogoPaint.textSize = w * 0.044f
         spindleSubtextPaint.textSize = w * 0.022f
 
-        // 2. 12-LED Progress Bar: 79.5% to 82.2% height
+        // 12-LED Progress Bar: 79.5% to 82.2% height
         val ledMarginH = w * 0.10f
         ledBarRect.set(
             ledMarginH,
@@ -415,7 +473,7 @@ class VerticalDeckView @JvmOverloads constructor(
             h * 0.822f
         )
 
-        // 3. Bottom 4 Mechanical Keys: 84.5% to 96.5% height
+        // Bottom 4 Mechanical Keys: 84.5% to 96.5% height
         val btnMarginH = w * 0.045f
         val btnTop = h * 0.845f
         val btnBottom = h * 0.965f
@@ -430,6 +488,8 @@ class VerticalDeckView @JvmOverloads constructor(
 
         buttonIconPaint.textSize = btnW * 0.32f
         buttonLabelPaint.textSize = btnW * 0.20f
+        buttonMutedIconPaint.textSize = btnW * 0.32f
+        buttonMutedLabelPaint.textSize = btnW * 0.20f
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -441,25 +501,25 @@ class VerticalDeckView @JvmOverloads constructor(
         // 1. Draw Outer Chassis & 4 Corner Torx Screws
         drawChassis(canvas, w, h)
 
-        // 2. Draw Vertical Smoky Cassette Tape & Internal Guides
-        drawCassetteShell(canvas)
+        // 2. Draw Recessed Cassette Slot & Smoky Acrylic Cassette Body
+        drawCassetteSlotAndShell(canvas)
 
-        // 3. Draw Kinetic Rotating Reels with Orange Calibration Notches
-        drawKineticReels(canvas)
+        // 3. Draw Transparent Acrylic Window Panel & Kinetic Rotating Reels
+        drawWindowPanelAndKineticReels(canvas)
 
-        // 4. Draw Real-Time 7-Segment Digital Device Clock (Top-Left)
-        drawDigitalClock(canvas)
+        // 4. Draw Top-Left 7-Segment Digital Clock (Rotated -90° Vertical)
+        drawVerticalDigitalClock(canvas)
 
-        // 5. Draw Left Column Track Info (Title & Artist • Duration)
-        drawTrackInfo(canvas)
+        // 5. Draw Middle Song Title and Artist • Duration (Rotated -90° Vertical)
+        drawVerticalTrackInfo(canvas)
 
-        // 6. Draw Bottom-Left SPINDLE Typography (Replaces MIUI RECORDER)
-        drawSpindleBranding(canvas)
+        // 6. Draw Bottom-Left SPINDLE Branding (Rotated -90° Vertical)
+        drawVerticalSpindleBranding(canvas)
 
         // 7. Draw 12-LED Song Playback Progress Bar
         drawLedProgressBar(canvas)
 
-        // 8. Draw 4 Mechanical Tactile Buttons (REW, FWD, PLAY, EJECT)
+        // 8. Draw 4 Mechanical Tactile Buttons (REW, FWD, PLAY [Muted when playing], EJECT)
         drawBottomButtons(canvas)
     }
 
@@ -503,21 +563,26 @@ class VerticalDeckView @JvmOverloads constructor(
     }
 
     /**
-     * Draws the vertical smoky acrylic cassette shell, bevels, internal guides, and corner screws.
+     * Draws the recessed cassette compartment slot, dark smoky cassette shell with corner screws,
+     * authentic right-side trapezoid faceplate contour, capstans, guide rollers, and tape head opening.
      */
-    private fun drawCassetteShell(canvas: Canvas) {
+    private fun drawCassetteSlotAndShell(canvas: Canvas) {
         val cr = 18f
-        // Recessed shadow behind cassette
-        canvas.drawRoundRect(cassetteRect, cr, cr, cassetteInnerShadowPaint)
-        // Cassette smoky acrylic body
+        // 1. Recessed cassette slot bay cavity
+        canvas.drawRoundRect(cassetteSlotRect, cr, cr, slotShadowPaint)
+        canvas.drawRoundRect(cassetteSlotRect, cr, cr, slotBevelPaint)
+
+        // 2. Cassette Shell Body
         canvas.drawRoundRect(cassetteRect, cr, cr, cassetteShellPaint)
-        // Beveled metallic border
         canvas.drawRoundRect(cassetteRect, cr, cr, cassetteBorderPaint)
 
-        // 4 Cassette Corner Screws
-        val cScrewR = cassetteRect.width() * 0.016f
-        val csOffsetX = cassetteRect.width() * 0.055f
-        val csOffsetY = cassetteRect.height() * 0.035f
+        val cw = cassetteRect.width()
+        val ch = cassetteRect.height()
+
+        // 4 Corner screws on the cassette shell
+        val cScrewR = cw * 0.015f
+        val csOffsetX = cw * 0.045f
+        val csOffsetY = ch * 0.030f
 
         drawTorxScrew(canvas, cassetteRect.left + csOffsetX, cassetteRect.top + csOffsetY, cScrewR, 40f)
         drawTorxScrew(canvas, cassetteRect.right - csOffsetX, cassetteRect.top + csOffsetY, cScrewR, 80f)
@@ -525,37 +590,61 @@ class VerticalDeckView @JvmOverloads constructor(
         drawTorxScrew(canvas, cassetteRect.right - csOffsetX, cassetteRect.bottom - csOffsetY, cScrewR, 60f)
 
         // Center right screw next to tape head opening
-        drawTorxScrew(canvas, cassetteRect.right - csOffsetX * 1.1f, cassetteRect.centerY(), cScrewR * 0.9f, 30f)
+        drawTorxScrew(canvas, cassetteRect.right - cw * 0.11f, cassetteRect.centerY(), cScrewR * 0.9f, 30f)
 
-        // Center Tape Window (Connecting top & bottom spools)
-        canvas.drawRoundRect(centerWindowRect, 14f, 14f, centerWindowPaint)
-        canvas.drawRoundRect(centerWindowRect, 14f, 14f, centerWindowBorderPaint)
-
-        // Right side tape head opening & orange felt pressure pad
-        canvas.drawRoundRect(headCavityRect, 6f, 6f, centerWindowPaint)
-        tempRectF.set(
-            headCavityRect.left + 4f,
-            headCavityRect.centerY() - 12f,
-            headCavityRect.left + 12f,
-            headCavityRect.centerY() + 12f
-        )
-        canvas.drawRoundRect(tempRectF, 2f, 2f, orangeNotchPaint)
+        // Trapezoid faceplate contour on the right side
+        canvas.drawPath(trapPath, cassetteGuidePaint)
 
         // Internal Guide Roller Circles (Top right and bottom right)
-        canvas.drawCircle(cassetteRect.right - csOffsetX * 1.5f, cassetteRect.top + csOffsetY * 2.2f, cScrewR * 1.8f, cassetteGuidePaint)
-        canvas.drawCircle(cassetteRect.right - csOffsetX * 1.5f, cassetteRect.bottom - csOffsetY * 2.2f, cScrewR * 1.8f, cassetteGuidePaint)
+        val rollerR = cw * 0.024f
+        val rollerX = cassetteRect.right - cw * 0.075f
+        val rollerYTop = cassetteRect.top + ch * 0.09f
+        val rollerYBottom = cassetteRect.bottom - ch * 0.09f
+
+        canvas.drawCircle(rollerX, rollerYTop, rollerR, screwHeadPaint)
+        canvas.drawCircle(rollerX, rollerYTop, rollerR * 0.5f, screwWellPaint)
+        canvas.drawCircle(rollerX, rollerYBottom, rollerR, screwHeadPaint)
+        canvas.drawCircle(rollerX, rollerYBottom, rollerR * 0.5f, screwWellPaint)
+
+        // Capstan drive holes (cutouts for the deck drive pins)
+        val capstanW = cw * 0.035f
+        val capstanH = ch * 0.045f
+        val capstanX = cassetteRect.right - cw * 0.065f
+        tempRectF.set(capstanX - capstanW * 0.5f, topHubCenter.y - capstanH * 0.5f, capstanX + capstanW * 0.5f, topHubCenter.y + capstanH * 0.5f)
+        canvas.drawRoundRect(tempRectF, 3f, 3f, cassetteCutoutPaint)
+        canvas.drawRoundRect(tempRectF, 3f, 3f, cassetteGuidePaint)
+
+        tempRectF.set(capstanX - capstanW * 0.5f, bottomHubCenter.y - capstanH * 0.5f, capstanX + capstanW * 0.5f, bottomHubCenter.y + capstanH * 0.5f)
+        canvas.drawRoundRect(tempRectF, 3f, 3f, cassetteCutoutPaint)
+        canvas.drawRoundRect(tempRectF, 3f, 3f, cassetteGuidePaint)
+
+        // Tape head opening & red magnetic pressure pad
+        canvas.drawRoundRect(headCavityRect, 6f, 6f, centerWindowPaint)
+        canvas.drawRoundRect(headCavityRect, 6f, 6f, centerWindowBorderPaint)
+        tempRectF.set(
+            headCavityRect.left + 4f,
+            headCavityRect.centerY() - 14f,
+            headCavityRect.left + 12f,
+            headCavityRect.centerY() + 14f
+        )
+        canvas.drawRoundRect(tempRectF, 2f, 2f, orangeNotchPaint)
     }
 
     /**
-     * Draws the differential dual reels with magnetic tape packs and spinning orange calibration notches.
+     * Draws the central transparent acrylic window panel and the kinetic rotating reels visible within it.
      */
-    private fun drawKineticReels(canvas: Canvas) {
+    private fun drawWindowPanelAndKineticReels(canvas: Canvas) {
+        // 1. Central transparent window panel cavity
+        canvas.drawRoundRect(centerWindowRect, 14f, 14f, centerWindowPaint)
+        canvas.drawRoundRect(centerWindowRect, 14f, 14f, centerWindowBorderPaint)
+
+        // 2. Kinetic Spools
         val spoolState = kinematics.calculate(progress, baseHubDimension)
         val rTopTape = spoolState.leftRadius
         val rBottomTape = spoolState.rightRadius
 
         // Vertical tape bridge between spools inside the center window
-        val bridgeWidth = hubOuterRadius * 0.4f
+        val bridgeWidth = hubOuterRadius * 0.44f
         tempRectF.set(
             centerWindowRect.centerX() - bridgeWidth * 0.5f,
             topHubCenter.y,
@@ -574,11 +663,20 @@ class VerticalDeckView @JvmOverloads constructor(
         canvas.drawCircle(bottomHubCenter.x, bottomHubCenter.y, rBottomTape * 0.92f, tapeTexturePaint)
         canvas.drawCircle(bottomHubCenter.x, bottomHubCenter.y, rBottomTape * 0.84f, tapeTexturePaint)
 
-        // Top Reel Mechanism & Signature Orange Calibration Notch
+        // Top Reel Hub Mechanism & Signature Orange Calibration Notch
         drawHubMechanism(canvas, topHubCenter.x, topHubCenter.y, hubOuterRadius, topReelAngle)
 
-        // Bottom Reel Mechanism & Signature Orange Calibration Notch
+        // Bottom Reel Hub Mechanism & Signature Orange Calibration Notch
         drawHubMechanism(canvas, bottomHubCenter.x, bottomHubCenter.y, hubOuterRadius, bottomReelAngle)
+
+        // Subtle specular highlight on acrylic window
+        tempRectF.set(
+            centerWindowRect.left + 4f,
+            centerWindowRect.top + 4f,
+            centerWindowRect.right - 4f,
+            centerWindowRect.top + 28f
+        )
+        canvas.drawRoundRect(tempRectF, 10f, 10f, windowGlassHighlightPaint)
     }
 
     /**
@@ -616,51 +714,69 @@ class VerticalDeckView @JvmOverloads constructor(
     }
 
     /**
-     * Draws the real-time 7-segment digital device clock (top-left).
+     * Draws the real-time 7-segment digital device clock (Rotated -90° Vertical).
+     * Replicates the exact vertical orientation in the reference image (digits reading from bottom to top).
      */
-    private fun drawDigitalClock(canvas: Canvas) {
+    private fun drawVerticalDigitalClock(canvas: Canvas) {
         calendar.timeInMillis = System.currentTimeMillis()
         val hour = calendar.get(Calendar.HOUR_OF_DAY)
         val minute = calendar.get(Calendar.MINUTE)
-
-        val clockLeft = cassetteRect.left + cassetteRect.width() * 0.08f
-        val clockTop = cassetteRect.top + cassetteRect.height() * 0.052f
-        val digitW = cassetteRect.width() * 0.058f
-        val digitH = cassetteRect.height() * 0.048f
-        val digitGap = digitW * 0.20f
 
         val h1 = hour / 10
         val h2 = hour % 10
         val m1 = minute / 10
         val m2 = minute % 10
 
-        var currentX = clockLeft
+        val cw = cassetteRect.width()
+        val ch = cassetteRect.height()
+        val originX = cassetteRect.left + cw * 0.145f
+        val originY = cassetteRect.top + ch * 0.205f
 
-        // Digit 1 (Hour tens)
-        draw7SegmentDigit(canvas, currentX, clockTop, digitW, digitH, h1)
+        canvas.save()
+        canvas.translate(originX, originY)
+        canvas.rotate(-90f)
+
+        // In this local frame:
+        // +X points UP along the screen
+        // +Y points RIGHT across the screen (towards the window)
+        // -Y points LEFT towards the phone edge
+        val digitH = cw * 0.055f  // Height across column (facing left)
+        val digitW = digitH * 0.52f // Width along column
+        val digitGap = digitW * 0.24f
+
+        var currentX = 0f
+
+        // Digit 1 (Hour tens) - Draw ghost 8 if 0 (matches crop_clock.png)
+        draw7SegmentDigitVertical(canvas, currentX, digitW, digitH, if (h1 > 0) h1 else -1)
         currentX += digitW + digitGap
 
         // Digit 2 (Hour units)
-        draw7SegmentDigit(canvas, currentX, clockTop, digitW, digitH, h2)
-        currentX += digitW + digitGap * 0.8f
+        draw7SegmentDigitVertical(canvas, currentX, digitW, digitH, h2)
+        currentX += digitW + digitGap * 0.7f
 
         // Colon ':'
-        drawColon(canvas, currentX, clockTop, digitW * 0.35f, digitH)
-        currentX += digitW * 0.35f + digitGap * 0.8f
+        drawColonVertical(canvas, currentX, digitW * 0.32f, digitH)
+        currentX += digitW * 0.32f + digitGap * 0.7f
 
         // Digit 3 (Minute tens)
-        draw7SegmentDigit(canvas, currentX, clockTop, digitW, digitH, m1)
+        draw7SegmentDigitVertical(canvas, currentX, digitW, digitH, m1)
         currentX += digitW + digitGap
 
         // Digit 4 (Minute units)
-        draw7SegmentDigit(canvas, currentX, clockTop, digitW, digitH, m2)
+        draw7SegmentDigitVertical(canvas, currentX, digitW, digitH, m2)
+
+        canvas.restore()
     }
 
-    private fun draw7SegmentDigit(canvas: Canvas, x: Float, y: Float, w: Float, h: Float, digit: Int) {
-        val t = w * 0.22f // Segment thickness
-        val midY = y + h * 0.5f
+    /**
+     * Draws a 7-segment digit in the vertical local frame.
+     * Top of digit points towards -Y (left of phone), bottom is at y=0 (towards reels).
+     */
+    private fun draw7SegmentDigitVertical(canvas: Canvas, x: Float, dw: Float, dh: Float, digit: Int) {
+        val t = dh * 0.12f // Slim, crisp segment thickness
+        val segGap = t * 0.22f
+        val midY = -dh * 0.5f
 
-        // Segments: 0:a(top), 1:b(TR), 2:c(BR), 3:d(bottom), 4:e(BL), 5:f(TL), 6:g(mid)
         val mask = when (digit) {
             0 -> 0b0111111
             1 -> 0b0000110
@@ -676,22 +792,22 @@ class VerticalDeckView @JvmOverloads constructor(
         }
 
         // Draw all 7 ghost segments first
-        drawSegment(canvas, x + t * 0.7f, y, x + w - t * 0.7f, y + t, clockGhostPaint) // a
-        drawSegment(canvas, x + w - t, y + t * 0.7f, x + w, midY - t * 0.3f, clockGhostPaint) // b
-        drawSegment(canvas, x + w - t, midY + t * 0.3f, x + w, y + h - t * 0.7f, clockGhostPaint) // c
-        drawSegment(canvas, x + t * 0.7f, y + h - t, x + w - t * 0.7f, y + h, clockGhostPaint) // d
-        drawSegment(canvas, x, midY + t * 0.3f, x + t, y + h - t * 0.7f, clockGhostPaint) // e
-        drawSegment(canvas, x, y + t * 0.7f, x + t, midY - t * 0.3f, clockGhostPaint) // f
-        drawSegment(canvas, x + t * 0.7f, midY - t * 0.5f, x + w - t * 0.7f, midY + t * 0.5f, clockGhostPaint) // g
+        drawSegment(canvas, x + t * 0.8f, -dh, x + dw - t * 0.8f, -dh + t, clockGhostPaint) // a (top)
+        drawSegment(canvas, x + dw - t, -dh + t * 0.8f, x + dw, midY - segGap, clockGhostPaint) // b (TR)
+        drawSegment(canvas, x + dw - t, midY + segGap, x + dw, -t * 0.8f, clockGhostPaint) // c (BR)
+        drawSegment(canvas, x + t * 0.8f, -t, x + dw - t * 0.8f, 0f, clockGhostPaint) // d (bottom)
+        drawSegment(canvas, x, midY + segGap, x + t, -t * 0.8f, clockGhostPaint) // e (BL)
+        drawSegment(canvas, x, -dh + t * 0.8f, x + t, midY - segGap, clockGhostPaint) // f (TL)
+        drawSegment(canvas, x + t * 0.8f, midY - t * 0.45f, x + dw - t * 0.8f, midY + t * 0.45f, clockGhostPaint) // g (mid)
 
         // Draw active lit segments
-        if ((mask and (1 shl 0)) != 0) drawSegment(canvas, x + t * 0.7f, y, x + w - t * 0.7f, y + t, clockLitPaint)
-        if ((mask and (1 shl 1)) != 0) drawSegment(canvas, x + w - t, y + t * 0.7f, x + w, midY - t * 0.3f, clockLitPaint)
-        if ((mask and (1 shl 2)) != 0) drawSegment(canvas, x + w - t, midY + t * 0.3f, x + w, y + h - t * 0.7f, clockLitPaint)
-        if ((mask and (1 shl 3)) != 0) drawSegment(canvas, x + t * 0.7f, y + h - t, x + w - t * 0.7f, y + h, clockLitPaint)
-        if ((mask and (1 shl 4)) != 0) drawSegment(canvas, x, midY + t * 0.3f, x + t, y + h - t * 0.7f, clockLitPaint)
-        if ((mask and (1 shl 5)) != 0) drawSegment(canvas, x, y + t * 0.7f, x + t, midY - t * 0.3f, clockLitPaint)
-        if ((mask and (1 shl 6)) != 0) drawSegment(canvas, x + t * 0.7f, midY - t * 0.5f, x + w - t * 0.7f, midY + t * 0.5f, clockLitPaint)
+        if ((mask and (1 shl 0)) != 0) drawSegment(canvas, x + t * 0.8f, -dh, x + dw - t * 0.8f, -dh + t, clockLitPaint)
+        if ((mask and (1 shl 1)) != 0) drawSegment(canvas, x + dw - t, -dh + t * 0.8f, x + dw, midY - segGap, clockLitPaint)
+        if ((mask and (1 shl 2)) != 0) drawSegment(canvas, x + dw - t, midY + segGap, x + dw, -t * 0.8f, clockLitPaint)
+        if ((mask and (1 shl 3)) != 0) drawSegment(canvas, x + t * 0.8f, -t, x + dw - t * 0.8f, 0f, clockLitPaint)
+        if ((mask and (1 shl 4)) != 0) drawSegment(canvas, x, midY + segGap, x + t, -t * 0.8f, clockLitPaint)
+        if ((mask and (1 shl 5)) != 0) drawSegment(canvas, x, -dh + t * 0.8f, x + t, midY - segGap, clockLitPaint)
+        if ((mask and (1 shl 6)) != 0) drawSegment(canvas, x + t * 0.8f, midY - t * 0.45f, x + dw - t * 0.8f, midY + t * 0.45f, clockLitPaint)
     }
 
     private fun drawSegment(canvas: Canvas, l: Float, t: Float, r: Float, b: Float, paint: Paint) {
@@ -699,11 +815,11 @@ class VerticalDeckView @JvmOverloads constructor(
         canvas.drawRoundRect(tempSegmentRect, 2f, 2f, paint)
     }
 
-    private fun drawColon(canvas: Canvas, x: Float, y: Float, w: Float, h: Float) {
-        val dotR = w * 0.40f
-        val cx = x + w * 0.5f
-        val dot1Y = y + h * 0.33f
-        val dot2Y = y + h * 0.67f
+    private fun drawColonVertical(canvas: Canvas, x: Float, cw: Float, dh: Float) {
+        val dotR = cw * 0.40f
+        val cx = x + cw * 0.5f
+        val dot1Y = -dh * 0.33f
+        val dot2Y = -dh * 0.67f
 
         // Lit colon dots
         canvas.drawCircle(cx, dot1Y, dotR, clockLitPaint)
@@ -711,24 +827,30 @@ class VerticalDeckView @JvmOverloads constructor(
     }
 
     /**
-     * Draws the track title and artist • duration in the left column space.
+     * Draws the track title and artist • duration in the left column space (Rotated -90° Vertical).
+     * Runs vertically along the cassette spine, exactly matching the reference layout.
      */
-    private fun drawTrackInfo(canvas: Canvas) {
-        val leftX = cassetteRect.left + cassetteRect.width() * 0.08f
-        val maxAvailableW = (centerWindowRect.left - leftX) - 12f
-        val centerY = cassetteRect.top + cassetteRect.height() * 0.44f
+    private fun drawVerticalTrackInfo(canvas: Canvas) {
+        val originX = cassetteRect.left + cassetteRect.width() * 0.14f
+        val originY = cassetteRect.top + cassetteRect.height() * 0.60f
+        val maxAvailableLength = cassetteRect.height() * 0.34f
 
-        val titleY = centerY - 6f
-        val artistY = centerY + (titleTextPaint.textSize * 0.95f)
-
-        // Clip to column width so text never overlaps reels
         canvas.save()
-        tempRectF.set(leftX, titleY - titleTextPaint.textSize * 1.2f, leftX + maxAvailableW, artistY + artistTextPaint.textSize * 1.2f)
+        canvas.translate(originX, originY)
+        canvas.rotate(-90f)
+
+        // Clip to column length so text does not overlap clock or logo
+        tempRectF.set(
+            0f,
+            -titleTextPaint.textSize * 1.5f,
+            maxAvailableLength,
+            titleTextPaint.textSize * 2.5f
+        )
         canvas.clipRect(tempRectF)
 
+        // Line 1: Song Title
         val measuredTitleW = titleTextPaint.measureText(trackTitle)
-        if (measuredTitleW > maxAvailableW && isPlaying) {
-            // Smooth marquee scroll
+        if (measuredTitleW > maxAvailableLength && isPlaying) {
             val now = SystemClock.uptimeMillis()
             if (lastMarqueeTime != 0L) {
                 val dt = (now - lastMarqueeTime) / 1000f
@@ -739,39 +861,51 @@ class VerticalDeckView @JvmOverloads constructor(
                 }
             }
             lastMarqueeTime = now
-            canvas.drawText(trackTitle, leftX - marqueeOffset, titleY, titleTextPaint)
-            canvas.drawText(trackTitle, leftX - marqueeOffset + measuredTitleW + 40f, titleY, titleTextPaint)
+            canvas.drawText(trackTitle, -marqueeOffset, 0f, titleTextPaint)
+            canvas.drawText(trackTitle, -marqueeOffset + measuredTitleW + 40f, 0f, titleTextPaint)
         } else {
-            canvas.drawText(trackTitle, leftX, titleY, titleTextPaint)
+            canvas.drawText(trackTitle, 0f, 0f, titleTextPaint)
         }
 
-        // Subtitle: Artist • Duration
+        // Line 2: Artist • Duration (shifted in +Y direction towards the window)
         val durStr = formatTime(durationMs)
         val subtitle = "$artistName • $durStr"
+        val line2Y = titleTextPaint.textSize * 1.18f
+
         val measuredSubW = artistTextPaint.measureText(subtitle)
-        if (measuredSubW > maxAvailableW) {
-            val budgetForArtist = maxAvailableW - artistTextPaint.measureText("… • $durStr")
+        if (measuredSubW > maxAvailableLength) {
+            val budgetForArtist = maxAvailableLength - artistTextPaint.measureText("… • $durStr")
             var trimmedArtist = artistName
             while (trimmedArtist.isNotEmpty() && artistTextPaint.measureText(trimmedArtist) > budgetForArtist) {
                 trimmedArtist = trimmedArtist.dropLast(1)
             }
-            canvas.drawText("${trimmedArtist.trimEnd()}… • $durStr", leftX, artistY, artistTextPaint)
+            canvas.drawText("${trimmedArtist.trimEnd()}… • $durStr", 0f, line2Y, artistTextPaint)
         } else {
-            canvas.drawText(subtitle, leftX, artistY, artistTextPaint)
+            canvas.drawText(subtitle, 0f, line2Y, artistTextPaint)
         }
 
         canvas.restore()
     }
 
     /**
-     * Draws the SPINDLE logo at the bottom left (replaces MIUI RECORDER).
+     * Draws the SPINDLE logo at the bottom left (Rotated -90° Vertical, replacing MIUI RECORDER).
      */
-    private fun drawSpindleBranding(canvas: Canvas) {
-        val leftX = cassetteRect.left + cassetteRect.width() * 0.08f
-        val brandY = cassetteRect.bottom - cassetteRect.height() * 0.090f
+    private fun drawVerticalSpindleBranding(canvas: Canvas) {
+        val originX = cassetteRect.left + cassetteRect.width() * 0.14f
+        val originY = cassetteRect.bottom - cassetteRect.height() * 0.050f
 
-        canvas.drawText("SPINDLE", leftX, brandY, spindleLogoPaint)
-        canvas.drawText("AUDIO RECORDER", leftX, brandY + (spindleLogoPaint.textSize * 0.85f), spindleSubtextPaint)
+        canvas.save()
+        canvas.translate(originX, originY)
+        canvas.rotate(-90f)
+
+        // Primary Brand: SPINDLE
+        canvas.drawText("SPINDLE", 0f, 0f, spindleLogoPaint)
+
+        // Secondary Tag: RECORDER (alongside SPINDLE towards the window)
+        val subtextY = spindleLogoPaint.textSize * 0.90f
+        canvas.drawText("RECORDER", 0f, subtextY, spindleSubtextPaint)
+
+        canvas.restore()
     }
 
     /**
@@ -829,29 +963,33 @@ class VerticalDeckView @JvmOverloads constructor(
         canvas.drawText(label, rect.centerX(), labelY, buttonLabelPaint)
     }
 
+    /**
+     * Draws the PLAY button.
+     * When playing: rendered in a muted sunken/depressed state (physically latched down, NO red circle).
+     * When stopped/paused: rendered in a raised state with top highlight bevel.
+     */
     private fun drawPlayKeyButton(canvas: Canvas, rect: RectF, index: Int) {
-        val isPressed = pressedButtonIndex == index
+        val isTouched = pressedButtonIndex == index
+        val isSunken = isPlaying || isTouched
         val r = 10f
 
-        canvas.drawRoundRect(rect, r, r, if (isPressed) buttonPressedPaint else buttonBasePaint)
+        canvas.drawRoundRect(rect, r, r, if (isSunken) buttonPressedPaint else buttonBasePaint)
         canvas.drawRoundRect(rect, r, r, buttonBorderPaint)
-        if (!isPressed) {
+        if (!isSunken) {
             canvas.drawRoundRect(rect, r, r, buttonHighlightPaint)
         }
 
-        val offsetY = if (isPressed) 3f else 0f
-        val jewelY = rect.centerY() - 4f + offsetY
+        val offsetY = if (isSunken) 3f else 0f
+        val symbolY = rect.centerY() - 2f + offsetY
         val labelY = rect.bottom - (rect.height() * 0.18f) + offsetY
 
         if (isPlaying) {
-            // Active Red/Orange Illuminated Recording Jewel Dot
-            val jewelR = rect.width() * 0.14f
-            canvas.drawCircle(rect.centerX(), jewelY, jewelR * 1.5f, playJewelGlowPaint)
-            canvas.drawCircle(rect.centerX(), jewelY, jewelR, playJewelPaint)
-            canvas.drawText("❚❚ PAUSE", rect.centerX(), labelY, buttonLabelPaint)
+            // Muted pressed/latched state - NO red circle button
+            canvas.drawText("❚❚", rect.centerX(), symbolY, buttonMutedIconPaint)
+            canvas.drawText("PAUSE", rect.centerX(), labelY, buttonMutedLabelPaint)
         } else {
-            // Inactive Play Triangle
-            canvas.drawText("▶", rect.centerX(), jewelY + 6f, buttonIconPaint)
+            // Raised Play key
+            canvas.drawText("▶", rect.centerX(), symbolY, buttonIconPaint)
             canvas.drawText("PLAY", rect.centerX(), labelY, buttonLabelPaint)
         }
     }

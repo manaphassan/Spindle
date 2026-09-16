@@ -80,14 +80,20 @@ class AudioEngine(
                 repeatMode = Player.REPEAT_MODE_ALL
                 addListener(object : Player.Listener {
                     override fun onIsPlayingChanged(isPlaying: Boolean) {
+                        android.util.Log.d("AudioEngine", "onIsPlayingChanged: $isPlaying")
                         _playbackState.value = _playbackState.value.copy(isPlaying = isPlaying)
                         if (isPlaying) startProgressPolling() else stopProgressPolling()
                     }
 
                     override fun onPlaybackStateChanged(state: Int) {
+                        android.util.Log.d("AudioEngine", "onPlaybackStateChanged: state=$state")
                         if (state == Player.STATE_ENDED) {
                             playNext()
                         }
+                    }
+
+                    override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+                        android.util.Log.e("AudioEngine", "ExoPlayer error: ${error.errorCodeName} (code=${error.errorCode}) - ${error.message}", error)
                     }
                 })
             }
@@ -116,8 +122,10 @@ class AudioEngine(
             // ignore
         }
         val song = playlist[currentIndex]
+        val file = File(song.path)
+        android.util.Log.d("AudioEngine", "playCurrentTrack: title='${song.title}', path='${song.path}', exists=${file.exists()}, canRead=${file.canRead()}, length=${file.length()}")
 
-        val mediaItem = MediaItem.fromUri(Uri.fromFile(File(song.path)))
+        val mediaItem = MediaItem.fromUri(Uri.fromFile(file))
         exoPlayer.setMediaItem(mediaItem)
         exoPlayer.prepare()
         exoPlayer.play()
