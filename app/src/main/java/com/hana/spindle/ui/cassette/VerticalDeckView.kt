@@ -91,12 +91,16 @@ class VerticalDeckView @JvmOverloads constructor(
     var onPlayClicked: (() -> Unit)? = null
     var onPrevClicked: (() -> Unit)? = null
     var onNextClicked: (() -> Unit)? = null
+    var onRewindClicked: (() -> Unit)? = null
+    var onFastForwardClicked: (() -> Unit)? = null
     var onEjectClicked: (() -> Unit)? = null
     var onSeek: ((Float) -> Unit)? = null
 
     // Touch & interaction tracking
     private var isDraggingProgress = false
     private var pressedButtonIndex = -1 // 0: REW, 1: FWD, 2: PLAY, 3: EJECT
+    private var lastRewindTapTime = 0L
+    private var lastFwdTapTime = 0L
 
     // Kinetic Animation State
     private var rotationAnimator: ValueAnimator? = null
@@ -130,11 +134,14 @@ class VerticalDeckView @JvmOverloads constructor(
     private val tapeSpoolPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val tapeTexturePaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val tapeBridgePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val tapePathPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val tapePathHighlightPaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
     private val hubRimPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val hubTeethPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val hubInnerCapPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val hubCenterPipPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val hubClutchDimplePaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val orangeNotchPaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
     private val clockGhostPaint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -144,11 +151,20 @@ class VerticalDeckView @JvmOverloads constructor(
     private val artistTextPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val spindleLogoPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val spindleSubtextPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val cassetteBadgePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+    private val acrylicSheenPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val acrylicLinePaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
     private val ledInactivePaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val ledActivePaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val ledActiveGlowPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val ledBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+    private val ledRunActivePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val ledRunInactivePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val ledPeakActivePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val ledPeakInactivePaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
     private val buttonBasePaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val buttonPressedPaint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -163,13 +179,16 @@ class VerticalDeckView @JvmOverloads constructor(
     private val chassisRect = RectF()
     private val cassetteSlotRect = RectF()
     private val cassetteRect = RectF()
-    private val transparentPanelRect = RectF()
     private val centerWindowRect = RectF()
     private val headCavityRect = RectF()
     private val ledBarRect = RectF()
+    private val ledRunRect = RectF()
+    private val ledPeakRect = RectF()
     private val tempRectF = RectF()
     private val tempSegmentRect = RectF()
     private val trapPath = Path()
+    private val threadedTapePath = Path()
+    private val acrylicSheenPath = Path()
 
     private val btnRewRect = RectF()
     private val btnFwdRect = RectF()
@@ -285,6 +304,17 @@ class VerticalDeckView @JvmOverloads constructor(
             color = Color.parseColor("#321F18")
             style = Paint.Style.FILL
         }
+        tapePathPaint.apply {
+            color = Color.parseColor("#38231B")
+            style = Paint.Style.STROKE
+            strokeWidth = 5f
+            strokeCap = Paint.Cap.ROUND
+        }
+        tapePathHighlightPaint.apply {
+            color = Color.parseColor("#4D3025")
+            style = Paint.Style.STROKE
+            strokeWidth = 1.5f
+        }
 
         hubRimPaint.apply {
             color = Color.parseColor("#CCD4DF") // Silver/chrome metallic hub teeth
@@ -300,6 +330,10 @@ class VerticalDeckView @JvmOverloads constructor(
         }
         hubCenterPipPaint.apply {
             color = Color.parseColor("#0A0B0E")
+            style = Paint.Style.FILL
+        }
+        hubClutchDimplePaint.apply {
+            color = Color.parseColor("#0E0F13")
             style = Paint.Style.FILL
         }
         orangeNotchPaint.apply {
@@ -318,21 +352,41 @@ class VerticalDeckView @JvmOverloads constructor(
 
         titleTextPaint.apply {
             color = Color.parseColor("#F1F5F9")
+            textAlign = Paint.Align.CENTER
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
         }
         artistTextPaint.apply {
             color = Color.parseColor("#8E929E")
+            textAlign = Paint.Align.CENTER
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
         }
         spindleLogoPaint.apply {
             color = Color.parseColor("#7E828E")
+            textAlign = Paint.Align.CENTER
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
-            letterSpacing = 0.20f
+            letterSpacing = 0.18f
         }
         spindleSubtextPaint.apply {
             color = Color.parseColor("#505460")
+            textAlign = Paint.Align.CENTER
             typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
-            letterSpacing = 0.10f
+            letterSpacing = 0.12f
+        }
+        cassetteBadgePaint.apply {
+            color = Color.parseColor("#444955")
+            textAlign = Paint.Align.CENTER
+            typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+            letterSpacing = 0.08f
+        }
+
+        acrylicSheenPaint.apply {
+            color = Color.argb(14, 255, 255, 255)
+            style = Paint.Style.FILL
+        }
+        acrylicLinePaint.apply {
+            color = Color.argb(45, 255, 255, 255)
+            style = Paint.Style.STROKE
+            strokeWidth = 1.5f
         }
 
         ledInactivePaint.apply {
@@ -352,6 +406,25 @@ class VerticalDeckView @JvmOverloads constructor(
             color = Color.parseColor("#22252D")
             style = Paint.Style.STROKE
             strokeWidth = 1.5f
+        }
+
+        ledRunActivePaint.apply {
+            color = Color.parseColor("#10B981")
+            style = Paint.Style.FILL
+            setShadowLayer(6f, 0f, 0f, Color.parseColor("#8010B981"))
+        }
+        ledRunInactivePaint.apply {
+            color = Color.parseColor("#064E3B")
+            style = Paint.Style.FILL
+        }
+        ledPeakActivePaint.apply {
+            color = Color.parseColor("#EF4444")
+            style = Paint.Style.FILL
+            setShadowLayer(6f, 0f, 0f, Color.parseColor("#80EF4444"))
+        }
+        ledPeakInactivePaint.apply {
+            color = Color.parseColor("#450A0A")
+            style = Paint.Style.FILL
         }
 
         buttonBasePaint.apply {
@@ -458,11 +531,38 @@ class VerticalDeckView @JvmOverloads constructor(
         trapPath.lineTo(cassetteRect.right - cw * 0.035f, cassetteRect.bottom - ch * 0.14f)
         trapPath.lineTo(cassetteRect.left + cw * 0.72f, cassetteRect.bottom - ch * 0.030f)
 
+        // Pre-compute threaded analog magnetic tape path
+        val rollerX = cassetteRect.right - cw * 0.075f
+        val rollerYTop = cassetteRect.top + ch * 0.09f
+        val rollerYBottom = cassetteRect.bottom - ch * 0.09f
+        threadedTapePath.reset()
+        threadedTapePath.moveTo(topHubCenter.x, topHubCenter.y)
+        threadedTapePath.lineTo(rollerX, rollerYTop)
+        threadedTapePath.lineTo(rollerX, rollerYBottom)
+        threadedTapePath.lineTo(bottomHubCenter.x, bottomHubCenter.y)
+
+        // Pre-compute diagonal acrylic specular sheen
+        acrylicSheenPath.reset()
+        acrylicSheenPath.moveTo(cassetteRect.left, cassetteRect.top + ch * 0.05f)
+        acrylicSheenPath.lineTo(cassetteRect.right, cassetteRect.top + ch * 0.28f)
+        acrylicSheenPath.lineTo(cassetteRect.right, cassetteRect.top + ch * 0.38f)
+        acrylicSheenPath.lineTo(cassetteRect.left, cassetteRect.top + ch * 0.15f)
+        acrylicSheenPath.close()
+
         // Text Sizing for vertical left column
         titleTextPaint.textSize = w * 0.035f
         artistTextPaint.textSize = w * 0.024f
         spindleLogoPaint.textSize = w * 0.044f
         spindleSubtextPaint.textSize = w * 0.022f
+        cassetteBadgePaint.textSize = w * 0.018f
+
+        // Dual Status LEDs directly below cassette slot (PEAK Red, RUN Green)
+        val ledW = w * 0.070f
+        val ledH = h * 0.009f
+        val ledY = cassetteSlotRect.bottom + h * 0.004f
+        val ledGap = w * 0.022f
+        ledPeakRect.set(w * 0.73f, ledY, w * 0.73f + ledW, ledY + ledH)
+        ledRunRect.set(ledPeakRect.right + ledGap, ledY, ledPeakRect.right + ledGap + ledW, ledY + ledH)
 
         // 12-LED Progress Bar: 79.5% to 82.2% height
         val ledMarginH = w * 0.10f
@@ -503,6 +603,9 @@ class VerticalDeckView @JvmOverloads constructor(
 
         // 2. Draw Recessed Cassette Slot & Smoky Acrylic Cassette Body
         drawCassetteSlotAndShell(canvas)
+
+        // 2b. Draw Deck Status LEDs (RUN & PEAK)
+        drawStatusLeds(canvas)
 
         // 3. Draw Transparent Acrylic Window Panel & Kinetic Rotating Reels
         drawWindowPanelAndKineticReels(canvas)
@@ -618,6 +721,10 @@ class VerticalDeckView @JvmOverloads constructor(
         canvas.drawRoundRect(tempRectF, 3f, 3f, cassetteCutoutPaint)
         canvas.drawRoundRect(tempRectF, 3f, 3f, cassetteGuidePaint)
 
+        // Tape path threading through the cassette cavity
+        canvas.drawPath(threadedTapePath, tapePathPaint)
+        canvas.drawPath(threadedTapePath, tapePathHighlightPaint)
+
         // Tape head opening & red magnetic pressure pad
         canvas.drawRoundRect(headCavityRect, 6f, 6f, centerWindowPaint)
         canvas.drawRoundRect(headCavityRect, 6f, 6f, centerWindowBorderPaint)
@@ -628,6 +735,24 @@ class VerticalDeckView @JvmOverloads constructor(
             headCavityRect.centerY() + 14f
         )
         canvas.drawRoundRect(tempRectF, 2f, 2f, orangeNotchPaint)
+
+        // Diagonal specular acrylic reflection sheen & sharp line across upper shell
+        canvas.drawPath(acrylicSheenPath, acrylicSheenPaint)
+        canvas.drawLine(
+            cassetteRect.left, cassetteRect.top + ch * 0.05f,
+            cassetteRect.right, cassetteRect.top + ch * 0.28f,
+            acrylicLinePaint
+        )
+    }
+
+    /**
+     * Draws the dual pill-shaped deck status LEDs (RUN Green, PEAK Red).
+     */
+    private fun drawStatusLeds(canvas: Canvas) {
+        // RUN Green LED (illuminated with neon glow when isPlaying)
+        canvas.drawRoundRect(ledRunRect, 4f, 4f, if (isPlaying) ledRunActivePaint else ledRunInactivePaint)
+        // PEAK Red LED (authentic dark ruby recessed peak indicator)
+        canvas.drawRoundRect(ledPeakRect, 4f, 4f, ledPeakInactivePaint)
     }
 
     /**
@@ -709,6 +834,16 @@ class VerticalDeckView @JvmOverloads constructor(
         // Center axle well and chrome spindle pip
         canvas.drawCircle(cx, cy, innerRadius * 0.44f, hubCenterPipPaint)
         canvas.drawCircle(cx, cy, innerRadius * 0.20f, hubRimPaint)
+
+        // 3-point drive clutch dimples stamped around the center chrome spindle pin
+        val dimpleDist = innerRadius * 0.32f
+        val dimpleR = innerRadius * 0.055f
+        for (j in 0 until 3) {
+            val dAngle = Math.toRadians(j * 120.0)
+            val dx = cx + (dimpleDist * Math.cos(dAngle)).toFloat()
+            val dy = cy + (dimpleDist * Math.sin(dAngle)).toFloat()
+            canvas.drawCircle(dx, dy, dimpleR, hubClutchDimplePaint)
+        }
 
         canvas.restore()
     }
@@ -827,28 +962,28 @@ class VerticalDeckView @JvmOverloads constructor(
     }
 
     /**
-     * Draws the track title and artist • duration in the left column space (Rotated -90° Vertical).
-     * Runs vertically along the cassette spine, exactly matching the reference layout.
+     * Draws the track title and artist • duration centered vertically along the cassette spine.
+     * Running vertically along the left column (Rotated -90° Vertical), perfectly centered to the cassette deck.
      */
     private fun drawVerticalTrackInfo(canvas: Canvas) {
         val originX = cassetteRect.left + cassetteRect.width() * 0.14f
-        val originY = cassetteRect.top + cassetteRect.height() * 0.60f
-        val maxAvailableLength = cassetteRect.height() * 0.34f
+        val originY = cassetteRect.centerY()
+        val maxAvailableLength = cassetteRect.height() * 0.38f
 
         canvas.save()
         canvas.translate(originX, originY)
         canvas.rotate(-90f)
 
-        // Clip to column length so text does not overlap clock or logo
+        // Clip symmetrically around the center (0,0)
         tempRectF.set(
-            0f,
+            -maxAvailableLength * 0.5f,
             -titleTextPaint.textSize * 1.5f,
-            maxAvailableLength,
+            maxAvailableLength * 0.5f,
             titleTextPaint.textSize * 2.5f
         )
         canvas.clipRect(tempRectF)
 
-        // Line 1: Song Title
+        // Line 1: Song Title (Centered at x = 0)
         val measuredTitleW = titleTextPaint.measureText(trackTitle)
         if (measuredTitleW > maxAvailableLength && isPlaying) {
             val now = SystemClock.uptimeMillis()
@@ -861,13 +996,22 @@ class VerticalDeckView @JvmOverloads constructor(
                 }
             }
             lastMarqueeTime = now
-            canvas.drawText(trackTitle, -marqueeOffset, 0f, titleTextPaint)
-            canvas.drawText(trackTitle, -marqueeOffset + measuredTitleW + 40f, 0f, titleTextPaint)
+            titleTextPaint.textAlign = Paint.Align.LEFT
+            canvas.drawText(trackTitle, -maxAvailableLength * 0.5f - marqueeOffset, 0f, titleTextPaint)
+            canvas.drawText(trackTitle, -maxAvailableLength * 0.5f - marqueeOffset + measuredTitleW + 40f, 0f, titleTextPaint)
+            titleTextPaint.textAlign = Paint.Align.CENTER
+        } else if (measuredTitleW > maxAvailableLength) {
+            val budget = maxAvailableLength - titleTextPaint.measureText("…")
+            var trimmed = trackTitle
+            while (trimmed.isNotEmpty() && titleTextPaint.measureText(trimmed) > budget) {
+                trimmed = trimmed.dropLast(1)
+            }
+            canvas.drawText("${trimmed.trimEnd()}…", 0f, 0f, titleTextPaint)
         } else {
             canvas.drawText(trackTitle, 0f, 0f, titleTextPaint)
         }
 
-        // Line 2: Artist • Duration (shifted in +Y direction towards the window)
+        // Line 2: Artist • Duration (shifted in +Y direction towards the window, centered at x = 0)
         val durStr = formatTime(durationMs)
         val subtitle = "$artistName • $durStr"
         val line2Y = titleTextPaint.textSize * 1.18f
@@ -888,11 +1032,11 @@ class VerticalDeckView @JvmOverloads constructor(
     }
 
     /**
-     * Draws the SPINDLE logo at the bottom left (Rotated -90° Vertical, replacing MIUI RECORDER).
+     * Draws the SPINDLE PLAYER branding and audiophile TYPE II badge at the bottom left (Rotated -90° Vertical).
      */
     private fun drawVerticalSpindleBranding(canvas: Canvas) {
         val originX = cassetteRect.left + cassetteRect.width() * 0.14f
-        val originY = cassetteRect.bottom - cassetteRect.height() * 0.050f
+        val originY = cassetteRect.bottom - cassetteRect.height() * 0.080f
 
         canvas.save()
         canvas.translate(originX, originY)
@@ -901,9 +1045,13 @@ class VerticalDeckView @JvmOverloads constructor(
         // Primary Brand: SPINDLE
         canvas.drawText("SPINDLE", 0f, 0f, spindleLogoPaint)
 
-        // Secondary Tag: RECORDER (alongside SPINDLE towards the window)
-        val subtextY = spindleLogoPaint.textSize * 0.90f
-        canvas.drawText("RECORDER", 0f, subtextY, spindleSubtextPaint)
+        // Secondary Tag: PLAYER (alongside SPINDLE towards the window)
+        val subtextY = spindleLogoPaint.textSize * 0.85f
+        canvas.drawText("PLAYER", 0f, subtextY, spindleSubtextPaint)
+
+        // Audiophile Badge: TYPE II [CrO2] HIGH BIAS
+        val badgeY = subtextY + cassetteBadgePaint.textSize * 1.25f
+        canvas.drawText("TYPE II [CrO2] HIGH BIAS", 0f, badgeY, cassetteBadgePaint)
 
         canvas.restore()
     }
@@ -939,8 +1087,8 @@ class VerticalDeckView @JvmOverloads constructor(
      * Draws the 4 tactile bottom buttons: REW, FWD, PLAY, and EJECT.
      */
     private fun drawBottomButtons(canvas: Canvas) {
-        drawKeyButton(canvas, btnRewRect, 0, "|◀◀", "REW")
-        drawKeyButton(canvas, btnFwdRect, 1, "▶▶|", "FWD")
+        drawKeyButton(canvas, btnRewRect, 0, "◀◀", "REW")
+        drawKeyButton(canvas, btnFwdRect, 1, "▶▶", "FWD")
         drawPlayKeyButton(canvas, btnPlayRect, 2)
         drawKeyButton(canvas, btnEjectRect, 3, "⏏", "EJECT")
     }
@@ -1046,9 +1194,30 @@ class VerticalDeckView @JvmOverloads constructor(
 
                 if (clickedIndex != -1) {
                     performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                    val now = SystemClock.uptimeMillis()
                     when (clickedIndex) {
-                        0 -> if (btnRewRect.contains(x, y)) onPrevClicked?.invoke()
-                        1 -> if (btnFwdRect.contains(x, y)) onNextClicked?.invoke()
+                        0 -> { // REW
+                            if (btnRewRect.contains(x, y)) {
+                                if (now - lastRewindTapTime < 350L) {
+                                    lastRewindTapTime = 0L
+                                    onPrevClicked?.invoke()
+                                } else {
+                                    lastRewindTapTime = now
+                                    onRewindClicked?.invoke()
+                                }
+                            }
+                        }
+                        1 -> { // FWD
+                            if (btnFwdRect.contains(x, y)) {
+                                if (now - lastFwdTapTime < 350L) {
+                                    lastFwdTapTime = 0L
+                                    onNextClicked?.invoke()
+                                } else {
+                                    lastFwdTapTime = now
+                                    onFastForwardClicked?.invoke()
+                                }
+                            }
+                        }
                         2 -> if (btnPlayRect.contains(x, y)) onPlayClicked?.invoke()
                         3 -> if (btnEjectRect.contains(x, y)) onEjectClicked?.invoke()
                     }

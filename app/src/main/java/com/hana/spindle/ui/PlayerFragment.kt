@@ -163,6 +163,8 @@ class PlayerFragment : Fragment() {
         }
         binding.verticalDeckView.onPrevClicked = { audioEngine.playPrevious() }
         binding.verticalDeckView.onNextClicked = { audioEngine.playNext() }
+        binding.verticalDeckView.onRewindClicked = { audioEngine.rewind(10_000L) }
+        binding.verticalDeckView.onFastForwardClicked = { audioEngine.fastForward(10_000L) }
         binding.verticalDeckView.onSeek = { progress ->
             val total = audioEngine.playbackState.value.durationMs
             if (total > 0) {

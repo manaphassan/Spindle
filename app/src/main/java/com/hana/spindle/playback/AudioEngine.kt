@@ -190,6 +190,19 @@ class AudioEngine(
         updateProgress()
     }
 
+    fun rewind(deltaMs: Long = 10_000L) {
+        val current = exoPlayer.currentPosition
+        val target = (current - deltaMs).coerceAtLeast(0L)
+        seekTo(target)
+    }
+
+    fun fastForward(deltaMs: Long = 10_000L) {
+        val current = exoPlayer.currentPosition
+        val duration = if (exoPlayer.duration > 0) exoPlayer.duration else _playbackState.value.durationMs
+        val target = (current + deltaMs).coerceAtMost(if (duration > 0) duration else Long.MAX_VALUE)
+        seekTo(target)
+    }
+
     private fun startProgressPolling() {
         progressPollJob?.cancel()
         progressPollJob = scope.launch {
