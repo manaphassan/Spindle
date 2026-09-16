@@ -1,50 +1,29 @@
 package com.hana.spindle.ui
 
-import android.animation.ObjectAnimator
-import android.content.BroadcastReceiver
-import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
-import android.os.BatteryManager
 import android.os.Bundle
-import android.view.animation.AccelerateDecelerateInterpolator
-import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.hana.spindle.SpindleApp
 import com.hana.spindle.databinding.ActivityMainBinding
-import com.hana.spindle.playback.AudioEngine
 import com.hana.spindle.theme.ThemeManager
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import java.util.Locale
-import java.util.concurrent.TimeUnit
 
+/**
+ * Main Android Home Launcher Activity hosting a seamless 3-screen ViewPager2:
+ *
+ * Page 0: Left Drawer (App Drawer, Audio Metrics Telemetry, EQ & Themes)
+ * Page 1: Center Home Screen (Sony Walkman II Red Chassis & Kinetic Cassette Player)
+ * Page 2: Right Catalog (Music Library: Folders, Albums, Artists, Songs, Star Ratings)
+ */
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var themeManager: ThemeManager
-    private lateinit var audioEngine: AudioEngine
-
-    private var isSideA = true
-
-    // Battery Receiver for WM-2 Hardware LED
-    private val batteryReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            if (intent?.action == Intent.ACTION_BATTERY_CHANGED) {
-                val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
-                val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
-                val status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
-
-                val batteryPct = if (level >= 0 && scale > 0) (level * 100) / scale else 80
-                val isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
-                        status == BatteryManager.BATTERY_STATUS_FULL
-
-                binding.wm2ChassisView.batteryLevel = batteryPct
-                binding.wm2ChassisView.isCharging = isCharging
-            }
-        }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,86 +32,64 @@ class MainActivity : AppCompatActivity() {
 
         val app = application as SpindleApp
         themeManager = ThemeManager(this)
-        audioEngine = app.audioEngine
 
+        setupViewPager()
         setupThemeObservation()
-        setupAudioPlaybackObservation()
-        setupControls()
-        setupCassetteFlip()
+        setupBackNavigation()
         triggerBackgroundScan(app)
     }
 
-    override fun onResume() {
-        super.onResume()
-        registerReceiver(batteryReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
-    }
+    private fun setupViewPager() {
+        binding.viewPager.adapter = object : FragmentStateAdapter(this) {
+            override fun getItemCount(): Int = 3
 
-    override fun onPause() {
-        super.onPause()
-        unregisterReceiver(batteryReceiver)
+            override fun createFragment(position: Int): Fragment {
+                return when (position) {
+                    0 -> DrawerFragment()
+                    1 -> PlayerFragment()
+                    2 -> CatalogFragment()
+                    else -> PlayerFragment()
+                }
+            }
+        }
+
+        // Center default: Main Cassette Player screen
+        binding.viewPager.setCurrentItem(1, false)
+        binding.viewPager.offscreenPageLimit = 2
     }
 
     private fun setupThemeObservation() {
         lifecycleScope.launch {
             themeManager.currentTheme.collectLatest { theme ->
-                binding.wm2ChassisView.theme = theme
-                binding.cassetteView.theme = theme
-                binding.root.setBackgroundColor(theme.chassisColor)
+                binding.viewPager.setBackgroundColor(theme.chassisColor)
+                window.statusBarColor = theme.chassisColor
             }
         }
     }
 
-    private fun setupAudioPlaybackObservation() {
-        lifecycleScope.launch {
-            audioEngine.playbackState.collectLatest { state ->
-                binding.wm2ChassisView.isPlaying = state.isPlaying
-                binding.cassetteView.isPlaying = state.isPlaying
-                binding.cassetteView.progress = state.progress
-
-                state.currentSong?.let { song ->
-                    binding.cassetteView.trackTitle = song.title
-                    binding.cassetteView.artistName = song.artist
+    private fun setupBackNavigation() {
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (binding.viewPager.currentItem != 1) {
+                    // Return back to Main Cassette Player screen
+                    navigateToPlayer()
+                } else {
+                    // Already on main launcher screen; do not exit
                 }
-
-                binding.btnPlayPause.text = if (state.isPlaying) "|| PAUSE" else "> PLAY"
-                binding.tvCurrentTime.text = formatTime(state.currentPositionMs)
-                binding.tvTotalDuration.text = formatTime(state.durationMs)
             }
-        }
+        })
     }
 
-    private fun setupControls() {
-        binding.wm2ChassisView.onPlayClicked = {
-            audioEngine.togglePlayPause()
-        }
+    fun navigateToPlayer() {
+        binding.viewPager.setCurrentItem(1, true)
+    }
 
-        binding.wm2ChassisView.onStopClicked = {
-            audioEngine.pause()
-        }
+    fun navigateToCatalog() {
+        binding.viewPager.setCurrentItem(2, true)
+    }
 
-        binding.btnPlayPause.setOnClickListener {
-            audioEngine.togglePlayPause()
-        }
-
-        binding.btnPrev.setOnClickListener {
-            audioEngine.playPrevious()
-        }
-
-        binding.btnNext.setOnClickListener {
-            audioEngine.playNext()
-        }
-
-        binding.btnEject.setOnClickListener {
-            Toast.makeText(this, "EJECT: Opening Music Catalog", Toast.LENGTH_SHORT).show()
-        }
-
-        binding.wm2ChassisView.onPrevClicked = {
-            audioEngine.playPrevious()
-        }
-
-        binding.wm2ChassisView.onNextClicked = {
-            audioEngine.playNext()
-        }
+    fun navigateToDrawer() {
+        binding.viewPager.setCurrentItem(0, true)
     }
 
     private fun triggerBackgroundScan(app: SpindleApp) {
@@ -141,41 +98,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * Tapping the cassette triggers a smooth 3D Y-axis camera flip transition
-     * between Side A (Player) and Side B (Album Tracklist).
-     */
-    private fun setupCassetteFlip() {
-        binding.cassetteView.setOnClickListener {
-            val startAngle = if (isSideA) 0f else 180f
-            val endAngle = if (isSideA) 180f else 360f
-
-            ObjectAnimator.ofFloat(binding.cassetteView, "flipRotationY", startAngle, endAngle).apply {
-                duration = 600L
-                interpolator = AccelerateDecelerateInterpolator()
-                addUpdateListener { animator ->
-                    val value = animator.animatedValue as Float
-                    if (value >= 90f && isSideA) {
-                        isSideA = false
-                        binding.cassetteView.isSideA = false
-                    } else if (value >= 270f && !isSideA) {
-                        isSideA = true
-                        binding.cassetteView.isSideA = true
-                    }
-                }
-                start()
-            }
-        }
-    }
-
-    private fun formatTime(millis: Long): String {
-        val minutes = TimeUnit.MILLISECONDS.toMinutes(millis)
-        val seconds = TimeUnit.MILLISECONDS.toSeconds(millis) - TimeUnit.MINUTES.toSeconds(minutes)
-        return String.format(Locale.US, "%02d:%02d", minutes, seconds)
-    }
-
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        // Ensure pressing Home button always brings user back to player screen
+        // Ensure pressing hardware/software Home button always brings user to Cassette Player
+        navigateToPlayer()
     }
 }
