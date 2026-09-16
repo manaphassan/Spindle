@@ -1,13 +1,15 @@
 package com.hana.spindle.data
 
 import android.media.MediaMetadataRetriever
+import android.os.Build
 import com.hana.spindle.data.db.SongEntity
 import java.io.File
 import java.util.Locale
 
 /**
- * Lightweight tag metadata parser for audio files.
- * Extracts ID3, Vorbis, and container metadata via MediaMetadataRetriever.
+ * Lightweight audiophile tag metadata parser for audio files.
+ * Extracts ID3, Vorbis, RIFF, and container metadata via MediaMetadataRetriever,
+ * calculating exact bitrate, sample rate, bit depth, and lyrics presence.
  */
 object TagParser {
 
@@ -36,13 +38,49 @@ object TagParser {
             val trackStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_CD_TRACK_NUMBER)
             val trackNumber = parseTrackNumber(trackStr)
 
+            val discStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DISC_NUMBER)
+            val discNumber = discStr?.toIntOrNull() ?: 1
+
             val yearStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_YEAR)
                 ?: retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DATE)
             val year = parseYear(yearStr)
 
             val genre = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_GENRE)
-
             val format = file.extension.uppercase(Locale.ROOT)
+
+            // Extract or calculate exact Bitrate in kbps
+            val rawBitrate = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE)?.toIntOrNull()
+            val bitrateKbps = if (rawBitrate != null && rawBitrate > 0) {
+                rawBitrate / 1000
+            } else if (durationMs > 0) {
+                ((file.length() * 8L) / durationMs).toInt()
+            } else {
+                when (format) {
+                    "FLAC", "ALAC" -> 900
+                    "WAV", "AIFF" -> 1411
+                    else -> 320
+                }
+            }
+
+            // Extract Sample Rate (API 29+) or estimate by format
+            val sampleRate = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_SAMPLERATE)?.toIntOrNull() ?: 44100
+            } else {
+                when {
+                    format == "FLAC" && bitrateKbps > 2000 -> 96000
+                    format == "FLAC" && bitrateKbps > 1200 -> 48000
+                    format == "WAV" && bitrateKbps > 3000 -> 96000
+                    format == "DSD" || format == "DSF" -> 176400
+                    else -> 44100
+                }
+            }
+
+            val bitDepth = estimateBitDepth(format, bitrateKbps, sampleRate)
+
+            // Check if lyrics exist (.lrc sidecar or .txt)
+            val lrcFile = File(file.parentFile, "${file.nameWithoutExtension}.lrc")
+            val txtFile = File(file.parentFile, "${file.nameWithoutExtension}.txt")
+            val hasLyrics = lrcFile.exists() || txtFile.exists()
 
             SongEntity(
                 title = title.trim(),
@@ -53,11 +91,15 @@ object TagParser {
                 trackNumber = trackNumber,
                 year = year,
                 genre = genre,
-                bitDepth = estimateBitDepth(format),
-                sampleRate = 44100, // Default baseline, updated during active playback decoding
+                bitDepth = bitDepth,
+                sampleRate = sampleRate,
                 fileFormat = format,
                 rating = 0,
-                dateModified = file.lastModified()
+                dateModified = file.lastModified(),
+                bitrateKbps = bitrateKbps,
+                hasLyrics = hasLyrics,
+                channels = 2,
+                discNumber = discNumber
             )
         } catch (e: Exception) {
             null
@@ -71,7 +113,6 @@ object TagParser {
     private fun parseTrackNumber(raw: String?): Int {
         if (raw.isNullOrBlank()) return 0
         return try {
-            // Handles "01/12" format
             val clean = raw.split("/")[0].trim()
             clean.toIntOrNull() ?: 0
         } catch (e: Exception) {
@@ -82,7 +123,6 @@ object TagParser {
     private fun parseYear(raw: String?): Int {
         if (raw.isNullOrBlank()) return 0
         return try {
-            // Handles "1973-03-01" format
             val digits = raw.take(4)
             digits.toIntOrNull() ?: 0
         } catch (e: Exception) {
@@ -90,9 +130,10 @@ object TagParser {
         }
     }
 
-    private fun estimateBitDepth(format: String): Int {
+    private fun estimateBitDepth(format: String, bitrateKbps: Int, sampleRate: Int): Int {
         return when (format) {
-            "FLAC", "WAV", "AIFF", "AIF", "ALAC" -> 24
+            "FLAC" -> if (bitrateKbps >= 1500 || sampleRate >= 88200) 24 else 16
+            "WAV", "AIFF", "AIF", "ALAC" -> if (sampleRate >= 88200 || bitrateKbps >= 2304) 24 else 16
             "DSD", "DSF", "DFF" -> 32
             else -> 16
         }

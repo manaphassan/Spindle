@@ -61,24 +61,24 @@ class RadioTuningDialView @JvmOverloads constructor(
 
     private fun initPaints() {
         rollerBgPaint.apply {
-            color = Color.parseColor("#E4E4E8") // Soft cream roller body
+            color = Color.parseColor("#181A22") // Dark machined cylinder roller body
             style = Paint.Style.FILL
         }
 
         ridgePaint.apply {
-            color = Color.parseColor("#C2C2C8") // Ribbed ridge shadow
+            color = Color.parseColor("#262936") // Ribbed ridge shadow
             style = Paint.Style.STROKE
             strokeWidth = 2.0f
         }
 
         ridgeHighlightPaint.apply {
-            color = Color.WHITE // Ribbed ridge highlight
+            color = Color.parseColor("#3C4254") // Metallic ridge highlight
             style = Paint.Style.STROKE
             strokeWidth = 1.2f
         }
 
         textPaint.apply {
-            color = Color.parseColor("#71717A") // Slate calibrated scale numbers
+            color = Color.parseColor("#94A3B8") // Crisp silver calibrated scale numbers
             textSize = 28f
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
             textAlign = Paint.Align.CENTER
@@ -92,7 +92,7 @@ class RadioTuningDialView @JvmOverloads constructor(
         }
 
         bevelPaint.apply {
-            color = Color.parseColor("#D4D4D8")
+            color = Color.parseColor("#2A2D3A")
             style = Paint.Style.STROKE
             strokeWidth = 2f
         }
@@ -105,14 +105,14 @@ class RadioTuningDialView @JvmOverloads constructor(
         boundsRect.set(0f, 0f, w.toFloat(), h.toFloat())
         textPaint.textSize = h * 0.22f
 
-        // 3D cylindrical side shadow vignette
+        // 3D cylindrical side shadow vignette (dark machined cylinder)
         cylinderShader = LinearGradient(
             0f, 0f, w.toFloat(), 0f,
             intArrayOf(
-                Color.argb(160, 180, 180, 186),
+                Color.argb(220, 10, 12, 16),
                 Color.TRANSPARENT,
                 Color.TRANSPARENT,
-                Color.argb(160, 180, 180, 186)
+                Color.argb(220, 10, 12, 16)
             ),
             floatArrayOf(0.0f, 0.25f, 0.75f, 1.0f),
             Shader.TileMode.CLAMP

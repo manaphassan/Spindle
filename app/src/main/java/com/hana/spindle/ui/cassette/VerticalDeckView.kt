@@ -1,5 +1,6 @@
 package com.hana.spindle.ui.cassette
 
+import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.*
@@ -10,6 +11,7 @@ import android.util.AttributeSet
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.View
+import android.view.animation.DecelerateInterpolator
 import android.view.animation.LinearInterpolator
 import com.hana.spindle.theme.CassetteTheme
 import java.util.Calendar
@@ -40,7 +42,7 @@ class VerticalDeckView @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
 
-    private val kinematics = SpindleKinematics()
+    private val kinematics = SpindleKinematics(hubRadiusRatio = 0.27f, maxTapeRadiusRatio = 0.56f)
 
     // State
     var theme: CassetteTheme = CassetteTheme.VERTICAL_STUDIO_DECK
@@ -65,14 +67,20 @@ class VerticalDeckView @JvmOverloads constructor(
             invalidate()
         }
 
-    var trackTitle: String = "No Track Loaded"
+    var trackTitle: String = ""
         set(value) {
             field = value
             marqueeOffset = 0f
             invalidate()
         }
 
-    var artistName: String = "Spindle Audio Player"
+    var artistName: String = ""
+        set(value) {
+            field = value
+            invalidate()
+        }
+
+    var audioFormat: String = ""
         set(value) {
             field = value
             invalidate()
@@ -89,6 +97,44 @@ class VerticalDeckView @JvmOverloads constructor(
             field = value
             invalidate()
         }
+
+    var isLowBattery: Boolean = false
+        set(value) {
+            if (field != value) {
+                field = value
+                invalidate()
+            }
+        }
+
+    // Dynamic Album Cover Accent Color with smooth transition animation
+    var coverAccentColor: Int = Color.parseColor("#EAB308")
+        private set
+
+    private var currentAccentColor: Int = Color.parseColor("#EAB308")
+    private var colorAnimator: ValueAnimator? = null
+
+    fun setCoverAccentColor(newColor: Int, animate: Boolean = true) {
+        if (coverAccentColor == newColor) return
+        coverAccentColor = newColor
+        colorAnimator?.cancel()
+        if (animate) {
+            val startColor = currentAccentColor
+            colorAnimator = ValueAnimator.ofObject(ArgbEvaluator(), startColor, newColor).apply {
+                duration = 600L
+                interpolator = DecelerateInterpolator()
+                addUpdateListener { anim ->
+                    currentAccentColor = anim.animatedValue as Int
+                    updateAccentPaints()
+                    invalidate()
+                }
+                start()
+            }
+        } else {
+            currentAccentColor = newColor
+            updateAccentPaints()
+            invalidate()
+        }
+    }
 
     // Callbacks
     var onPlayClicked: (() -> Unit)? = null
@@ -196,10 +242,38 @@ class VerticalDeckView @JvmOverloads constructor(
     private val buttonMutedIconPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val buttonMutedLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
+    // Cassette Wireframe & Structural Outline Paints
+    private val cassetteInnerLipPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val cassetteOutlinePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val cassetteSubtleOutlinePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val cassetteScrewBossPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val cassetteHighlightLinePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+    // Dynamic Cassette Label, Slip-Sheet & Audiophile Accents
+    private val labelBgPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val labelAccentBarPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val labelAccentSubtlePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val labelBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val labelRuledLinePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val labelBadgeBgPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val labelBadgeTextPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val tapeWindowGaugePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val tapeWindowGaugeTextPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val formatBadgeBgPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val formatBadgeBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val formatBadgeTextPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val cassetteSlipSheetPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val deckGuidePinPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+
     // Pre-allocated Geometries
     private val chassisRect = RectF()
     private val cassetteSlotRect = RectF()
     private val cassetteRect = RectF()
+    private val innerShellRect = RectF()
+    private val labelRecessRect = RectF()
+    private val labelAccentBarRect = RectF()
+    private val formatBadgeRect = RectF()
+    private val sideBadgeRect = RectF()
     private val centerWindowRect = RectF()
     private val headCavityRect = RectF()
     private val ledBarRect = RectF()
@@ -208,12 +282,17 @@ class VerticalDeckView @JvmOverloads constructor(
     private val tempRectF = RectF()
     private val tempSegmentRect = RectF()
     private val trapPath = Path()
+    private val innerTrapPath = Path()
     private val threadedTapePath = Path()
     private val acrylicSheenPath = Path()
     private val pressurePadSpringPath = Path()
     private val pressurePadRect = RectF()
     private val tapeHeadRect = RectF()
     private var textRightMarginX = 0f
+    private var columnCenterX = 0f
+    private var rollerX = 0f
+    private var rollerYTop = 0f
+    private var rollerYBottom = 0f
 
     private val btnRewRect = RectF()
     private val btnFwdRect = RectF()
@@ -277,16 +356,41 @@ class VerticalDeckView @JvmOverloads constructor(
             style = Paint.Style.FILL
         }
         cassetteBorderPaint.apply {
-            color = Color.parseColor("#2A2D36")
+            color = Color.parseColor("#64748B") // Crisp slate outer border
             style = Paint.Style.STROKE
-            strokeWidth = 2f
+            strokeWidth = 2.0f
+        }
+        cassetteHighlightLinePaint.apply {
+            color = Color.argb(120, 255, 255, 255) // Top-left plastic bevel light catch
+            style = Paint.Style.STROKE
+            strokeWidth = 1.0f
+        }
+        cassetteInnerLipPaint.apply {
+            color = Color.parseColor("#475569") // Stepped perimeter chamfer seam
+            style = Paint.Style.STROKE
+            strokeWidth = 1.5f
+        }
+        cassetteOutlinePaint.apply {
+            color = Color.parseColor("#94A3B8") // Primary wireframe lines (label recess, trapezoid, capstans)
+            style = Paint.Style.STROKE
+            strokeWidth = 1.6f
+        }
+        cassetteSubtleOutlinePaint.apply {
+            color = Color.parseColor("#64748B") // Secondary molded ridges (reel wells, center ridge, inner trapezoid)
+            style = Paint.Style.STROKE
+            strokeWidth = 1.3f
+        }
+        cassetteScrewBossPaint.apply {
+            color = Color.parseColor("#788497") // Molded circular screw bosses & corner struts
+            style = Paint.Style.STROKE
+            strokeWidth = 1.5f
         }
         cassetteCutoutPaint.apply {
-            color = Color.parseColor("#0B0C0F")
+            color = Color.parseColor("#08090C")
             style = Paint.Style.FILL
         }
         cassetteGuidePaint.apply {
-            color = Color.parseColor("#20232B")
+            color = Color.parseColor("#64748B")
             style = Paint.Style.STROKE
             strokeWidth = 1.5f
         }
@@ -297,7 +401,7 @@ class VerticalDeckView @JvmOverloads constructor(
             style = Paint.Style.FILL
         }
         windowPanelBorderPaint.apply {
-            color = Color.parseColor("#252831")
+            color = Color.parseColor("#333A48")
             style = Paint.Style.STROKE
             strokeWidth = 2f
         }
@@ -307,34 +411,34 @@ class VerticalDeckView @JvmOverloads constructor(
         }
 
         centerWindowPaint.apply {
-            color = Color.parseColor("#08090C")
+            color = Color.parseColor("#0C0E13")
             style = Paint.Style.FILL
         }
         centerWindowBorderPaint.apply {
-            color = Color.parseColor("#1A1C22")
+            color = Color.parseColor("#475569")
             style = Paint.Style.STROKE
-            strokeWidth = 2f
+            strokeWidth = 1.6f
         }
 
         tapeSpoolPaint.apply {
-            color = Color.parseColor("#38231B") // Opaque magnetic brown oxide tape pack inside clear window
+            color = Color.parseColor("#5A3832") // Warm ferric oxide tape pack matching mockup
             style = Paint.Style.FILL
         }
         tapeShellSpoolPaint.apply {
-            color = Color.argb(75, 45, 28, 22) // Translucent smoky silhouette seen through protective plastic shell
+            color = Color.argb(85, 90, 56, 50) // Translucent smoky silhouette seen through protective plastic shell
             style = Paint.Style.FILL
         }
         tapeTexturePaint.apply {
-            color = Color.parseColor("#261712")
+            color = Color.parseColor("#38231E")
             style = Paint.Style.STROKE
             strokeWidth = 1.2f
         }
         tapeBridgePaint.apply {
-            color = Color.parseColor("#321F18")
+            color = Color.parseColor("#181412")
             style = Paint.Style.FILL
         }
         tapePathPaint.apply {
-            color = Color.argb(85, 45, 28, 22) // Translucent ribbon outside the clear window inside shell
+            color = Color.argb(125, 75, 45, 40) // Translucent ribbon outside the clear window inside shell
             style = Paint.Style.STROKE
             strokeWidth = 5f
             strokeCap = Paint.Cap.ROUND
@@ -404,25 +508,25 @@ class VerticalDeckView @JvmOverloads constructor(
         }
 
         titleTextPaint.apply {
-            color = Color.parseColor("#F1F5F9")
+            color = Color.WHITE
             textAlign = Paint.Align.CENTER
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
         }
         artistTextPaint.apply {
-            color = Color.parseColor("#8E929E")
+            color = Color.parseColor("#94A3B8")
             textAlign = Paint.Align.CENTER
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
         }
         spindleLogoPaint.apply {
-            color = Color.parseColor("#8E929E")
+            color = Color.WHITE // Crisp white WALKMAN branding
             textAlign = Paint.Align.LEFT
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
             letterSpacing = 0.12f
         }
         spindleSubtextPaint.apply {
-            color = Color.parseColor("#5A5D6B")
+            color = Color.parseColor("#94A3B8") // Muted grey Player subtext
             textAlign = Paint.Align.LEFT
-            typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+            typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
             letterSpacing = 0.16f
         }
         cassetteBadgePaint.apply {
@@ -447,11 +551,11 @@ class VerticalDeckView @JvmOverloads constructor(
             style = Paint.Style.FILL
         }
         ledActivePaint.apply {
-            color = Color.parseColor("#FF5722") // Radiant warm orange/amber progress LED
+            color = Color.parseColor("#DC2626") // Vivid red progress LED
             style = Paint.Style.FILL
         }
         ledActiveGlowPaint.apply {
-            color = Color.argb(80, 255, 87, 34)
+            color = Color.argb(90, 220, 38, 38)
             style = Paint.Style.STROKE
             strokeWidth = 3f
         }
@@ -481,15 +585,15 @@ class VerticalDeckView @JvmOverloads constructor(
         }
 
         buttonBasePaint.apply {
-            color = Color.parseColor("#21232A")
+            color = Color.parseColor("#252830")
             style = Paint.Style.FILL
         }
         buttonPressedPaint.apply {
-            color = Color.parseColor("#121316") // Muted sunken depressed button
+            color = Color.parseColor("#16181D") // Muted sunken depressed button
             style = Paint.Style.FILL
         }
         buttonHighlightPaint.apply {
-            color = Color.parseColor("#343844")
+            color = Color.parseColor("#383C48")
             style = Paint.Style.STROKE
             strokeWidth = 2f
         }
@@ -499,7 +603,7 @@ class VerticalDeckView @JvmOverloads constructor(
             strokeWidth = 2f
         }
         buttonIconPaint.apply {
-            color = Color.parseColor("#E2E8F0")
+            color = Color.parseColor("#CBD5E1")
             style = Paint.Style.FILL
             textAlign = Paint.Align.CENTER
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
@@ -522,6 +626,98 @@ class VerticalDeckView @JvmOverloads constructor(
             textAlign = Paint.Align.CENTER
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
         }
+
+        labelBgPaint.apply {
+            style = Paint.Style.FILL
+        }
+        labelAccentBarPaint.apply {
+            style = Paint.Style.FILL
+        }
+        labelAccentSubtlePaint.apply {
+            style = Paint.Style.FILL
+        }
+        labelBorderPaint.apply {
+            style = Paint.Style.STROKE
+            strokeWidth = 1.5f
+        }
+        labelRuledLinePaint.apply {
+            style = Paint.Style.STROKE
+            strokeWidth = 1.0f
+        }
+        labelBadgeBgPaint.apply {
+            style = Paint.Style.FILL
+        }
+        labelBadgeTextPaint.apply {
+            color = Color.WHITE
+            style = Paint.Style.FILL
+            textAlign = Paint.Align.CENTER
+            typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+        }
+        tapeWindowGaugePaint.apply {
+            color = Color.argb(190, 255, 255, 255)
+            style = Paint.Style.STROKE
+            strokeWidth = 1.2f
+        }
+        tapeWindowGaugeTextPaint.apply {
+            color = Color.argb(210, 255, 255, 255)
+            style = Paint.Style.FILL
+            textAlign = Paint.Align.CENTER
+            typeface = Typeface.create(Typeface.MONOSPACE, Typeface.NORMAL)
+        }
+        formatBadgeBgPaint.apply {
+            style = Paint.Style.FILL
+        }
+        formatBadgeBorderPaint.apply {
+            style = Paint.Style.STROKE
+            strokeWidth = 1.2f
+        }
+        formatBadgeTextPaint.apply {
+            style = Paint.Style.FILL
+            textAlign = Paint.Align.CENTER
+            typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+        }
+        cassetteSlipSheetPaint.apply {
+            style = Paint.Style.FILL
+        }
+        deckGuidePinPaint.apply {
+            color = Color.parseColor("#4B5263")
+            style = Paint.Style.FILL
+        }
+
+        updateAccentPaints()
+    }
+
+    private fun updateAccentPaints() {
+        val accent = currentAccentColor
+        val r = Color.red(accent)
+        val g = Color.green(accent)
+        val b = Color.blue(accent)
+
+        labelAccentBarPaint.color = accent
+        labelAccentSubtlePaint.color = Color.argb(50, r, g, b)
+
+        // Tinted matte charcoal cassette label body
+        val labelBgR = (19 + r * 0.08f).toInt().coerceIn(0, 255)
+        val labelBgG = (21 + g * 0.08f).toInt().coerceIn(0, 255)
+        val labelBgB = (27 + b * 0.08f).toInt().coerceIn(0, 255)
+        labelBgPaint.color = Color.rgb(labelBgR, labelBgG, labelBgB)
+
+        labelBorderPaint.color = Color.argb(160, (r * 0.6f + 70).toInt().coerceAtMost(255), (g * 0.6f + 70).toInt().coerceAtMost(255), (b * 0.6f + 70).toInt().coerceAtMost(255))
+        labelRuledLinePaint.color = Color.argb(30, 255, 255, 255)
+
+        // Internal tinted Teflon/polyester slip-sheet visible through clear shell
+        cassetteSlipSheetPaint.color = Color.argb(22, r, g, b)
+
+        // Spool marker notch & badges
+        orangeNotchPaint.color = accent
+        labelBadgeBgPaint.color = accent
+        formatBadgeBgPaint.color = Color.argb(50, r, g, b)
+        formatBadgeBorderPaint.color = Color.argb(180, r, g, b)
+        formatBadgeTextPaint.color = accent
+
+        // Dynamic LED meter peak glow
+        ledPeakActivePaint.color = accent
+        ledPeakActivePaint.setShadowLayer(6f, 0f, 0f, Color.argb(140, r, g, b))
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -530,59 +726,107 @@ class VerticalDeckView @JvmOverloads constructor(
 
         chassisRect.set(0f, 0f, w.toFloat(), h.toFloat())
 
-        // 1. Precise 1.6:1 (height:width) Compact Cassette Proportion
-        val maxCh = h * 0.725f
-        val maxCw = w * 0.860f
-        var cw = maxCw
-        var ch = cw * 1.60f
-        if (ch > maxCh) {
-            ch = maxCh
-            cw = ch / 1.60f
-        }
+        // 1. Bottom 4 Mechanical Keys anchored at the bottom of the screen
+        val btnMarginH = w * 0.035f
+        val btnBottom = h * 0.985f
+        val btnH = h * 0.115f
+        val btnTop = btnBottom - btnH
+        val btnGap = w * 0.014f
+        val totalBtnW = (w - (btnMarginH * 2f)) - (btnGap * 3f)
+        val btnW = totalBtnW / 4f
 
-        val cLeft = (w - cw) * 0.5f
-        val cTop = h * 0.024f
-        cassetteRect.set(cLeft, cTop, cLeft + cw, cTop + ch)
+        btnRewRect.set(btnMarginH, btnTop, btnMarginH + btnW, btnBottom)
+        btnFwdRect.set(btnRewRect.right + btnGap, btnTop, btnRewRect.right + btnGap + btnW, btnBottom)
+        btnPlayRect.set(btnFwdRect.right + btnGap, btnTop, btnFwdRect.right + btnGap + btnW, btnBottom)
+        btnEjectRect.set(btnPlayRect.right + btnGap, btnTop, btnPlayRect.right + btnGap + btnW, btnBottom)
 
+        buttonIconPaint.textSize = btnW * 0.32f
+        buttonLabelPaint.textSize = btnW * 0.19f
+        buttonMutedIconPaint.textSize = btnW * 0.32f
+        buttonMutedLabelPaint.textSize = btnW * 0.19f
+
+        // 2. 12-LED Progress Bar directly above the bottom buttons
+        val barH = h * 0.022f
+        val barGap = h * 0.012f
+        val barBottom = btnTop - barGap
+        val barTop = barBottom - barH
+        val ledMarginH = w * 0.075f
+        ledBarRect.set(
+            ledMarginH,
+            barTop,
+            w - ledMarginH,
+            barBottom
+        )
+
+        // 3. Dual Status LEDs directly above the progress bar on the right (LOW BATT Red, RUN Green)
+        val ledH = h * 0.012f
+        val ledBottom = barTop - h * 0.008f
+        val ledTop = ledBottom - ledH
+        val ledW = w * 0.080f
+        val ledGapL = w * 0.020f
+        ledRunRect.set(ledBarRect.right - ledW, ledTop, ledBarRect.right, ledBottom)
+        ledPeakRect.set(ledRunRect.left - ledGapL - ledW, ledTop, ledRunRect.left - ledGapL, ledBottom)
+
+        // 4. Cassette FULL HEIGHT: fills entire space above the LEDs/meter ("cassette full height")
         val slotInset = w * 0.008f
+        val cTop = h * 0.020f
+        val cBottom = ledTop - h * 0.012f - slotInset
+        val ch = cBottom - cTop
+        val cw = w * 0.930f // Wide sleek cassette door filling width
+        val cLeft = (w - cw) * 0.5f
+
+        cassetteRect.set(cLeft, cTop, cLeft + cw, cBottom)
         cassetteSlotRect.set(
             cLeft - slotInset,
             cTop - slotInset,
             cLeft + cw + slotInset,
-            cTop + ch + slotInset
+            cBottom + slotInset
         )
 
-        // 2. Central Transparent Window Frame: Sized to the EXACT height of the spindles
-        val reelCenterX = cassetteRect.centerX()
-        val winW = cw * 0.44f
-        baseHubDimension = winW * 0.88f
-        hubOuterRadius = baseHubDimension * 0.33f
-        val maxTapeRadius = hubOuterRadius * 1.25f
+        // Inner perimeter chamfer seam / double outline
+        innerShellRect.set(
+            cassetteRect.left + cw * 0.022f,
+            cassetteRect.top + ch * 0.015f,
+            cassetteRect.right - cw * 0.022f,
+            cassetteRect.bottom - ch * 0.015f
+        )
 
-        // Position the two spindles vertically in the upper region of the cassette
-        val hubDistance = maxTapeRadius * 2.15f
-        val topSpindleY = cassetteRect.top + ch * 0.175f
-        val bottomSpindleY = topSpindleY + hubDistance
+        // 5. Spindle Center Window & Mechanics: Centered on screen
+        val reelCenterX = cassetteRect.centerX()
+        val winW = cw * 0.350f
+        val winLeft = reelCenterX - winW * 0.5f
+        val winRight = reelCenterX + winW * 0.5f
+
+        // Center align Walkman & Time in the column between left frame (innerShellRect.left) and clear spindle frame (winLeft)
+        val colLeft = innerShellRect.left
+        val colRight = winLeft
+        columnCenterX = (colLeft + colRight) * 0.5f
+        textRightMarginX = columnCenterX
+
+        baseHubDimension = winW
+        hubOuterRadius = winW * 0.270f
+        val maxTapeRadius = winW * 0.560f
+
+        // Position the two spindles vertically across the full height of the cassette
+        val topSpindleY = cassetteRect.top + ch * 0.312f
+        val bottomSpindleY = cassetteRect.top + ch * 0.720f
 
         topHubCenter.set(reelCenterX, topSpindleY)
         bottomHubCenter.set(reelCenterX, bottomSpindleY)
 
-        // Window tightly frames the two spindles (same height as the spindles)
-        val winPaddingV = cw * 0.018f
-        val winTop = topHubCenter.y - maxTapeRadius - winPaddingV
-        val winBottom = bottomHubCenter.y + maxTapeRadius + winPaddingV
-        val winLeft = reelCenterX - winW * 0.5f
-        val winRight = reelCenterX + winW * 0.5f
+        // Window tightly frames the two spindles vertically in the center
+        val winTop = cassetteRect.top + ch * 0.068f
+        val winBottom = cassetteRect.bottom - ch * 0.068f
         centerWindowRect.set(winLeft, winTop, winRight, winBottom)
 
-        // Baseline margin for left column typography directly next to clear window frame
-        textRightMarginX = centerWindowRect.left - cw * 0.024f
+        // Right side: Bottom tape (Trapezoid & head cavity)
+        val trapInnerX = cassetteRect.left + cw * 0.740f
 
         // Head opening on the right side of cassette (centered between spindles)
-        val headLeft = cassetteRect.right - cw * 0.095f
+        val headLeft = cassetteRect.right - cw * 0.125f
         val headRight = cassetteRect.right - cw * 0.018f
         val headMidY = (topHubCenter.y + bottomHubCenter.y) * 0.5f
-        val headH = ch * 0.12f
+        val headH = ch * 0.125f
         headCavityRect.set(
             headLeft,
             headMidY - headH * 0.5f,
@@ -594,81 +838,84 @@ class VerticalDeckView @JvmOverloads constructor(
         val padMidY = headCavityRect.centerY()
         pressurePadSpringPath.reset()
         pressurePadSpringPath.moveTo(headCavityRect.left + 3f, padMidY - headH * 0.28f)
-        pressurePadSpringPath.quadTo(headCavityRect.left + 10f, padMidY, headCavityRect.left + 3f, padMidY + headH * 0.28f)
+        pressurePadSpringPath.quadTo(headCavityRect.left + 12f, padMidY, headCavityRect.left + 3f, padMidY + headH * 0.28f)
 
         // Pre-compute ruby red felt pressure pad
-        val padW = cw * 0.018f
-        val padH = headH * 0.24f
-        val padX = headCavityRect.left + 8.5f
+        val padW = cw * 0.020f
+        val padH = headH * 0.26f
+        val padX = headCavityRect.left + 10f
         pressurePadRect.set(padX - padW * 0.5f, padMidY - padH * 0.5f, padX + padW * 0.5f, padMidY + padH * 0.5f)
 
-        // Pre-compute right trapezoid contour
+        // Pre-compute right trapezoid contour (outer and inner stepped)
+        // Bottom frame height length 80% so top and bottom has 20% space (10% top, 10% bottom)
+        val trapOuterX = cassetteRect.right - cw * 0.025f
+        val trapTopOuterY = cassetteRect.top + ch * 0.100f
+        val trapBottomOuterY = cassetteRect.bottom - ch * 0.100f
+        val trapSlope = ch * 0.045f
+        val trapTopInnerY = trapTopOuterY + trapSlope
+        val trapBottomInnerY = trapBottomOuterY - trapSlope
+
         trapPath.reset()
-        trapPath.moveTo(cassetteRect.left + cw * 0.72f, topHubCenter.y - hubOuterRadius * 0.70f)
-        trapPath.lineTo(cassetteRect.right - cw * 0.035f, topHubCenter.y + hubOuterRadius * 0.25f)
-        trapPath.lineTo(cassetteRect.right - cw * 0.035f, bottomHubCenter.y - hubOuterRadius * 0.25f)
-        trapPath.lineTo(cassetteRect.left + cw * 0.72f, bottomHubCenter.y + hubOuterRadius * 0.70f)
+        trapPath.moveTo(trapInnerX, trapTopInnerY)
+        trapPath.lineTo(trapOuterX, trapTopOuterY)
+        trapPath.lineTo(trapOuterX, trapBottomOuterY)
+        trapPath.lineTo(trapInnerX, trapBottomInnerY)
+        trapPath.close()
+
+        val innerTrapInnerX = trapInnerX + cw * 0.025f
+        val innerTrapOuterX = trapOuterX - cw * 0.018f
+        val innerTrapTopOuterY = trapTopOuterY + ch * 0.018f
+        val innerTrapBottomOuterY = trapBottomOuterY - ch * 0.018f
+        val innerTrapTopInnerY = trapTopInnerY + ch * 0.018f
+        val innerTrapBottomInnerY = trapBottomInnerY - ch * 0.018f
+
+        innerTrapPath.reset()
+        innerTrapPath.moveTo(innerTrapInnerX, innerTrapTopInnerY)
+        innerTrapPath.lineTo(innerTrapOuterX, innerTrapTopOuterY)
+        innerTrapPath.lineTo(innerTrapOuterX, innerTrapBottomOuterY)
+        innerTrapPath.lineTo(innerTrapInnerX, innerTrapBottomInnerY)
+        innerTrapPath.close()
 
         // Pre-compute threaded analog magnetic tape path & guide rollers
-        val rollerX = cassetteRect.right - cw * 0.075f
-        val rollerYTop = topHubCenter.y - hubOuterRadius * 0.35f
-        val rollerYBottom = bottomHubCenter.y + hubOuterRadius * 0.35f
+        rollerX = cassetteRect.right - cw * 0.075f
+        rollerYTop = trapTopOuterY + ch * 0.065f
+        rollerYBottom = trapBottomOuterY - ch * 0.065f
         threadedTapePath.reset()
         threadedTapePath.moveTo(topHubCenter.x, topHubCenter.y)
         threadedTapePath.lineTo(rollerX, rollerYTop)
         threadedTapePath.lineTo(rollerX, rollerYBottom)
         threadedTapePath.lineTo(bottomHubCenter.x, bottomHubCenter.y)
 
-        // Pre-compute diagonal acrylic specular sheen
+        // Pre-compute diagonal acrylic specular sheen (starts below digital clock)
         acrylicSheenPath.reset()
-        acrylicSheenPath.moveTo(cassetteRect.left, cassetteRect.top + ch * 0.05f)
-        acrylicSheenPath.lineTo(cassetteRect.right, cassetteRect.top + ch * 0.28f)
-        acrylicSheenPath.lineTo(cassetteRect.right, cassetteRect.top + ch * 0.38f)
-        acrylicSheenPath.lineTo(cassetteRect.left, cassetteRect.top + ch * 0.15f)
+        acrylicSheenPath.moveTo(cassetteRect.left, cassetteRect.top + ch * 0.20f)
+        acrylicSheenPath.lineTo(cassetteRect.right, cassetteRect.top + ch * 0.44f)
+        acrylicSheenPath.lineTo(cassetteRect.right, cassetteRect.top + ch * 0.56f)
+        acrylicSheenPath.lineTo(cassetteRect.left, cassetteRect.top + ch * 0.32f)
         acrylicSheenPath.close()
 
-        // Text Sizing
-        titleTextPaint.textSize = cw * 0.046f
-        artistTextPaint.textSize = cw * 0.030f
-        spindleLogoPaint.textSize = cw * 0.046f
-        spindleSubtextPaint.textSize = cw * 0.024f
+        // Text Sizing - High legibility bold typography for audiophile DAP
+        titleTextPaint.textSize = cw * 0.062f
+        titleTextPaint.color = Color.WHITE
+        titleTextPaint.typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+
+        artistTextPaint.textSize = cw * 0.036f
+        artistTextPaint.color = Color.parseColor("#CBD5E1")
+        artistTextPaint.typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
+
+        formatBadgeTextPaint.textSize = cw * 0.024f
+        tapeWindowGaugeTextPaint.textSize = cw * 0.020f
+        labelBadgeTextPaint.textSize = cw * 0.020f
+
+        spindleLogoPaint.textSize = cw * 0.042f
+        spindleLogoPaint.color = Color.WHITE
+        spindleLogoPaint.typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+
+        spindleSubtextPaint.textSize = cw * 0.026f
+        spindleSubtextPaint.color = Color.parseColor("#94A3B8")
+        spindleSubtextPaint.typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
+
         cassetteBadgePaint.textSize = cw * 0.018f
-
-        // Dual Status LEDs directly below cassette slot (PEAK Red, RUN Green)
-        val ledW = w * 0.070f
-        val ledH = h * 0.009f
-        val ledY = cassetteSlotRect.bottom + h * 0.006f
-        val ledGap = w * 0.022f
-        ledPeakRect.set(w * 0.73f, ledY, w * 0.73f + ledW, ledY + ledH)
-        ledRunRect.set(ledPeakRect.right + ledGap, ledY, ledPeakRect.right + ledGap + ledW, ledY + ledH)
-
-        // 12-LED Progress Bar: directly below status LEDs
-        val ledMarginH = w * 0.10f
-        val barTop = (ledY + ledH + h * 0.008f).coerceAtLeast(h * 0.792f)
-        ledBarRect.set(
-            ledMarginH,
-            barTop,
-            w - ledMarginH,
-            barTop + h * 0.027f
-        )
-
-        // Bottom 4 Mechanical Keys: 84.5% to 96.5% height
-        val btnMarginH = w * 0.045f
-        val btnTop = h * 0.845f
-        val btnBottom = h * 0.965f
-        val btnGap = w * 0.016f
-        val totalBtnW = (w - (btnMarginH * 2f)) - (btnGap * 3f)
-        val btnW = totalBtnW / 4f
-
-        btnRewRect.set(btnMarginH, btnTop, btnMarginH + btnW, btnBottom)
-        btnFwdRect.set(btnRewRect.right + btnGap, btnTop, btnRewRect.right + btnGap + btnW, btnBottom)
-        btnPlayRect.set(btnFwdRect.right + btnGap, btnTop, btnFwdRect.right + btnGap + btnW, btnBottom)
-        btnEjectRect.set(btnPlayRect.right + btnGap, btnTop, btnPlayRect.right + btnGap + btnW, btnBottom)
-
-        buttonIconPaint.textSize = btnW * 0.32f
-        buttonLabelPaint.textSize = btnW * 0.20f
-        buttonMutedIconPaint.textSize = btnW * 0.32f
-        buttonMutedLabelPaint.textSize = btnW * 0.20f
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -689,16 +936,19 @@ class VerticalDeckView @JvmOverloads constructor(
         // 3. Draw Transparent Acrylic Window Panel & Kinetic Rotating Reels
         drawWindowPanelAndKineticReels(canvas)
 
+        // 3b. Draw Cassette Structural Blueprint Wireframe Overlay (on top of reels & window)
+        drawCassetteWireframeOverlay(canvas)
+
         // 4. Draw Top-Left 7-Segment Digital Clock (Rotated -90° Vertical)
         drawVerticalDigitalClock(canvas)
 
-        // 5. Draw Song Title and Artist • Duration Horizontally Below Clear Window
-        drawHorizontalTrackInfo(canvas)
+        // 4b. Draw Hi-Res Audio Format Capsule Badge directly below Time (when song played)
+        drawAudioFormatBadgeBelowTime(canvas)
 
-        // 6. Draw Bottom-Left SPINDLE Branding (Rotated -90° Vertical)
+        // 5. Draw Bottom-Left Walkman Branding or Now Playing Song Info (Rotated -90° Vertical)
         drawVerticalSpindleBranding(canvas)
 
-        // 7. Draw 12-LED Song Playback Progress Bar
+        // 6. Draw 12-LED Song Playback Progress Bar
         drawLedProgressBar(canvas)
 
         // 8. Draw 4 Mechanical Tactile Buttons (REW, FWD, PLAY [Muted when playing], EJECT)
@@ -706,22 +956,11 @@ class VerticalDeckView @JvmOverloads constructor(
     }
 
     /**
-     * Draws the dark matte industrial chassis faceplate and 4 corner Torx screws.
+     * Draws the dark matte industrial chassis faceplate.
      */
     private fun drawChassis(canvas: Canvas, w: Float, h: Float) {
         canvas.drawRect(chassisRect, chassisPaint)
         canvas.drawRect(chassisRect, chassisBevelPaint)
-
-        // 4 Large Chassis Corner Screws
-        val screwR = w * 0.024f
-        val marginX = w * 0.075f
-        val marginYTop = h * 0.040f
-        val marginYBottom = h * 0.760f
-
-        drawTorxScrew(canvas, marginX, marginYTop, screwR, 25f)
-        drawTorxScrew(canvas, w - marginX, marginYTop, screwR, 70f)
-        drawTorxScrew(canvas, marginX, marginYBottom, screwR, 15f)
-        drawTorxScrew(canvas, w - marginX, marginYBottom, screwR, 45f)
     }
 
     /**
@@ -745,8 +984,39 @@ class VerticalDeckView @JvmOverloads constructor(
     }
 
     /**
-     * Draws the recessed cassette compartment slot, dark smoky cassette shell with corner screws,
-     * authentic right-side trapezoid faceplate contour, capstans, guide rollers, and tape head opening.
+     * Draws a corner screw surrounded by molded circular boss wells and a diagonal reinforcement strut
+     * matching the authentic technical cassette blueprint.
+     */
+    private fun drawCornerScrewWithBoss(
+        canvas: Canvas,
+        cx: Float,
+        cy: Float,
+        r: Float,
+        cornerX: Float,
+        cornerY: Float,
+        angleDeg: Float
+    ) {
+        // Outer molded circular boss rings
+        canvas.drawCircle(cx, cy, r * 1.65f, cassetteScrewBossPaint)
+        canvas.drawCircle(cx, cy, r * 1.28f, cassetteSubtleOutlinePaint)
+
+        // Diagonal corner strut connecting shell corner to the screw boss well
+        val dirX = cx - cornerX
+        val dirY = cy - cornerY
+        val len = Math.hypot(dirX.toDouble(), dirY.toDouble()).toFloat()
+        if (len > 0f) {
+            val stopX = cx - (dirX / len) * (r * 1.65f)
+            val stopY = cy - (dirY / len) * (r * 1.65f)
+            canvas.drawLine(cornerX, cornerY, stopX, stopY, cassetteScrewBossPaint)
+        }
+
+        // Torx screw inside the boss
+        drawTorxScrew(canvas, cx, cy, r, angleDeg)
+    }
+
+    /**
+     * Draws the recessed cassette compartment slot, dark smoky cassette shell body,
+     * tape head opening, and tape path mechanism.
      */
     private fun drawCassetteSlotAndShell(canvas: Canvas) {
         val cr = 18f
@@ -754,51 +1024,29 @@ class VerticalDeckView @JvmOverloads constructor(
         canvas.drawRoundRect(cassetteSlotRect, cr, cr, slotShadowPaint)
         canvas.drawRoundRect(cassetteSlotRect, cr, cr, slotBevelPaint)
 
-        // 2. Cassette Shell Body
-        canvas.drawRoundRect(cassetteRect, cr, cr, cassetteShellPaint)
-        canvas.drawRoundRect(cassetteRect, cr, cr, cassetteBorderPaint)
-
         val cw = cassetteRect.width()
         val ch = cassetteRect.height()
 
-        // 4 Corner screws on the cassette shell
-        val cScrewR = cw * 0.015f
-        val csOffsetX = cw * 0.045f
-        val csOffsetY = ch * 0.030f
+        // 1b. Mechanical Deck Locating Guide Pins (cylindrical alignment studs in cassette bay)
+        val pinR = cw * 0.010f
+        val pinX = cassetteSlotRect.left + cw * 0.015f
+        canvas.drawCircle(pinX, cassetteRect.top + ch * 0.16f, pinR, deckGuidePinPaint)
+        canvas.drawCircle(pinX, cassetteRect.top + ch * 0.16f, pinR * 0.5f, screwHighlightPaint)
+        canvas.drawCircle(pinX, cassetteRect.bottom - ch * 0.16f, pinR, deckGuidePinPaint)
+        canvas.drawCircle(pinX, cassetteRect.bottom - ch * 0.16f, pinR * 0.5f, screwHighlightPaint)
 
-        drawTorxScrew(canvas, cassetteRect.left + csOffsetX, cassetteRect.top + csOffsetY, cScrewR, 40f)
-        drawTorxScrew(canvas, cassetteRect.right - csOffsetX, cassetteRect.top + csOffsetY, cScrewR, 80f)
-        drawTorxScrew(canvas, cassetteRect.left + csOffsetX, cassetteRect.bottom - csOffsetY, cScrewR, 20f)
-        drawTorxScrew(canvas, cassetteRect.right - csOffsetX, cassetteRect.bottom - csOffsetY, cScrewR, 60f)
+        // 2. Cassette Shell Body Base
+        canvas.drawRoundRect(cassetteRect, cr, cr, cassetteShellPaint)
 
-        // Center right screw next to tape head opening
-        drawTorxScrew(canvas, cassetteRect.right - cw * 0.11f, headCavityRect.centerY(), cScrewR * 0.9f, 30f)
+        // 2b. Internal Slip-Sheet Tint (subtle dynamic tint visible through smoky acrylic)
+        canvas.drawRoundRect(innerShellRect, 12f, 12f, cassetteSlipSheetPaint)
 
-        // Trapezoid faceplate contour on the right side
-        canvas.drawPath(trapPath, cassetteGuidePaint)
-
-        // Internal Guide Roller Circles (Top right and bottom right)
+        // Guide Roller Circles (Top right and bottom right of 80% bottom frame)
         val rollerR = cw * 0.024f
-        val rollerX = cassetteRect.right - cw * 0.075f
-        val rollerYTop = topHubCenter.y - hubOuterRadius * 0.35f
-        val rollerYBottom = bottomHubCenter.y + hubOuterRadius * 0.35f
-
         canvas.drawCircle(rollerX, rollerYTop, rollerR, screwHeadPaint)
         canvas.drawCircle(rollerX, rollerYTop, rollerR * 0.5f, screwWellPaint)
         canvas.drawCircle(rollerX, rollerYBottom, rollerR, screwHeadPaint)
         canvas.drawCircle(rollerX, rollerYBottom, rollerR * 0.5f, screwWellPaint)
-
-        // Capstan drive holes (cutouts for the deck drive pins)
-        val capstanW = cw * 0.035f
-        val capstanH = ch * 0.045f
-        val capstanX = cassetteRect.right - cw * 0.065f
-        tempRectF.set(capstanX - capstanW * 0.5f, topHubCenter.y - capstanH * 0.5f, capstanX + capstanW * 0.5f, topHubCenter.y + capstanH * 0.5f)
-        canvas.drawRoundRect(tempRectF, 3f, 3f, cassetteCutoutPaint)
-        canvas.drawRoundRect(tempRectF, 3f, 3f, cassetteGuidePaint)
-
-        tempRectF.set(capstanX - capstanW * 0.5f, bottomHubCenter.y - capstanH * 0.5f, capstanX + capstanW * 0.5f, bottomHubCenter.y + capstanH * 0.5f)
-        canvas.drawRoundRect(tempRectF, 3f, 3f, cassetteCutoutPaint)
-        canvas.drawRoundRect(tempRectF, 3f, 3f, cassetteGuidePaint)
 
         // 1. Tape head opening & pressure pad mechanism
         canvas.drawRoundRect(headCavityRect, 6f, 6f, centerWindowPaint)
@@ -854,24 +1102,118 @@ class VerticalDeckView @JvmOverloads constructor(
         // Draw translucent tape ribbon outside clear window seen through protective plastic shell
         canvas.drawPath(threadedTapePath, tapePathPaint)
         canvas.drawPath(threadedTapePath, tapePathHighlightPaint)
+    }
 
-        // Diagonal specular acrylic reflection sheen & sharp line across upper shell
+    /**
+     * Draws the complete technical wireframe blueprint overlay of the cassette tape on top of the
+     * cassette body, reels, and window.
+     */
+    private fun drawCassetteWireframeOverlay(canvas: Canvas) {
+        val cr = 18f
+        val cw = cassetteRect.width()
+        val ch = cassetteRect.height()
+
+        // 1. Primary Outer Shell Wireframe Boundary
+        canvas.drawRoundRect(cassetteRect, cr, cr, cassetteBorderPaint)
+
+        // 2. Inner Perimeter Chamfer Seam / Double Outline
+        canvas.drawRoundRect(innerShellRect, 12f, 12f, cassetteInnerLipPaint)
+        canvas.drawRoundRect(innerShellRect, 12f, 12f, cassetteHighlightLinePaint)
+
+        // 3. Molded Side Grip Notches on top and bottom edges
+        val notchLeft = cassetteRect.left + cw * 0.72f
+        val notchRight = cassetteRect.left + cw * 0.90f
+        val notchDepth = ch * 0.012f
+        tempRectF.set(notchLeft, cassetteRect.top, notchRight, cassetteRect.top + notchDepth)
+        canvas.drawRoundRect(tempRectF, 2f, 2f, cassetteCutoutPaint)
+        canvas.drawRoundRect(tempRectF, 2f, 2f, cassetteOutlinePaint)
+
+        tempRectF.set(notchLeft, cassetteRect.bottom - notchDepth, notchRight, cassetteRect.bottom)
+        canvas.drawRoundRect(tempRectF, 2f, 2f, cassetteCutoutPaint)
+        canvas.drawRoundRect(tempRectF, 2f, 2f, cassetteOutlinePaint)
+
+        // 4. Large Label Recess Wireframe: frame outline removed per user instruction
+        // (Clean borderless song title frame wrapping text)
+
+        // 5. Circular Molded Reel Wells (concentric circles around top and bottom spools)
+        canvas.drawCircle(topHubCenter.x, topHubCenter.y, hubOuterRadius * 1.58f, cassetteSubtleOutlinePaint)
+        canvas.drawCircle(topHubCenter.x, topHubCenter.y, hubOuterRadius * 1.30f, cassetteSubtleOutlinePaint)
+        canvas.drawCircle(bottomHubCenter.x, bottomHubCenter.y, hubOuterRadius * 1.58f, cassetteSubtleOutlinePaint)
+        canvas.drawCircle(bottomHubCenter.x, bottomHubCenter.y, hubOuterRadius * 1.30f, cassetteSubtleOutlinePaint)
+
+        // 6. Center Molded Rectangular Ridge between the reels
+        val midY = (topHubCenter.y + bottomHubCenter.y) * 0.5f
+        val ridgeW = baseHubDimension * 0.68f
+        val ridgeH = ch * 0.052f
+        tempRectF.set(topHubCenter.x - ridgeW * 0.5f, midY - ridgeH * 0.5f, topHubCenter.x + ridgeW * 0.5f, midY + ridgeH * 0.5f)
+        canvas.drawRoundRect(tempRectF, 3f, 3f, cassetteSubtleOutlinePaint)
+
+        // 7. 4 Corner Screws with Molded Circular Bosses and Diagonal Corner Struts
+        val cScrewR = cw * 0.022f
+        val csOffsetX = cw * 0.048f
+        val csOffsetY = ch * 0.028f
+
+        drawCornerScrewWithBoss(canvas, cassetteRect.left + csOffsetX, cassetteRect.top + csOffsetY, cScrewR, innerShellRect.left, innerShellRect.top, 40f)
+        drawCornerScrewWithBoss(canvas, cassetteRect.right - csOffsetX, cassetteRect.top + csOffsetY, cScrewR, innerShellRect.right, innerShellRect.top, 80f)
+        drawCornerScrewWithBoss(canvas, cassetteRect.left + csOffsetX, cassetteRect.bottom - csOffsetY, cScrewR, innerShellRect.left, innerShellRect.bottom, 20f)
+        drawCornerScrewWithBoss(canvas, cassetteRect.right - csOffsetX, cassetteRect.bottom - csOffsetY, cScrewR, innerShellRect.right, innerShellRect.bottom, 60f)
+
+        // 8. Dual-Stepped Trapezoid Faceplate Contours (Outer & Inner - 80% height length)
+        canvas.drawPath(trapPath, cassetteOutlinePaint)
+        canvas.drawPath(innerTrapPath, cassetteSubtleOutlinePaint)
+
+        // 8a. Center Faceplate Screw with Molded Circular Boss (between capstan drive cutouts)
+        val centerScrewX = cassetteRect.left + cw * 0.805f
+        val centerScrewY = midY
+        canvas.drawCircle(centerScrewX, centerScrewY, cScrewR * 1.55f, cassetteScrewBossPaint)
+        drawTorxScrew(canvas, centerScrewX, centerScrewY, cScrewR * 0.88f, 30f)
+
+        // 9. Capstan Drive Holes (circular molded openings for deck drive pins)
+        val capstanR = cw * 0.024f
+        val capstanX = cassetteRect.left + cw * 0.910f
+        val capstanYTop = midY - ch * 0.24f
+        val capstanYBottom = midY + ch * 0.24f
+
+        canvas.drawCircle(capstanX, capstanYTop, capstanR, cassetteCutoutPaint)
+        canvas.drawCircle(capstanX, capstanYTop, capstanR, cassetteOutlinePaint)
+        canvas.drawCircle(capstanX, capstanYTop, capstanR * 0.55f, cassetteSubtleOutlinePaint)
+
+        canvas.drawCircle(capstanX, capstanYBottom, capstanR, cassetteCutoutPaint)
+        canvas.drawCircle(capstanX, capstanYBottom, capstanR, cassetteOutlinePaint)
+        canvas.drawCircle(capstanX, capstanYBottom, capstanR * 0.55f, cassetteSubtleOutlinePaint)
+
+        // 9a. Pinch Roller Rectangular Window Cutouts
+        val prW = cw * 0.048f
+        val prH = ch * 0.038f
+        val prX = cassetteRect.left + cw * 0.820f
+        val prYTop = midY - ch * 0.12f
+        val prYBottom = midY + ch * 0.12f
+
+        tempRectF.set(prX - prW * 0.5f, prYTop - prH * 0.5f, prX + prW * 0.5f, prYTop + prH * 0.5f)
+        canvas.drawRoundRect(tempRectF, 3f, 3f, cassetteCutoutPaint)
+        canvas.drawRoundRect(tempRectF, 3f, 3f, cassetteOutlinePaint)
+
+        tempRectF.set(prX - prW * 0.5f, prYBottom - prH * 0.5f, prX + prW * 0.5f, prYBottom + prH * 0.5f)
+        canvas.drawRoundRect(tempRectF, 3f, 3f, cassetteCutoutPaint)
+        canvas.drawRoundRect(tempRectF, 3f, 3f, cassetteOutlinePaint)
+
+        // 10. Diagonal specular acrylic reflection sheen & sharp line across upper shell
         canvas.drawPath(acrylicSheenPath, acrylicSheenPaint)
         canvas.drawLine(
-            cassetteRect.left, cassetteRect.top + ch * 0.05f,
-            cassetteRect.right, cassetteRect.top + ch * 0.28f,
+            cassetteRect.left, cassetteRect.top + ch * 0.20f,
+            cassetteRect.right, cassetteRect.top + ch * 0.44f,
             acrylicLinePaint
         )
     }
 
     /**
-     * Draws the dual pill-shaped deck status LEDs (RUN Green, PEAK Red).
+     * Draws the dual pill-shaped deck status LEDs (LOW BATT Red, RUN Green).
      */
     private fun drawStatusLeds(canvas: Canvas) {
+        // LOW BATT Red LED (illuminated with ruby glow when isLowBattery is true)
+        canvas.drawRoundRect(ledPeakRect, 4f, 4f, if (isLowBattery) ledPeakActivePaint else ledPeakInactivePaint)
         // RUN Green LED (illuminated with neon glow when isPlaying)
         canvas.drawRoundRect(ledRunRect, 4f, 4f, if (isPlaying) ledRunActivePaint else ledRunInactivePaint)
-        // PEAK Red LED (authentic dark ruby recessed peak indicator)
-        canvas.drawRoundRect(ledPeakRect, 4f, 4f, ledPeakInactivePaint)
     }
 
     /**
@@ -919,6 +1261,32 @@ class VerticalDeckView @JvmOverloads constructor(
 
         // Bottom Reel Hub Mechanism & Signature Orange Calibration Notch
         drawHubMechanism(canvas, bottomHubCenter.x, bottomHubCenter.y, hubOuterRadius, bottomReelAngle)
+
+        // 4. Printed tape counter gauge scale (100 ... 50 ... 0)
+        val cw = cassetteRect.width()
+        val gaugeX = centerWindowRect.left + cw * 0.038f
+        val gaugeTopY = topHubCenter.y + hubOuterRadius * 0.95f
+        val gaugeBottomY = bottomHubCenter.y - hubOuterRadius * 0.95f
+        val tickCount = 9
+        val tickStep = (gaugeBottomY - gaugeTopY) / (tickCount - 1)
+        for (i in 0 until tickCount) {
+            val ty = gaugeTopY + i * tickStep
+            val isMajor = (i == 0 || i == 4 || i == 8)
+            val tickLen = if (isMajor) cw * 0.022f else cw * 0.012f
+            canvas.drawLine(gaugeX, ty, gaugeX + tickLen, ty, tapeWindowGaugePaint)
+            if (isMajor) {
+                val label = when (i) {
+                    0 -> "100"
+                    4 -> "50"
+                    else -> "0"
+                }
+                canvas.save()
+                canvas.translate(gaugeX + tickLen + cw * 0.016f, ty)
+                canvas.rotate(-90f)
+                canvas.drawText(label, 0f, tapeWindowGaugeTextPaint.textSize * 0.35f, tapeWindowGaugeTextPaint)
+                canvas.restore()
+            }
+        }
 
         canvas.restore()
 
@@ -983,7 +1351,11 @@ class VerticalDeckView @JvmOverloads constructor(
      */
     private fun drawVerticalDigitalClock(canvas: Canvas) {
         calendar.timeInMillis = System.currentTimeMillis()
-        val hour = calendar.get(Calendar.HOUR_OF_DAY)
+        val is24 = android.text.format.DateFormat.is24HourFormat(context)
+        val hour = if (is24) calendar.get(Calendar.HOUR_OF_DAY) else {
+            val h12 = calendar.get(Calendar.HOUR)
+            if (h12 == 0) 12 else h12
+        }
         val minute = calendar.get(Calendar.MINUTE)
 
         val h1 = hour / 10
@@ -1000,8 +1372,8 @@ class VerticalDeckView @JvmOverloads constructor(
         val colonW = digitW * 0.32f
         val totalClockLength = digitW * 4f + digitGap * 2.4f + colonW
 
-        // Right-align top of clock with top border of center clear window frame
-        val originX = textRightMarginX
+        // Center-align clock horizontally in the column between left frame and clear spindle frame
+        val originX = columnCenterX + digitH * 0.5f
         val originY = centerWindowRect.top + totalClockLength + ch * 0.008f
 
         canvas.save()
@@ -1091,93 +1463,177 @@ class VerticalDeckView @JvmOverloads constructor(
     }
 
     /**
-     * Draws the track title and artist • duration horizontally centered below the clear window frame.
+     * Draws the SONG TITLE, Artist Name • Song Duration, and Hi-Res Audio Format capsule badge
+     * in the expansive center-left column on the cassette label face (Rotated -90° Vertical).
+     * Sized with bold, prominent typography (cw * 0.062f) for effortless legibility.
      */
-    private fun drawHorizontalTrackInfo(canvas: Canvas) {
-        val textCenterX = cassetteRect.centerX()
-        val areaTop = centerWindowRect.bottom + cassetteRect.height() * 0.018f
-        val areaBottom = cassetteRect.bottom - cassetteRect.height() * 0.030f
-        val areaCenterY = (areaTop + areaBottom) * 0.5f
+    /**
+     * Draws the Hi-Res Audio Format capsule badge positioned directly below the 7-segment digital clock,
+     * center-aligned in the column between the left frame and the clear spindle frame.
+     */
+    private fun drawAudioFormatBadgeBelowTime(canvas: Canvas) {
+        val hasSong = trackTitle.isNotEmpty() && trackTitle != "No Track Loaded"
+        if (!hasSong) return
 
-        val titleY = areaCenterY - artistTextPaint.textSize * 0.35f
-        val artistY = areaCenterY + artistTextPaint.textSize * 1.15f
-        val maxAvailableWidth = cassetteRect.width() * 0.88f
+        val cw = cassetteRect.width()
+        val ch = cassetteRect.height()
+
+        val digitH = cw * 0.052f
+        val digitW = digitH * 0.52f
+        val digitGap = digitW * 0.22f
+        val colonW = digitW * 0.32f
+        val clockLength = digitW * 4f + digitGap * 2.4f + colonW
+        val clockBottomY = centerWindowRect.top + clockLength + ch * 0.008f
+
+        val badgeText = if (audioFormat.isNotEmpty()) audioFormat else "HI-RES AUDIO"
+        val badgeW = formatBadgeTextPaint.measureText(badgeText) + cw * 0.028f
+        val badgeH = cw * 0.028f
+        val badgeGap = ch * 0.022f
+        val badgeCenterY = clockBottomY + badgeGap + badgeW * 0.5f
 
         canvas.save()
-        tempRectF.set(
-            textCenterX - maxAvailableWidth * 0.5f,
-            areaTop,
-            textCenterX + maxAvailableWidth * 0.5f,
-            areaBottom + artistTextPaint.textSize * 0.5f
+        canvas.translate(columnCenterX, badgeCenterY)
+        canvas.rotate(-90f)
+
+        formatBadgeRect.set(-badgeW * 0.5f, -badgeH * 0.5f, badgeW * 0.5f, badgeH * 0.5f)
+        canvas.drawRoundRect(formatBadgeRect, badgeH * 0.5f, badgeH * 0.5f, formatBadgeBgPaint)
+        canvas.drawRoundRect(formatBadgeRect, badgeH * 0.5f, badgeH * 0.5f, formatBadgeBorderPaint)
+        canvas.drawText(
+            badgeText,
+            0f,
+            formatBadgeTextPaint.textSize * 0.35f,
+            formatBadgeTextPaint
         )
-        canvas.clipRect(tempRectF)
-
-        // Line 1: Song Title (Centered horizontally)
-        val measuredTitleW = titleTextPaint.measureText(trackTitle)
-        if (measuredTitleW > maxAvailableWidth && isPlaying) {
-            val now = SystemClock.uptimeMillis()
-            if (lastMarqueeTime != 0L) {
-                val dt = (now - lastMarqueeTime) / 1000f
-                marqueeOffset += dt * 35f
-                val totalScrollW = measuredTitleW + 40f
-                if (marqueeOffset > totalScrollW) {
-                    marqueeOffset = 0f
-                }
-            }
-            lastMarqueeTime = now
-            titleTextPaint.textAlign = Paint.Align.LEFT
-            val startX = textCenterX - maxAvailableWidth * 0.5f - marqueeOffset
-            canvas.drawText(trackTitle, startX, titleY, titleTextPaint)
-            canvas.drawText(trackTitle, startX + measuredTitleW + 40f, titleY, titleTextPaint)
-            titleTextPaint.textAlign = Paint.Align.CENTER
-        } else if (measuredTitleW > maxAvailableWidth) {
-            val budget = maxAvailableWidth - titleTextPaint.measureText("…")
-            var trimmed = trackTitle
-            while (trimmed.isNotEmpty() && titleTextPaint.measureText(trimmed) > budget) {
-                trimmed = trimmed.dropLast(1)
-            }
-            canvas.drawText("${trimmed.trimEnd()}…", textCenterX, titleY, titleTextPaint)
-        } else {
-            canvas.drawText(trackTitle, textCenterX, titleY, titleTextPaint)
-        }
-
-        // Line 2: Artist • Duration (Centered horizontally)
-        val durStr = formatTime(durationMs)
-        val subtitle = if (artistName.isNotEmpty() && artistName != "Unknown Artist") "$artistName • $durStr" else durStr
-        val measuredSubW = artistTextPaint.measureText(subtitle)
-        if (measuredSubW > maxAvailableWidth) {
-            val budgetForArtist = maxAvailableWidth - artistTextPaint.measureText("… • $durStr")
-            var trimmedArtist = artistName
-            while (trimmedArtist.isNotEmpty() && artistTextPaint.measureText(trimmedArtist) > budgetForArtist) {
-                trimmedArtist = trimmedArtist.dropLast(1)
-            }
-            canvas.drawText("${trimmedArtist.trimEnd()}… • $durStr", textCenterX, artistY, artistTextPaint)
-        } else {
-            canvas.drawText(subtitle, textCenterX, artistY, artistTextPaint)
-        }
 
         canvas.restore()
     }
 
     /**
-     * Draws the SPINDLE PLAYER branding at the bottom left (Rotated -90° Vertical).
-     * Right-aligned with the clear window frame (textRightMarginX) and bottom-aligned with centerWindowRect.bottom.
-     * Matches the authentic MIUI RECORDER typography from reference image media_1789561453495.png.
+     * Draws the WALKMAN Player branding (default idle) or Now Playing Track Info (when a song is played)
+     * at the bottom-left of the cassette shell, center-aligned in the column between the left frame
+     * and the clear spindle frame (Rotated -90° Vertical).
+     *
+     * In default idle state (no track loaded):
+     * - Line 0: WALKMAN (crisp bold white typography)
+     * - Line 1: Player (silver/slate subtext)
+     *
+     * When a song is played / loaded:
+     * - Line 0: Song Title (prominent bold white with smooth marquee scrolling when playing)
+     * - Line 1: Artist Name • song time / total duration (e.g. Linkin Park • 01:24 / 03:24)
      */
     private fun drawVerticalSpindleBranding(canvas: Canvas) {
-        val originX = textRightMarginX
-        val originY = centerWindowRect.bottom - cassetteRect.height() * 0.008f
+        val hasSong = trackTitle.isNotEmpty() && trackTitle != "No Track Loaded"
+
+        val cw = cassetteRect.width()
+        val ch = cassetteRect.height()
+
+        val originX = columnCenterX
+        val originY = centerWindowRect.bottom - ch * 0.008f
 
         canvas.save()
         canvas.translate(originX, originY)
         canvas.rotate(-90f)
 
-        // Line 2 (closest to clear window frame): PLAYER
-        canvas.drawText("PLAYER", 0f, 0f, spindleSubtextPaint)
+        // Local coordinates:
+        // +X points UP towards the top-left digital clock and badge.
+        // -Y points LEFT towards the outer cassette chassis edge.
+        // +Y points RIGHT towards the center spindle window.
+        // y = 0f is exactly at columnCenterX!
 
-        // Line 1 (stepping to the left towards outer chassis): SPINDLE
-        val logoY = -spindleSubtextPaint.textSize * 1.35f
-        canvas.drawText("SPINDLE", 0f, logoY, spindleLogoPaint)
+        val titleSize = spindleLogoPaint.textSize
+        val artistSize = spindleSubtextPaint.textSize
+        val lineGap = cw * 0.012f
+        val totalBlockH = titleSize + lineGap + artistSize
+
+        // Center Line 0 and Line 1 together symmetrically around y = 0 (columnCenterX)
+        val line0Y = -totalBlockH * 0.5f + 0.8f * titleSize
+        val line1Y = +totalBlockH * 0.5f - 0.2f * artistSize
+
+        if (!hasSong) {
+            // Default Walkman Player typography
+            spindleLogoPaint.letterSpacing = 0.12f
+            spindleSubtextPaint.letterSpacing = 0.16f
+
+            // Line 0: WALKMAN (crisp bold white typography)
+            canvas.drawText("WALKMAN", 0f, line0Y, spindleLogoPaint)
+
+            // Line 1: Player (silver/slate subtext)
+            canvas.drawText("Player", 0f, line1Y, spindleSubtextPaint)
+        } else {
+            spindleLogoPaint.letterSpacing = 0.02f
+            spindleSubtextPaint.letterSpacing = 0.02f
+
+            // Compute available vertical length along +X before reaching the badge below time
+            val digitH = cw * 0.052f
+            val digitW = digitH * 0.52f
+            val digitGap = digitW * 0.22f
+            val colonW = digitW * 0.32f
+            val clockLength = digitW * 4f + digitGap * 2.4f + colonW
+            val clockBottomY = centerWindowRect.top + clockLength + ch * 0.008f
+
+            val badgeText = if (audioFormat.isNotEmpty()) audioFormat else "HI-RES AUDIO"
+            val badgeW = formatBadgeTextPaint.measureText(badgeText) + cw * 0.028f
+            val badgeGap = ch * 0.022f
+            val badgeBottomY = clockBottomY + badgeGap + badgeW
+
+            val maxAvailableLength = ((originY - badgeBottomY) - ch * 0.035f).coerceAtLeast(100f)
+
+            // Line 0: Song Title (prominent bold white with smooth marquee scrolling when playing)
+            val measuredTitleW = spindleLogoPaint.measureText(trackTitle)
+            if (measuredTitleW > maxAvailableLength && isPlaying) {
+                val now = SystemClock.uptimeMillis()
+                if (lastMarqueeTime != 0L) {
+                    val dt = (now - lastMarqueeTime) / 1000f
+                    marqueeOffset += dt * 36f
+                    val totalScrollW = measuredTitleW + 48f
+                    if (marqueeOffset > totalScrollW) {
+                        marqueeOffset = 0f
+                    }
+                }
+                lastMarqueeTime = now
+
+                canvas.save()
+                tempRectF.set(
+                    0f,
+                    line0Y - titleSize * 1.25f,
+                    maxAvailableLength,
+                    line0Y + titleSize * 0.40f
+                )
+                canvas.clipRect(tempRectF)
+                val startX = -marqueeOffset
+                canvas.drawText(trackTitle, startX, line0Y, spindleLogoPaint)
+                canvas.drawText(trackTitle, startX + measuredTitleW + 48f, line0Y, spindleLogoPaint)
+                canvas.restore()
+            } else if (measuredTitleW > maxAvailableLength) {
+                val budget = maxAvailableLength - spindleLogoPaint.measureText("…")
+                var trimmed = trackTitle
+                while (trimmed.isNotEmpty() && spindleLogoPaint.measureText(trimmed) > budget) {
+                    trimmed = trimmed.dropLast(1)
+                }
+                canvas.drawText("${trimmed.trimEnd()}…", 0f, line0Y, spindleLogoPaint)
+            } else {
+                canvas.drawText(trackTitle, 0f, line0Y, spindleLogoPaint)
+            }
+
+            // Line 1: Artist Name • song time / total duration (e.g. Linkin Park • 01:24 / 03:24)
+            val curTimeStr = formatTime(currentTimeMs)
+            val totTimeStr = formatTime(durationMs)
+            val artistPart = if (artistName.isNotEmpty() && artistName != "Unknown Artist") artistName else "Unknown Artist"
+            val subtitle = "$artistPart • $curTimeStr / $totTimeStr"
+
+            val measuredSubW = spindleSubtextPaint.measureText(subtitle)
+            if (measuredSubW > maxAvailableLength) {
+                val durSuffix = " • $curTimeStr / $totTimeStr"
+                val budgetForArtist = maxAvailableLength - spindleSubtextPaint.measureText("…$durSuffix")
+                var trimmedArtist = artistPart
+                while (trimmedArtist.isNotEmpty() && spindleSubtextPaint.measureText("$trimmedArtist…$durSuffix") > maxAvailableLength) {
+                    trimmedArtist = trimmedArtist.dropLast(1)
+                }
+                canvas.drawText("${trimmedArtist.trimEnd()}…$durSuffix", 0f, line1Y, spindleSubtextPaint)
+            } else {
+                canvas.drawText(subtitle, 0f, line1Y, spindleSubtextPaint)
+            }
+        }
 
         canvas.restore()
     }

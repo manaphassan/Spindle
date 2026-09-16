@@ -1,6 +1,7 @@
 package com.hana.spindle.ui.catalog
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -34,9 +35,18 @@ class AlbumAdapter(
 
         b.tvGridTitle.text = album.album
         b.tvGridSubtitle.text = album.artist
-        b.tvGridTrackCount.text = "${album.trackCount} songs"
+        b.tvGridTrackCount.text = "${album.trackCount} tracks"
 
-        // Asynchronously load RGB_565 downsampled cover art (140x140)
+        if (album.year > 0) {
+            b.tvGridYear.visibility = View.VISIBLE
+            b.tvGridYear.text = album.year.toString()
+        } else {
+            b.tvGridYear.visibility = View.GONE
+        }
+
+        b.tvGridFormat.text = album.format
+
+        // Asynchronously load RGB_565 downsampled cover art (200x200)
         b.ivGridArt.setImageDrawable(null)
         scope.launch {
             val thumb = imageLoader.loadCover(album.representativePath, 200, 200)

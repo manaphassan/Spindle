@@ -38,6 +38,21 @@ class MusicScanner(
 
     companion object {
         private const val TAG = "SpindleScanner"
+        const val PREF_CUSTOM_MUSIC_PATH = "pref_custom_music_path"
+    }
+
+    private val prefs = context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+
+    fun getCustomMusicPath(): String? {
+        return prefs.getString(PREF_CUSTOM_MUSIC_PATH, null)
+    }
+
+    fun setCustomMusicPath(path: String?) {
+        if (path.isNullOrBlank()) {
+            prefs.edit().remove(PREF_CUSTOM_MUSIC_PATH).apply()
+        } else {
+            prefs.edit().putString(PREF_CUSTOM_MUSIC_PATH, path).apply()
+        }
     }
 
     private val _progress = MutableStateFlow(ScanProgress())
@@ -48,7 +63,8 @@ class MusicScanner(
     )
 
     /**
-     * Initiates a full scan across internal music storage and external MicroSD cards.
+     * Initiates a full scan across internal music storage and external MicroSD cards,
+     * or scans only the custom configured directory if one was selected by the user.
      */
     suspend fun scanAll() = withContext(Dispatchers.IO) {
         if (_progress.value.isScanning) {
@@ -56,26 +72,32 @@ class MusicScanner(
             return@withContext
         }
 
-        Log.d(TAG, "Starting full music library scan...")
-        _progress.value = ScanProgress(isScanning = true, songsFound = 0, currentPath = "Indexing MediaStore...")
+        val customPath = getCustomMusicPath()
+        Log.d(TAG, "Starting music library scan (customPath=$customPath)...")
+        _progress.value = ScanProgress(isScanning = true, songsFound = 0, currentPath = "Starting scan...")
 
         var totalFound = 0
 
-        // Phase 1: Fast MediaStore Query
-        try {
-            val mediaStoreSongs = scanMediaStore()
-            if (mediaStoreSongs.isNotEmpty()) {
-                songDao.insertSongs(mediaStoreSongs)
-                totalFound += mediaStoreSongs.size
-                Log.d(TAG, "Phase 1: Loaded ${mediaStoreSongs.size} tracks from MediaStore")
-                _progress.value = ScanProgress(isScanning = true, songsFound = totalFound, currentPath = "MediaStore indexed")
+        val customDir = if (!customPath.isNullOrBlank()) File(customPath) else null
+        val isCustomScan = customDir != null && customDir.exists() && customDir.isDirectory && customDir.canRead()
+
+        // Phase 1: Fast MediaStore Query (only if scanning all storage)
+        if (!isCustomScan) {
+            try {
+                val mediaStoreSongs = scanMediaStore()
+                if (mediaStoreSongs.isNotEmpty()) {
+                    songDao.insertSongs(mediaStoreSongs)
+                    totalFound += mediaStoreSongs.size
+                    Log.d(TAG, "Phase 1: Loaded ${mediaStoreSongs.size} tracks from MediaStore")
+                    _progress.value = ScanProgress(isScanning = true, songsFound = totalFound, currentPath = "MediaStore indexed")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error in Phase 1 MediaStore scan", e)
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error in Phase 1 MediaStore scan", e)
         }
 
-        // Phase 2: Direct Storage Crawler (for SD Card files, Hi-Res FLAC, DSD)
-        val roots = findStorageRoots()
+        // Phase 2: Direct Storage Crawler (crawl custom directory or storage roots)
+        val roots = if (isCustomScan) listOf(customDir!!) else findStorageRoots()
         Log.d(TAG, "Phase 2: Storage roots to crawl: ${roots.map { it.absolutePath }}")
 
         val batch = mutableListOf<SongEntity>()
@@ -158,6 +180,10 @@ class MusicScanner(
                 val dateModified = cursor.getLong(dateModCol) * 1000L
                 val format = file.extension.uppercase(Locale.ROOT)
 
+                val bitrateKbps = if (duration > 0) ((file.length() * 8L) / duration).toInt() else 320
+                val lrcFile = File(file.parentFile, "${file.nameWithoutExtension}.lrc")
+                val txtFile = File(file.parentFile, "${file.nameWithoutExtension}.txt")
+
                 songs.add(
                     SongEntity(
                         title = title.trim(),
@@ -171,7 +197,9 @@ class MusicScanner(
                         sampleRate = 44100,
                         fileFormat = format,
                         rating = 0,
-                        dateModified = dateModified
+                        dateModified = dateModified,
+                        bitrateKbps = bitrateKbps,
+                        hasLyrics = lrcFile.exists() || txtFile.exists()
                     )
                 )
             }

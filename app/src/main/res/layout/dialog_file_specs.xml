@@ -1,0 +1,321 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#15161A"
+    android:padding="20dp">
+
+    <!-- Header & Close -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="AUDIOPHILE FILE TELEMETRY"
+            android:textColor="@color/text_primary"
+            android:textSize="14.5sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.08" />
+
+        <Button
+            android:id="@+id/btnCloseSpecs"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:text="CLOSE"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:textColor="@color/white"
+            android:backgroundTint="#242630"
+            android:paddingHorizontal="14dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            app:cornerRadius="16dp" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#24262E"
+        android:layout_marginVertical="12dp" />
+
+    <!-- Audio Stream Specs Grid -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#1C1D24"
+        android:padding="14dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="STREAM SPECIFICATIONS"
+            android:textColor="#64748B"
+            android:textSize="10.5sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.1" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="FORMAT / CODEC"
+                    android:textColor="#94A3B8"
+                    android:textSize="10sp" />
+
+                <TextView
+                    android:id="@+id/tvSpecFormat"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="FLAC (Free Lossless)"
+                    android:textColor="@color/vfd_emerald"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:fontFamily="monospace" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="BITRATE"
+                    android:textColor="#94A3B8"
+                    android:textSize="10sp" />
+
+                <TextView
+                    android:id="@+id/tvSpecBitrate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="2,840 kbps VBR"
+                    android:textColor="@color/text_primary"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:fontFamily="monospace" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="10dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="SAMPLE RATE"
+                    android:textColor="#94A3B8"
+                    android:textSize="10sp" />
+
+                <TextView
+                    android:id="@+id/tvSpecSampleRate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="96,000 Hz (96.0 kHz)"
+                    android:textColor="@color/text_primary"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:fontFamily="monospace" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="BIT DEPTH"
+                    android:textColor="#94A3B8"
+                    android:textSize="10sp" />
+
+                <TextView
+                    android:id="@+id/tvSpecBitDepth"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="24-bit Studio"
+                    android:textColor="@color/text_primary"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:fontFamily="monospace" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="10dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="CHANNELS"
+                    android:textColor="#94A3B8"
+                    android:textSize="10sp" />
+
+                <TextView
+                    android:id="@+id/tvSpecChannels"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="2 Channels (Stereo)"
+                    android:textColor="@color/text_primary"
+                    android:textSize="12.5sp"
+                    android:fontFamily="sans-serif-medium" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="AUDIO QUALITY"
+                    android:textColor="#94A3B8"
+                    android:textSize="10sp" />
+
+                <TextView
+                    android:id="@+id/tvSpecQuality"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Hi-Res Lossless Audio"
+                    android:textColor="@color/vfd_emerald"
+                    android:textSize="12.5sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- File System & Storage Info -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#1C1D24"
+        android:padding="14dp"
+        android:layout_marginTop="10dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="FILE &amp; METADATA STORAGE"
+            android:textColor="#64748B"
+            android:textSize="10.5sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.1" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="FILE PATH"
+            android:textColor="#94A3B8"
+            android:textSize="10sp"
+            android:layout_marginTop="8dp" />
+
+        <TextView
+            android:id="@+id/tvSpecPath"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="/storage/emulated/0/Music/track.flac"
+            android:textColor="@color/text_primary"
+            android:textSize="11.5sp"
+            android:fontFamily="monospace"
+            android:ellipsize="middle"
+            android:singleLine="true" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="FILE SIZE"
+                    android:textColor="#94A3B8"
+                    android:textSize="10sp" />
+
+                <TextView
+                    android:id="@+id/tvSpecSize"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="48.3 MB"
+                    android:textColor="@color/text_primary"
+                    android:textSize="12.5sp"
+                    android:fontFamily="monospace" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="LYRICS STATUS"
+                    android:textColor="#94A3B8"
+                    android:textSize="10sp" />
+
+                <TextView
+                    android:id="@+id/tvSpecLyrics"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Synchronized (.lrc)"
+                    android:textColor="@color/vfd_emerald"
+                    android:textSize="12.5sp"
+                    android:fontFamily="sans-serif-medium" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>

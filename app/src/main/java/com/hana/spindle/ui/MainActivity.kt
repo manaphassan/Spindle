@@ -59,6 +59,11 @@ class MainActivity : AppCompatActivity() {
         setupCatalogContainer()
         setupThemeObservation()
         setupBackNavigation()
+        if (intent?.getStringExtra("navigate") == "radio") {
+            binding.viewPager.post {
+                navigateToRadio()
+            }
+        }
         checkAndRequestStoragePermissions(app)
     }
 
@@ -140,6 +145,10 @@ class MainActivity : AppCompatActivity() {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (binding.catalogContainer.visibility == View.VISIBLE) {
+                    val catalogFrag = supportFragmentManager.findFragmentById(R.id.catalogContainer) as? CatalogFragment
+                    if (catalogFrag != null && catalogFrag.handleBackPressed()) {
+                        return
+                    }
                     // Close Catalog and return to Cassette Deck
                     navigateToPlayer()
                 } else if (binding.viewPager.currentItem != 1) {
@@ -225,6 +234,14 @@ class MainActivity : AppCompatActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        if (intent.getStringExtra("navigate") == "radio") {
+            binding.viewPager.post { navigateToRadio() }
+            return
+        }
+        if (intent.getStringExtra("navigate") == "drawer") {
+            binding.viewPager.post { navigateToDrawer() }
+            return
+        }
         // Ensure pressing hardware/software Home button always brings user to Cassette Player
         navigateToPlayer()
     }

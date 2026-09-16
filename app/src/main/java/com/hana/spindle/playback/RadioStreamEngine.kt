@@ -73,21 +73,80 @@ class RadioStreamEngine(private val context: Context) {
         )
     }
 
-    var userStations: MutableList<RadioStation> = PRESET_STATIONS.toMutableList()
+    private val prefs = context.getSharedPreferences("spindle_radio_stations", Context.MODE_PRIVATE)
+
+    var userStations: MutableList<RadioStation> = loadStations()
         private set
+
+    private fun loadStations(): MutableList<RadioStation> {
+        val jsonStr = prefs.getString("stations_json", null)
+        if (jsonStr.isNullOrBlank()) {
+            return PRESET_STATIONS.toMutableList()
+        }
+        return try {
+            val jsonArray = org.json.JSONArray(jsonStr)
+            val list = mutableListOf<RadioStation>()
+            for (i in 0 until jsonArray.length()) {
+                val obj = jsonArray.getJSONObject(i)
+                list.add(
+                    RadioStation(
+                        frequencyMhz = obj.getDouble("frequencyMhz").toFloat(),
+                        callsign = obj.getString("callsign"),
+                        rdsName = obj.optString("rdsName", obj.getString("callsign")),
+                        genre = obj.optString("genre", "Radio"),
+                        streamUrl = obj.getString("streamUrl")
+                    )
+                )
+            }
+            if (list.isEmpty()) PRESET_STATIONS.toMutableList() else list
+        } catch (e: Exception) {
+            Log.e(TAG, "Error loading stations json", e)
+            PRESET_STATIONS.toMutableList()
+        }
+    }
+
+    private fun saveStations() {
+        try {
+            val jsonArray = org.json.JSONArray()
+            for (station in userStations) {
+                val obj = org.json.JSONObject().apply {
+                    put("frequencyMhz", station.frequencyMhz.toDouble())
+                    put("callsign", station.callsign)
+                    put("rdsName", station.rdsName)
+                    put("genre", station.genre)
+                    put("streamUrl", station.streamUrl)
+                }
+                jsonArray.put(obj)
+            }
+            prefs.edit().putString("stations_json", jsonArray.toString()).apply()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error saving stations json", e)
+        }
+    }
 
     fun addStation(station: RadioStation) {
         userStations.removeAll { it.frequencyMhz == station.frequencyMhz }
         userStations.add(station)
+        userStations.sortBy { it.frequencyMhz }
+        saveStations()
     }
 
     fun removeStation(frequencyMhz: Float) {
         userStations.removeAll { it.frequencyMhz == frequencyMhz }
+        saveStations()
+        if (_radioState.value.currentStation?.frequencyMhz == frequencyMhz) {
+            if (userStations.isNotEmpty()) {
+                tuneTo(userStations[0].frequencyMhz)
+            } else {
+                pause()
+            }
+        }
     }
 
     fun resetStationsToDefaults() {
         userStations.clear()
         userStations.addAll(PRESET_STATIONS)
+        prefs.edit().remove("stations_json").apply()
     }
 
     private val _radioState = MutableStateFlow(

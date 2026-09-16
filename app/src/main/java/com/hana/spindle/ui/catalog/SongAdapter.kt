@@ -50,7 +50,9 @@ class SongAdapter(
             b.tvSongTitle.setTextColor(Color.WHITE)
         }
 
-        val formatStr = "${song.fileFormat} ${song.bitDepth}/${song.sampleRate / 1000}k"
+        val bitrateStr = if (song.bitrateKbps > 0) " ${song.bitrateKbps}k" else ""
+        val lyricsStr = if (song.hasLyrics) " • LRC" else ""
+        val formatStr = "${song.fileFormat} ${song.bitDepth}/${song.sampleRate / 1000}k$bitrateStr$lyricsStr"
         b.tvFormatBadge.text = formatStr
         b.tvDuration.text = formatDuration(song.durationMs)
 

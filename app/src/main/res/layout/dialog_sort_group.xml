@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#15161A"
+    android:padding="20dp">
+
+    <!-- Header & Close -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="SORT &amp; GROUP LIBRARY"
+            android:textColor="@color/text_primary"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.08" />
+
+        <Button
+            android:id="@+id/btnDoneSort"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:text="DONE"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:textColor="@color/white"
+            android:backgroundTint="@color/wm2_red"
+            android:paddingHorizontal="14dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            app:cornerRadius="16dp" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#24262E"
+        android:layout_marginVertical="12dp" />
+
+    <!-- Section 1: Sort Order -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="SORT ORDER"
+        android:textColor="#64748B"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.1" />
+
+    <RadioGroup
+        android:id="@+id/radioGroupSort"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#24262E"
+        android:layout_marginVertical="12dp" />
+
+    <!-- Section 2: Grouping Mode -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="GROUP BY"
+        android:textColor="#64748B"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.1" />
+
+    <RadioGroup
+        android:id="@+id/radioGroupGroup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp" />
+
+</LinearLayout>

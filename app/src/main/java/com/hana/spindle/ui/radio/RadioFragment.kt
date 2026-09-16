@@ -127,11 +127,14 @@ class RadioFragment : Fragment() {
         }
         binding.tvRadioStreamStatus.setTextColor(
             when {
-                state.isPlaying -> Color.parseColor("#2D5A27")
-                state.isBuffering -> Color.parseColor("#B45309")
-                else -> Color.parseColor("#71717A")
+                state.isPlaying -> Color.parseColor("#10B981")
+                state.isBuffering -> Color.parseColor("#F59E0B")
+                else -> Color.parseColor("#64748B")
             }
         )
+
+        // Visualizer inside speaker grille
+        binding.speakerGrilleView.isPlaying = state.isPlaying
 
         // Now Playing Title
         val nowPlaying = when {
@@ -144,15 +147,15 @@ class RadioFragment : Fragment() {
         binding.tvRadioNowPlaying.text = nowPlaying
         binding.tvRadioNowPlaying.isSelected = true // Enables horizontal marquee auto-scroll
 
-        // Highlight active preset button
+        // Highlight active preset button (Dark theme)
         for (i in presetButtons.indices) {
             val station = RadioStreamEngine.PRESET_STATIONS.getOrNull(i)
             val isCurrent = (station != null && station.callsign == state.currentStation?.callsign)
             presetButtons[i].setTextColor(
-                if (isCurrent) Color.parseColor("#EF4444") else Color.parseColor("#52525B")
+                if (isCurrent) Color.parseColor("#EF4444") else Color.parseColor("#94A3B8")
             )
             presetButtons[i].backgroundTintList = android.content.res.ColorStateList.valueOf(
-                if (isCurrent && state.isPlaying) Color.parseColor("#FFFFFF") else Color.parseColor("#EDEDF2")
+                if (isCurrent && state.isPlaying) Color.parseColor("#2E3342") else Color.parseColor("#222530")
             )
         }
 

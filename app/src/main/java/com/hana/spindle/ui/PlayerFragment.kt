@@ -12,16 +12,22 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
+import android.widget.SeekBar
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.hana.spindle.SpindleApp
+import com.hana.spindle.data.db.SongEntity
 import com.hana.spindle.databinding.FragmentPlayerBinding
 import com.hana.spindle.playback.AudioEngine
+import com.hana.spindle.playback.RepeatMode
+import com.hana.spindle.playback.ShuffleMode
 import com.hana.spindle.theme.ChassisStyle
 import com.hana.spindle.theme.ThemeManager
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
+import java.io.File
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
@@ -32,7 +38,6 @@ class PlayerFragment : Fragment() {
 
     private lateinit var themeManager: ThemeManager
     private lateinit var audioEngine: AudioEngine
-
     private var isSideA = true
 
     // Battery Receiver for WM-2 Hardware LED
@@ -49,6 +54,7 @@ class PlayerFragment : Fragment() {
 
                 _binding?.wm2ChassisView?.batteryLevel = batteryPct
                 _binding?.wm2ChassisView?.isCharging = isCharging
+                _binding?.verticalDeckView?.isLowBattery = (batteryPct <= 15)
             }
         }
     }
@@ -70,7 +76,7 @@ class PlayerFragment : Fragment() {
         audioEngine = app.audioEngine
 
         setupThemeObservation()
-        setupAudioPlaybackObservation()
+        setupAudioPlaybackObservation(app)
         setupControls()
         setupCassetteFlip()
     }
@@ -107,11 +113,11 @@ class PlayerFragment : Fragment() {
         }
     }
 
-    private fun setupAudioPlaybackObservation() {
+    private fun setupAudioPlaybackObservation(app: SpindleApp) {
         viewLifecycleOwner.lifecycleScope.launch {
             audioEngine.playbackState.collectLatest { state ->
                 _binding?.let { b ->
-                    // 1. Vertical Walkman Deck (Reference 1 & 2)
+                    // 1. Vertical Walkman Deck
                     b.verticalDeckView.isPlaying = state.isPlaying
                     b.verticalDeckView.progress = state.progress
                     b.verticalCassetteView.isPlaying = state.isPlaying
@@ -123,22 +129,49 @@ class PlayerFragment : Fragment() {
                     b.wm2CassetteView.progress = state.progress
 
                     state.currentSong?.let { song ->
+                        // Deck values
                         b.verticalDeckView.trackTitle = song.title
                         b.verticalDeckView.artistName = song.artist
                         b.verticalDeckView.durationMs = song.durationMs
+                        val formatStr = if (song.fileFormat.equals("MP3", ignoreCase = true) && song.bitrateKbps > 0) {
+                            "MP3 • ${song.bitrateKbps}kbps"
+                        } else if (song.sampleRate > 0) {
+                            val kHz = if (song.sampleRate % 1000 == 0) "${song.sampleRate / 1000}" else String.format(Locale.US, "%.1f", song.sampleRate / 1000f)
+                            val bitStr = if (song.bitDepth > 0) "${song.bitDepth}-bit / " else ""
+                            "${song.fileFormat} • $bitStr${kHz}kHz"
+                        } else {
+                            song.fileFormat
+                        }
+                        b.verticalDeckView.audioFormat = formatStr
+
+                        // Dynamic cover accent color
+                        viewLifecycleOwner.lifecycleScope.launch {
+                            val accentColor = app.imageLoader.extractAccentColor(song.path)
+                            b.verticalDeckView.setCoverAccentColor(accentColor)
+                        }
+
                         b.verticalCassetteView.trackTitle = song.title
                         b.verticalCassetteView.artistName = song.artist
                         b.wm2CassetteView.trackTitle = song.title
                         b.wm2CassetteView.artistName = song.artist
+                    } ?: run {
+                        b.verticalDeckView.trackTitle = ""
+                        b.verticalDeckView.artistName = ""
+                        b.verticalDeckView.durationMs = 0L
+                        b.verticalDeckView.audioFormat = ""
+                        b.verticalCassetteView.trackTitle = ""
+                        b.verticalCassetteView.artistName = ""
+                        b.wm2CassetteView.trackTitle = ""
+                        b.wm2CassetteView.artistName = ""
                     }
+
                     b.verticalDeckView.currentTimeMs = state.currentPositionMs
 
                     val curTimeStr = formatTime(state.currentPositionMs)
-                    val totalTimeStr = formatTime(state.durationMs)
+                    b.tvCurrentTime.text = curTimeStr
+                    b.tvTotalDuration.text = formatTime(state.durationMs)
 
                     b.btnPlayPause.text = if (state.isPlaying) "❚❚ PAUSE" else "▶ PLAY"
-                    b.tvCurrentTime.text = curTimeStr
-                    b.tvTotalDuration.text = totalTimeStr
                 }
             }
         }

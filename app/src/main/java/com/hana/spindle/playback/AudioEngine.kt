@@ -9,6 +9,8 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
+import com.hana.spindle.data.LyricsData
+import com.hana.spindle.data.LyricsParser
 import com.hana.spindle.data.db.SongEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -22,12 +24,28 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.io.File
 
+enum class ShuffleMode {
+    OFF,
+    ALL,
+    ALBUM
+}
+
+enum class RepeatMode {
+    OFF,
+    ALL,
+    ONE
+}
+
 data class PlaybackState(
     val isPlaying: Boolean = false,
     val currentSong: SongEntity? = null,
     val currentPositionMs: Long = 0L,
     val durationMs: Long = 0L,
-    val progress: Float = 0.0f
+    val progress: Float = 0.0f,
+    val shuffleMode: ShuffleMode = ShuffleMode.OFF,
+    val repeatMode: RepeatMode = RepeatMode.ALL,
+    val currentLyrics: LyricsData? = null,
+    val activeLyricIndex: Int = -1
 )
 
 /**
@@ -37,6 +55,8 @@ data class PlaybackState(
  * 1. Gapless buffer pre-allocation.
  * 2. High-resolution audio attributes for direct ALSA routing.
  * 3. Low-RAM memory load control (<8MB audio buffer).
+ * 4. 3-state Shuffle & 3-state Repeat modes (inspired by Poweramp).
+ * 5. Synchronized lyrics streaming & timestamp lookup.
  */
 @UnstableApi
 class AudioEngine(
@@ -52,6 +72,7 @@ class AudioEngine(
     private val _playbackState = MutableStateFlow(PlaybackState())
     val playbackState: StateFlow<PlaybackState> = _playbackState.asStateFlow()
 
+    private var originalPlaylist = mutableListOf<SongEntity>()
     private var playlist = mutableListOf<SongEntity>()
     private var currentIndex = -1
 
@@ -78,18 +99,23 @@ class AudioEngine(
             .setAudioAttributes(audioAttributes, true)
             .setLoadControl(loadControl)
             .build().apply {
-                repeatMode = Player.REPEAT_MODE_ALL
+                repeatMode = Player.REPEAT_MODE_OFF
                 addListener(object : Player.Listener {
                     override fun onIsPlayingChanged(isPlaying: Boolean) {
                         android.util.Log.d("AudioEngine", "onIsPlayingChanged: $isPlaying")
                         _playbackState.value = _playbackState.value.copy(isPlaying = isPlaying)
-                        if (isPlaying) startProgressPolling() else stopProgressPolling()
+                        if (isPlaying) {
+                            startProgressPolling()
+                        } else {
+                            stopProgressPolling()
+                            saveLastPlayed(playlist.getOrNull(currentIndex)?.path, exoPlayer.currentPosition)
+                        }
                     }
 
                     override fun onPlaybackStateChanged(state: Int) {
                         android.util.Log.d("AudioEngine", "onPlaybackStateChanged: state=$state")
                         if (state == Player.STATE_ENDED) {
-                            playNext()
+                            handleTrackEnded()
                         }
                     }
 
@@ -100,16 +126,45 @@ class AudioEngine(
             }
 
         audioFxController.attachSession(exoPlayer.audioSessionId)
+        restoreLastPlayedSong()
+    }
+
+    private fun handleTrackEnded() {
+        android.util.Log.d("AudioEngine", "handleTrackEnded: repeatMode=${_playbackState.value.repeatMode}, currentIndex=$currentIndex, size=${playlist.size}")
+        when (_playbackState.value.repeatMode) {
+            RepeatMode.ONE -> {
+                seekTo(0)
+                play()
+            }
+            RepeatMode.ALL -> {
+                playNext()
+            }
+            RepeatMode.OFF -> {
+                if (currentIndex + 1 < playlist.size) {
+                    playNext()
+                } else {
+                    pause()
+                    seekTo(0)
+                }
+            }
+        }
     }
 
     fun playQueue(songs: List<SongEntity>, startIndex: Int = 0) {
         if (songs.isEmpty()) return
+        originalPlaylist = songs.toMutableList()
         playlist = songs.toMutableList()
         currentIndex = startIndex.coerceIn(0, playlist.size - 1)
-        playCurrentTrack()
+
+        if (_playbackState.value.shuffleMode != ShuffleMode.OFF) {
+            applyShuffleMode(_playbackState.value.shuffleMode)
+        } else {
+            playCurrentTrack()
+        }
     }
 
     fun playSong(song: SongEntity) {
+        originalPlaylist = mutableListOf(song)
         playlist = mutableListOf(song)
         currentIndex = 0
         playCurrentTrack()
@@ -124,27 +179,117 @@ class AudioEngine(
         }
         val song = playlist[currentIndex]
         val file = File(song.path)
-        android.util.Log.d("AudioEngine", "playCurrentTrack: title='${song.title}', path='${song.path}', exists=${file.exists()}, canRead=${file.canRead()}, length=${file.length()}")
+        android.util.Log.d("AudioEngine", "playCurrentTrack: title='${song.title}', path='${song.path}', exists=${file.exists()}, length=${file.length()}")
 
         val mediaItem = MediaItem.fromUri(Uri.fromFile(file))
         exoPlayer.setMediaItem(mediaItem)
         exoPlayer.prepare()
         exoPlayer.play()
 
-        _playbackState.value = PlaybackState(
+        val bitrate = if (song.bitrateKbps > 0) song.bitrateKbps else if (song.durationMs > 0) ((file.length() * 8L) / song.durationMs).toInt() else 1411
+
+        _playbackState.value = _playbackState.value.copy(
             isPlaying = true,
             currentSong = song,
             currentPositionMs = 0L,
             durationMs = song.durationMs,
-            progress = 0f
+            progress = 0f,
+            currentLyrics = null,
+            activeLyricIndex = -1
         )
+
+        // Load lyrics asynchronously
+        scope.launch(Dispatchers.IO) {
+            val lyrics = LyricsParser.loadLyrics(song.path)
+            _playbackState.value = _playbackState.value.copy(currentLyrics = lyrics)
+        }
 
         // Update telemetry
         metricsTracker.updateSourceSpecs(
             format = song.fileFormat,
             bitDepth = song.bitDepth,
             sampleRate = song.sampleRate,
-            bitrateKbps = if (song.durationMs > 0) ((File(song.path).length() * 8) / song.durationMs).toInt() else 1411
+            bitrateKbps = bitrate
+        )
+        saveLastPlayed(song.path, 0L)
+    }
+
+    private fun saveLastPlayed(path: String?, pos: Long) {
+        if (path.isNullOrEmpty()) return
+        try {
+            val prefs = context.getSharedPreferences("spindle_playback_prefs", Context.MODE_PRIVATE)
+            prefs.edit()
+                .putString("last_played_song_path", path)
+                .putLong("last_played_song_pos", pos)
+                .apply()
+        } catch (e: Exception) {
+            // ignore
+        }
+    }
+
+    private fun restoreLastPlayedSong() {
+        scope.launch(Dispatchers.IO) {
+            try {
+                val app = context.applicationContext as? com.hana.spindle.SpindleApp ?: return@launch
+                val prefs = context.getSharedPreferences("spindle_playback_prefs", Context.MODE_PRIVATE)
+                val lastPath = prefs.getString("last_played_song_path", null)
+                val lastPos = prefs.getLong("last_played_song_pos", 0L)
+
+                val allSongs = app.database.songDao().getAllSongs().firstOrNull() ?: return@launch
+                if (allSongs.isEmpty()) return@launch
+
+                val songIndex = if (lastPath != null) {
+                    allSongs.indexOfFirst { it.path == lastPath }.let { if (it >= 0) it else 0 }
+                } else {
+                    0
+                }
+
+                val song = allSongs[songIndex]
+                val targetPos = if (lastPath != null && lastPos in 0L..song.durationMs) lastPos else 0L
+
+                kotlinx.coroutines.withContext(Dispatchers.Main) {
+                    originalPlaylist = allSongs.toMutableList()
+                    playlist = allSongs.toMutableList()
+                    currentIndex = songIndex
+                    prepareTrackWithoutPlaying(song, targetPos)
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("AudioEngine", "restoreLastPlayedSong error", e)
+            }
+        }
+    }
+
+    private fun prepareTrackWithoutPlaying(song: SongEntity, initialPositionMs: Long = 0L) {
+        val file = File(song.path)
+        if (!file.exists()) return
+        val mediaItem = MediaItem.fromUri(Uri.fromFile(file))
+        exoPlayer.setMediaItem(mediaItem)
+        exoPlayer.prepare()
+        if (initialPositionMs > 0L) {
+            exoPlayer.seekTo(initialPositionMs)
+        }
+        val bitrate = if (song.bitrateKbps > 0) song.bitrateKbps else if (song.durationMs > 0) ((file.length() * 8L) / song.durationMs).toInt() else 1411
+
+        _playbackState.value = _playbackState.value.copy(
+            isPlaying = false,
+            currentSong = song,
+            currentPositionMs = initialPositionMs,
+            durationMs = song.durationMs,
+            progress = if (song.durationMs > 0) (initialPositionMs.toFloat() / song.durationMs).coerceIn(0f, 1f) else 0f,
+            currentLyrics = null,
+            activeLyricIndex = -1
+        )
+
+        scope.launch(Dispatchers.IO) {
+            val lyrics = LyricsParser.loadLyrics(song.path)
+            _playbackState.value = _playbackState.value.copy(currentLyrics = lyrics)
+        }
+
+        metricsTracker.updateSourceSpecs(
+            format = song.fileFormat,
+            bitDepth = song.bitDepth,
+            sampleRate = song.sampleRate,
+            bitrateKbps = bitrate
         )
     }
 
@@ -158,6 +303,7 @@ class AudioEngine(
 
     fun pause() {
         exoPlayer.pause()
+        saveLastPlayed(playlist.getOrNull(currentIndex)?.path, exoPlayer.currentPosition)
     }
 
     fun play() {
@@ -167,6 +313,65 @@ class AudioEngine(
             // ignore
         }
         exoPlayer.play()
+    }
+
+    fun toggleShuffle(): ShuffleMode {
+        val nextMode = when (_playbackState.value.shuffleMode) {
+            ShuffleMode.OFF -> ShuffleMode.ALL
+            ShuffleMode.ALL -> ShuffleMode.ALBUM
+            ShuffleMode.ALBUM -> ShuffleMode.OFF
+        }
+        setShuffleMode(nextMode)
+        return nextMode
+    }
+
+    fun setShuffleMode(mode: ShuffleMode) {
+        _playbackState.value = _playbackState.value.copy(shuffleMode = mode)
+        applyShuffleMode(mode)
+    }
+
+    private fun applyShuffleMode(mode: ShuffleMode) {
+        if (originalPlaylist.isEmpty()) return
+        val currentSong = playlist.getOrNull(currentIndex) ?: originalPlaylist.firstOrNull()
+
+        when (mode) {
+            ShuffleMode.OFF -> {
+                playlist = originalPlaylist.toMutableList()
+                currentIndex = if (currentSong != null) playlist.indexOfFirst { it.id == currentSong.id }.coerceAtLeast(0) else 0
+            }
+            ShuffleMode.ALL -> {
+                val remaining = originalPlaylist.filter { it.id != currentSong?.id }.shuffled()
+                playlist = if (currentSong != null) (listOf(currentSong) + remaining).toMutableList() else remaining.toMutableList()
+                currentIndex = 0
+            }
+            ShuffleMode.ALBUM -> {
+                val currentAlbum = currentSong?.album ?: ""
+                val albumSongs = originalPlaylist.filter { it.album == currentAlbum }
+                val otherSongs = originalPlaylist.filter { it.album != currentAlbum }
+                val remainingAlbum = albumSongs.filter { it.id != currentSong?.id }.shuffled()
+                val shuffledAlbum = if (currentSong != null) listOf(currentSong) + remainingAlbum else remainingAlbum
+                playlist = (shuffledAlbum + otherSongs).toMutableList()
+                currentIndex = 0
+            }
+        }
+    }
+
+    fun toggleRepeat(): RepeatMode {
+        val nextMode = when (_playbackState.value.repeatMode) {
+            RepeatMode.OFF -> RepeatMode.ALL
+            RepeatMode.ALL -> RepeatMode.ONE
+            RepeatMode.ONE -> RepeatMode.OFF
+        }
+        setRepeatMode(nextMode)
+        return nextMode
+    }
+
+    fun setRepeatMode(mode: RepeatMode) {
+        _playbackState.value = _playbackState.value.copy(repeatMode = mode)
+        // RepeatMode.ONE natively loops the single item in ExoPlayer.
+        // RepeatMode.ALL and OFF use Player.REPEAT_MODE_OFF so that ExoPlayer triggers STATE_ENDED,
+        // allowing AudioEngine.handleTrackEnded() to advance currentIndex and play the next song.
+        exoPlayer.repeatMode = if (mode == RepeatMode.ONE) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
     }
 
     fun playNext() {
@@ -180,6 +385,7 @@ class AudioEngine(
                         val currentSongPath = playlist.getOrNull(currentIndex)?.path
                         val dbIndex = allSongs.indexOfFirst { it.path == currentSongPath }
                         val nextIndex = if (dbIndex >= 0) (dbIndex + 1) % allSongs.size else 0
+                        originalPlaylist = allSongs.toMutableList()
                         playlist = allSongs.toMutableList()
                         currentIndex = nextIndex
                         playCurrentTrack()
@@ -209,6 +415,7 @@ class AudioEngine(
                             val currentSongPath = playlist.getOrNull(currentIndex)?.path
                             val dbIndex = allSongs.indexOfFirst { it.path == currentSongPath }
                             val prevIndex = if (dbIndex > 0) dbIndex - 1 else allSongs.size - 1
+                            originalPlaylist = allSongs.toMutableList()
                             playlist = allSongs.toMutableList()
                             currentIndex = prevIndex
                             playCurrentTrack()
@@ -227,7 +434,6 @@ class AudioEngine(
     fun playNextAlbum() {
         if (playlist.isEmpty()) return
         val currentAlbum = playlist.getOrNull(currentIndex)?.album ?: ""
-        // Search forward in playlist for the first track belonging to a different album
         for (i in 1 until playlist.size) {
             val candidateIndex = (currentIndex + i) % playlist.size
             if (playlist[candidateIndex].album != currentAlbum) {
@@ -236,7 +442,6 @@ class AudioEngine(
                 return
             }
         }
-        // If current playlist only has 1 album, fetch all songs from Room DB
         scope.launch {
             try {
                 val app = context.applicationContext as? com.hana.spindle.SpindleApp ?: return@launch
@@ -247,6 +452,7 @@ class AudioEngine(
                     for (i in 1 until allSongs.size) {
                         val candidateIndex = (dbIndex + i) % allSongs.size
                         if (allSongs[candidateIndex].album != currentAlbum) {
+                            originalPlaylist = allSongs.toMutableList()
                             playlist = allSongs.toMutableList()
                             currentIndex = candidateIndex
                             playCurrentTrack()
@@ -291,6 +497,7 @@ class AudioEngine(
                             while (firstTrackIndex > 0 && allSongs[firstTrackIndex - 1].album == targetAlbum) {
                                 firstTrackIndex--
                             }
+                            originalPlaylist = allSongs.toMutableList()
                             playlist = allSongs.toMutableList()
                             currentIndex = firstTrackIndex
                             playCurrentTrack()
@@ -337,16 +544,28 @@ class AudioEngine(
         progressPollJob = null
     }
 
+    private var lastSaveProgressTime = 0L
+
     private fun updateProgress() {
         val current = exoPlayer.currentPosition
         val duration = if (exoPlayer.duration > 0) exoPlayer.duration else _playbackState.value.durationMs
         val progress = if (duration > 0) (current.toFloat() / duration).coerceIn(0f, 1f) else 0f
 
+        val lyrics = _playbackState.value.currentLyrics
+        val activeIndex = lyrics?.getActiveIndex(current) ?: -1
+
         _playbackState.value = _playbackState.value.copy(
             currentPositionMs = current,
             durationMs = duration,
-            progress = progress
+            progress = progress,
+            activeLyricIndex = activeIndex
         )
+
+        val now = System.currentTimeMillis()
+        if (now - lastSaveProgressTime > 4000L) {
+            lastSaveProgressTime = now
+            saveLastPlayed(playlist.getOrNull(currentIndex)?.path, current)
+        }
     }
 
     var audioBalance: Float = 0.5f

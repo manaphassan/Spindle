@@ -1,11 +1,11 @@
 # Spindle — Master Technical & Architectural Documentation
 **Product Name:** Spindle (Audiophile DAP Launcher)  
 **Package Name:** `com.hana.spindle`  
-**Hero Hardware Inspiration:** Sony Walkman II (WM-2) Red (1981)  
-**Version:** 1.3.0-PROD  
+**Hero Hardware Inspiration:** Sony Walkman II (WM-2) & Modern Minimalist Audiophile Deck  
+**Version:** 1.2.0-RELEASE  
 **Author / Art Director & Lead Systems Architect:** Spindle Core Team  
 **Platform Target:** Android 8.0 (API 26) through Android 14/15 (API 34/35)  
-**Primary Hardware Targets:** Ultra-low-resource Android DAPs (HiBy R5/R6, Shanling M3X/M6, FiiO M6/M9/M11, Sony Walkman NW-A100/ZX500, Sony Xperia X Compact)  
+**Primary Hardware Targets:** Ultra-low-resource Android DAPs (HiBy R5/R6, Shanling M3X/M6, FiiO M6/M9/M11, Sony Walkman NW-A100/ZX500, Sony Xperia X Compact, E-Ink DAPs)  
 **License:** Apache License 2.0 (with Trademark & Visual IP Reservation)
 
 ---
@@ -14,149 +14,151 @@
 
 **Spindle** is an ultra-lightweight, audiophile-grade Android Home Launcher designed to transform any Android hardware—especially dedicated Digital Audio Players (DAPs) and compact vintage Android devices like the Sony Xperia X Compact—into a physical-feeling, distraction-free Walkman.
 
-The hero aesthetic is directly inspired by the legendary **Sony Walkman II (WM-2) in Vibrant Red**, marrying its iconic asymmetrical diagonal control panel, mechanical pill-shaped play/stop levers, and circular knurled volume dial with authentic kinetic cassette physics.
+The hero aesthetic unites legendary Japanese industrial audio design with a pure, minimalist audiophile catalog and dedicated single-audio player. Spindle delivers a centered kinetic cassette spindle window, column-aligned hardware telemetry, an interactive circular radial progress scrubber with live audio waveforms, synced lyrics, and an A-Z fast alphabet scroller—all operating with **zero cloud bloat and zero background AI**.
 
 ### Core Pillars
-1. **Sony Walkman II (WM-2) Industrial Design**: Asymmetrical diagonal control block, iconic crimson red chassis, knurled metallic dials, battery indicator LED, and classic pill-shaped buttons with green/red indicator dots.
-2. **True Android Home Launcher**: Registers as the default home screen with an app drawer, instant search, and complete system lifecycle management.
-3. **Skeuomorphic Kinetic Walkman Interface**: An authentic dual-reel cassette player with differential tape spools, dynamic palette accenting, and Side A (Player) <-> Side B (Tracklist) 3D mechanical flip.
-4. **Vast Cassette Taxonomy**: Parametric rendering of authentic cassette models from the golden age (Sony Walkman Tape, HF-90, Metal Master, CD-IT, BASF Chromdioxid, TDK SA-90, Fuji).
-5. **Extreme Low-RAM & Small APK Footprint**: Tailored specifically for DAPs with as little as **1GB – 2GB of RAM** and weak quad-core Cortex-A53 processors (Snapdragon 425/430, Exynos 7270, Rockchip).
-6. **Audiophile Audio Chain**: Native gapless playback, ReplayGain (EBU R128), real-time audio metrics telemetry (bit depth, sample rate, codec, resampling detector), and bit-perfect routing.
+1. **Centered Spindle Cassette Deck**: Horizontally centered clear acrylic window with non-linear kinetic reels ($v = 4.7625\text{ cm/s}$), left column-aligned time, Hi-Res format capsule badge, bold Line 0 title, and Line 1 artist/duration.
+2. **Dedicated Single Audio Now Playing**: Pure minimalist overlay featuring circular album art framed by a radial progress arc scrubber, dynamic 24-band frequency envelope visualizer, format telemetry chip, and expandable synced lyrics drawer.
+3. **Audiophile Music Catalog & Index**: Tactile vertical A-Z alphabet fast-scroller with haptic ticks, 6-attribute sorting dialog (Title, Artist, Album, Year, Duration, Bitrate), format filters (Hi-Res 24-bit, Lossless, MP3), and persistent mini-player.
+4. **Curated 3-Theme Hardware Palettes**:
+   - **Audiophile Dark (Obsidian)**: Deep charcoal and OLED black with glowing mint accents.
+   - **Monochrome E-Ink**: 1-bit high-contrast pure black and white tailored specifically for e-paper / e-ink DAPs (Onyx Boox, Hisense).
+   - **Clean Light (Brushed Aluminum)**: Industrial silver and crisp white minimalist aesthetic.
+5. **Continuous Auto-Play & State Persistence**: Automatically sequences to the next track upon completion (`REPEAT_MODE_OFF`). Remembers and restores last-played track and seek position across system reboots.
+6. **Extreme Low-RAM Footprint**: Tailored specifically for legacy DAPs with as little as **1GB – 2GB of RAM** and weak quad-core Cortex-A53 processors. Idle footprint $< 25\text{MB}$.
 
 ---
 
-## 2. Hero Design: Sony Walkman II (WM-2) Red Architectural Blueprint
+## 2. Interface Architecture & Component Specifications
 
-The 1981 **Sony WM-2** is celebrated as one of the greatest feats of consumer industrial design. Spindle maps every physical detail of the WM-2 directly onto the Android launcher layout:
+### 2.1 Flagship Cassette Deck (`VerticalDeckView.kt`)
+The center home screen renders a custom hardware-accelerated Canvas deck:
 
 ```
 +-------------------------------------------------------------+
-|  SPINDLE                                                    |
-|                                         +-----------------+ |
-|                                         | (( Knurled ))   | |
-|                                         | (( Dial/Vol ))  | |
-|                                         |                 | |
-|                                         |  [FF]   [REW]   | |
-|                                         |   O       O     | |
-|                                         |                 | |
-|   +----------------------------------+  |  ( ) BATTERY    | |
-|   | SONY HF 90             SIDE A    |  |                 | |
-|   | +------------------------------+ |  |  +------------+ | |
-|   | | [Art] Pink Floyd - Time      | |  |  | [> PLAY] ● | | |
-|   | +------------------------------+ |  |  +------------+ | |
-|   |                                  |  |                 | |
-|   |    (( O ))   ======   (( O ))    |  |  +------------+ | |
-|   |   [Supply]   [Tape]   [Take-up]  |  |  | [■ STOP] ■ | | |
-|   |   (R_left)            (R_right)  |  |  +------------+ | |
-|   +----------------------------------+  +-----------------+ |
-|   03:45 ═══════════════●═════════════════ 06:53             |
 |                                                             |
-|   STEREO                                                    |
-|   SPINDLE II                                    [ EJECT ▲ ] |
+|   +-------------------+  +-------------------------------+  |
+|   | WALKMAN           |  |                               |  |
+|   | 10:45:22          |  |    CENTERED CLEAR SPINDLE     |  |
+|   | [ FLAC 24/96K ]   |  |          WINDOW DECK          |  |
+|   |                   |  |                               |  |
+|   | Song Title        |  |     (( O ))       (( O ))     |  |
+|   | Artist • 01:23    |  |    [Supply]      [Take-up]    |  |
+|   +-------------------+  +-------------------------------+  |
+|   <--- columnCenterX ---><------ centerWindowRect ------>    |
+|                                                             |
+|   +-----------------------------------------------------+   |
+|   | [<< REW]   [>> FWD]    [> PLAY / || PAUSE]   [EJECT] |  |
+|   +-----------------------------------------------------+   |
+|                                                             |
 +-------------------------------------------------------------+
 ```
 
-### 2.1 The WM-2 Physical Elements Translated to UI
-1. **The WM-2 Crimson Red Chassis**:
-   - Primary shell finished in rich anodized crimson red (`#D71920` / `#C8102E`) with subtle perimeter bevels and corner radiuses that hug the phone display.
-2. **The Diagonal Asymmetrical Black Control Bezel**:
-   - A textured matte-black (`#1E1E20`) panel cutting diagonally across the top-right of the chassis.
-   - **Knurled Circular Dial**: Metallic silver dial that visually indicates current playback volume or allows rotational touch scrub.
-   - **Tactile Transport Levers**:
-     - **PLAY**: Pill-shaped brushed silver button featuring the iconic **emerald green dot** (`#00C853`). Depressing it triggers a physical latch haptic kick.
-     - **STOP / PAUSE**: Matching pill-shaped lever with the classic **crimson red square** (`#D50000`).
-     - **FF & REW**: Small, circular spring-loaded silver push buttons for high-speed winding with authentic tape pitch sound effects.
-   - **Dynamic Battery LED**: A physical-looking indicator light on the black bezel that reflects actual device battery telemetry:
-     - Constant Soft Green: Battery $\ge 20\%$
-     - Warm Amber: Battery $10\% - 20\%$
-     - Pulsing Red: Battery $< 10\%$
-     - Pulsing Green: Connected to charger
-3. **The Panoramic Acrylic Cassette Bay**:
-   - Centered inside the red chassis, featuring transparent acrylic glass with subtle light reflections.
-   - Houses the fully animated cassette tape with differential kinematics and real-time rotating reels.
-4. **Retro Stacked Typography**:
-   - Bottom-left corner: **`STEREO SPINDLE II`** in the unmistakable rounded 1980s Walkman II display typeface.
+1. **Geometry & Centering (`centerWindowRect`)**:
+   - The clear acrylic spindle window is centered horizontally across the display width.
+   - Houses the dual mechanical spools, cogs, guide rollers, and simulated magnetic tape ribbon.
+2. **Column-Aligned Telemetry (`columnCenterX`)**:
+   - Calculated precisely at the horizontal midpoint between the display's left margin and the left edge of the spindle window.
+   - **Header**: `WALKMAN` brand typography (18sp, bold sans-serif).
+   - **Clock**: Real-time 24-hour clock (`HH:MM:SS`, bold monospace).
+   - **Hi-Res Audio Format Capsule Badge**: Drawn directly beneath the clock with rounded pill borders (e.g. `FLAC 16-BIT / 44.1 KHZ`, `MP3 320 KBPS`).
+   - **2-Line Active Song Metadata**:
+     - **Line 0**: Track Title (bold crisp white, marquee/wrap logic).
+     - **Line 1**: Artist Name • mm:ss / mm:ss (slate subtext with bullet separator).
+3. **Transport Deck & Kinematics**:
+   - `REW`, `FWD`, `PLAY / PAUSE`, and `⏏ EJECT` buttons with physical detent haptics.
+   - Differential kinetic reel rotation speeds calculated from physical tape pack radius equations.
+
+### 2.2 Dedicated Single Audio Now Playing (`CatalogFragment.kt`)
+Triggered by tapping the floating mini-player in the music catalog:
+1. **Circular Cover & Radial Arc (`CircularCoverArcView.kt`)**:
+   - Custom view rendering a centered circular album artwork thumbnail.
+   - Outer track is framed with a 360° progress arc that supports direct rotational touch scrubbing.
+2. **Live Dynamic Waveform (`AudioWaveformView.kt`)**:
+   - 24 vertical bars vibrating in real time in response to playback ballistics and frequency envelopes.
+3. **Hi-Res Format Telemetry Badge**:
+   - Interactive badge displaying container, bit depth, sample frequency, and live bitrate (`FLAC 16-bit / 44.1kHz • 846 kbps`).
+4. **Expandable Synced Lyrics Drawer (`LyricsParser.kt` & `LyricsAdapter.kt`)**:
+   - Automatically parses `.lrc` timestamp files located alongside the audio file or extracts embedded SYLT/USLT tags.
+   - Smoothly auto-scrolls to highlight the currently sung line in sync with playback.
+5. **Technical File Specs Dialog (`DialogFileSpecs.kt`)**:
+   - Complete technical sheet showing format, codec, sample rate, bit depth, channel configuration, dynamic bitrate, file size, and filesystem URI.
+
+### 2.3 Audiophile Music Catalog & Browsing
+1. **A-Z Fast Alphabet Scroller (`AlphabetIndexView.kt`)**:
+   - Vertical alphabet rail (A–Z, #) on the right edge of the screen.
+   - Dragging across letters triggers haptic tick vibrations and instantly scrolls the list to matching tracks.
+2. **Sorting & Grouping (`SortGroupBottomSheet.kt`)**:
+   - Sort by **Title**, **Artist**, **Album**, **Year**, **Duration**, or **Bitrate**.
+   - Sort direction: Ascending / Descending toggle.
+3. **Format Filters**:
+   - Instant filter chips for `All`, `Hi-Res (24-bit+)`, `Lossless (FLAC/WAV)`, and `MP3`.
+
+### 2.4 Braun / Dieter Rams Online FM Radio (`RadioFragment.kt`)
+1. **Swipe-to-Tune**: Page 2 in the main launcher ViewPager2.
+2. **Concentric Speaker Grille (`RadioSpeakerGrilleView.kt`)**: 7-ring concentric perforation pattern with acoustic recess shadows.
+3. **3D Ribbed Tuning Dial (`RadioTuningDialView.kt`)**: Tactile cylindrical thumbwheel with moving calibrated frequency scale (`87.5 - 108.0 MHz`).
+4. **Vintage LCD Display**: Mint-green backlit panel showing frequency, RDS station info, and connection status.
 
 ---
 
-## 3. Tape Taxonomy & Parametric Skins
+## 3. Playback Architecture & State Persistence
 
-Spindle draws from an exhaustive library of classic cassette styles (based on authentic period specimens):
+```
+                        +----------------------+
+                        |   AudioEngine.kt     |
+                        |   (Media3/ExoPlayer) |
+                        +----------+-----------+
+                                   |
+                  +----------------+----------------+
+                  |                                 |
+                  v                                 v
+        +-------------------+             +-------------------+
+        | onPlaybackEnded() |             | SharedPreferences |
+        | Auto Next Song    |             | "playback_state"  |
+        | (REPEAT_OFF)      |             | Last Track & Pos  |
+        +-------------------+             +-------------------+
+```
 
-| Tape Family | Signature Aesthetic | Reel Hubs & Shell | Audio Bias Pairing |
-| :--- | :--- | :--- | :--- |
-| **Sony Walkman Tape** | Red & teal dual-tone branding, wide panoramic window. | Red 6-tooth hubs, smoked charcoal shell. | General / Universal |
-| **Sony HF-60 / HF-90** | Warm ivory/cream matte label, red/black typography. | White 6-tooth hubs, dark brown ferric tape pack. | Type I Normal Bias |
-| **Sony Metal Master** | Ultra-rigid white ceramic composite chassis, gold lettering. | White precision hubs, deep gunmetal metallic tape. | Type IV Metal (Hi-Res FLAC/DSD) |
-| **Sony CD-IT** | 1990s translucent sapphire blue & purple polycarbonate. | White hubs with neon blue accents, visible gears. | CD-Quality 16-bit FLAC |
-| **Sony UX-Pro / UCX-S** | Dark smoked guide ribs, green/gold high-bias badges. | Chrome/black hubs, deep black tape ribbon. | Type II Chrome / High Bias |
-| **BASF Chromdioxid 90** | Classic two-tone orange/cream header, dark graphite body. | Red/white hubs, chrome magnetic coating. | Type II Chrome |
-| **TDK SA-90 / DJ2** | Classic gold foil lettering on midnight black chassis. | Red/black racing hubs, precision guide rollers. | Type II High Bias |
-| **Fuji FL / Super Ferro** | Minimalist clean Japanese design, transparent shell. | Vibrant red spindle hubs, transparent tape pack. | Type I Normal Bias |
-| **Album Adaptive (Chameleon)**| Automatically adopts primary and accent colors from album art. | Tinted hubs, contrast-clamped label. | Dynamic |
-
----
-
-## 4. Google Play Store Certification & Compliance Audit
-
-### 4.1 Launcher Intent & Package Visibility (`QUERY_ALL_PACKAGES`)
-* **Policy Concern**: Google Play strictly prohibits broad package visibility unless the app's core user-facing functionality cannot function without it.
-* **Compliance Verdict**: **FULLY PERMITTED**.
-  - Google Play policy explicitly defines **Home Launchers (Launcher Apps)** as an authorized exception for the `android.permission.QUERY_ALL_PACKAGES` permission.
-  - Declares `<category android:name="android.intent.category.HOME" />` and `CATEGORY_DEFAULT`.
-  - Submit the standard Play Console Home Launcher declaration form.
-
-### 4.2 Storage Permissions & Scoped Storage Strategy
-* **Compliance Architecture**:
-  1. **Android 13+ (API 33+)**: Uses official `android.permission.READ_MEDIA_AUDIO`.
-  2. **Android 8.0 – 12 (API 26 – 32)**: Uses `READ_EXTERNAL_STORAGE` (`maxSdkVersion="32"`). Enables direct POSIX file path crawling on Android 8.0 (Xperia X Compact / HiBy) without SAF latency.
-  3. **Playlists & ID3 Tag Editing**: Uses `MediaStore.createWriteRequest()` on API 30+ or SAF `ACTION_OPEN_DOCUMENT_TREE` on user-specified music folders.
-
-### 4.3 Foreground Service & Background Audio (API 34+ Requirements)
-* Declares `android:foregroundServiceType="mediaPlayback"` on `PlaybackService`.
-* Declares permissions `FOREGROUND_SERVICE` and `FOREGROUND_SERVICE_MEDIA_PLAYBACK`.
-* Integrates with `MediaSessionCompat` / `androidx.media3.session.MediaSession` for system notifications.
-
-### 4.4 Target SDK Requirements
-* `minSdkVersion = 26` (Android 8.0 Oreo).
-* `compileSdkVersion = 34` / `targetSdkVersion = 34`.
+1. **Auto-Play Progression**:
+   - In standard mode (`repeatMode = REPEAT_MODE_OFF`), finishing a track triggers automatic playback of the next sequential song in the catalog/queue.
+   - Repeat modes: `REPEAT_MODE_OFF` (sequential progression), `REPEAT_MODE_ALL` (loop entire playlist), `REPEAT_MODE_ONE` (loop current track).
+2. **State Persistence**:
+   - Track ID, URI, position in milliseconds, and catalog shuffle state are written to `playback_state` SharedPreferences.
+   - On launcher launch, the last played track is automatically restored and populated into the cassette deck and mini-player.
 
 ---
 
-## 5. Extreme Low-RAM & Low-Spec DAP Architecture
+## 4. Memory Budget & Low-RAM DAP Optimization
 
 ```
        +-------------------------------------------------------------+
-       |             SPINDLE MEMORY BUDGET (<45 MB)                  |
+       |             SPINDLE MEMORY BUDGET (<38 MB)                  |
        +-------------------------------------------------------------+
                                       |
          +----------------------------+----------------------------+
          |                            |                            |
          v                            v                            v
   Bitmap Cache (RGB_565)     Room Database & Cursors       Audio Buffers
-     (Max: 16 MB)                 (Max: 6 MB)               (Max: 8 MB)
+     (Max: 12 MB)                 (Max: 4 MB)               (Max: 6 MB)
          |                            |                            |
          v                            v                            v
   Canvas Hardware Render       Lightweight ViewModels       Media3 Audio Engine
-     (Max: 5 MB)                  (Max: 4 MB)               (Max: 6 MB)
+     (Max: 5 MB)                  (Max: 3 MB)               (Max: 6 MB)
 ```
 
-1. **Pure Native Views & Canvas (No Jetpack Compose)**:
-   - Single custom `CassetteView` rendering the WM-2 chassis, diagonal control bezel, acrylic window, and kinetic reels directly via hardware-accelerated Android `Canvas`.
-   - **Zero Allocations in `onDraw()`**: All `Paint`, `Path`, `Matrix`, and `RectF` objects are pre-allocated during view initialization. Zero GC churn!
-2. **RGB_565 Color Format**: Cuts image memory by **50%** compared to standard ARGB_8888.
-3. **Micro-Downsampling on Decode**:
-   - Player Cassette Label: max 300 x 300 px (~180 KB in RGB_565).
-   - Catalog Thumbnails: max 128 x 128 px (~32 KB in RGB_565).
-4. **Target Metrics**:
-   - **Total Idle RAM**: <= 35 MB.
-   - **Peak Playback RAM**: <= 48 MB.
-   - **Total APK Size (Release with R8)**: <= 6.5 MB.
+1. **Pure Native Views & Canvas (No Compose Overhead)**:
+   - All complex animations (spools, waveforms, radial arcs, grilles) run on custom Android `View` implementations using pre-allocated `Paint`, `Path`, and `RectF` structures.
+2. **RGB_565 Image Pipeline**:
+   - Album artwork decoded strictly in 16-bit `RGB_565` format, halving memory usage compared to default `ARGB_8888`.
+3. **Resource Metrics**:
+   - **Idle RAM Overhead**: $< 25\text{MB}$.
+   - **Active Playback RAM**: $< 38\text{MB}$.
+   - **APK Package Size**: $< 4.5\text{MB}$.
 
 ---
 
-## 6. Kinetic Differential Reel Kinematics
+## 5. Kinetic Differential Reel Kinematics
 
 Linear tape speed is constant at $v = 4.7625\text{ cm/s}$. Given track progress ratio $p \in [0.0, 1.0]$:
 1. **Supply Spool (Left Reel)**:
@@ -166,75 +168,83 @@ Linear tape speed is constant at $v = 4.7625\text{ cm/s}$. Given track progress 
 
 ---
 
-## 7. Audiophile Sound Engine & Real-time Metrics
-
-* **Codecs**: FLAC, ALAC, WAV (16/24/32-bit), AIFF, DSD (DSF/DFF via PCM transcoding), OGG Vorbis, AAC, MP3.
-* **Gapless Playback**: Zero-latency buffer pre-loading.
-* **ReplayGain (EBU R128)**: Automatic volume leveling without dynamic compression.
-* **Audio Metrics (Swipe Left - Tab 2)**:
-  - Source: Codec, bit depth, sample rate, live bitrate, ReplayGain offset.
-  - Output: Route (3.5mm Jack, Bluetooth LDAC/aptX/AAC, USB DAC), audio sink sample rate, and **Resampling Alert** (Native vs 48kHz Resampled).
-* **10-Band Equalizer (Swipe Left - Tab 3)**: Audiophile target presets and custom EQ curves.
-
----
-
-## 8. Complete Project File Layout
+## 6. Complete Project File Layout
 
 ```
 dap_launcher/
-├── MASTER_DOCUMENTATION.md                  # This master specification
 ├── build.gradle.kts                         # Root Gradle build script
 ├── settings.gradle.kts                      # Module settings
+├── MASTER_DOCUMENTATION.md                  # This master specification
+├── README.md                                # Repository overview & quick start
+├── docs/                                    # GitHub Pages site & assets
+│   ├── index.html                           # Live project showcase website
+│   ├── BRANDING.md                          # Brand identity & color specifications
+│   └── assets/                              # High-resolution screenshots & logos
+│       ├── screenshot_walkman_home.png      # Home Cassette Deck (Centered Spindle & Telemetry)
+│       ├── screenshot_now_playing.png       # Dedicated Single Audio Now Playing
+│       ├── screenshot_catalog.png           # Music Catalog with A-Z Alphabet Scroller
+│       ├── screenshot_braun_radio.png       # Braun / Dieter Rams Online FM Radio
+│       ├── screenshot_dj_eq.png             # Dark Audiophile DJ Console
+│       ├── spindle_app_icon.png             # Official Spindle gear hub icon
+│       └── spindle_hero_banner.jpg          # Showcase banner
 └── app/
     ├── build.gradle.kts                     # App dependencies (Media3, Room, Palette, R8)
-    ├── proguard-rules.pro                   # R8 stripping rules for <6.5MB APK
+    ├── proguard-rules.pro                   # R8 stripping rules for <4.5MB APK
     └── src/
-        ├── main/
-        │   ├── AndroidManifest.xml          # Launcher intent, permissions, foreground service
-        │   ├── java/com/hana/spindle/
-        │   │   ├── SpindleApp.kt            # Application entrypoint & dependency container
-        │   │   ├── theme/                   # Parametric Theme Subsystem
-        │   │   │   ├── CassetteTheme.kt     # WM-2 Red & classic cassette skins
-        │   │   │   ├── ThemeManager.kt      # Preset themes & reactive state
-        │   │   │   └── PaletteHelper.kt     # Dynamic album art color extractor
-        │   │   ├── ui/
-        │   │   │   ├── MainActivity.kt      # Main container with swipe pager
-        │   │   │   ├── cassette/            # Main Cassette Player
-        │   │   │   │   ├── Wm2ChassisView.kt # Hardware-accelerated WM-2 Red & diagonal controls
-        │   │   │   │   ├── CassetteView.kt  # Custom Canvas: parametric tape, reels, window
-        │   │   │   │   ├── SpindleKinematics.kt # Mathematical tape movement model
-        │   │   │   │   └── SideBTracklistView.kt # 3D Flip tracklist
-        │   │   │   ├── drawer/              # Swipe Left Screen (3 Tabs)
-        │   │   │   │   ├── DrawerContainerFragment.kt
-        │   │   │   │   ├── AppDrawerFragment.kt      # Installed applications grid
-        │   │   │   │   ├── AudioMetricsFragment.kt   # Real-time audiophile metrics
-        │   │   │   │   ├── EqualizerFragment.kt      # 10-band DSP & EQ
-        │   │   │   │   └── ThemeSelectorDialog.kt    # Visual tape & chassis picker
-        │   │   │   └── catalog/             # Swipe Right Screen (Audio Catalog)
-        │   │   │       ├── CatalogContainerFragment.kt
-        │   │   │       ├── SongsFragment.kt
-        │   │   │       ├── AlbumsFragment.kt
-        │   │   │       ├── ArtistsFragment.kt
-        │   │   │       ├── FolderBrowserFragment.kt  # Direct SD card folder tree
-        │   │   │       └── PlaylistFragment.kt
-        │   │   ├── playback/                # Audio Playback Subsystem
-        │   │   │   ├── PlaybackService.kt   # Foreground MediaSession Service
-        │   │   │   ├── AudioEngine.kt       # Media3 / ExoPlayer wrapper
-        │   │   │   └── AudioMetricsTracker.kt# Sample rate & bit depth analyzer
-        │   │   ├── data/                    # Storage & Database
-        │   │   │   ├── MusicScanner.kt      # High-speed SD card scanner
-        │   │   │   ├── TagParser.kt         # Lightweight ID3/FLAC metadata extractor
-        │   │   │   ├── ImageLoader.kt       # RGB_565 bounded thumbnail cache
-        │   │   │   └── db/
-        │   │   │       ├── SpindleDatabase.kt # Room Database
-        │   │   │       ├── SongDao.kt
-        │   │   │       └── SongEntity.kt
-        │   │   └── launcher/                # Launcher Subsystem
-        │   │       ├── AppListLoader.kt     # Installed apps fetcher
-        │   │       └── AppItem.kt
-        │   └── res/
-        │       ├── drawable/                # WM-2 diagonal paths, knurled dial, buttons
-        │       ├── layout/                  # Minimal XML layouts
-        │       ├── values/                  # Colors, themes, strings
-        │       └── xml/                     # Home launcher configurations
+        └── main/
+            ├── AndroidManifest.xml          # Launcher intent, permissions, foreground service
+            ├── java/com/hana/spindle/
+            │   ├── SpindleApp.kt            # Application entrypoint & dependency container
+            │   ├── data/                    # Storage, Database & Parsers
+            │   │   ├── MusicScanner.kt      # High-speed SD card scanner
+            │   │   ├── TagParser.kt         # Lightweight ID3/FLAC metadata extractor
+            │   │   ├── LyricsParser.kt      # .lrc and embedded lyrics parser
+            │   │   ├── ImageLoader.kt       # RGB_565 bounded thumbnail cache
+            │   │   └── db/
+            │   │       ├── SpindleDatabase.kt # Room Database
+            │   │       ├── SongDao.kt       # Query operations for songs & albums
+            │   │       ├── SongEntity.kt    # Audio entity with format & bitrate fields
+            │   │       └── AlbumItem.kt     # Album model
+            │   ├── playback/                # Audio Playback Subsystem
+            │   │   ├── PlaybackService.kt   # Foreground MediaSession Service
+            │   │   ├── AudioEngine.kt       # Media3 / ExoPlayer wrapper with auto-play & state persistence
+            │   │   ├── RadioStreamEngine.kt # Low-latency online shoutcast stream player
+            │   │   └── AudioMetricsTracker.kt # Real-time sample rate & bit depth analyzer
+            │   ├── launcher/                # Launcher Subsystem
+            │   │   ├── AppListLoader.kt     # Installed apps fetcher (<2MB overhead)
+            │   │   └── AppItem.kt           # App list item model
+            │   ├── theme/                   # Parametric Theme Subsystem
+            │   │   ├── CassetteTheme.kt     # Palettes for Dark Obsidian, E-Ink, and Light
+            │   │   ├── ThemeManager.kt      # Theme selector & preferences store
+            │   │   └── PaletteHelper.kt     # Dynamic album art color extractor
+            │   └── ui/
+            │       ├── MainActivity.kt      # 3-Page ViewPager2 Launcher Controller
+            │       ├── PlayerFragment.kt    # Home Screen Walkman Deck Controller
+            │       ├── CatalogFragment.kt   # Music Catalog & Single Audio Now Playing Overlay
+            │       ├── DrawerFragment.kt    # App Drawer, Volume Slider & Settings
+            │       ├── AlphabetIndexView.kt # Tactile vertical A-Z alphabet scroller
+            │       ├── LyricsAdapter.kt     # Real-time synced lyrics line adapter
+            │       ├── DialogFileSpecs.kt   # Audiophile technical file specifications inspector
+            │       ├── cassette/            # Kinetic Cassette Deck Views
+            │       │   ├── VerticalDeckView.kt  # Centered spindle deck with column telemetry
+            │       │   ├── CassetteKinematics.kt # Reel angular velocity kinematics
+            │       │   └── CassetteView.kt  # Custom Canvas tape spool rendering
+            │       ├── catalog/             # Catalog Custom Views & Adapters
+            │       │   ├── CircularCoverArcView.kt # Circular cover with radial progress arc
+            │       │   ├── AudioWaveformView.kt    # Dynamic 24-band frequency visualizer
+            │       │   ├── CatalogSortGroup.kt     # Sort & grouping enum definitions
+            │       │   ├── SortGroupBottomSheet.kt # Sort & filter modal dialog
+            │       │   ├── SongAdapter.kt          # Song list RecyclerView adapter
+            │       │   └── AlbumAdapter.kt         # 2-column album grid adapter
+            │       └── radio/               # Braun Radio Custom Views
+            │           ├── RadioFragment.kt        # Online radio controller
+            │           ├── RadioSpeakerGrilleView.kt # Concentric acoustic hole grille
+            │           └── RadioTuningDialView.kt  # 3D ribbed tuning cylinder
+            └── res/                         # Hardware vector graphics, layouts, and styles
 ```
+
+---
+
+<div align="center">
+  <sub>Spindle · Engineered with precision for audiophiles, analog purists, and hardware preservation.</sub>
+</div>

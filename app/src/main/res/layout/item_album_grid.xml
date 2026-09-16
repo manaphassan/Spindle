@@ -11,9 +11,9 @@
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:cardCornerRadius="14dp"
+        app:cardCornerRadius="12dp"
         app:cardElevation="2dp"
-        app:cardBackgroundColor="#212226">
+        app:cardBackgroundColor="#1C1D22">
 
         <RelativeLayout
             android:layout_width="match_parent"
@@ -23,31 +23,70 @@
             <ImageView
                 android:id="@+id/ivGridArt"
                 android:layout_width="match_parent"
-                android:layout_height="140dp"
+                android:layout_height="145dp"
                 android:scaleType="centerCrop"
-                android:background="#2E2F35"
+                android:background="#24262E"
                 android:contentDescription="Album Art" />
 
-            <!-- Track Count Badge & Quick Play Overlay -->
+            <!-- Top Format & Year Pills -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="6dp"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/tvGridYear"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="#B3000000"
+                    android:textColor="#E2E8F0"
+                    android:textSize="9.5sp"
+                    android:fontFamily="monospace"
+                    android:paddingHorizontal="5dp"
+                    android:paddingVertical="2dp"
+                    android:visibility="gone"
+                    android:text="1973" />
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1" />
+
+                <TextView
+                    android:id="@+id/tvGridFormat"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="#CC1E293B"
+                    android:textColor="@color/vfd_emerald"
+                    android:textSize="9sp"
+                    android:fontFamily="monospace"
+                    android:paddingHorizontal="5dp"
+                    android:paddingVertical="2dp"
+                    android:text="FLAC" />
+            </LinearLayout>
+
+            <!-- Bottom Track Count Badge & Quick Play Overlay -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_alignBottom="@+id/ivGridArt"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:background="#99000000"
+                android:background="#B30F1015"
                 android:paddingHorizontal="8dp"
-                android:paddingVertical="4dp">
+                android:paddingVertical="5dp">
 
                 <TextView
                     android:id="@+id/tvGridTrackCount"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:textColor="#CCFFFFFF"
-                    android:textSize="11sp"
+                    android:textColor="#E2E8F0"
+                    android:textSize="10.5sp"
                     android:fontFamily="sans-serif-medium"
-                    android:text="12 songs" />
+                    android:text="12 tracks" />
 
                 <!-- Mini Quick Play Button -->
                 <ImageView
@@ -82,6 +121,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="2dp"
+        android:layout_marginTop="1dp"
         android:textColor="@color/text_secondary"
         android:textSize="11sp"
         android:maxLines="1"

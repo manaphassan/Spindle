@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#E8E8EC"
+    android:background="#111318"
     android:paddingTop="36dp"
     android:paddingBottom="20dp"
     android:paddingHorizontal="20dp">
@@ -24,7 +24,7 @@
         android:layout_height="44dp"
         app:cardCornerRadius="10dp"
         app:cardElevation="0dp"
-        app:cardBackgroundColor="#DADAE0"
+        app:cardBackgroundColor="#181A22"
         android:layout_marginBottom="12dp">
 
         <LinearLayout
@@ -44,7 +44,7 @@
                 android:textColor="#EF4444"
                 android:textSize="11sp"
                 android:textStyle="bold"
-                android:backgroundTint="#F4F4F8"
+                android:backgroundTint="#2E3342"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
                 android:padding="0dp"
@@ -57,10 +57,10 @@
                 android:layout_weight="1"
                 android:layout_marginHorizontal="2dp"
                 android:text="ANIMEFM"
-                android:textColor="#52525B"
+                android:textColor="#94A3B8"
                 android:textSize="10.5sp"
                 android:textStyle="bold"
-                android:backgroundTint="#EDEDF2"
+                android:backgroundTint="#222530"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
                 android:padding="0dp"
@@ -73,10 +73,10 @@
                 android:layout_weight="1"
                 android:layout_marginHorizontal="2dp"
                 android:text="INITIAL D"
-                android:textColor="#52525B"
+                android:textColor="#94A3B8"
                 android:textSize="10.5sp"
                 android:textStyle="bold"
-                android:backgroundTint="#EDEDF2"
+                android:backgroundTint="#222530"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
                 android:padding="0dp"
@@ -89,10 +89,10 @@
                 android:layout_weight="1"
                 android:layout_marginHorizontal="2dp"
                 android:text="CITYPOP"
-                android:textColor="#52525B"
+                android:textColor="#94A3B8"
                 android:textSize="10.5sp"
                 android:textStyle="bold"
-                android:backgroundTint="#EDEDF2"
+                android:backgroundTint="#222530"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
                 android:padding="0dp"
@@ -100,14 +100,14 @@
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
-    <!-- 3. Backlit LCD Panel (Greenish-Cream Vintage Matrix Display - Clickable to Toggle Play/Stop) -->
+    <!-- 3. Backlit LCD Panel (Dark VFD/OLED Vintage Matrix Display - Clickable to Toggle Play/Stop) -->
     <androidx.cardview.widget.CardView
         android:id="@+id/cardLcd"
         android:layout_width="match_parent"
         android:layout_height="146dp"
         app:cardCornerRadius="16dp"
-        app:cardElevation="3dp"
-        app:cardBackgroundColor="#DCE6DA"
+        app:cardElevation="4dp"
+        app:cardBackgroundColor="#0A0E17"
         android:foreground="?attr/selectableItemBackground"
         android:clickable="true"
         android:focusable="true"
@@ -130,7 +130,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="FM"
-                    android:textColor="#3F4D3C"
+                    android:textColor="#94A3B8"
                     android:textSize="13sp"
                     android:textStyle="bold"
                     android:fontFamily="monospace" />
@@ -145,7 +145,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="ıll LIVE IN"
-                    android:textColor="#2D5A27"
+                    android:textColor="#10B981"
                     android:textSize="11sp"
                     android:textStyle="bold"
                     android:fontFamily="monospace" />
@@ -164,7 +164,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="88.5"
-                    android:textColor="#1F2E1E"
+                    android:textColor="#F97316"
                     android:textSize="40sp"
                     android:textStyle="bold"
                     android:fontFamily="monospace"
@@ -174,7 +174,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text=" MHz"
-                    android:textColor="#3F4D3C"
+                    android:textColor="#FBBF24"
                     android:textSize="15sp"
                     android:textStyle="bold"
                     android:fontFamily="monospace"
@@ -187,7 +187,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="♪ NO TRACK INFO"
-                android:textColor="#143610"
+                android:textColor="#F8FAFC"
                 android:textSize="12sp"
                 android:textStyle="bold"
                 android:fontFamily="monospace"
@@ -202,7 +202,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="LO-FI RADIO • CHILL BEATS TO RELAX / STUDY"
-                android:textColor="#3F4D3C"
+                android:textColor="#94A3B8"
                 android:textSize="10.5sp"
                 android:fontFamily="monospace"
                 android:singleLine="true"
@@ -227,7 +227,7 @@
             android:layout_height="44dp"
             android:background="@drawable/bg_neumorphic_button"
             android:src="@android:drawable/ic_media_previous"
-            app:tint="#52525B"
+            app:tint="#CBD5E1"
             android:contentDescription="Tune Previous" />
 
         <com.hana.spindle.ui.radio.RadioTuningDialView
@@ -243,7 +243,7 @@
             android:layout_height="44dp"
             android:background="@drawable/bg_neumorphic_button"
             android:src="@android:drawable/ic_media_next"
-            app:tint="#52525B"
+            app:tint="#CBD5E1"
             android:contentDescription="Tune Next" />
     </LinearLayout>
 

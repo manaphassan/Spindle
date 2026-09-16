@@ -6,7 +6,7 @@ import androidx.room.PrimaryKey
 
 /**
  * Room Entity representing a single audio track on storage.
- * Indexed by path, album, artist, title, and rating for instant searching and sorting.
+ * Indexed by path, album, artist, title, rating, format, and year for instant searching and sorting.
  */
 @Entity(
     tableName = "songs",
@@ -15,7 +15,9 @@ import androidx.room.PrimaryKey
         Index(value = ["album"]),
         Index(value = ["artist"]),
         Index(value = ["title"]),
-        Index(value = ["rating"])
+        Index(value = ["rating"]),
+        Index(value = ["year"]),
+        Index(value = ["fileFormat"])
     ]
 )
 data class SongEntity(
@@ -33,5 +35,9 @@ data class SongEntity(
     val sampleRate: Int = 44100,
     val fileFormat: String = "FLAC",
     val rating: Int = 0, // 0 to 5 stars
-    val dateModified: Long = 0L
+    val dateModified: Long = 0L,
+    val bitrateKbps: Int = 0,
+    val hasLyrics: Boolean = false,
+    val channels: Int = 2,
+    val discNumber: Int = 1
 )

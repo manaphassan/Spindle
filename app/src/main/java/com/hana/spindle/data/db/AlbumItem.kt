@@ -7,5 +7,7 @@ data class AlbumItem(
     val album: String,
     val artist: String,
     val trackCount: Int,
-    val representativePath: String
+    val representativePath: String,
+    val year: Int = 0,
+    val format: String = "FLAC"
 )

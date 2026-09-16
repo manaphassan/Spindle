@@ -96,7 +96,47 @@ class ImageLoader(context: Context) {
         return inSampleSize
     }
 
+    // Cache extracted accent colors per audio path
+    private val colorCache = LruCache<String, Int>(100)
+
+    /**
+     * Extracts a vibrant or dominant accent color from the embedded cover art.
+     * Returns a default audiophile vintage gold if no cover art is found.
+     */
+    suspend fun extractAccentColor(
+        audioPath: String,
+        defaultColor: Int = android.graphics.Color.parseColor("#EAB308")
+    ): Int = withContext(Dispatchers.IO) {
+        colorCache.get(audioPath)?.let { return@withContext it }
+
+        val coverBitmap = loadCover(audioPath, 120, 120)
+        if (coverBitmap == null) {
+            colorCache.put(audioPath, defaultColor)
+            return@withContext defaultColor
+        }
+
+        val palette = try {
+            androidx.palette.graphics.Palette.from(coverBitmap).generate()
+        } catch (e: Exception) {
+            null
+        }
+
+        val extractedColor = palette?.let { p ->
+            p.getVibrantColor(
+                p.getLightVibrantColor(
+                    p.getDominantColor(
+                        p.getMutedColor(defaultColor)
+                    )
+                )
+            )
+        } ?: defaultColor
+
+        colorCache.put(audioPath, extractedColor)
+        return@withContext extractedColor
+    }
+
     fun clearMemoryCache() {
         memoryCache.evictAll()
+        colorCache.evictAll()
     }
 }
