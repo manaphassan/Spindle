@@ -35,10 +35,13 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val PERMISSION_REQUEST_CODE = 1001
+        const val PREF_IMMERSIVE_STATUS_BAR = "pref_immersive_status_bar"
     }
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var themeManager: ThemeManager
+    var isImmersiveModeEnabled: Boolean = true
+        private set
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,11 +51,56 @@ class MainActivity : AppCompatActivity() {
         val app = application as SpindleApp
         themeManager = app.themeManager
 
+        val prefs = getSharedPreferences("spindle_prefs", MODE_PRIVATE)
+        isImmersiveModeEnabled = prefs.getBoolean(PREF_IMMERSIVE_STATUS_BAR, true)
+        applyImmersiveFlags()
+
         setupViewPager()
         setupCatalogContainer()
         setupThemeObservation()
         setupBackNavigation()
         checkAndRequestStoragePermissions(app)
+    }
+
+    fun setImmersiveMode(enable: Boolean) {
+        isImmersiveModeEnabled = enable
+        getSharedPreferences("spindle_prefs", MODE_PRIVATE)
+            .edit()
+            .putBoolean(PREF_IMMERSIVE_STATUS_BAR, enable)
+            .apply()
+        applyImmersiveFlags()
+    }
+
+    fun applyImmersiveFlags() {
+        if (isImmersiveModeEnabled) {
+            @Suppress("DEPRECATION")
+            window.decorView.systemUiVisibility = (
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                or View.SYSTEM_UI_FLAG_FULLSCREEN
+                or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            window.decorView.systemUiVisibility = (
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                or View.SYSTEM_UI_FLAG_VISIBLE
+            )
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (isImmersiveModeEnabled) {
+            applyImmersiveFlags()
+        }
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus && isImmersiveModeEnabled) {
+            applyImmersiveFlags()
+        }
     }
 
     private fun setupViewPager() {

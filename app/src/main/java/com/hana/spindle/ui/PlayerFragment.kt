@@ -123,15 +123,18 @@ class PlayerFragment : Fragment() {
                     b.wm2CassetteView.progress = state.progress
 
                     state.currentSong?.let { song ->
+                        b.verticalDeckView.trackTitle = song.title
+                        b.verticalDeckView.artistName = song.artist
+                        b.verticalDeckView.durationMs = song.durationMs
                         b.verticalCassetteView.trackTitle = song.title
                         b.verticalCassetteView.artistName = song.artist
                         b.wm2CassetteView.trackTitle = song.title
                         b.wm2CassetteView.artistName = song.artist
                     }
+                    b.verticalDeckView.currentTimeMs = state.currentPositionMs
 
                     val curTimeStr = formatTime(state.currentPositionMs)
                     val totalTimeStr = formatTime(state.durationMs)
-                    b.tvVerticalTime.text = "$curTimeStr / $totalTimeStr"
 
                     b.btnPlayPause.text = if (state.isPlaying) "❚❚ PAUSE" else "▶ PLAY"
                     b.tvCurrentTime.text = curTimeStr

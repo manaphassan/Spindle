@@ -424,6 +424,63 @@
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
 
+                <!-- 1b. IMMERSIVE DISPLAY -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="4dp"
+                    app:cardBackgroundColor="#141518"
+                    android:layout_marginBottom="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:padding="16dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="IMMERSIVE DISPLAY"
+                                android:textColor="#71717A"
+                                android:textStyle="bold"
+                                android:textSize="11sp"
+                                android:fontFamily="monospace" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Hide Android Status Bar"
+                                android:textColor="@color/white"
+                                android:textStyle="bold"
+                                android:textSize="14sp"
+                                android:layout_marginTop="2dp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Enables edge-to-edge hardware tape player experience."
+                                android:textColor="#A1A1AA"
+                                android:textSize="11.5sp"
+                                android:layout_marginTop="2dp" />
+                        </LinearLayout>
+
+                        <androidx.appcompat.widget.SwitchCompat
+                            android:id="@+id/switchImmersiveMode"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:checked="true" />
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
                 <!-- 2. WALKMAN CASSETTE THEMES -->
                 <androidx.cardview.widget.CardView
                     android:layout_width="match_parent"

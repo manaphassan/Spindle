@@ -76,6 +76,7 @@ class DrawerFragment : Fragment() {
         setupAppDrawer()
         setupDjConsole(app)
         setupDefaultLauncher()
+        setupImmersiveModeToggle()
         setupThemeSelector()
         setupRadioStationManager(app)
         setupAudioMetrics(app)
@@ -143,6 +144,14 @@ class DrawerFragment : Fragment() {
                     startActivity(Intent.createChooser(homeIntent, "Select Spindle as Default Home Launcher"))
                 }
             }
+        }
+    }
+
+    private fun setupImmersiveModeToggle() {
+        val mainActivity = activity as? MainActivity ?: return
+        binding.switchImmersiveMode.isChecked = mainActivity.isImmersiveModeEnabled
+        binding.switchImmersiveMode.setOnCheckedChangeListener { _, isChecked ->
+            mainActivity.setImmersiveMode(isChecked)
         }
     }
 

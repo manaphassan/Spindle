@@ -37,21 +37,21 @@ data class CassetteTheme(
     val isDarkAppTheme: Boolean = true
 ) {
     companion object {
-        // 1. Primary Reference: Vertical Studio Deck (Dark Brushed Aluminum + Orange Tape)
+        // 1. Primary Reference: Retro Cassette Recorder (Dark Matte Chassis + Smoky Tape)
         val VERTICAL_STUDIO_DECK = CassetteTheme(
             id = "vertical_studio_deck",
-            name = "Vertical Studio Deck",
-            subtitle = "Dark Brushed Aluminum + Orange Tape",
+            name = "Retro Tape Deck",
+            subtitle = "Dark Industrial Chassis + Smoky Shell",
             chassisStyle = ChassisStyle.VERTICAL_DECK,
-            chassisColor = Color.parseColor("#1C1C1E"),
-            diagonalBezelColor = Color.parseColor("#121214"),
-            shellColor = Color.parseColor("#E65100"), // Vibrant Orange cassette shell
-            labelBackgroundColor = Color.parseColor("#F5F4EE"), // Ivory textured paper label
-            labelTextColor = Color.parseColor("#1A1A1A"),
-            labelAccentColor = Color.parseColor("#D50000"), // Red accent line
-            reelHubColor = Color.WHITE,
-            tapeRibbonColor = Color.parseColor("#2E1A14"),
-            vfdGlowColor = Color.parseColor("#E65100")
+            chassisColor = Color.parseColor("#16181B"),
+            diagonalBezelColor = Color.parseColor("#121316"),
+            shellColor = Color.parseColor("#131418"),
+            labelBackgroundColor = Color.parseColor("#1E2026"),
+            labelTextColor = Color.parseColor("#F1F5F9"),
+            labelAccentColor = Color.parseColor("#FF5722"),
+            reelHubColor = Color.parseColor("#CBD5E1"),
+            tapeRibbonColor = Color.parseColor("#38231B"),
+            vfdGlowColor = Color.parseColor("#FF5722")
         )
 
         // 2. Secondary Reference: 80s Vaporwave / Cyberpunk (Studio White + Neon Racing Stripes)
