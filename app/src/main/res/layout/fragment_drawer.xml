@@ -1,174 +1,126 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     android:background="@color/surface_dark"
     android:paddingTop="36dp">
 
-    <!-- 1. APPS TAB / LISTING CONTAINER -->
+    <!-- TOP 3-TAB SEGMENTED BAR -->
     <LinearLayout
-        android:id="@+id/containerApps"
+        android:id="@+id/tabBar"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:visibility="visible">
+        android:layout_height="44dp"
+        android:orientation="horizontal"
+        android:background="#121316"
+        android:padding="4dp"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="12dp">
 
-        <!-- App Listing Header Bar: Title & Settings Icon -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingHorizontal="16dp">
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="SPINDLE APPS"
-                android:textColor="@color/text_primary"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:fontFamily="sans-serif-medium" />
-
-            <ImageButton
-                android:id="@+id/btnSettings"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@android:drawable/ic_menu_preferences"
-                app:tint="@color/text_primary"
-                android:contentDescription="Settings &amp; Tuning" />
-        </LinearLayout>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@color/divider" />
-
-        <!-- App Search Bar -->
-        <EditText
-            android:id="@+id/etSearchApps"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_margin="16dp"
-            android:background="@drawable/ic_launcher_background"
-            android:backgroundTint="@color/surface_elevated"
-            android:hint="Search installed apps..."
-            android:textColorHint="@color/text_secondary"
-            android:textColor="@color/text_primary"
-            android:paddingHorizontal="16dp"
-            android:textSize="14sp"
-            android:singleLine="true" />
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvApps"
-            android:layout_width="match_parent"
+        <Button
+            android:id="@+id/btnTabApps"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:clipToPadding="false"
-            android:paddingBottom="24dp" />
+            android:layout_weight="1"
+            android:text="APPS"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:backgroundTint="#E53935"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:padding="0dp"
+            app:cornerRadius="8dp" />
+
+        <Button
+            android:id="@+id/btnTabEq"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:text="EQ / DSP"
+            android:textColor="#A1A1AA"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:backgroundTint="#1F2128"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:padding="0dp"
+            app:cornerRadius="8dp" />
+
+        <Button
+            android:id="@+id/btnTabSettings"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:text="SETTINGS"
+            android:textColor="#A1A1AA"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:backgroundTint="#1F2128"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:padding="0dp"
+            app:cornerRadius="8dp" />
     </LinearLayout>
 
-    <!-- 2. DEDICATED SETTINGS PAGE (OPENED VIA ⚙️ ICON IN APP LISTING) -->
-    <LinearLayout
-        android:id="@+id/containerSettings"
+    <!-- CONTENT FRAME FOR 3 TABS -->
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:visibility="gone">
+        android:layout_height="0dp"
+        android:layout_weight="1">
 
-        <!-- Settings Header Bar: Back to Apps & Title -->
+        <!-- 1. TAB 1: ANDROID APP LIST -->
         <LinearLayout
+            android:id="@+id/containerApps"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingHorizontal="12dp">
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:visibility="visible">
 
-            <ImageButton
-                android:id="@+id/btnBackFromSettings"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@android:drawable/ic_menu_revert"
-                app:tint="@color/text_primary"
-                android:contentDescription="Back to App List" />
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="SETTINGS &amp; TUNING"
+            <!-- App Search Bar -->
+            <EditText
+                android:id="@+id/etSearchApps"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/ic_launcher_background"
+                android:backgroundTint="@color/surface_elevated"
+                android:hint="Search installed apps..."
+                android:textColorHint="@color/text_secondary"
                 android:textColor="@color/text_primary"
-                android:textSize="17sp"
-                android:textStyle="bold"
-                android:fontFamily="sans-serif-medium"
-                android:layout_marginStart="8dp" />
+                android:paddingHorizontal="16dp"
+                android:textSize="14sp"
+                android:singleLine="true" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvApps"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingBottom="24dp" />
         </LinearLayout>
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@color/divider" />
-
-        <!-- Scrollable Settings Content -->
+        <!-- 2. TAB 2: HARDWARE EQ & ACOUSTIC DSP CONSOLE -->
         <ScrollView
+            android:id="@+id/containerEq"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:paddingHorizontal="14dp"
-            android:paddingVertical="10dp"
-            android:clipToPadding="false">
+            android:scrollbars="none"
+            android:visibility="gone">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:paddingBottom="48dp">
+                android:paddingBottom="40dp">
 
-                <!-- 1. WALKMAN CASSETTE THEME SELECTOR -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginBottom="8dp">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="WALKMAN CASSETTE THEMES"
-                        android:textColor="#A1A1AA"
-                        android:textStyle="bold"
-                        android:textSize="11.5sp"
-                        android:fontFamily="sans-serif-medium" />
-
-                    <TextView
-                        android:id="@+id/tvActiveThemeName"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="WM-2 Red (1981)"
-                        android:textColor="@color/wm2_red"
-                        android:textSize="11.5sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <HorizontalScrollView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:scrollbars="none"
-                    android:layout_marginBottom="14dp">
-
-                    <LinearLayout
-                        android:id="@+id/llThemeButtons"
-                        android:layout_width="wrap_content"
-                        android:layout_height="36dp"
-                        android:orientation="horizontal" />
-                </HorizontalScrollView>
-
-                <!-- 2. DARK AUDIOPHILE DJ MIXER HARDWARE CONSOLE -->
+                <!-- Hardware DJ Mixer Console Card -->
                 <androidx.cardview.widget.CardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -181,15 +133,15 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:padding="14dp">
+                        android:padding="16dp">
 
-                        <!-- Console Header: Title & FX Preset Button -->
+                        <!-- Header & DSP Preset Button -->
                         <LinearLayout
                             android:layout_width="match_parent"
-                            android:layout_height="32dp"
+                            android:layout_height="wrap_content"
                             android:orientation="horizontal"
                             android:gravity="center_vertical"
-                            android:layout_marginBottom="8dp">
+                            android:layout_marginBottom="12dp">
 
                             <TextView
                                 android:layout_width="0dp"
@@ -207,65 +159,55 @@
                                 android:layout_height="28dp"
                                 android:text="FX: FLAT"
                                 android:textColor="#00E676"
-                                android:textSize="10.5sp"
+                                android:textSize="11sp"
                                 android:textStyle="bold"
-                                android:fontFamily="monospace"
-                                android:backgroundTint="#1F2126"
-                                android:paddingHorizontal="10dp"
-                                android:paddingVertical="0dp"
+                                android:backgroundTint="#1B281E"
                                 android:insetTop="0dp"
                                 android:insetBottom="0dp"
+                                android:paddingHorizontal="10dp"
+                                android:paddingVertical="0dp"
                                 app:cornerRadius="6dp" />
                         </LinearLayout>
 
-                        <!-- Top Row: 3 Studio Potentiometers (LOW, MID, HI) -->
+                        <!-- Top 3 Knobs: LOW, MID, HI -->
                         <LinearLayout
                             android:layout_width="match_parent"
-                            android:layout_height="88dp"
+                            android:layout_height="wrap_content"
                             android:orientation="horizontal"
                             android:gravity="center">
 
                             <com.hana.spindle.ui.eq.AudiophileKnobView
                                 android:id="@+id/knobLow"
                                 android:layout_width="0dp"
-                                android:layout_height="match_parent"
+                                android:layout_height="100dp"
                                 android:layout_weight="1" />
 
                             <com.hana.spindle.ui.eq.AudiophileKnobView
                                 android:id="@+id/knobMid"
                                 android:layout_width="0dp"
-                                android:layout_height="match_parent"
+                                android:layout_height="100dp"
                                 android:layout_weight="1" />
 
                             <com.hana.spindle.ui.eq.AudiophileKnobView
                                 android:id="@+id/knobHi"
                                 android:layout_width="0dp"
-                                android:layout_height="match_parent"
+                                android:layout_height="100dp"
                                 android:layout_weight="1" />
                         </LinearLayout>
 
-                        <!-- Middle Stage: Filter Knob + Waveform Visualizer + LED VU Meter -->
+                        <!-- Middle Row: FILTER Knob + Live Waveform + Level VU Meter -->
                         <LinearLayout
                             android:layout_width="match_parent"
-                            android:layout_height="108dp"
+                            android:layout_height="124dp"
                             android:orientation="horizontal"
                             android:gravity="center_vertical"
-                            android:layout_marginVertical="6dp">
+                            android:layout_marginTop="8dp">
 
-                            <!-- Filter / Bass Boost Rotary Knob -->
-                            <LinearLayout
-                                android:layout_width="80dp"
-                                android:layout_height="match_parent"
-                                android:orientation="vertical"
-                                android:gravity="center">
+                            <com.hana.spindle.ui.eq.AudiophileKnobView
+                                android:id="@+id/knobFilter"
+                                android:layout_width="86dp"
+                                android:layout_height="86dp" />
 
-                                <com.hana.spindle.ui.eq.AudiophileKnobView
-                                    android:id="@+id/knobFilter"
-                                    android:layout_width="76dp"
-                                    android:layout_height="76dp" />
-                            </LinearLayout>
-
-                            <!-- Center: Track Title & Waveform Visualizer -->
                             <LinearLayout
                                 android:layout_width="0dp"
                                 android:layout_height="match_parent"
@@ -278,10 +220,10 @@
                                     android:id="@+id/tvDjTrackTitle"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
-                                    android:text="Spindle Direct DSD / ALSA"
-                                    android:textColor="#E4E4E8"
+                                    android:text="Spindle Direct ALSA / DSD DAC"
+                                    android:textColor="#A1A1AA"
                                     android:textSize="11.5sp"
-                                    android:textStyle="bold"
+                                    android:fontFamily="sans-serif-medium"
                                     android:singleLine="true"
                                     android:ellipsize="marquee"
                                     android:marqueeRepeatLimit="marquee_forever"
@@ -291,32 +233,34 @@
                                 <com.hana.spindle.ui.eq.AudioWaveformView
                                     android:id="@+id/waveformView"
                                     android:layout_width="match_parent"
-                                    android:layout_height="56dp" />
+                                    android:layout_height="64dp"
+                                    android:background="#0C0D0E" />
                             </LinearLayout>
 
-                            <!-- Right: 12-Segment Stereo dB LED VU Meter -->
                             <com.hana.spindle.ui.eq.LedVuMeterView
                                 android:id="@+id/ledVuMeter"
-                                android:layout_width="54dp"
-                                android:layout_height="match_parent" />
+                                android:layout_width="62dp"
+                                android:layout_height="match_parent"
+                                android:background="#0C0D0E" />
                         </LinearLayout>
 
-                        <!-- Transport Deck Section: CUE | DECK A / B | PLAY/PAUSE | BROWSE -->
+                        <!-- DJ Transport Controls: RESET Button + L/R Voltage Peak Meter + Play/Pause + Browse -->
                         <LinearLayout
                             android:layout_width="match_parent"
-                            android:layout_height="56dp"
+                            android:layout_height="60dp"
                             android:orientation="horizontal"
                             android:gravity="center_vertical"
-                            android:layout_marginTop="8dp">
+                            android:layout_marginTop="10dp">
 
+                            <!-- RESET button (replaces CUE) -->
                             <Button
-                                android:id="@+id/btnCue"
-                                android:layout_width="48dp"
+                                android:id="@+id/btnReset"
+                                android:layout_width="52dp"
                                 android:layout_height="48dp"
                                 android:background="@drawable/bg_dj_circle_button"
-                                android:text="CUE"
+                                android:text="RESET"
                                 android:textColor="#A1A1AA"
-                                android:textSize="11sp"
+                                android:textSize="10sp"
                                 android:textStyle="bold"
                                 android:insetTop="0dp"
                                 android:insetBottom="0dp"
@@ -328,56 +272,12 @@
                                 android:layout_height="1dp"
                                 android:layout_weight="1" />
 
-                            <LinearLayout
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:orientation="vertical"
-                                android:gravity="center">
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="DECK"
-                                    android:textColor="#71717A"
-                                    android:textSize="9.5sp"
-                                    android:textStyle="bold"
-                                    android:layout_marginBottom="2dp" />
-
-                                <LinearLayout
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:orientation="horizontal">
-
-                                    <Button
-                                        android:id="@+id/btnDeckA"
-                                        android:layout_width="36dp"
-                                        android:layout_height="36dp"
-                                        android:background="@drawable/bg_dj_active_circle_button"
-                                        android:text="A"
-                                        android:textColor="#00E676"
-                                        android:textSize="12sp"
-                                        android:textStyle="bold"
-                                        android:insetTop="0dp"
-                                        android:insetBottom="0dp"
-                                        android:padding="0dp"
-                                        app:backgroundTint="@null" />
-
-                                    <Button
-                                        android:id="@+id/btnDeckB"
-                                        android:layout_width="36dp"
-                                        android:layout_height="36dp"
-                                        android:layout_marginStart="6dp"
-                                        android:background="@drawable/bg_dj_circle_button"
-                                        android:text="B"
-                                        android:textColor="#71717A"
-                                        android:textSize="12sp"
-                                        android:textStyle="bold"
-                                        android:insetTop="0dp"
-                                        android:insetBottom="0dp"
-                                        android:padding="0dp"
-                                        app:backgroundTint="@null" />
-                                </LinearLayout>
-                            </LinearLayout>
+                            <!-- L & R Voltage Peak Spectrum Meter (replaces Deck A/B buttons) -->
+                            <com.hana.spindle.ui.eq.LrVoltagePeakMeterView
+                                android:id="@+id/lrPeakMeter"
+                                android:layout_width="72dp"
+                                android:layout_height="52dp"
+                                android:background="#0C0D0E" />
 
                             <View
                                 android:layout_width="0dp"
@@ -386,10 +286,10 @@
 
                             <ImageButton
                                 android:id="@+id/btnDjPlayPause"
-                                android:layout_width="52dp"
-                                android:layout_height="52dp"
+                                android:layout_width="50dp"
+                                android:layout_height="50dp"
                                 android:background="@drawable/bg_dj_mint_button"
-                                android:src="@android:drawable/ic_media_pause"
+                                android:src="@android:drawable/ic_media_play"
                                 app:tint="#121316"
                                 android:contentDescription="Play / Pause" />
 
@@ -408,7 +308,7 @@
                                 android:contentDescription="Browse Music Catalog" />
                         </LinearLayout>
 
-                        <!-- Bottom Crossfader: Deck A ───|─── Deck B -->
+                        <!-- L and R Audio Balance Slider (replaces A/B crossfader) -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -419,10 +319,11 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="A"
-                                android:textColor="#71717A"
-                                android:textSize="12sp"
-                                android:textStyle="bold" />
+                                android:text="L"
+                                android:textColor="#00E676"
+                                android:textSize="13sp"
+                                android:textStyle="bold"
+                                android:fontFamily="monospace" />
 
                             <SeekBar
                                 android:id="@+id/seekCrossfader"
@@ -438,23 +339,41 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="B"
-                                android:textColor="#71717A"
-                                android:textSize="12sp"
-                                android:textStyle="bold" />
+                                android:text="R"
+                                android:textColor="#00E676"
+                                android:textSize="13sp"
+                                android:textStyle="bold"
+                                android:fontFamily="monospace" />
                         </LinearLayout>
 
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
+            </LinearLayout>
+        </ScrollView>
 
-                <!-- 3. OFFLINE MUSIC STORAGE & SCANNER -->
+        <!-- 3. TAB 3: LAUNCHER SETTINGS -->
+        <ScrollView
+            android:id="@+id/containerSettings"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingHorizontal="14dp"
+            android:scrollbars="none"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingBottom="40dp">
+
+                <!-- 1. SET AS DEFAULT LAUNCHER ACTION CARD -->
                 <androidx.cardview.widget.CardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     app:cardCornerRadius="16dp"
                     app:cardElevation="4dp"
-                    app:cardBackgroundColor="#141518"
-                    android:layout_marginBottom="18dp">
+                    app:cardBackgroundColor="#1C1E24"
+                    android:layout_marginBottom="16dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -465,40 +384,38 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="OFFLINE MUSIC STORAGE"
+                            android:text="ANDROID HOME INTEGRATION"
                             android:textColor="#71717A"
                             android:textStyle="bold"
                             android:textSize="11sp"
                             android:fontFamily="monospace" />
 
                         <TextView
-                            android:id="@+id/tvSongCount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Loading library index..."
+                            android:text="Primary Home Launcher"
                             android:textColor="@color/white"
-                            android:fontFamily="sans-serif-medium"
+                            android:textStyle="bold"
                             android:textSize="15sp"
-                            android:layout_marginTop="6dp" />
+                            android:layout_marginTop="4dp" />
 
                         <TextView
-                            android:id="@+id/tvScanProgress"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Indexed across MicroSD and internal storage"
+                            android:text="Configure Spindle as the default home screen for this device. Pressing physical or software Home will directly open the Cassette Deck."
                             android:textColor="#A1A1AA"
                             android:textSize="12sp"
-                            android:layout_marginTop="2dp" />
+                            android:layout_marginTop="4dp" />
 
                         <Button
-                            android:id="@+id/btnRescanLibrary"
+                            android:id="@+id/btnSetDefaultLauncher"
                             android:layout_width="match_parent"
-                            android:layout_height="40dp"
-                            android:text="RESCAN MUSIC STORAGE"
+                            android:layout_height="44dp"
+                            android:text="⚙️ SET AS DEFAULT LAUNCHER"
                             android:textColor="@color/white"
                             android:textSize="12sp"
                             android:textStyle="bold"
-                            android:backgroundTint="@color/wm2_red"
+                            android:backgroundTint="#E53935"
                             android:insetTop="0dp"
                             android:insetBottom="0dp"
                             android:padding="0dp"
@@ -507,14 +424,127 @@
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
 
-                <!-- 4. AUDIO TELEMETRY & BLUETOOTH BATTERY HEALTH -->
+                <!-- 2. WALKMAN CASSETTE THEMES -->
                 <androidx.cardview.widget.CardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     app:cardCornerRadius="16dp"
                     app:cardElevation="4dp"
                     app:cardBackgroundColor="#141518"
-                    android:layout_marginBottom="18dp">
+                    android:layout_marginBottom="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="12dp">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="WALKMAN CASSETTE THEMES"
+                                android:textColor="#71717A"
+                                android:textStyle="bold"
+                                android:textSize="11sp"
+                                android:fontFamily="monospace" />
+
+                            <TextView
+                                android:id="@+id/tvActiveThemeName"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="WM-2 Red (1981)"
+                                android:textColor="@color/wm2_red"
+                                android:textStyle="bold"
+                                android:textSize="11sp"
+                                android:fontFamily="monospace" />
+                        </LinearLayout>
+
+                        <HorizontalScrollView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:scrollbars="none">
+
+                            <LinearLayout
+                                android:id="@+id/llThemeButtons"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal" />
+                        </HorizontalScrollView>
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <!-- 3. RADIO STATIONS MANAGER -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="4dp"
+                    app:cardBackgroundColor="#141518"
+                    android:layout_marginBottom="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="8dp">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="RADIO STATIONS CATALOG"
+                                android:textColor="#71717A"
+                                android:textStyle="bold"
+                                android:textSize="11sp"
+                                android:fontFamily="monospace" />
+
+                            <Button
+                                android:id="@+id/btnResetStations"
+                                android:layout_width="wrap_content"
+                                android:layout_height="28dp"
+                                android:text="RESET PRESETS"
+                                android:textColor="#A1A1AA"
+                                android:textSize="10sp"
+                                android:textStyle="bold"
+                                android:backgroundTint="#202228"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:paddingHorizontal="8dp"
+                                android:paddingVertical="0dp"
+                                app:cornerRadius="6dp" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/llRadioStationsList"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical" />
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <!-- 4. AUDIO HARDWARE TELEMETRY -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="4dp"
+                    app:cardBackgroundColor="#141518"
+                    android:layout_marginBottom="16dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -651,14 +681,75 @@
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
 
-                <!-- 5. ABOUT SPINDLE & SYSTEM -->
+                <!-- 5. OFFLINE MUSIC STORAGE & SCANNER -->
                 <androidx.cardview.widget.CardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     app:cardCornerRadius="16dp"
                     app:cardElevation="4dp"
                     app:cardBackgroundColor="#141518"
-                    android:layout_marginBottom="18dp">
+                    android:layout_marginBottom="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="OFFLINE MUSIC STORAGE"
+                            android:textColor="#71717A"
+                            android:textStyle="bold"
+                            android:textSize="11sp"
+                            android:fontFamily="monospace" />
+
+                        <TextView
+                            android:id="@+id/tvSongCount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Loading library index..."
+                            android:textColor="@color/white"
+                            android:fontFamily="sans-serif-medium"
+                            android:textSize="16sp"
+                            android:layout_marginTop="4dp" />
+
+                        <ProgressBar
+                            android:id="@+id/progressScan"
+                            style="?android:attr/progressBarStyleHorizontal"
+                            android:layout_width="match_parent"
+                            android:layout_height="4dp"
+                            android:indeterminate="true"
+                            android:visibility="gone"
+                            android:progressTint="@color/wm2_red"
+                            android:layout_marginTop="8dp" />
+
+                        <Button
+                            android:id="@+id/btnRescanLibrary"
+                            android:layout_width="match_parent"
+                            android:layout_height="44dp"
+                            android:text="RESCAN MUSIC STORAGE"
+                            android:textColor="@color/white"
+                            android:textSize="12sp"
+                            android:textStyle="bold"
+                            android:backgroundTint="@color/wm2_red"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:padding="0dp"
+                            app:cornerRadius="8dp"
+                            android:layout_marginTop="12dp" />
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <!-- 6. ABOUT SPINDLE LAUNCHER -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="4dp"
+                    app:cardBackgroundColor="#141518"
+                    android:layout_marginBottom="16dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -697,6 +788,6 @@
 
             </LinearLayout>
         </ScrollView>
-    </LinearLayout>
 
-</FrameLayout>
+    </FrameLayout>
+</LinearLayout>

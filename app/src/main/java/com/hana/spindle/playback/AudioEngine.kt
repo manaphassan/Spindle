@@ -209,6 +209,19 @@ class AudioEngine(
         )
     }
 
+    var audioBalance: Float = 0.5f
+        private set
+
+    fun setBalance(balance: Float) {
+        audioBalance = balance.coerceIn(0.0f, 1.0f)
+    }
+
+    fun getStereoLevels(baseLevel: Float): Pair<Float, Float> {
+        val leftMult = (2f * (1f - audioBalance)).coerceIn(0f, 1f)
+        val rightMult = (2f * audioBalance).coerceIn(0f, 1f)
+        return Pair(baseLevel * leftMult, baseLevel * rightMult)
+    }
+
     fun release() {
         stopProgressPolling()
         audioFxController.release()

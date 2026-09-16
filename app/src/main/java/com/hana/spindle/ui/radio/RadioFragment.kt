@@ -133,6 +133,17 @@ class RadioFragment : Fragment() {
             }
         )
 
+        // Now Playing Title
+        val nowPlaying = when {
+            state.isBuffering -> "◌ CONNECTING LIVE STREAM..."
+            !state.isPlaying -> "■ STOPPED"
+            !state.nowPlayingTitle.isNullOrBlank() -> "♪ ${state.nowPlayingTitle}"
+            state.currentStation != null -> "♪ LIVE BROADCAST • ${state.currentStation.genre.uppercase()}"
+            else -> "♪ LIVE FM TUNER"
+        }
+        binding.tvRadioNowPlaying.text = nowPlaying
+        binding.tvRadioNowPlaying.isSelected = true // Enables horizontal marquee auto-scroll
+
         // Highlight active preset button
         for (i in presetButtons.indices) {
             val station = RadioStreamEngine.PRESET_STATIONS.getOrNull(i)

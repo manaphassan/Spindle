@@ -32,7 +32,8 @@ data class RadioPlaybackState(
     val currentStation: RadioStation? = null,
     val currentFrequency: Float = 88.5f,
     val volume: Float = 0.8f,
-    val isMuted: Boolean = false
+    val isMuted: Boolean = false,
+    val nowPlayingTitle: String? = null
 )
 
 class RadioStreamEngine(private val context: Context) {
@@ -72,6 +73,23 @@ class RadioStreamEngine(private val context: Context) {
         )
     }
 
+    var userStations: MutableList<RadioStation> = PRESET_STATIONS.toMutableList()
+        private set
+
+    fun addStation(station: RadioStation) {
+        userStations.removeAll { it.frequencyMhz == station.frequencyMhz }
+        userStations.add(station)
+    }
+
+    fun removeStation(frequencyMhz: Float) {
+        userStations.removeAll { it.frequencyMhz == frequencyMhz }
+    }
+
+    fun resetStationsToDefaults() {
+        userStations.clear()
+        userStations.addAll(PRESET_STATIONS)
+    }
+
     private val _radioState = MutableStateFlow(
         RadioPlaybackState(
             currentStation = PRESET_STATIONS[0],
@@ -88,9 +106,10 @@ class RadioStreamEngine(private val context: Context) {
             .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
             .build()
 
-        // Robust HTTP data source supporting Icecast/Shoutcast redirects & custom agent
+        // Robust HTTP data source supporting Icecast/Shoutcast redirects & ICY metadata
         val httpDataSourceFactory = DefaultHttpDataSource.Factory()
             .setUserAgent("Spindle/1.0 (Linux; Android DAP) ExoPlayer")
+            .setDefaultRequestProperties(mapOf("Icy-MetaData" to "1"))
             .setConnectTimeoutMs(10000)
             .setReadTimeoutMs(15000)
             .setAllowCrossProtocolRedirects(true)
@@ -125,6 +144,15 @@ class RadioStreamEngine(private val context: Context) {
                         val isBuffering = (playbackState == Player.STATE_BUFFERING) && exoPlayer.playWhenReady
                         Log.i(TAG, "onPlaybackStateChanged: state=$playbackState, isBuffering=$isBuffering, playWhenReady=${exoPlayer.playWhenReady}")
                         _radioState.value = _radioState.value.copy(isBuffering = isBuffering)
+                    }
+
+                    override fun onMediaMetadataChanged(mediaMetadata: androidx.media3.common.MediaMetadata) {
+                        val title = mediaMetadata.title?.toString()
+                            ?: mediaMetadata.displayTitle?.toString()
+                        Log.i(TAG, "onMediaMetadataChanged: title='$title', artist='${mediaMetadata.artist}'")
+                        if (!title.isNullOrBlank()) {
+                            _radioState.value = _radioState.value.copy(nowPlayingTitle = title)
+                        }
                     }
 
                     override fun onPlayerError(error: PlaybackException) {
@@ -163,7 +191,8 @@ class RadioStreamEngine(private val context: Context) {
         _radioState.value = _radioState.value.copy(
             currentStation = station,
             currentFrequency = station.frequencyMhz,
-            isBuffering = true
+            isBuffering = true,
+            nowPlayingTitle = null
         )
         val mediaItem = MediaItem.Builder()
             .setUri(station.streamUrl)

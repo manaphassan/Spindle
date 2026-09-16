@@ -4,15 +4,22 @@ import android.content.ComponentName
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Color
+import android.graphics.Typeface
 import android.os.Bundle
+import android.provider.Settings
 import android.text.Editable
+import android.text.TextUtils
 import android.text.TextWatcher
+import android.view.Gravity
+import android.view.HapticFeedbackConstants
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.SeekBar
+import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -47,6 +54,7 @@ class DrawerFragment : Fragment() {
 
     private val dspPresets = listOf("FLAT", "BASS_BOOST", "HARMAN", "VOCAL", "CLUB")
     private var currentPresetIndex = 0
+    private var currentTabIndex = 0
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -64,27 +72,28 @@ class DrawerFragment : Fragment() {
         themeManager = app.themeManager
         appListLoader = AppListLoader(requireContext())
 
-        setupSettingsNavigation()
+        setupTabNavigation()
         setupAppDrawer()
-        setupAudioMetrics(app)
-        setupThemeSelector()
         setupDjConsole(app)
+        setupDefaultLauncher()
+        setupThemeSelector()
+        setupRadioStationManager(app)
+        setupAudioMetrics(app)
         setupLibraryRescan(app)
     }
 
-    private fun setupSettingsNavigation() {
-        binding.btnSettings.setOnClickListener {
-            showSettings(true)
-        }
+    private fun setupTabNavigation() {
+        binding.btnTabApps.setOnClickListener { selectTab(0) }
+        binding.btnTabEq.setOnClickListener { selectTab(1) }
+        binding.btnTabSettings.setOnClickListener { selectTab(2) }
 
-        binding.btnBackFromSettings.setOnClickListener {
-            showSettings(false)
-        }
+        selectTab(0)
 
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (binding.containerSettings.visibility == View.VISIBLE) {
-                    showSettings(false)
+                if (currentTabIndex != 0) {
+                    // Switch back to Apps tab first
+                    selectTab(0)
                 } else {
                     isEnabled = false
                     requireActivity().onBackPressedDispatcher.onBackPressed()
@@ -94,9 +103,118 @@ class DrawerFragment : Fragment() {
         })
     }
 
-    private fun showSettings(show: Boolean) {
-        binding.containerApps.visibility = if (show) View.GONE else View.VISIBLE
-        binding.containerSettings.visibility = if (show) View.VISIBLE else View.GONE
+    private fun selectTab(index: Int) {
+        currentTabIndex = index
+        binding.containerApps.visibility = if (index == 0) View.VISIBLE else View.GONE
+        binding.containerEq.visibility = if (index == 1) View.VISIBLE else View.GONE
+        binding.containerSettings.visibility = if (index == 2) View.VISIBLE else View.GONE
+
+        val activeColor = ColorStateList.valueOf(Color.parseColor("#E53935")) // Walkman Red
+        val inactiveColor = ColorStateList.valueOf(Color.parseColor("#1F2128"))
+
+        binding.btnTabApps.backgroundTintList = if (index == 0) activeColor else inactiveColor
+        binding.btnTabApps.setTextColor(if (index == 0) Color.WHITE else Color.parseColor("#A1A1AA"))
+
+        binding.btnTabEq.backgroundTintList = if (index == 1) activeColor else inactiveColor
+        binding.btnTabEq.setTextColor(if (index == 1) Color.WHITE else Color.parseColor("#A1A1AA"))
+
+        binding.btnTabSettings.backgroundTintList = if (index == 2) activeColor else inactiveColor
+        binding.btnTabSettings.setTextColor(if (index == 2) Color.WHITE else Color.parseColor("#A1A1AA"))
+    }
+
+    private fun setupDefaultLauncher() {
+        binding.btnSetDefaultLauncher.setOnClickListener {
+            try {
+                val intent = Intent(Settings.ACTION_HOME_SETTINGS).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                startActivity(intent)
+            } catch (e: Exception) {
+                try {
+                    val intent = Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    }
+                    startActivity(intent)
+                } catch (e2: Exception) {
+                    val homeIntent = Intent(Intent.ACTION_MAIN).apply {
+                        addCategory(Intent.CATEGORY_HOME)
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    }
+                    startActivity(Intent.createChooser(homeIntent, "Select Spindle as Default Home Launcher"))
+                }
+            }
+        }
+    }
+
+    private fun setupRadioStationManager(app: SpindleApp) {
+        val container = binding.llRadioStationsList
+        container.removeAllViews()
+
+        val stations = app.radioStreamEngine.userStations
+        for (station in stations) {
+            val card = LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(24, 20, 24, 20)
+                background = ContextCompat.getDrawable(context, R.drawable.bg_card_dark)
+                val params = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    bottomMargin = 14
+                }
+                layoutParams = params
+
+                val infoLayout = LinearLayout(context).apply {
+                    orientation = LinearLayout.VERTICAL
+                    layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+
+                    val tvName = TextView(context).apply {
+                        text = "${station.callsign} (${String.format(Locale.US, "%.1f", station.frequencyMhz)} MHz)"
+                        setTextColor(Color.WHITE)
+                        textSize = 13.5f
+                        typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+                    }
+                    val tvUrl = TextView(context).apply {
+                        text = "${station.genre}\n${station.streamUrl}"
+                        setTextColor(Color.parseColor("#71717A"))
+                        textSize = 10.5f
+                        maxLines = 2
+                        ellipsize = TextUtils.TruncateAt.END
+                    }
+                    addView(tvName)
+                    addView(tvUrl)
+                }
+                addView(infoLayout)
+
+                val btnTune = Button(context).apply {
+                    text = "TUNE"
+                    textSize = 10.5f
+                    typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+                    setTextColor(Color.WHITE)
+                    backgroundTintList = ColorStateList.valueOf(Color.parseColor("#E53935"))
+                    val btnParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        (36 * resources.displayMetrics.density).toInt()
+                    ).apply {
+                        marginStart = 12
+                    }
+                    layoutParams = btnParams
+                    setOnClickListener {
+                        app.radioStreamEngine.playStation(station)
+                        (activity as? MainActivity)?.navigateToRadio()
+                    }
+                }
+                addView(btnTune)
+            }
+            container.addView(card)
+        }
+
+        binding.btnResetStations.setOnClickListener {
+            app.radioStreamEngine.resetStationsToDefaults()
+            setupRadioStationManager(app)
+            Toast.makeText(requireContext(), "Radio presets reset to default", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun setupLibraryRescan(app: SpindleApp) {
@@ -108,7 +226,7 @@ class DrawerFragment : Fragment() {
         binding.btnRescanLibrary.setOnClickListener {
             binding.btnRescanLibrary.isEnabled = false
             binding.btnRescanLibrary.text = "SCANNING STORAGE..."
-            binding.tvScanProgress.text = "Crawling storage and indexing metadata..."
+            binding.progressScan.visibility = View.VISIBLE
 
             viewLifecycleOwner.lifecycleScope.launch {
                 app.musicScanner.scanAll()
@@ -116,7 +234,8 @@ class DrawerFragment : Fragment() {
                 binding.tvSongCount.text = "$count tracks indexed in local database"
                 binding.btnRescanLibrary.text = "RESCAN MUSIC STORAGE"
                 binding.btnRescanLibrary.isEnabled = true
-                binding.tvScanProgress.text = "Scan complete • $count tracks ready"
+                binding.progressScan.visibility = View.GONE
+                Toast.makeText(requireContext(), "Scan complete: $count tracks ready", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -140,46 +259,57 @@ class DrawerFragment : Fragment() {
         }
 
         binding.etSearchApps.addTextChangedListener(object : TextWatcher {
-            override fun afterTextChanged(s: Editable?) {
-                val query = s?.toString()?.trim()?.lowercase(Locale.ROOT) ?: ""
-                val filtered = if (query.isEmpty()) {
-                    allApps
-                } else {
-                    allApps.filter { it.label.lowercase(Locale.ROOT).contains(query) }
-                }
-                appAdapter.submitList(filtered)
-            }
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                filterApps(s.toString())
+            }
+            override fun afterTextChanged(s: Editable?) {}
         })
     }
 
+    private fun filterApps(query: String) {
+        val filtered = if (query.isBlank()) {
+            allApps
+        } else {
+            allApps.filter { it.label.contains(query, ignoreCase = true) }
+        }
+        appAdapter.submitList(filtered)
+    }
+
     private fun setupAudioMetrics(app: SpindleApp) {
+        val metricsTracker = app.audioEngine.metricsTracker
+
         viewLifecycleOwner.lifecycleScope.launch {
-            app.audioEngine.metricsTracker.metrics.collectLatest { metrics ->
-                _binding?.let { b ->
-                    b.tvMetricFormat.text = metrics.format
-                    b.tvMetricSampleRate.text = "${metrics.bitDepth}-bit / ${metrics.sampleRate / 1000.0} kHz"
-                    b.tvMetricBitrate.text = "${metrics.dynamicBitrateKbps} kbps"
-                    b.tvMetricRoute.text = metrics.outputRoute
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                metricsTracker.metrics.collectLatest { metrics ->
+                    _binding?.let { b ->
+                        b.tvMetricFormat.text = "${metrics.format.uppercase()} (${metrics.bitDepth}-bit)"
+                        b.tvMetricSampleRate.text = "${metrics.bitDepth}-bit / ${String.format(Locale.US, "%.1f", metrics.sampleRate / 1000f)} kHz"
+                        b.tvMetricBitrate.text = "${metrics.dynamicBitrateKbps} kbps"
+                        b.tvMetricRoute.text = metrics.outputRoute
 
-                    if (metrics.bluetoothBatteryPct != null) {
-                        b.tvMetricBtBattery.text = "● ${metrics.bluetoothDeviceName ?: "Audio Gear"}: ${metrics.bluetoothBatteryPct}% (Healthy)"
-                        b.tvMetricBtBattery.setTextColor(Color.parseColor("#00E676"))
-                    } else if (metrics.outputRoute.contains("Bluetooth", ignoreCase = true)) {
-                        b.tvMetricBtBattery.text = "● ${metrics.bluetoothDeviceName ?: "Connected Wireless Audio"} • Connected"
-                        b.tvMetricBtBattery.setTextColor(Color.parseColor("#00E676"))
-                    } else {
-                        b.tvMetricBtBattery.text = "Disconnected (Using Wired 3.5mm ALSA Direct)"
-                        b.tvMetricBtBattery.setTextColor(Color.parseColor("#71717A"))
-                    }
+                        if (metrics.bluetoothDeviceName != null && metrics.bluetoothBatteryPct != null) {
+                            val batteryStatus = when {
+                                metrics.bluetoothBatteryPct < 20 -> "Low"
+                                metrics.bluetoothBatteryPct < 50 -> "Adequate"
+                                else -> "Healthy"
+                            }
+                            b.tvMetricBtBattery.text = "● ${metrics.bluetoothDeviceName}: ${metrics.bluetoothBatteryPct}% ($batteryStatus)"
+                            b.tvMetricBtBattery.setTextColor(
+                                if (metrics.bluetoothBatteryPct < 20) Color.parseColor("#EF4444") else Color.parseColor("#00E676")
+                            )
+                        } else {
+                            b.tvMetricBtBattery.text = "No Bluetooth Gear Connected (Using 3.5mm ALSA Direct)"
+                            b.tvMetricBtBattery.setTextColor(Color.parseColor("#A1A1AA"))
+                        }
 
-                    if (metrics.isBitPerfect) {
-                        b.tvBitPerfectBadge.text = "● BIT-PERFECT NATIVE"
-                        b.tvBitPerfectBadge.setTextColor(Color.parseColor("#00E676"))
-                    } else {
-                        b.tvBitPerfectBadge.text = "▲ RESAMPLED (48kHz)"
-                        b.tvBitPerfectBadge.setTextColor(Color.parseColor("#FFB300"))
+                        if (metrics.isBitPerfect) {
+                            b.tvBitPerfectBadge.text = "● BIT-PERFECT NATIVE"
+                            b.tvBitPerfectBadge.setTextColor(Color.parseColor("#00E676"))
+                        } else {
+                            b.tvBitPerfectBadge.text = "▲ AudioFlinger Resampled"
+                            b.tvBitPerfectBadge.setTextColor(Color.parseColor("#F59E0B"))
+                        }
                     }
                 }
             }
@@ -190,17 +320,19 @@ class DrawerFragment : Fragment() {
         val container = binding.llThemeButtons
         container.removeAllViews()
 
-        for (theme in CassetteTheme.ALL_PRESETS) {
+        val density = resources.displayMetrics.density
+        CassetteTheme.ALL_PRESETS.forEach { theme ->
             val btn = Button(requireContext()).apply {
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.WRAP_CONTENT,
-                    LinearLayout.LayoutParams.MATCH_PARENT
+                    (42 * density).toInt()
                 ).apply {
-                    setMargins(0, 0, 16, 0)
+                    marginEnd = (8 * density).toInt()
                 }
-                text = theme.name
-                textSize = 11.5f
-                isAllCaps = true
+                text = "${theme.name}\n${theme.subtitle}"
+                textSize = 10.5f
+                isAllCaps = false
+                setPadding((14 * density).toInt(), (4 * density).toInt(), (14 * density).toInt(), (4 * density).toInt())
                 setTextColor(if (theme.isDarkAppTheme) Color.WHITE else Color.parseColor("#1E293B"))
                 backgroundTintList = ColorStateList.valueOf(theme.chassisColor)
                 setOnClickListener {
@@ -263,17 +395,27 @@ class DrawerFragment : Fragment() {
             binding.knobFilter.currentValue = fxController.bassBoostStrength.toFloat()
         }
 
-        // 3. Transport Deck Buttons
-        binding.btnCue.setOnClickListener {
-            audioEngine.seekTo(0)
-        }
+        // 3. RESET Button (replaces CUE) - restores default Flat EQ & 50% Balance
+        binding.btnReset.setOnClickListener {
+            fxController.setLowGain(0f)
+            fxController.setMidGain(0f)
+            fxController.setHighGain(0f)
+            fxController.setFilterStrength(0)
+            fxController.applyPreset("FLAT")
+            currentPresetIndex = 0
 
-        binding.btnDeckA.setOnClickListener {
-            (activity as? MainActivity)?.navigateToPlayer()
-        }
+            binding.knobLow.currentValue = 0f
+            binding.knobMid.currentValue = 0f
+            binding.knobHi.currentValue = 0f
+            binding.knobFilter.currentValue = 0f
+            binding.btnFx.text = "FX: FLAT"
 
-        binding.btnDeckB.setOnClickListener {
-            (activity as? MainActivity)?.navigateToRadio()
+            // Reset L & R Audio Balance to Center (50%)
+            binding.seekCrossfader.progress = 50
+            audioEngine.setBalance(0.5f)
+
+            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            Toast.makeText(requireContext(), "EQ and Audio Balance reset to default", Toast.LENGTH_SHORT).show()
         }
 
         binding.btnDjPlayPause.setOnClickListener {
@@ -284,21 +426,19 @@ class DrawerFragment : Fragment() {
             (activity as? MainActivity)?.navigateToCatalog()
         }
 
-        // 4. Crossfader
+        // 4. L and R Audio Balance Slider (replaces A/B crossfader)
         binding.seekCrossfader.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                if (fromUser) {
-                    val deckAVol = ((100 - progress) / 50f).coerceIn(0f, 1f)
-                    val deckBVol = (progress / 50f).coerceIn(0f, 1f)
-                    audioEngine.exoPlayer.volume = deckAVol
-                    app.radioStreamEngine.setVolume(deckBVol)
-                }
+                val balance = progress / 100f
+                audioEngine.setBalance(balance)
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                seekBar?.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            }
         })
 
-        // 5. Observe playback state and animate VU Meter & Waveform
+        // 5. Observe playback state and animate VU Meter, Waveform, and L/R Voltage Peak Meter
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
@@ -321,20 +461,32 @@ class DrawerFragment : Fragment() {
                     }
                 }
 
-                // 6. Realistic 15Hz Dynamic Ballistics Simulation for LED VU Meter
+                // 6. Realistic 15Hz Dynamic Ballistics Simulation for LED VU Meter & L/R Peak Spectrum Meter
                 launch {
                     var phase = 0.0
                     while (isActive) {
-                        val isPlaying = audioEngine.playbackState.value.isPlaying
-                        if (isPlaying) {
+                        val isLocalPlaying = audioEngine.playbackState.value.isPlaying
+                        val isRadioPlaying = app.radioStreamEngine.radioState.value.isPlaying
+                        val isAudioActive = isLocalPlaying || isRadioPlaying
+
+                        if (isAudioActive) {
                             phase += 0.4
                             val baseLevel = 0.65f + 0.28f * sin(phase).toFloat()
                             val peakJitter = (sin(phase * 2.3) * 0.12f).toFloat()
-                            _binding?.ledVuMeter?.audioLevel = (baseLevel + peakJitter).coerceIn(0f, 1f)
+                            val totalLevel = (baseLevel + peakJitter).coerceIn(0f, 1f)
+
+                            _binding?.ledVuMeter?.audioLevel = totalLevel
+
+                            // Modulate L and R voltage levels by the audio balance slider
+                            val (leftLvl, rightLvl) = audioEngine.getStereoLevels(totalLevel)
+                            _binding?.lrPeakMeter?.leftLevel = leftLvl
+                            _binding?.lrPeakMeter?.rightLevel = rightLvl
                         } else {
                             _binding?.ledVuMeter?.audioLevel = 0.0f
+                            _binding?.lrPeakMeter?.leftLevel = 0.0f
+                            _binding?.lrPeakMeter?.rightLevel = 0.0f
                         }
-                        delay(66L) // ~15 FPS VU meter ballistics
+                        delay(66L) // ~15 FPS VU & peak meter ballistics
                     }
                 }
             }

@@ -104,7 +104,7 @@
     <androidx.cardview.widget.CardView
         android:id="@+id/cardLcd"
         android:layout_width="match_parent"
-        android:layout_height="136dp"
+        android:layout_height="146dp"
         app:cardCornerRadius="16dp"
         app:cardElevation="3dp"
         app:cardBackgroundColor="#DCE6DA"
@@ -163,9 +163,9 @@
                     android:id="@+id/tvRadioFrequency"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="98.2"
+                    android:text="88.5"
                     android:textColor="#1F2E1E"
-                    android:textSize="44sp"
+                    android:textSize="40sp"
                     android:textStyle="bold"
                     android:fontFamily="monospace"
                     android:includeFontPadding="false" />
@@ -175,25 +175,40 @@
                     android:layout_height="wrap_content"
                     android:text=" MHz"
                     android:textColor="#3F4D3C"
-                    android:textSize="16sp"
+                    android:textSize="15sp"
                     android:textStyle="bold"
                     android:fontFamily="monospace"
-                    android:layout_marginBottom="6dp" />
+                    android:layout_marginBottom="4dp" />
             </LinearLayout>
+
+            <!-- Now Playing Title Marquee -->
+            <TextView
+                android:id="@+id/tvRadioNowPlaying"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="♪ NO TRACK INFO"
+                android:textColor="#143610"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:fontFamily="monospace"
+                android:singleLine="true"
+                android:ellipsize="marquee"
+                android:marqueeRepeatLimit="marquee_forever"
+                android:layout_marginTop="1dp" />
 
             <!-- RDS Marquee / Station Metadata -->
             <TextView
                 android:id="@+id/tvRadioRdsName"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="PEOPLE'S CENTRAL BROADCASTING STATION--VOICE OF CHINA"
-                android:textColor="#2E3D2B"
-                android:textSize="11sp"
+                android:text="LO-FI RADIO • CHILL BEATS TO RELAX / STUDY"
+                android:textColor="#3F4D3C"
+                android:textSize="10.5sp"
                 android:fontFamily="monospace"
                 android:singleLine="true"
                 android:ellipsize="marquee"
                 android:marqueeRepeatLimit="marquee_forever"
-                android:layout_marginTop="4dp" />
+                android:layout_marginTop="2dp" />
 
         </LinearLayout>
     </androidx.cardview.widget.CardView>
