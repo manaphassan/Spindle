@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Sony Walkman II (WM-2) Red Hero Palette -->
+    <color name="wm2_red">#D71920</color>
+    <color name="wm2_red_dark">#A80E14</color>
+    <color name="wm2_bezel_black">#1C1C1E</color>
+    <color name="wm2_bezel_dark">#121214</color>
+    <color name="wm2_silver_dial">#D1D5DB</color>
+    <color name="wm2_play_green">#00C853</color>
+    <color name="wm2_stop_red">#D50000</color>
+    <color name="wm2_battery_led">#00E676</color>
+    <color name="wm2_amber">#FFB300</color>
+
+    <!-- General Dark Theme Elements -->
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="surface_dark">#18181A</color>
+    <color name="surface_elevated">#242428</color>
+    <color name="text_primary">#F3F4F6</color>
+    <color name="text_secondary">#9CA3AF</color>
+    <color name="divider">#2E2E34</color>
+
+    <!-- VFD Glow Colors -->
+    <color name="vfd_cyan">#00E5FF</color>
+    <color name="vfd_amber">#FF9100</color>
+    <color name="vfd_emerald">#00E676</color>
+</resources>

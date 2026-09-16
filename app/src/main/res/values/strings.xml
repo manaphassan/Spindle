@@ -1,0 +1,31 @@
+<resources>
+    <string name="app_name">Spindle</string>
+    <string name="launcher_label">Spindle DAP Launcher</string>
+
+    <!-- Transport Controls -->
+    <string name="action_play">Play</string>
+    <string name="action_pause">Pause</string>
+    <string name="action_stop">Stop</string>
+    <string name="action_prev">Previous</string>
+    <string name="action_next">Next</string>
+    <string name="action_eject">Eject</string>
+    <string name="action_rew">Rewind</string>
+    <string name="action_ff">Fast Forward</string>
+
+    <!-- Side Labels -->
+    <string name="cassette_side_a">SIDE A</string>
+    <string name="cassette_side_b">SIDE B</string>
+
+    <!-- Drawer Tabs -->
+    <string name="tab_apps">Apps</string>
+    <string name="tab_metrics">Metrics</string>
+    <string name="tab_equalizer">EQ &amp; DSP</string>
+    <string name="tab_themes">Themes</string>
+
+    <!-- Catalog Tabs -->
+    <string name="tab_folders">Folders</string>
+    <string name="tab_albums">Albums</string>
+    <string name="tab_artists">Artists</string>
+    <string name="tab_songs">Songs</string>
+    <string name="tab_playlists">Playlists</string>
+</resources>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Spindle" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/wm2_red</item>
+        <item name="colorPrimaryVariant">@color/wm2_red_dark</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/wm2_silver_dial</item>
+        <item name="colorSecondaryVariant">@color/wm2_bezel_black</item>
+        <item name="colorOnSecondary">@color/black</item>
+        <item name="android:statusBarColor">@color/wm2_red_dark</item>
+        <item name="android:navigationBarColor">@color/wm2_bezel_dark</item>
+        <item name="android:windowBackground">@color/wm2_red</item>
+    </style>
+</resources>
