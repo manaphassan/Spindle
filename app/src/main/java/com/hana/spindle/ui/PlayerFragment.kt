@@ -161,10 +161,12 @@ class PlayerFragment : Fragment() {
                 audioEngine.togglePlayPause()
             }
         }
-        binding.verticalDeckView.onPrevClicked = { audioEngine.playPrevious() }
+        binding.verticalDeckView.onPrevClicked = { audioEngine.playPrevious(forcePreviousSong = true) }
         binding.verticalDeckView.onNextClicked = { audioEngine.playNext() }
-        binding.verticalDeckView.onRewindClicked = { audioEngine.rewind(10_000L) }
-        binding.verticalDeckView.onFastForwardClicked = { audioEngine.fastForward(10_000L) }
+        binding.verticalDeckView.onNextAlbumClicked = { audioEngine.playNextAlbum() }
+        binding.verticalDeckView.onPrevAlbumClicked = { audioEngine.playPreviousAlbum() }
+        binding.verticalDeckView.onHoldSeekForward = { audioEngine.fastForward(2500L) }
+        binding.verticalDeckView.onHoldSeekRewind = { audioEngine.rewind(2500L) }
         binding.verticalDeckView.onSeek = { progress ->
             val total = audioEngine.playbackState.value.durationMs
             if (total > 0) {

@@ -17,6 +17,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.io.File
@@ -170,18 +171,136 @@ class AudioEngine(
 
     fun playNext() {
         if (playlist.isEmpty()) return
+        if (playlist.size <= 1) {
+            scope.launch {
+                try {
+                    val app = context.applicationContext as? com.hana.spindle.SpindleApp ?: return@launch
+                    val allSongs = app.database.songDao().getAllSongs().firstOrNull() ?: return@launch
+                    if (allSongs.isNotEmpty()) {
+                        val currentSongPath = playlist.getOrNull(currentIndex)?.path
+                        val dbIndex = allSongs.indexOfFirst { it.path == currentSongPath }
+                        val nextIndex = if (dbIndex >= 0) (dbIndex + 1) % allSongs.size else 0
+                        playlist = allSongs.toMutableList()
+                        currentIndex = nextIndex
+                        playCurrentTrack()
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("AudioEngine", "playNext expand playlist error", e)
+                }
+            }
+            return
+        }
         currentIndex = (currentIndex + 1) % playlist.size
         playCurrentTrack()
     }
 
-    fun playPrevious() {
+    fun playPrevious(forcePreviousSong: Boolean = false) {
         if (playlist.isEmpty()) return
-        if (exoPlayer.currentPosition > 3000L) {
+        if (!forcePreviousSong && exoPlayer.currentPosition > 3000L) {
             // Restart current track if played more than 3 seconds
             exoPlayer.seekTo(0)
         } else {
+            if (playlist.size <= 1) {
+                scope.launch {
+                    try {
+                        val app = context.applicationContext as? com.hana.spindle.SpindleApp ?: return@launch
+                        val allSongs = app.database.songDao().getAllSongs().firstOrNull() ?: return@launch
+                        if (allSongs.isNotEmpty()) {
+                            val currentSongPath = playlist.getOrNull(currentIndex)?.path
+                            val dbIndex = allSongs.indexOfFirst { it.path == currentSongPath }
+                            val prevIndex = if (dbIndex > 0) dbIndex - 1 else allSongs.size - 1
+                            playlist = allSongs.toMutableList()
+                            currentIndex = prevIndex
+                            playCurrentTrack()
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e("AudioEngine", "playPrevious expand playlist error", e)
+                    }
+                }
+                return
+            }
             currentIndex = if (currentIndex - 1 < 0) playlist.size - 1 else currentIndex - 1
             playCurrentTrack()
+        }
+    }
+
+    fun playNextAlbum() {
+        if (playlist.isEmpty()) return
+        val currentAlbum = playlist.getOrNull(currentIndex)?.album ?: ""
+        // Search forward in playlist for the first track belonging to a different album
+        for (i in 1 until playlist.size) {
+            val candidateIndex = (currentIndex + i) % playlist.size
+            if (playlist[candidateIndex].album != currentAlbum) {
+                currentIndex = candidateIndex
+                playCurrentTrack()
+                return
+            }
+        }
+        // If current playlist only has 1 album, fetch all songs from Room DB
+        scope.launch {
+            try {
+                val app = context.applicationContext as? com.hana.spindle.SpindleApp ?: return@launch
+                val allSongs = app.database.songDao().getAllSongs().firstOrNull() ?: return@launch
+                if (allSongs.isNotEmpty()) {
+                    val currentSongPath = playlist.getOrNull(currentIndex)?.path
+                    val dbIndex = allSongs.indexOfFirst { it.path == currentSongPath }.coerceAtLeast(0)
+                    for (i in 1 until allSongs.size) {
+                        val candidateIndex = (dbIndex + i) % allSongs.size
+                        if (allSongs[candidateIndex].album != currentAlbum) {
+                            playlist = allSongs.toMutableList()
+                            currentIndex = candidateIndex
+                            playCurrentTrack()
+                            return@launch
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("AudioEngine", "playNextAlbum error", e)
+            }
+        }
+    }
+
+    fun playPreviousAlbum() {
+        if (playlist.isEmpty()) return
+        val currentAlbum = playlist.getOrNull(currentIndex)?.album ?: ""
+        for (i in 1 until playlist.size) {
+            val candidateIndex = if (currentIndex - i < 0) playlist.size + (currentIndex - i) else currentIndex - i
+            if (playlist[candidateIndex].album != currentAlbum) {
+                val targetAlbum = playlist[candidateIndex].album
+                var firstTrackIndex = candidateIndex
+                while (firstTrackIndex > 0 && playlist[firstTrackIndex - 1].album == targetAlbum) {
+                    firstTrackIndex--
+                }
+                currentIndex = firstTrackIndex
+                playCurrentTrack()
+                return
+            }
+        }
+        scope.launch {
+            try {
+                val app = context.applicationContext as? com.hana.spindle.SpindleApp ?: return@launch
+                val allSongs = app.database.songDao().getAllSongs().firstOrNull() ?: return@launch
+                if (allSongs.isNotEmpty()) {
+                    val currentSongPath = playlist.getOrNull(currentIndex)?.path
+                    val dbIndex = allSongs.indexOfFirst { it.path == currentSongPath }.coerceAtLeast(0)
+                    for (i in 1 until allSongs.size) {
+                        val candidateIndex = if (dbIndex - i < 0) allSongs.size + (dbIndex - i) else dbIndex - i
+                        if (allSongs[candidateIndex].album != currentAlbum) {
+                            val targetAlbum = allSongs[candidateIndex].album
+                            var firstTrackIndex = candidateIndex
+                            while (firstTrackIndex > 0 && allSongs[firstTrackIndex - 1].album == targetAlbum) {
+                                firstTrackIndex--
+                            }
+                            playlist = allSongs.toMutableList()
+                            currentIndex = firstTrackIndex
+                            playCurrentTrack()
+                            return@launch
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("AudioEngine", "playPreviousAlbum error", e)
+            }
         }
     }
 

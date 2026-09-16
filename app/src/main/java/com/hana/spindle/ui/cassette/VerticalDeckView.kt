@@ -3,6 +3,8 @@ package com.hana.spindle.ui.cassette
 import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.*
+import android.os.Handler
+import android.os.Looper
 import android.os.SystemClock
 import android.util.AttributeSet
 import android.view.HapticFeedbackConstants
@@ -92,6 +94,11 @@ class VerticalDeckView @JvmOverloads constructor(
     var onPlayClicked: (() -> Unit)? = null
     var onPrevClicked: (() -> Unit)? = null
     var onNextClicked: (() -> Unit)? = null
+    var onNextAlbumClicked: (() -> Unit)? = null
+    var onPrevAlbumClicked: (() -> Unit)? = null
+    var onHoldSeekForward: (() -> Unit)? = null
+    var onHoldSeekRewind: (() -> Unit)? = null
+    var onHoldSeekEnd: (() -> Unit)? = null
     var onRewindClicked: (() -> Unit)? = null
     var onFastForwardClicked: (() -> Unit)? = null
     var onEjectClicked: (() -> Unit)? = null
@@ -100,8 +107,12 @@ class VerticalDeckView @JvmOverloads constructor(
     // Touch & interaction tracking
     private var isDraggingProgress = false
     private var pressedButtonIndex = -1 // 0: REW, 1: FWD, 2: PLAY, 3: EJECT
-    private var lastRewindTapTime = 0L
-    private var lastFwdTapTime = 0L
+    private val gestureHandler = Handler(Looper.getMainLooper())
+    private var holdSeekRunnable: Runnable? = null
+    private var pendingSingleTapRunnable: Runnable? = null
+    private var isHoldSeeking = false
+    private var lastTapButtonIndex = -1
+    private var lastTapTime = 0L
 
     // Kinetic Animation State
     private var rotationAnimator: ValueAnimator? = null
@@ -519,54 +530,64 @@ class VerticalDeckView @JvmOverloads constructor(
 
         chassisRect.set(0f, 0f, w.toFloat(), h.toFloat())
 
-        // Cassette Compartment Slot: Fills from 2.0% to 77.5% height
-        val slotMarginH = w * 0.030f
+        // 1. Precise 1.6:1 (height:width) Compact Cassette Proportion
+        val maxCh = h * 0.725f
+        val maxCw = w * 0.860f
+        var cw = maxCw
+        var ch = cw * 1.60f
+        if (ch > maxCh) {
+            ch = maxCh
+            cw = ch / 1.60f
+        }
+
+        val cLeft = (w - cw) * 0.5f
+        val cTop = h * 0.024f
+        cassetteRect.set(cLeft, cTop, cLeft + cw, cTop + ch)
+
+        val slotInset = w * 0.008f
         cassetteSlotRect.set(
-            slotMarginH,
-            h * 0.020f,
-            w - slotMarginH,
-            h * 0.775f
+            cLeft - slotInset,
+            cTop - slotInset,
+            cLeft + cw + slotInset,
+            cTop + ch + slotInset
         )
 
-        // Cassette Shell inside the slot
-        val shellInset = w * 0.008f
-        cassetteRect.set(
-            cassetteSlotRect.left + shellInset,
-            cassetteSlotRect.top + shellInset,
-            cassetteSlotRect.right - shellInset,
-            cassetteSlotRect.bottom - shellInset
-        )
+        // 2. Central Transparent Window Frame: Sized to the EXACT height of the spindles
+        val reelCenterX = cassetteRect.centerX()
+        val winW = cw * 0.44f
+        baseHubDimension = winW * 0.88f
+        hubOuterRadius = baseHubDimension * 0.33f
+        val maxTapeRadius = hubOuterRadius * 1.25f
 
-        val cw = cassetteRect.width()
-        val ch = cassetteRect.height()
+        // Position the two spindles vertically in the upper region of the cassette
+        val hubDistance = maxTapeRadius * 2.15f
+        val topSpindleY = cassetteRect.top + ch * 0.175f
+        val bottomSpindleY = topSpindleY + hubDistance
 
-        // Center Transparent Acrylic Window Panel (Framing both spools, matching reference ratio)
-        val winLeft = cassetteRect.left + cw * 0.245f
-        val winRight = cassetteRect.left + cw * 0.675f
-        val winTop = cassetteRect.top + ch * 0.048f
-        val winBottom = cassetteRect.bottom - ch * 0.048f
+        topHubCenter.set(reelCenterX, topSpindleY)
+        bottomHubCenter.set(reelCenterX, bottomSpindleY)
+
+        // Window tightly frames the two spindles (same height as the spindles)
+        val winPaddingV = cw * 0.018f
+        val winTop = topHubCenter.y - maxTapeRadius - winPaddingV
+        val winBottom = bottomHubCenter.y + maxTapeRadius + winPaddingV
+        val winLeft = reelCenterX - winW * 0.5f
+        val winRight = reelCenterX + winW * 0.5f
         centerWindowRect.set(winLeft, winTop, winRight, winBottom)
 
-        // Baseline right-alignment margin for left column typography directly next to clear window frame
-        textRightMarginX = centerWindowRect.left - cw * 0.022f
+        // Baseline margin for left column typography directly next to clear window frame
+        textRightMarginX = centerWindowRect.left - cw * 0.024f
 
-        // Reels Center Coordinates (Centered horizontally inside the central window panel)
-        val reelCenterX = centerWindowRect.centerX()
-        topHubCenter.set(reelCenterX, centerWindowRect.top + centerWindowRect.height() * 0.26f)
-        bottomHubCenter.set(reelCenterX, centerWindowRect.top + centerWindowRect.height() * 0.65f)
-
-        baseHubDimension = centerWindowRect.width() * 0.88f
-        hubOuterRadius = baseHubDimension * 0.33f
-
-        // Head opening on the right side of cassette
+        // Head opening on the right side of cassette (centered between spindles)
         val headLeft = cassetteRect.right - cw * 0.095f
         val headRight = cassetteRect.right - cw * 0.018f
-        val headH = ch * 0.16f
+        val headMidY = (topHubCenter.y + bottomHubCenter.y) * 0.5f
+        val headH = ch * 0.12f
         headCavityRect.set(
             headLeft,
-            cassetteRect.centerY() - headH * 0.5f,
+            headMidY - headH * 0.5f,
             headRight,
-            cassetteRect.centerY() + headH * 0.5f
+            headMidY + headH * 0.5f
         )
 
         // Pre-compute bronze beryllium leaf spring plate
@@ -583,15 +604,15 @@ class VerticalDeckView @JvmOverloads constructor(
 
         // Pre-compute right trapezoid contour
         trapPath.reset()
-        trapPath.moveTo(cassetteRect.left + cw * 0.72f, cassetteRect.top + ch * 0.030f)
-        trapPath.lineTo(cassetteRect.right - cw * 0.035f, cassetteRect.top + ch * 0.14f)
-        trapPath.lineTo(cassetteRect.right - cw * 0.035f, cassetteRect.bottom - ch * 0.14f)
-        trapPath.lineTo(cassetteRect.left + cw * 0.72f, cassetteRect.bottom - ch * 0.030f)
+        trapPath.moveTo(cassetteRect.left + cw * 0.72f, topHubCenter.y - hubOuterRadius * 0.70f)
+        trapPath.lineTo(cassetteRect.right - cw * 0.035f, topHubCenter.y + hubOuterRadius * 0.25f)
+        trapPath.lineTo(cassetteRect.right - cw * 0.035f, bottomHubCenter.y - hubOuterRadius * 0.25f)
+        trapPath.lineTo(cassetteRect.left + cw * 0.72f, bottomHubCenter.y + hubOuterRadius * 0.70f)
 
-        // Pre-compute threaded analog magnetic tape path
+        // Pre-compute threaded analog magnetic tape path & guide rollers
         val rollerX = cassetteRect.right - cw * 0.075f
-        val rollerYTop = cassetteRect.top + ch * 0.09f
-        val rollerYBottom = cassetteRect.bottom - ch * 0.09f
+        val rollerYTop = topHubCenter.y - hubOuterRadius * 0.35f
+        val rollerYBottom = bottomHubCenter.y + hubOuterRadius * 0.35f
         threadedTapePath.reset()
         threadedTapePath.moveTo(topHubCenter.x, topHubCenter.y)
         threadedTapePath.lineTo(rollerX, rollerYTop)
@@ -606,28 +627,29 @@ class VerticalDeckView @JvmOverloads constructor(
         acrylicSheenPath.lineTo(cassetteRect.left, cassetteRect.top + ch * 0.15f)
         acrylicSheenPath.close()
 
-        // Text Sizing for vertical left column
-        titleTextPaint.textSize = w * 0.035f
-        artistTextPaint.textSize = w * 0.024f
-        spindleLogoPaint.textSize = w * 0.044f
-        spindleSubtextPaint.textSize = w * 0.022f
-        cassetteBadgePaint.textSize = w * 0.018f
+        // Text Sizing
+        titleTextPaint.textSize = cw * 0.046f
+        artistTextPaint.textSize = cw * 0.030f
+        spindleLogoPaint.textSize = cw * 0.046f
+        spindleSubtextPaint.textSize = cw * 0.024f
+        cassetteBadgePaint.textSize = cw * 0.018f
 
         // Dual Status LEDs directly below cassette slot (PEAK Red, RUN Green)
         val ledW = w * 0.070f
         val ledH = h * 0.009f
-        val ledY = cassetteSlotRect.bottom + h * 0.004f
+        val ledY = cassetteSlotRect.bottom + h * 0.006f
         val ledGap = w * 0.022f
         ledPeakRect.set(w * 0.73f, ledY, w * 0.73f + ledW, ledY + ledH)
         ledRunRect.set(ledPeakRect.right + ledGap, ledY, ledPeakRect.right + ledGap + ledW, ledY + ledH)
 
-        // 12-LED Progress Bar: 79.5% to 82.2% height
+        // 12-LED Progress Bar: directly below status LEDs
         val ledMarginH = w * 0.10f
+        val barTop = (ledY + ledH + h * 0.008f).coerceAtLeast(h * 0.792f)
         ledBarRect.set(
             ledMarginH,
-            h * 0.795f,
+            barTop,
             w - ledMarginH,
-            h * 0.822f
+            barTop + h * 0.027f
         )
 
         // Bottom 4 Mechanical Keys: 84.5% to 96.5% height
@@ -670,8 +692,8 @@ class VerticalDeckView @JvmOverloads constructor(
         // 4. Draw Top-Left 7-Segment Digital Clock (Rotated -90° Vertical)
         drawVerticalDigitalClock(canvas)
 
-        // 5. Draw Middle Song Title and Artist • Duration (Rotated -90° Vertical)
-        drawVerticalTrackInfo(canvas)
+        // 5. Draw Song Title and Artist • Duration Horizontally Below Clear Window
+        drawHorizontalTrackInfo(canvas)
 
         // 6. Draw Bottom-Left SPINDLE Branding (Rotated -90° Vertical)
         drawVerticalSpindleBranding(canvas)
@@ -750,7 +772,7 @@ class VerticalDeckView @JvmOverloads constructor(
         drawTorxScrew(canvas, cassetteRect.right - csOffsetX, cassetteRect.bottom - csOffsetY, cScrewR, 60f)
 
         // Center right screw next to tape head opening
-        drawTorxScrew(canvas, cassetteRect.right - cw * 0.11f, cassetteRect.centerY(), cScrewR * 0.9f, 30f)
+        drawTorxScrew(canvas, cassetteRect.right - cw * 0.11f, headCavityRect.centerY(), cScrewR * 0.9f, 30f)
 
         // Trapezoid faceplate contour on the right side
         canvas.drawPath(trapPath, cassetteGuidePaint)
@@ -758,8 +780,8 @@ class VerticalDeckView @JvmOverloads constructor(
         // Internal Guide Roller Circles (Top right and bottom right)
         val rollerR = cw * 0.024f
         val rollerX = cassetteRect.right - cw * 0.075f
-        val rollerYTop = cassetteRect.top + ch * 0.09f
-        val rollerYBottom = cassetteRect.bottom - ch * 0.09f
+        val rollerYTop = topHubCenter.y - hubOuterRadius * 0.35f
+        val rollerYBottom = bottomHubCenter.y + hubOuterRadius * 0.35f
 
         canvas.drawCircle(rollerX, rollerYTop, rollerR, screwHeadPaint)
         canvas.drawCircle(rollerX, rollerYTop, rollerR * 0.5f, screwWellPaint)
@@ -1069,30 +1091,30 @@ class VerticalDeckView @JvmOverloads constructor(
     }
 
     /**
-     * Draws the track title and artist • duration centered vertically along the cassette spine.
-     * Running vertically along the left column (Rotated -90° Vertical), baseline aligned with clear window.
+     * Draws the track title and artist • duration horizontally centered below the clear window frame.
      */
-    private fun drawVerticalTrackInfo(canvas: Canvas) {
-        val originX = textRightMarginX - titleTextPaint.textSize * 1.18f
-        val originY = cassetteRect.centerY()
-        val maxAvailableLength = cassetteRect.height() * 0.38f
+    private fun drawHorizontalTrackInfo(canvas: Canvas) {
+        val textCenterX = cassetteRect.centerX()
+        val areaTop = centerWindowRect.bottom + cassetteRect.height() * 0.018f
+        val areaBottom = cassetteRect.bottom - cassetteRect.height() * 0.030f
+        val areaCenterY = (areaTop + areaBottom) * 0.5f
+
+        val titleY = areaCenterY - artistTextPaint.textSize * 0.35f
+        val artistY = areaCenterY + artistTextPaint.textSize * 1.15f
+        val maxAvailableWidth = cassetteRect.width() * 0.88f
 
         canvas.save()
-        canvas.translate(originX, originY)
-        canvas.rotate(-90f)
-
-        // Clip symmetrically around the center (0,0)
         tempRectF.set(
-            -maxAvailableLength * 0.5f,
-            -titleTextPaint.textSize * 1.5f,
-            maxAvailableLength * 0.5f,
-            titleTextPaint.textSize * 2.5f
+            textCenterX - maxAvailableWidth * 0.5f,
+            areaTop,
+            textCenterX + maxAvailableWidth * 0.5f,
+            areaBottom + artistTextPaint.textSize * 0.5f
         )
         canvas.clipRect(tempRectF)
 
-        // Line 1: Song Title (Centered at x = 0)
+        // Line 1: Song Title (Centered horizontally)
         val measuredTitleW = titleTextPaint.measureText(trackTitle)
-        if (measuredTitleW > maxAvailableLength && isPlaying) {
+        if (measuredTitleW > maxAvailableWidth && isPlaying) {
             val now = SystemClock.uptimeMillis()
             if (lastMarqueeTime != 0L) {
                 val dt = (now - lastMarqueeTime) / 1000f
@@ -1104,35 +1126,34 @@ class VerticalDeckView @JvmOverloads constructor(
             }
             lastMarqueeTime = now
             titleTextPaint.textAlign = Paint.Align.LEFT
-            canvas.drawText(trackTitle, -maxAvailableLength * 0.5f - marqueeOffset, 0f, titleTextPaint)
-            canvas.drawText(trackTitle, -maxAvailableLength * 0.5f - marqueeOffset + measuredTitleW + 40f, 0f, titleTextPaint)
+            val startX = textCenterX - maxAvailableWidth * 0.5f - marqueeOffset
+            canvas.drawText(trackTitle, startX, titleY, titleTextPaint)
+            canvas.drawText(trackTitle, startX + measuredTitleW + 40f, titleY, titleTextPaint)
             titleTextPaint.textAlign = Paint.Align.CENTER
-        } else if (measuredTitleW > maxAvailableLength) {
-            val budget = maxAvailableLength - titleTextPaint.measureText("…")
+        } else if (measuredTitleW > maxAvailableWidth) {
+            val budget = maxAvailableWidth - titleTextPaint.measureText("…")
             var trimmed = trackTitle
             while (trimmed.isNotEmpty() && titleTextPaint.measureText(trimmed) > budget) {
                 trimmed = trimmed.dropLast(1)
             }
-            canvas.drawText("${trimmed.trimEnd()}…", 0f, 0f, titleTextPaint)
+            canvas.drawText("${trimmed.trimEnd()}…", textCenterX, titleY, titleTextPaint)
         } else {
-            canvas.drawText(trackTitle, 0f, 0f, titleTextPaint)
+            canvas.drawText(trackTitle, textCenterX, titleY, titleTextPaint)
         }
 
-        // Line 2: Artist • Duration (shifted in +Y direction landing right at textRightMarginX)
+        // Line 2: Artist • Duration (Centered horizontally)
         val durStr = formatTime(durationMs)
-        val subtitle = "$artistName • $durStr"
-        val line2Y = titleTextPaint.textSize * 1.18f
-
+        val subtitle = if (artistName.isNotEmpty() && artistName != "Unknown Artist") "$artistName • $durStr" else durStr
         val measuredSubW = artistTextPaint.measureText(subtitle)
-        if (measuredSubW > maxAvailableLength) {
-            val budgetForArtist = maxAvailableLength - artistTextPaint.measureText("… • $durStr")
+        if (measuredSubW > maxAvailableWidth) {
+            val budgetForArtist = maxAvailableWidth - artistTextPaint.measureText("… • $durStr")
             var trimmedArtist = artistName
             while (trimmedArtist.isNotEmpty() && artistTextPaint.measureText(trimmedArtist) > budgetForArtist) {
                 trimmedArtist = trimmedArtist.dropLast(1)
             }
-            canvas.drawText("${trimmedArtist.trimEnd()}… • $durStr", 0f, line2Y, artistTextPaint)
+            canvas.drawText("${trimmedArtist.trimEnd()}… • $durStr", textCenterX, artistY, artistTextPaint)
         } else {
-            canvas.drawText(subtitle, 0f, line2Y, artistTextPaint)
+            canvas.drawText(subtitle, textCenterX, artistY, artistTextPaint)
         }
 
         canvas.restore()
@@ -1274,6 +1295,31 @@ class VerticalDeckView @JvmOverloads constructor(
                 if (pressedButtonIndex != -1) {
                     performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                     invalidate()
+
+                    // If REW (0) or FWD (1), schedule hold-seeking runnable after 350ms
+                    if (pressedButtonIndex == 0 || pressedButtonIndex == 1) {
+                        val btnIndex = pressedButtonIndex
+                        holdSeekRunnable?.let { gestureHandler.removeCallbacks(it) }
+                        isHoldSeeking = false
+                        holdSeekRunnable = object : Runnable {
+                            override fun run() {
+                                isHoldSeeking = true
+                                if (btnIndex == 1) {
+                                    onHoldSeekForward?.invoke()
+                                    topReelAngle = (topReelAngle + 22f) % 360f
+                                    bottomReelAngle = (bottomReelAngle + 22f) % 360f
+                                } else {
+                                    onHoldSeekRewind?.invoke()
+                                    topReelAngle = (topReelAngle - 22f + 360f) % 360f
+                                    bottomReelAngle = (bottomReelAngle - 22f + 360f) % 360f
+                                }
+                                performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                invalidate()
+                                gestureHandler.postDelayed(this, 120L)
+                            }
+                        }
+                        gestureHandler.postDelayed(holdSeekRunnable!!, 350L)
+                    }
                     return true
                 }
             }
@@ -1299,30 +1345,52 @@ class VerticalDeckView @JvmOverloads constructor(
 
                 if (clickedIndex != -1) {
                     performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                    val now = SystemClock.uptimeMillis()
-                    when (clickedIndex) {
-                        0 -> { // REW
-                            if (btnRewRect.contains(x, y)) {
-                                if (now - lastRewindTapTime < 350L) {
-                                    lastRewindTapTime = 0L
-                                    onPrevClicked?.invoke()
-                                } else {
-                                    lastRewindTapTime = now
-                                    onRewindClicked?.invoke()
-                                }
-                            }
+
+                    if (clickedIndex == 0 || clickedIndex == 1) {
+                        holdSeekRunnable?.let { gestureHandler.removeCallbacks(it) }
+                        holdSeekRunnable = null
+
+                        if (isHoldSeeking) {
+                            isHoldSeeking = false
+                            onHoldSeekEnd?.invoke()
+                            return true
                         }
-                        1 -> { // FWD
-                            if (btnFwdRect.contains(x, y)) {
-                                if (now - lastFwdTapTime < 350L) {
-                                    lastFwdTapTime = 0L
+
+                        val now = SystemClock.uptimeMillis()
+                        if (lastTapButtonIndex == clickedIndex && (now - lastTapTime) < 280L) {
+                            // Double tap: Skip Album!
+                            pendingSingleTapRunnable?.let { gestureHandler.removeCallbacks(it) }
+                            pendingSingleTapRunnable = null
+                            lastTapButtonIndex = -1
+                            lastTapTime = 0L
+
+                            if (clickedIndex == 1) {
+                                onNextAlbumClicked?.invoke()
+                            } else {
+                                onPrevAlbumClicked?.invoke()
+                            }
+                            performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                        } else {
+                            // First tap: Wait for possible double tap, otherwise trigger next/previous song!
+                            lastTapButtonIndex = clickedIndex
+                            lastTapTime = now
+
+                            pendingSingleTapRunnable?.let { gestureHandler.removeCallbacks(it) }
+                            pendingSingleTapRunnable = Runnable {
+                                if (clickedIndex == 1) {
                                     onNextClicked?.invoke()
                                 } else {
-                                    lastFwdTapTime = now
-                                    onFastForwardClicked?.invoke()
+                                    onPrevClicked?.invoke()
                                 }
+                                lastTapButtonIndex = -1
+                                pendingSingleTapRunnable = null
                             }
+                            gestureHandler.postDelayed(pendingSingleTapRunnable!!, 260L)
                         }
+                        return true
+                    }
+
+                    when (clickedIndex) {
                         2 -> if (btnPlayRect.contains(x, y)) onPlayClicked?.invoke()
                         3 -> if (btnEjectRect.contains(x, y)) onEjectClicked?.invoke()
                     }
@@ -1333,6 +1401,15 @@ class VerticalDeckView @JvmOverloads constructor(
             MotionEvent.ACTION_CANCEL -> {
                 isDraggingProgress = false
                 parent?.requestDisallowInterceptTouchEvent(false)
+                holdSeekRunnable?.let { gestureHandler.removeCallbacks(it) }
+                holdSeekRunnable = null
+                if (isHoldSeeking) {
+                    isHoldSeeking = false
+                    onHoldSeekEnd?.invoke()
+                }
+                pendingSingleTapRunnable?.let { gestureHandler.removeCallbacks(it) }
+                pendingSingleTapRunnable = null
+                lastTapButtonIndex = -1
                 pressedButtonIndex = -1
                 invalidate()
             }
@@ -1399,6 +1476,8 @@ class VerticalDeckView @JvmOverloads constructor(
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
+        holdSeekRunnable?.let { gestureHandler.removeCallbacks(it) }
+        pendingSingleTapRunnable?.let { gestureHandler.removeCallbacks(it) }
         headAnimator?.cancel()
         headAnimator = null
         stopRotation()
