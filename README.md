@@ -54,24 +54,24 @@ Modern smartphones are overloaded with algorithmic distractions, background trac
       <td width="50%" align="center">
         <b>Flagship Sony Walkman Cassette Deck</b><br/>
         <sub>Centered clear spindle window, column-aligned time, format capsule & kinetic spools</sub><br/><br/>
-        <img src="docs/assets/screenshot_walkman_home.png" width="320" alt="Sony Walkman Cassette Deck"/>
+        <img src="docs/assets/screenshot_walkman_home.png?v=1.2.0" width="320" alt="Sony Walkman Cassette Deck"/>
       </td>
       <td width="50%" align="center">
         <b>Dedicated Single Audio Now Playing</b><br/>
         <sub>Minimalist circular cover, radial arc scrubber, dynamic waveform & lyrics drawer</sub><br/><br/>
-        <img src="docs/assets/screenshot_now_playing.png" width="320" alt="Single Audio Now Playing Screen"/>
+        <img src="docs/assets/screenshot_now_playing.png?v=1.2.0" width="320" alt="Single Audio Now Playing Screen"/>
       </td>
     </tr>
     <tr>
       <td width="50%" align="center">
         <b>Audiophile Music Catalog (⏏ EJECT)</b><br/>
         <sub>A-Z alphabet fast scroller, sorting chips, format filters & floating mini-player</sub><br/><br/>
-        <img src="docs/assets/screenshot_catalog.png" width="320" alt="Audiophile Music Catalog"/>
+        <img src="docs/assets/screenshot_catalog.png?v=1.2.0" width="320" alt="Audiophile Music Catalog"/>
       </td>
       <td width="50%" align="center">
         <b>Braun / Dieter Rams Online FM Radio</b><br/>
         <sub>7-ring acoustic grille, 3D cylindrical tuning roller & backlit vintage LCD</sub><br/><br/>
-        <img src="docs/assets/screenshot_braun_radio.png" width="320" alt="Braun Online FM Radio"/>
+        <img src="docs/assets/screenshot_braun_radio.png?v=1.2.0" width="320" alt="Braun Online FM Radio"/>
       </td>
     </tr>
   </table>
