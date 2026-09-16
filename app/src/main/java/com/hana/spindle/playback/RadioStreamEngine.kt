@@ -1,13 +1,18 @@
 package com.hana.spindle.playback
 
 import android.content.Context
+import android.util.Log
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import com.hana.spindle.SpindleApp
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,14 +30,16 @@ data class RadioPlaybackState(
     val isPlaying: Boolean = false,
     val isBuffering: Boolean = false,
     val currentStation: RadioStation? = null,
-    val currentFrequency: Float = 98.2f,
+    val currentFrequency: Float = 88.5f,
     val volume: Float = 0.8f,
     val isMuted: Boolean = false
 )
 
-class RadioStreamEngine(context: Context) {
+class RadioStreamEngine(private val context: Context) {
 
     companion object {
+        private const val TAG = "RadioStreamEngine"
+
         val PRESET_STATIONS = listOf(
             RadioStation(
                 frequencyMhz = 88.5f,
@@ -46,14 +53,14 @@ class RadioStreamEngine(context: Context) {
                 callsign = "ANIMEFM",
                 rdsName = "ANIMEFM RADIO • 24/7 ANIME OST & J-POP",
                 genre = "Anime & J-Pop",
-                streamUrl = "https://listen.moe/stream"
+                streamUrl = "https://listen.moe/fallback"
             ),
             RadioStation(
                 frequencyMhz = 98.6f,
                 callsign = "INITIAL D",
                 rdsName = "INITIAL D WORLD RADIO • EUROBEAT SPEEDWAY",
                 genre = "Eurobeat / High Octane",
-                streamUrl = "https://stream.nightride.fm/nightride.m4a"
+                streamUrl = "https://stream.laut.fm/eurobeat"
             ),
             RadioStation(
                 frequencyMhz = 104.2f,
@@ -81,17 +88,28 @@ class RadioStreamEngine(context: Context) {
             .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
             .build()
 
-        // Fast-buffering LoadControl for live internet radio (3.5 sec max)
+        // Robust HTTP data source supporting Icecast/Shoutcast redirects & custom agent
+        val httpDataSourceFactory = DefaultHttpDataSource.Factory()
+            .setUserAgent("Spindle/1.0 (Linux; Android DAP) ExoPlayer")
+            .setConnectTimeoutMs(10000)
+            .setReadTimeoutMs(15000)
+            .setAllowCrossProtocolRedirects(true)
+
+        val dataSourceFactory = DefaultDataSource.Factory(context, httpDataSourceFactory)
+        val mediaSourceFactory = DefaultMediaSourceFactory(dataSourceFactory)
+
+        // Fast-buffering LoadControl for live internet radio
         val loadControl = DefaultLoadControl.Builder()
             .setBufferDurationsMs(
-                1500,  // Min buffer ms
-                5000,  // Max buffer ms
-                1000,  // Playback buffer ms
-                1500   // Rebuffer ms
+                2000,  // Min buffer ms
+                8000,  // Max buffer ms
+                1500,  // Playback buffer ms
+                2000   // Rebuffer ms
             )
             .build()
 
         exoPlayer = ExoPlayer.Builder(context)
+            .setMediaSourceFactory(mediaSourceFactory)
             .setAudioAttributes(audioAttributes, true)
             .setLoadControl(loadControl)
             .build().apply {
@@ -99,15 +117,18 @@ class RadioStreamEngine(context: Context) {
                 volume = 0.8f
                 addListener(object : Player.Listener {
                     override fun onIsPlayingChanged(isPlaying: Boolean) {
+                        Log.i(TAG, "onIsPlayingChanged: $isPlaying")
                         _radioState.value = _radioState.value.copy(isPlaying = isPlaying)
                     }
 
                     override fun onPlaybackStateChanged(playbackState: Int) {
                         val isBuffering = (playbackState == Player.STATE_BUFFERING) && exoPlayer.playWhenReady
+                        Log.i(TAG, "onPlaybackStateChanged: state=$playbackState, isBuffering=$isBuffering, playWhenReady=${exoPlayer.playWhenReady}")
                         _radioState.value = _radioState.value.copy(isBuffering = isBuffering)
                     }
 
                     override fun onPlayerError(error: PlaybackException) {
+                        Log.e(TAG, "onPlayerError: ${error.errorCodeName} - ${error.message}", error)
                         _radioState.value = _radioState.value.copy(isPlaying = false, isBuffering = false)
                     }
                 })
@@ -116,13 +137,16 @@ class RadioStreamEngine(context: Context) {
 
     fun tuneTo(frequency: Float) {
         val matchingStation = findNearestStation(frequency)
+        val prevStation = _radioState.value.currentStation
         _radioState.value = _radioState.value.copy(
             currentFrequency = frequency,
             currentStation = matchingStation
         )
 
         if (matchingStation != null) {
-            playStation(matchingStation)
+            if (prevStation?.frequencyMhz != matchingStation.frequencyMhz || (!exoPlayer.isPlaying && !_radioState.value.isBuffering)) {
+                playStation(matchingStation)
+            }
         } else {
             // Static / White Noise or silence between stations
             pause()
@@ -130,12 +154,26 @@ class RadioStreamEngine(context: Context) {
     }
 
     fun playStation(station: RadioStation) {
+        Log.i(TAG, "playStation: ${station.callsign} (${station.frequencyMhz} MHz) -> ${station.streamUrl}")
+        try {
+            (context.applicationContext as? SpindleApp)?.audioEngine?.pause()
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not pause audioEngine: ${e.message}")
+        }
         _radioState.value = _radioState.value.copy(
             currentStation = station,
             currentFrequency = station.frequencyMhz,
             isBuffering = true
         )
-        val mediaItem = MediaItem.fromUri(station.streamUrl)
+        val mediaItem = MediaItem.Builder()
+            .setUri(station.streamUrl)
+            .setLiveConfiguration(
+                MediaItem.LiveConfiguration.Builder()
+                    .setMaxPlaybackSpeed(1.02f)
+                    .setMinPlaybackSpeed(0.98f)
+                    .build()
+            )
+            .build()
         exoPlayer.setMediaItem(mediaItem)
         exoPlayer.prepare()
         exoPlayer.play()
@@ -145,11 +183,13 @@ class RadioStreamEngine(context: Context) {
         if (exoPlayer.isPlaying || _radioState.value.isBuffering) {
             pause()
         } else {
-            _radioState.value.currentStation?.let { playStation(it) }
+            val targetStation = _radioState.value.currentStation ?: PRESET_STATIONS[0]
+            playStation(targetStation)
         }
     }
 
     fun pause() {
+        Log.i(TAG, "pause() called: stopping exoPlayer")
         exoPlayer.stop()
         _radioState.value = _radioState.value.copy(isPlaying = false, isBuffering = false)
     }

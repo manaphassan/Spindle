@@ -110,6 +110,11 @@ class AudioEngine(
 
     private fun playCurrentTrack() {
         if (currentIndex !in playlist.indices) return
+        try {
+            (context.applicationContext as? com.hana.spindle.SpindleApp)?.radioStreamEngine?.pause()
+        } catch (e: Exception) {
+            // ignore
+        }
         val song = playlist[currentIndex]
 
         val mediaItem = MediaItem.fromUri(Uri.fromFile(File(song.path)))
@@ -138,7 +143,7 @@ class AudioEngine(
         if (exoPlayer.isPlaying) {
             exoPlayer.pause()
         } else {
-            exoPlayer.play()
+            play()
         }
     }
 
@@ -147,6 +152,11 @@ class AudioEngine(
     }
 
     fun play() {
+        try {
+            (context.applicationContext as? com.hana.spindle.SpindleApp)?.radioStreamEngine?.pause()
+        } catch (e: Exception) {
+            // ignore
+        }
         exoPlayer.play()
     }
 
