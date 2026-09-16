@@ -7,6 +7,18 @@ import android.os.Build
 
 class SpindleApp : Application() {
 
+    val database: com.hana.spindle.data.db.SpindleDatabase by lazy {
+        com.hana.spindle.data.db.SpindleDatabase.getInstance(this)
+    }
+
+    val imageLoader: com.hana.spindle.data.ImageLoader by lazy {
+        com.hana.spindle.data.ImageLoader(this)
+    }
+
+    val musicScanner: com.hana.spindle.data.MusicScanner by lazy {
+        com.hana.spindle.data.MusicScanner(this, database.songDao())
+    }
+
     companion object {
         const val PLAYBACK_CHANNEL_ID = "spindle_playback_channel"
         lateinit var instance: SpindleApp
