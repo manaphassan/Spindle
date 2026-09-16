@@ -17,13 +17,17 @@
         android:paddingHorizontal="16dp">
 
         <TextView
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:text="MUSIC CATALOG"
             android:textColor="@color/text_primary"
             android:textStyle="bold"
-            android:textSize="18sp" />
+            android:textSize="17sp" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
 
         <TextView
             android:id="@+id/tvScanStatus"
@@ -32,7 +36,9 @@
             android:text="Scan Ready"
             android:textColor="@color/vfd_emerald"
             android:textSize="11sp"
-            android:fontFamily="monospace" />
+            android:fontFamily="monospace"
+            android:maxLines="1"
+            android:ellipsize="end" />
     </LinearLayout>
 
     <!-- Catalog Tabs: SONGS / ALBUMS / FAVORITES -->

@@ -87,52 +87,67 @@
         <Button
             android:id="@+id/btnPrev"
             android:layout_width="0dp"
-            android:layout_height="56dp"
+            android:layout_height="52dp"
             android:layout_weight="1"
             android:layout_marginEnd="6dp"
             android:backgroundTint="@color/wm2_bezel_black"
             android:text="|&lt;&lt;"
             android:textColor="@color/white"
+            android:textSize="12sp"
             android:textStyle="bold"
+            android:padding="0dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
             app:cornerRadius="8dp" />
 
         <!-- PLAY / PAUSE -->
         <Button
             android:id="@+id/btnPlayPause"
             android:layout_width="0dp"
-            android:layout_height="56dp"
+            android:layout_height="52dp"
             android:layout_weight="1.2"
             android:layout_marginEnd="6dp"
             android:backgroundTint="@color/wm2_bezel_dark"
-            android:text="&gt; / ||"
+            android:text="&gt; PLAY"
             android:textColor="@color/wm2_play_green"
-            android:textSize="18sp"
+            android:textSize="12sp"
             android:textStyle="bold"
+            android:padding="0dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
             app:cornerRadius="8dp" />
 
         <!-- NEXT -->
         <Button
             android:id="@+id/btnNext"
             android:layout_width="0dp"
-            android:layout_height="56dp"
+            android:layout_height="52dp"
             android:layout_weight="1"
             android:layout_marginEnd="6dp"
             android:backgroundTint="@color/wm2_bezel_black"
             android:text="&gt;&gt;|"
             android:textColor="@color/white"
+            android:textSize="12sp"
             android:textStyle="bold"
+            android:padding="0dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
             app:cornerRadius="8dp" />
 
         <!-- EJECT -->
         <Button
             android:id="@+id/btnEject"
             android:layout_width="0dp"
-            android:layout_height="56dp"
+            android:layout_height="52dp"
             android:layout_weight="1"
             android:backgroundTint="@color/wm2_red_dark"
             android:text="EJECT"
             android:textColor="@color/white"
+            android:textSize="12sp"
             android:textStyle="bold"
+            android:padding="0dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
             app:cornerRadius="8dp" />
     </LinearLayout>
 

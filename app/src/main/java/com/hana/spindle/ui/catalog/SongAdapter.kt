@@ -26,7 +26,13 @@ class SongAdapter(
         val song = getItem(position)
         val b = holder.binding
 
-        b.tvTrackNumber.text = if (song.trackNumber > 0) String.format(Locale.US, "%02d", song.trackNumber) else "${position + 1}"
+        val rawTrack = song.trackNumber
+        val trackNum = if (rawTrack > 0) {
+            if (rawTrack >= 1000) rawTrack % 1000 else if (rawTrack > 100) rawTrack % 100 else rawTrack
+        } else {
+            position + 1
+        }
+        b.tvTrackNumber.text = String.format(Locale.US, "%02d", trackNum)
         b.tvSongTitle.text = song.title
         b.tvSongArtist.text = song.artist
 

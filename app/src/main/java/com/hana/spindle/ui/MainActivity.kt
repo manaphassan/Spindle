@@ -1,9 +1,15 @@
 package com.hana.spindle.ui
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.adapter.FragmentStateAdapter
@@ -22,6 +28,10 @@ import kotlinx.coroutines.launch
  */
 class MainActivity : AppCompatActivity() {
 
+    companion object {
+        private const val PERMISSION_REQUEST_CODE = 1001
+    }
+
     private lateinit var binding: ActivityMainBinding
     private lateinit var themeManager: ThemeManager
 
@@ -36,7 +46,7 @@ class MainActivity : AppCompatActivity() {
         setupViewPager()
         setupThemeObservation()
         setupBackNavigation()
-        triggerBackgroundScan(app)
+        checkAndRequestStoragePermissions(app)
     }
 
     private fun setupViewPager() {
@@ -92,7 +102,37 @@ class MainActivity : AppCompatActivity() {
         binding.viewPager.setCurrentItem(0, true)
     }
 
-    private fun triggerBackgroundScan(app: SpindleApp) {
+    private fun checkAndRequestStoragePermissions(app: SpindleApp) {
+        val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            Manifest.permission.READ_MEDIA_AUDIO
+        } else {
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        }
+
+        if (ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED) {
+            triggerBackgroundScan(app)
+        } else {
+            ActivityCompat.requestPermissions(this, arrayOf(permission), PERMISSION_REQUEST_CODE)
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        val app = application as SpindleApp
+        if (requestCode == PERMISSION_REQUEST_CODE && grantResults.isNotEmpty() &&
+            grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            Toast.makeText(this, "Storage access granted. Indexing library...", Toast.LENGTH_SHORT).show()
+            triggerBackgroundScan(app)
+        } else {
+            Toast.makeText(this, "Storage permission required to index music", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    fun triggerBackgroundScan(app: SpindleApp) {
         lifecycleScope.launch {
             app.musicScanner.scanAll()
         }

@@ -107,7 +107,7 @@ class PlayerFragment : Fragment() {
                         b.cassetteView.artistName = song.artist
                     }
 
-                    b.btnPlayPause.text = if (state.isPlaying) "|| PAUSE" else "> PLAY"
+                    b.btnPlayPause.text = if (state.isPlaying) "❚❚ PAUSE" else "▶ PLAY"
                     b.tvCurrentTime.text = formatTime(state.currentPositionMs)
                     b.tvTotalDuration.text = formatTime(state.durationMs)
                 }

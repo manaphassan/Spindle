@@ -11,11 +11,14 @@
     <!-- Track Number -->
     <TextView
         android:id="@+id/tvTrackNumber"
-        android:layout_width="32dp"
+        android:layout_width="wrap_content"
+        android:minWidth="28dp"
         android:layout_height="wrap_content"
         android:textColor="@color/text_secondary"
-        android:textSize="14sp"
+        android:textSize="13sp"
         android:fontFamily="monospace"
+        android:maxLines="1"
+        android:paddingEnd="6dp"
         android:gravity="center_vertical|start" />
 
     <!-- Title, Artist, and Format Tag -->

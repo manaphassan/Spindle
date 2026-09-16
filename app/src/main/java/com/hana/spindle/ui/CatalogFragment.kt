@@ -125,6 +125,11 @@ class CatalogFragment : Fragment() {
                     allSongsList = songs
                     songAdapter.submitList(songs)
                 }
+                _binding?.let { b ->
+                    if (!app.musicScanner.progress.value.isScanning) {
+                        b.tvScanStatus.text = if (songs.isNotEmpty()) "Library: ${songs.size} songs" else "Tap to Scan"
+                    }
+                }
             }
         }
     }
@@ -151,13 +156,21 @@ class CatalogFragment : Fragment() {
     }
 
     private fun observeScanProgress(app: SpindleApp) {
+        binding.tvScanStatus.setOnClickListener {
+            viewLifecycleOwner.lifecycleScope.launch {
+                app.musicScanner.scanAll()
+            }
+        }
+
         viewLifecycleOwner.lifecycleScope.launch {
             app.musicScanner.progress.collectLatest { progress ->
                 _binding?.let { b ->
                     b.tvScanStatus.text = if (progress.isScanning) {
-                        "Indexing: ${progress.songsFound} songs"
-                    } else {
+                        "Indexing: ${progress.songsFound} songs..."
+                    } else if (progress.songsFound > 0) {
                         "Library: ${progress.songsFound} songs"
+                    } else {
+                        "Tap to Scan"
                     }
                 }
             }
