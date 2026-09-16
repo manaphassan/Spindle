@@ -27,6 +27,10 @@ class SpindleApp : Application() {
         com.hana.spindle.theme.ThemeManager(this)
     }
 
+    val radioStreamEngine: com.hana.spindle.playback.RadioStreamEngine by lazy {
+        com.hana.spindle.playback.RadioStreamEngine(this)
+    }
+
     companion object {
         const val PLAYBACK_CHANNEL_ID = "spindle_playback_channel"
         lateinit var instance: SpindleApp

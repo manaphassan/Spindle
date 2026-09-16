@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="72dp"
     android:orientation="horizontal"
@@ -8,18 +9,24 @@
     android:paddingHorizontal="16dp"
     android:background="?attr/selectableItemBackground">
 
-    <!-- Track Number -->
-    <TextView
-        android:id="@+id/tvTrackNumber"
-        android:layout_width="wrap_content"
-        android:minWidth="28dp"
-        android:layout_height="wrap_content"
-        android:textColor="@color/text_secondary"
-        android:textSize="13sp"
-        android:fontFamily="monospace"
-        android:maxLines="1"
-        android:paddingEnd="6dp"
-        android:gravity="center_vertical|start" />
+    <!-- Album Art Thumbnail Card -->
+    <androidx.cardview.widget.CardView
+        android:layout_width="46dp"
+        android:layout_height="46dp"
+        app:cardCornerRadius="10dp"
+        app:cardElevation="0dp"
+        app:cardBackgroundColor="#212226">
+
+        <ImageView
+            android:id="@+id/ivSongThumb"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:src="@android:drawable/ic_media_play"
+            app:tint="#64748B"
+            android:padding="10dp"
+            android:contentDescription="Song Thumbnail" />
+    </androidx.cardview.widget.CardView>
 
     <!-- Title, Artist, and Format Tag -->
     <LinearLayout
@@ -27,23 +34,42 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:orientation="vertical"
+        android:layout_marginStart="14dp"
         android:paddingEnd="8dp">
-
-        <TextView
-            android:id="@+id/tvSongTitle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textColor="@color/text_primary"
-            android:textSize="15sp"
-            android:textStyle="bold"
-            android:maxLines="1"
-            android:ellipsize="end" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginTop="2dp"
+            android:gravity="center_vertical">
+
+            <!-- Active Waveform Indicator when playing -->
+            <TextView
+                android:id="@+id/tvPlayingWave"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ıllı "
+                android:textColor="@color/vfd_emerald"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/tvSongTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/text_primary"
+                android:textSize="14.5sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="3dp"
             android:gravity="center_vertical">
 
             <TextView
@@ -52,20 +78,20 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:textColor="@color/text_secondary"
-                android:textSize="13sp"
+                android:textSize="12.5sp"
                 android:maxLines="1"
                 android:ellipsize="end" />
 
-            <!-- Hi-Res Badge -->
+            <!-- Hi-Res Audio Badge -->
             <TextView
                 android:id="@+id/tvFormatBadge"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="#2E2E34"
+                android:background="#1E293B"
                 android:textColor="@color/vfd_emerald"
-                android:textSize="10sp"
+                android:textSize="9.5sp"
                 android:fontFamily="monospace"
-                android:paddingHorizontal="6dp"
+                android:paddingHorizontal="5dp"
                 android:paddingVertical="2dp"
                 android:layout_marginStart="6dp" />
         </LinearLayout>
@@ -83,7 +109,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="@color/text_secondary"
-            android:textSize="13sp"
+            android:textSize="12sp"
             android:fontFamily="monospace" />
 
         <!-- Star Rating (e.g. ★★★★☆) -->
@@ -93,8 +119,18 @@
             android:layout_height="wrap_content"
             android:text="☆☆☆☆☆"
             android:textColor="@color/vfd_amber"
-            android:textSize="12sp"
+            android:textSize="11sp"
             android:layout_marginTop="2dp" />
     </LinearLayout>
+
+    <!-- Trailing Menu -->
+    <ImageView
+        android:id="@+id/btnSongMenu"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:padding="4dp"
+        android:src="@android:drawable/ic_menu_more"
+        app:tint="#64748B"
+        android:contentDescription="Song Options" />
 
 </LinearLayout>

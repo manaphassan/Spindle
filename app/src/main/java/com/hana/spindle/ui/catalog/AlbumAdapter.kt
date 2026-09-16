@@ -7,7 +7,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.hana.spindle.data.ImageLoader
 import com.hana.spindle.data.db.AlbumItem
-import com.hana.spindle.databinding.ItemAlbumBinding
+import com.hana.spindle.databinding.ItemAlbumGridBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -15,15 +15,16 @@ import kotlinx.coroutines.withContext
 
 class AlbumAdapter(
     private val imageLoader: ImageLoader,
-    private val onAlbumClicked: (AlbumItem) -> Unit
+    private val onAlbumClicked: (AlbumItem) -> Unit,
+    private val onPlayAlbumClicked: (AlbumItem) -> Unit
 ) : ListAdapter<AlbumItem, AlbumAdapter.AlbumViewHolder>(DiffCallback) {
 
     private val scope = CoroutineScope(Dispatchers.Main)
 
-    class AlbumViewHolder(val binding: ItemAlbumBinding) : RecyclerView.ViewHolder(binding.root)
+    class AlbumViewHolder(val binding: ItemAlbumGridBinding) : RecyclerView.ViewHolder(binding.root)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AlbumViewHolder {
-        val binding = ItemAlbumBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        val binding = ItemAlbumGridBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         return AlbumViewHolder(binding)
     }
 
@@ -31,19 +32,20 @@ class AlbumAdapter(
         val album = getItem(position)
         val b = holder.binding
 
-        b.tvAlbumName.text = album.album
-        b.tvAlbumArtist.text = album.artist
-        b.tvTrackCount.text = "${album.trackCount} tracks"
+        b.tvGridTitle.text = album.album
+        b.tvGridSubtitle.text = album.artist
+        b.tvGridTrackCount.text = "${album.trackCount} songs"
 
-        // Asynchronously load RGB_565 downsampled cover art
-        holder.binding.ivAlbumThumb.setImageDrawable(null)
+        // Asynchronously load RGB_565 downsampled cover art (140x140)
+        b.ivGridArt.setImageDrawable(null)
         scope.launch {
-            val thumb = imageLoader.loadCover(album.representativePath, 128, 128)
+            val thumb = imageLoader.loadCover(album.representativePath, 200, 200)
             withContext(Dispatchers.Main) {
-                holder.binding.ivAlbumThumb.setImageBitmap(thumb)
+                b.ivGridArt.setImageBitmap(thumb)
             }
         }
 
+        b.btnGridPlay.setOnClickListener { onPlayAlbumClicked(album) }
         holder.itemView.setOnClickListener { onAlbumClicked(album) }
     }
 

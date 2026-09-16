@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.view.View
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
@@ -13,18 +14,22 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.adapter.FragmentStateAdapter
+import com.hana.spindle.R
 import com.hana.spindle.SpindleApp
 import com.hana.spindle.databinding.ActivityMainBinding
 import com.hana.spindle.theme.ThemeManager
+import com.hana.spindle.ui.radio.RadioFragment
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 /**
  * Main Android Home Launcher Activity hosting a seamless 3-screen ViewPager2:
  *
- * Page 0: Left Drawer (App Drawer, Audio Metrics Telemetry, EQ & Themes)
- * Page 1: Center Home Screen (Sony Walkman II Red Chassis & Kinetic Cassette Player)
- * Page 2: Right Catalog (Music Library: Folders, Albums, Artists, Songs, Star Ratings)
+ * Page 0: Left Drawer (App Drawer, Audio Metrics Telemetry, Dark DJ Mixer EQ Console)
+ * Page 1: Center Home Screen (Sony Walkman II Chassis & Kinetic Cassette Player)
+ * Page 2: Right Online FM Radio (Braun Neumorphic Tuner with Live ExoPlayer Streaming)
+ *
+ * Overlay: Full-Screen Audiophile Music Catalog triggered via the Mechanical ⏏ EJECT Button.
  */
 class MainActivity : AppCompatActivity() {
 
@@ -44,6 +49,7 @@ class MainActivity : AppCompatActivity() {
         themeManager = app.themeManager
 
         setupViewPager()
+        setupCatalogContainer()
         setupThemeObservation()
         setupBackNavigation()
         checkAndRequestStoragePermissions(app)
@@ -57,7 +63,7 @@ class MainActivity : AppCompatActivity() {
                 return when (position) {
                     0 -> DrawerFragment()
                     1 -> PlayerFragment()
-                    2 -> CatalogFragment()
+                    2 -> RadioFragment()
                     else -> PlayerFragment()
                 }
             }
@@ -66,6 +72,11 @@ class MainActivity : AppCompatActivity() {
         // Center default: Main Cassette Player screen
         binding.viewPager.setCurrentItem(1, false)
         binding.viewPager.offscreenPageLimit = 2
+    }
+
+    private fun setupCatalogContainer() {
+        // Initially container is gone
+        binding.catalogContainer.visibility = View.GONE
     }
 
     private fun setupThemeObservation() {
@@ -80,7 +91,10 @@ class MainActivity : AppCompatActivity() {
     private fun setupBackNavigation() {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (binding.viewPager.currentItem != 1) {
+                if (binding.catalogContainer.visibility == View.VISIBLE) {
+                    // Close Catalog and return to Cassette Deck
+                    navigateToPlayer()
+                } else if (binding.viewPager.currentItem != 1) {
                     // Return back to Main Cassette Player screen
                     navigateToPlayer()
                 } else {
@@ -91,14 +105,37 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun navigateToPlayer() {
+        binding.catalogContainer.visibility = View.GONE
+        val frag = supportFragmentManager.findFragmentById(R.id.catalogContainer)
+        if (frag != null) {
+            supportFragmentManager.beginTransaction().remove(frag).commitAllowingStateLoss()
+        }
         binding.viewPager.setCurrentItem(1, true)
     }
 
     fun navigateToCatalog() {
+        binding.catalogContainer.visibility = View.VISIBLE
+        binding.catalogContainer.bringToFront()
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.catalogContainer, CatalogFragment())
+            .commitAllowingStateLoss()
+    }
+
+    fun navigateToRadio() {
+        binding.catalogContainer.visibility = View.GONE
+        val frag = supportFragmentManager.findFragmentById(R.id.catalogContainer)
+        if (frag != null) {
+            supportFragmentManager.beginTransaction().remove(frag).commitAllowingStateLoss()
+        }
         binding.viewPager.setCurrentItem(2, true)
     }
 
     fun navigateToDrawer() {
+        binding.catalogContainer.visibility = View.GONE
+        val frag = supportFragmentManager.findFragmentById(R.id.catalogContainer)
+        if (frag != null) {
+            supportFragmentManager.beginTransaction().remove(frag).commitAllowingStateLoss()
+        }
         binding.viewPager.setCurrentItem(0, true)
     }
 

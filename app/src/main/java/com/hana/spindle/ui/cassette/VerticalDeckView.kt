@@ -52,7 +52,8 @@ class VerticalDeckView @JvmOverloads constructor(
     var onPlayClicked: (() -> Unit)? = null
     var onPrevClicked: (() -> Unit)? = null
     var onNextClicked: (() -> Unit)? = null
-    var onRecClicked: (() -> Unit)? = null // Side A/B flip or Catalog eject
+    var onEjectClicked: (() -> Unit)? = null // Opens Music Catalog
+    var onRecClicked: (() -> Unit)? = null // Legacy alias for eject/flip
     var onSeek: ((Float) -> Unit)? = null
 
     // Touch interaction tracking
@@ -439,8 +440,8 @@ class VerticalDeckView @JvmOverloads constructor(
         val playSub = if (isPlaying) "PAUSE" else "PLAY"
         drawSingleButton(canvas, btnPlayRect, playSymbol, playSub, pressedButtonIndex == 2, isGlow = isPlaying)
 
-        // Button 4: REC (Luminous Red Jewel LED)
-        drawRecButton(canvas, btnRecRect, pressedButtonIndex == 3)
+        // Button 4: EJECT (Tactile mechanical eject with ⏏ symbol)
+        drawEjectButton(canvas, btnRecRect, pressedButtonIndex == 3)
     }
 
     private fun drawSingleButton(
@@ -467,7 +468,7 @@ class VerticalDeckView @JvmOverloads constructor(
         canvas.drawText(subtext, rect.centerX(), subY, buttonSubTextPaint)
     }
 
-    private fun drawRecButton(canvas: Canvas, rect: RectF, isPressed: Boolean) {
+    private fun drawEjectButton(canvas: Canvas, rect: RectF, isPressed: Boolean) {
         val radius = 10f
         canvas.drawRoundRect(rect, radius, radius, buttonBasePaint)
 
@@ -476,12 +477,11 @@ class VerticalDeckView @JvmOverloads constructor(
             canvas.drawRoundRect(rect, radius, radius, buttonShadowPaint)
         }
 
-        val ledRadius = rect.width() * 0.20f
-        val ledCenterY = rect.centerY() - 4f
-        canvas.drawCircle(rect.centerX(), ledCenterY, ledRadius, recLedPaint)
+        val textY = rect.centerY() - 2f
+        canvas.drawText("⏏", rect.centerX(), textY, buttonTextPaint)
 
         val subY = rect.bottom - (rect.height() * 0.16f)
-        canvas.drawText("REC", rect.centerX(), subY, buttonSubTextPaint)
+        canvas.drawText("EJECT", rect.centerX(), subY, buttonSubTextPaint)
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -544,7 +544,9 @@ class VerticalDeckView @JvmOverloads constructor(
                     0 -> if (btnRewRect.contains(x, y)) onPrevClicked?.invoke()
                     1 -> if (btnFwdRect.contains(x, y)) onNextClicked?.invoke()
                     2 -> if (btnPlayRect.contains(x, y)) onPlayClicked?.invoke()
-                    3 -> if (btnRecRect.contains(x, y)) onRecClicked?.invoke()
+                    3 -> if (btnRecRect.contains(x, y)) {
+                        (onEjectClicked ?: onRecClicked)?.invoke()
+                    }
                 }
                 pressedButtonIndex = -1
                 invalidate()

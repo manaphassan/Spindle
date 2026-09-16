@@ -1,0 +1,383 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#E8E8EC"
+    android:paddingTop="36dp"
+    android:paddingBottom="20dp"
+    android:paddingHorizontal="20dp">
+
+    <!-- 1. Top Bar: Back Arrow -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <ImageButton
+            android:id="@+id/btnRadioBack"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_revert"
+            app:tint="#27272A"
+            android:contentDescription="Back to Cassette Deck" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="ONLINE FM RADIO"
+            android:textColor="#52525B"
+            android:textStyle="bold"
+            android:textSize="13sp"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="center" />
+
+        <View
+            android:layout_width="38dp"
+            android:layout_height="38dp" />
+    </LinearLayout>
+
+    <!-- 2. Concentric Radial Acoustic Speaker Grille -->
+    <com.hana.spindle.ui.radio.RadioSpeakerGrilleView
+        android:id="@+id/speakerGrilleView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1.1"
+        android:layout_marginVertical="4dp" />
+
+    <!-- 3. Preset Station Recessed Strip -->
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="42dp"
+        app:cardCornerRadius="10dp"
+        app:cardElevation="0dp"
+        app:cardBackgroundColor="#DADAE0"
+        android:layout_marginBottom="12dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="4dp">
+
+            <Button
+                android:id="@+id/btnPreset0"
+                android:layout_width="0dp"
+                android:layout_height="32dp"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="2dp"
+                android:text="LOFI"
+                android:textColor="#52525B"
+                android:textSize="10.5sp"
+                android:textStyle="bold"
+                android:backgroundTint="#EDEDF2"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:padding="0dp"
+                app:cornerRadius="6dp" />
+
+            <Button
+                android:id="@+id/btnPreset1"
+                android:layout_width="0dp"
+                android:layout_height="32dp"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="2dp"
+                android:text="JAZZ"
+                android:textColor="#52525B"
+                android:textSize="10.5sp"
+                android:textStyle="bold"
+                android:backgroundTint="#EDEDF2"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:padding="0dp"
+                app:cornerRadius="6dp" />
+
+            <Button
+                android:id="@+id/btnPreset2"
+                android:layout_width="0dp"
+                android:layout_height="32dp"
+                android:layout_weight="1.2"
+                android:layout_marginHorizontal="2dp"
+                android:text="CLASSIC"
+                android:textColor="#52525B"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:backgroundTint="#EDEDF2"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:padding="0dp"
+                app:cornerRadius="6dp" />
+
+            <Button
+                android:id="@+id/btnPreset3"
+                android:layout_width="0dp"
+                android:layout_height="32dp"
+                android:layout_weight="1.2"
+                android:layout_marginHorizontal="2dp"
+                android:text="BEIJING"
+                android:textColor="#EF4444"
+                android:textSize="10.5sp"
+                android:textStyle="bold"
+                android:backgroundTint="#F4F4F8"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:padding="0dp"
+                app:cornerRadius="6dp" />
+
+            <Button
+                android:id="@+id/btnPreset4"
+                android:layout_width="0dp"
+                android:layout_height="32dp"
+                android:layout_weight="1.2"
+                android:layout_marginHorizontal="2dp"
+                android:text="RETRO"
+                android:textColor="#52525B"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:backgroundTint="#EDEDF2"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:padding="0dp"
+                app:cornerRadius="6dp" />
+
+            <ImageButton
+                android:id="@+id/btnStationList"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginStart="2dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_sort_by_size"
+                app:tint="#52525B"
+                android:contentDescription="Station List" />
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- 4. Backlit LCD Panel (Greenish-Cream Vintage Matrix Display) -->
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="136dp"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="3dp"
+        app:cardBackgroundColor="#DCE6DA"
+        android:layout_marginBottom="14dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <!-- LCD Header: FM & Live Status -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="FM"
+                    android:textColor="#3F4D3C"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:fontFamily="monospace" />
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1" />
+
+                <TextView
+                    android:id="@+id/tvRadioStreamStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="ıll LIVE IN"
+                    android:textColor="#2D5A27"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:fontFamily="monospace" />
+            </LinearLayout>
+
+            <!-- Large 7-Segment / LCD Frequency Readout -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="bottom"
+                android:layout_marginTop="2dp">
+
+                <TextView
+                    android:id="@+id/tvRadioFrequency"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="98.2"
+                    android:textColor="#1F2E1E"
+                    android:textSize="44sp"
+                    android:textStyle="bold"
+                    android:fontFamily="monospace"
+                    android:includeFontPadding="false" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=" MHz"
+                    android:textColor="#3F4D3C"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:fontFamily="monospace"
+                    android:layout_marginBottom="6dp" />
+            </LinearLayout>
+
+            <!-- RDS Marquee / Station Metadata -->
+            <TextView
+                android:id="@+id/tvRadioRdsName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="PEOPLE'S CENTRAL BROADCASTING STATION--VOICE OF CHINA"
+                android:textColor="#2E3D2B"
+                android:textSize="11sp"
+                android:fontFamily="monospace"
+                android:singleLine="true"
+                android:ellipsize="marquee"
+                android:marqueeRepeatLimit="marquee_forever"
+                android:layout_marginTop="4dp" />
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- 5. Analog 3D Tuning Thumbwheel Flanked by Skip Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="16dp">
+
+        <ImageButton
+            android:id="@+id/btnTunePrev"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/bg_neumorphic_button"
+            android:src="@android:drawable/ic_media_previous"
+            app:tint="#52525B"
+            android:contentDescription="Tune Previous" />
+
+        <com.hana.spindle.ui.radio.RadioTuningDialView
+            android:id="@+id/tuningDialView"
+            android:layout_width="0dp"
+            android:layout_height="52dp"
+            android:layout_weight="1"
+            android:layout_marginHorizontal="10dp" />
+
+        <ImageButton
+            android:id="@+id/btnTuneNext"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/bg_neumorphic_button"
+            android:src="@android:drawable/ic_media_next"
+            app:tint="#52525B"
+            android:contentDescription="Tune Next" />
+    </LinearLayout>
+
+    <!-- 6. Bottom Controls: Mute, Volume Slider & Favorite Button -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <ImageButton
+            android:id="@+id/btnRadioMute"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:background="@drawable/bg_neumorphic_button"
+            android:src="@android:drawable/ic_lock_silent_mode"
+            app:tint="#52525B"
+            android:contentDescription="Mute / Unmute" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginHorizontal="12dp">
+
+            <!-- Scale markings: 0  25  50  75  100 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="0"
+                    android:textColor="#71717A"
+                    android:textSize="9.5sp"
+                    android:fontFamily="monospace" />
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="25"
+                    android:textColor="#71717A"
+                    android:textSize="9.5sp"
+                    android:fontFamily="monospace"
+                    android:gravity="center" />
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="50"
+                    android:textColor="#71717A"
+                    android:textSize="9.5sp"
+                    android:fontFamily="monospace"
+                    android:gravity="center" />
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="75"
+                    android:textColor="#71717A"
+                    android:textSize="9.5sp"
+                    android:fontFamily="monospace"
+                    android:gravity="center" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="100"
+                    android:textColor="#71717A"
+                    android:textSize="9.5sp"
+                    android:fontFamily="monospace"
+                    android:gravity="end" />
+            </LinearLayout>
+
+            <SeekBar
+                android:id="@+id/seekRadioVolume"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="100"
+                android:progress="80"
+                android:progressTint="#EF4444"
+                android:thumbTint="#EF4444" />
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/btnRadioFavorite"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:background="@drawable/bg_neumorphic_button"
+            android:src="@android:drawable/btn_star_big_on"
+            app:tint="#EF4444"
+            android:contentDescription="Favorite Station" />
+    </LinearLayout>
+
+</LinearLayout>

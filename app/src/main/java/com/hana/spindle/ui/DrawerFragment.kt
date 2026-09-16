@@ -12,9 +12,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.LinearLayout
+import android.widget.SeekBar
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.hana.spindle.R
 import com.hana.spindle.SpindleApp
@@ -24,9 +27,12 @@ import com.hana.spindle.launcher.AppListAdapter
 import com.hana.spindle.launcher.AppListLoader
 import com.hana.spindle.theme.CassetteTheme
 import com.hana.spindle.theme.ThemeManager
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.Locale
+import kotlin.math.sin
 
 class DrawerFragment : Fragment() {
 
@@ -37,6 +43,9 @@ class DrawerFragment : Fragment() {
     private lateinit var appListLoader: AppListLoader
     private lateinit var appAdapter: AppListAdapter
     private var allApps: List<AppInfo> = emptyList()
+
+    private val dspPresets = listOf("FLAT", "BASS_BOOST", "HARMAN", "VOCAL", "CLUB")
+    private var currentPresetIndex = 0
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -58,6 +67,7 @@ class DrawerFragment : Fragment() {
         setupAppDrawer()
         setupAudioMetrics(app)
         setupThemeSelector()
+        setupDjConsole(app)
     }
 
     private fun setupTabs() {
@@ -146,21 +156,151 @@ class DrawerFragment : Fragment() {
         for (theme in CassetteTheme.ALL_PRESETS) {
             val btn = Button(requireContext()).apply {
                 layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    140
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.MATCH_PARENT
                 ).apply {
-                    setMargins(0, 8, 0, 8)
+                    setMargins(0, 0, 16, 0)
                 }
-                text = "${theme.name} — ${theme.subtitle}"
-                textSize = 13f
-                isAllCaps = false
+                text = theme.name
+                textSize = 11.5f
+                isAllCaps = true
                 setTextColor(if (theme.isDarkAppTheme) Color.WHITE else Color.parseColor("#1E293B"))
                 backgroundTintList = ColorStateList.valueOf(theme.chassisColor)
                 setOnClickListener {
                     themeManager.setTheme(theme)
+                    binding.tvActiveThemeName.text = "${theme.name} (${theme.subtitle})"
                 }
             }
             container.addView(btn)
+        }
+    }
+
+    private fun setupDjConsole(app: SpindleApp) {
+        val audioEngine = app.audioEngine
+        val fxController = audioEngine.audioFxController
+
+        // 1. Studio Rotary Potentiometers
+        binding.knobLow.label = "LOW"
+        binding.knobLow.minValue = -12f
+        binding.knobLow.maxValue = 12f
+        binding.knobLow.currentValue = fxController.lowGainDb
+        binding.knobLow.onValueChanged = { gainDb ->
+            fxController.setLowGain(gainDb)
+        }
+
+        binding.knobMid.label = "MID"
+        binding.knobMid.minValue = -12f
+        binding.knobMid.maxValue = 12f
+        binding.knobMid.currentValue = fxController.midGainDb
+        binding.knobMid.onValueChanged = { gainDb ->
+            fxController.setMidGain(gainDb)
+        }
+
+        binding.knobHi.label = "HI"
+        binding.knobHi.minValue = -12f
+        binding.knobHi.maxValue = 12f
+        binding.knobHi.currentValue = fxController.highGainDb
+        binding.knobHi.onValueChanged = { gainDb ->
+            fxController.setHighGain(gainDb)
+        }
+
+        binding.knobFilter.label = "FILTER"
+        binding.knobFilter.minValue = 0f
+        binding.knobFilter.maxValue = 1000f
+        binding.knobFilter.currentValue = fxController.bassBoostStrength.toFloat()
+        binding.knobFilter.onValueChanged = { strength ->
+            fxController.setFilterStrength(strength.toInt())
+        }
+
+        // 2. FX Preset Button
+        binding.btnFx.setOnClickListener {
+            currentPresetIndex = (currentPresetIndex + 1) % dspPresets.size
+            val preset = dspPresets[currentPresetIndex]
+            fxController.applyPreset(preset)
+            binding.btnFx.text = "FX: ${preset.replace("_", " ")}"
+
+            // Update knob positions to reflect preset
+            binding.knobLow.currentValue = fxController.lowGainDb
+            binding.knobMid.currentValue = fxController.midGainDb
+            binding.knobHi.currentValue = fxController.highGainDb
+            binding.knobFilter.currentValue = fxController.bassBoostStrength.toFloat()
+        }
+
+        // 3. Transport Deck Buttons
+        binding.btnCue.setOnClickListener {
+            audioEngine.seekTo(0)
+        }
+
+        binding.btnDeckA.setOnClickListener {
+            (activity as? MainActivity)?.navigateToPlayer()
+        }
+
+        binding.btnDeckB.setOnClickListener {
+            (activity as? MainActivity)?.navigateToRadio()
+        }
+
+        binding.btnDjPlayPause.setOnClickListener {
+            audioEngine.togglePlayPause()
+        }
+
+        binding.btnBrowse.setOnClickListener {
+            (activity as? MainActivity)?.navigateToCatalog()
+        }
+
+        // 4. Crossfader
+        binding.seekCrossfader.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                if (fromUser) {
+                    val deckAVol = ((100 - progress) / 50f).coerceIn(0f, 1f)
+                    val deckBVol = (progress / 50f).coerceIn(0f, 1f)
+                    audioEngine.exoPlayer.volume = deckAVol
+                    app.radioStreamEngine.setVolume(deckBVol)
+                }
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+
+        // 5. Observe playback state and animate VU Meter & Waveform
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    audioEngine.playbackState.collectLatest { state ->
+                        _binding?.let { b ->
+                            b.waveformView.isPlaying = state.isPlaying
+                            b.waveformView.progress = state.progress
+
+                            b.btnDjPlayPause.setImageResource(
+                                if (state.isPlaying) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play
+                            )
+
+                            if (state.currentSong != null) {
+                                b.tvDjTrackTitle.text = "${state.currentSong.title} • ${state.currentSong.artist}"
+                            } else {
+                                b.tvDjTrackTitle.text = "Spindle Direct ALSA / DSD DAC"
+                            }
+                            b.tvDjTrackTitle.isSelected = true
+                        }
+                    }
+                }
+
+                // 6. Realistic 15Hz Dynamic Ballistics Simulation for LED VU Meter
+                launch {
+                    var phase = 0.0
+                    while (isActive) {
+                        val isPlaying = audioEngine.playbackState.value.isPlaying
+                        if (isPlaying) {
+                            phase += 0.4
+                            val baseLevel = 0.65f + 0.28f * sin(phase).toFloat()
+                            val peakJitter = (sin(phase * 2.3) * 0.12f).toFloat()
+                            _binding?.ledVuMeter?.audioLevel = (baseLevel + peakJitter).coerceIn(0f, 1f)
+                        } else {
+                            _binding?.ledVuMeter?.audioLevel = 0.0f
+                        }
+                        delay(66L) // ~15 FPS VU meter ballistics
+                    }
+                }
+            }
         }
     }
 

@@ -1,106 +1,343 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="@color/surface_dark"
-    android:paddingTop="36dp">
+    android:background="@color/surface_dark">
 
-    <!-- Header & Scan Status -->
+    <!-- Top Container: Header, Search, Tabs & Quick Actions -->
     <LinearLayout
+        android:id="@+id/catalogHeaderContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingHorizontal="16dp">
+        android:orientation="vertical"
+        android:paddingTop="32dp"
+        android:background="#151619">
 
-        <TextView
-            android:layout_width="wrap_content"
+        <!-- Top Bar: Back Arrow, Title, Search & Status -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="MUSIC CATALOG"
-            android:textColor="@color/text_primary"
-            android:textStyle="bold"
-            android:textSize="17sp" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="14dp">
+
+            <ImageButton
+                android:id="@+id/btnBackToPlayer"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_revert"
+                app:tint="@color/text_primary"
+                android:contentDescription="Back to Cassette Deck" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="MUSIC CATALOG"
+                android:textColor="@color/text_primary"
+                android:textStyle="bold"
+                android:textSize="17sp" />
+
+            <TextView
+                android:id="@+id/tvScanStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Ready"
+                android:textColor="@color/vfd_emerald"
+                android:textSize="11sp"
+                android:fontFamily="monospace" />
+        </LinearLayout>
+
+        <!-- Inline Real-time Search Input -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="#212228"
+            android:layout_marginHorizontal="14dp"
+            android:layout_marginTop="8dp"
+            android:paddingHorizontal="12dp">
+
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@android:drawable/ic_menu_search"
+                app:tint="@color/text_secondary"
+                android:contentDescription="Search Icon" />
+
+            <EditText
+                android:id="@+id/etCatalogSearch"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginStart="8dp"
+                android:background="@null"
+                android:hint="Search songs, albums, artists..."
+                android:textColorHint="#64748B"
+                android:textColor="@color/text_primary"
+                android:textSize="13sp"
+                android:imeOptions="actionDone"
+                android:singleLine="true" />
+        </LinearLayout>
+
+        <!-- Horizontal Scrollable Category Tabs -->
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none"
+            android:layout_marginTop="10dp"
+            android:paddingHorizontal="10dp">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <Button
+                    android:id="@+id/tabSongs"
+                    android:layout_width="wrap_content"
+                    android:layout_height="34dp"
+                    android:layout_marginHorizontal="4dp"
+                    android:text="SONGS"
+                    android:textSize="11.5sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/white"
+                    android:backgroundTint="@color/wm2_red"
+                    android:paddingHorizontal="14dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    app:cornerRadius="17dp" />
+
+                <Button
+                    android:id="@+id/tabAlbums"
+                    android:layout_width="wrap_content"
+                    android:layout_height="34dp"
+                    android:layout_marginHorizontal="4dp"
+                    android:text="ALBUMS"
+                    android:textSize="11.5sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_secondary"
+                    android:backgroundTint="#212228"
+                    android:paddingHorizontal="14dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    app:cornerRadius="17dp" />
+
+                <Button
+                    android:id="@+id/tabArtists"
+                    android:layout_width="wrap_content"
+                    android:layout_height="34dp"
+                    android:layout_marginHorizontal="4dp"
+                    android:text="ARTISTS"
+                    android:textSize="11.5sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_secondary"
+                    android:backgroundTint="#212228"
+                    android:paddingHorizontal="14dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    app:cornerRadius="17dp" />
+
+                <Button
+                    android:id="@+id/tabFolders"
+                    android:layout_width="wrap_content"
+                    android:layout_height="34dp"
+                    android:layout_marginHorizontal="4dp"
+                    android:text="FOLDERS"
+                    android:textSize="11.5sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_secondary"
+                    android:backgroundTint="#212228"
+                    android:paddingHorizontal="14dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    app:cornerRadius="17dp" />
+
+                <Button
+                    android:id="@+id/tabFavorites"
+                    android:layout_width="wrap_content"
+                    android:layout_height="34dp"
+                    android:layout_marginHorizontal="4dp"
+                    android:text="RATED ★"
+                    android:textSize="11.5sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_secondary"
+                    android:backgroundTint="#212228"
+                    android:paddingHorizontal="14dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    app:cornerRadius="17dp" />
+            </LinearLayout>
+        </HorizontalScrollView>
+
+        <!-- Sub-Header Quick Action Bar (Shuffle / Play All / Count) -->
+        <LinearLayout
+            android:id="@+id/actionBarContainer"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="14dp"
+            android:layout_marginTop="6dp">
+
+            <TextView
+                android:id="@+id/tvCatalogCount"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="48 songs"
+                android:textColor="@color/text_secondary"
+                android:textSize="12.5sp"
+                android:fontFamily="sans-serif-medium" />
+
+            <!-- Shuffle Pill Button -->
+            <Button
+                android:id="@+id/btnShuffle"
+                android:layout_width="wrap_content"
+                android:layout_height="30dp"
+                android:text="🔀 Shuffle"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                android:backgroundTint="#2A2B32"
+                android:paddingHorizontal="12dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                app:cornerRadius="15dp" />
+
+            <!-- Play All Pill Button -->
+            <Button
+                android:id="@+id/btnPlayAll"
+                android:layout_width="wrap_content"
+                android:layout_height="30dp"
+                android:layout_marginStart="8dp"
+                android:text="▶ Play All"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="@color/white"
+                android:backgroundTint="@color/wm2_red"
+                android:paddingHorizontal="12dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                app:cornerRadius="15dp" />
+        </LinearLayout>
 
         <View
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:layout_weight="1" />
-
-        <TextView
-            android:id="@+id/tvScanStatus"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Scan Ready"
-            android:textColor="@color/vfd_emerald"
-            android:textSize="11sp"
-            android:fontFamily="monospace"
-            android:maxLines="1"
-            android:ellipsize="end" />
+            android:background="#24252B"
+            android:layout_marginTop="8dp" />
     </LinearLayout>
 
-    <!-- Catalog Tabs: SONGS / ALBUMS / FAVORITES -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="44dp"
-        android:orientation="horizontal"
-        android:paddingHorizontal="16dp"
-        android:layout_marginTop="12dp"
-        android:gravity="center">
-
-        <Button
-            android:id="@+id/tabSongs"
-            android:layout_width="0dp"
-            android:layout_height="36dp"
-            android:layout_weight="1"
-            android:text="SONGS"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:textColor="@color/white"
-            android:backgroundTint="@color/wm2_red"
-            app:cornerRadius="6dp" />
-
-        <Button
-            android:id="@+id/tabAlbums"
-            android:layout_width="0dp"
-            android:layout_height="36dp"
-            android:layout_weight="1"
-            android:layout_marginStart="8dp"
-            android:text="ALBUMS"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:textColor="@color/text_secondary"
-            android:backgroundTint="@color/surface_elevated"
-            app:cornerRadius="6dp" />
-
-        <Button
-            android:id="@+id/tabFavorites"
-            android:layout_width="0dp"
-            android:layout_height="36dp"
-            android:layout_weight="1"
-            android:layout_marginStart="8dp"
-            android:text="RATED ★"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:textColor="@color/text_secondary"
-            android:backgroundTint="@color/surface_elevated"
-            app:cornerRadius="6dp" />
-    </LinearLayout>
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="@color/divider"
-        android:layout_marginTop="10dp" />
-
-    <!-- RecyclerView for Songs / Albums -->
+    <!-- Main Content Recycler View -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvCatalog"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_below="@+id/catalogHeaderContainer"
+        android:layout_above="@+id/cardMiniPlayer"
         android:clipToPadding="false"
-        android:paddingBottom="32dp" />
+        android:paddingTop="6dp"
+        android:paddingBottom="16dp" />
 
-</LinearLayout>
+    <!-- Persistent Bottom Mini-Player Bar (Matches Wireframe) -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardMiniPlayer"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:layout_alignParentBottom="true"
+        android:layout_marginHorizontal="10dp"
+        android:layout_marginBottom="10dp"
+        app:cardCornerRadius="14dp"
+        app:cardElevation="6dp"
+        app:cardBackgroundColor="#1A1B20">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="12dp">
+
+            <!-- Thumbnail -->
+            <ImageView
+                android:id="@+id/ivMiniArt"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:scaleType="centerCrop"
+                android:background="#2E2F35"
+                android:src="@android:drawable/ic_media_play"
+                app:tint="#64748B"
+                android:padding="8dp"
+                android:contentDescription="Mini Cover" />
+
+            <!-- Title & Artist -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginStart="12dp"
+                android:paddingEnd="6dp">
+
+                <TextView
+                    android:id="@+id/tvMiniTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="No Track Loaded"
+                    android:textColor="@color/text_primary"
+                    android:textSize="13.5sp"
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+                <TextView
+                    android:id="@+id/tvMiniArtist"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Spindle Player"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="11.5sp"
+                    android:layout_marginTop="2dp"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+            </LinearLayout>
+
+            <!-- Compact Playback Controls -->
+            <ImageButton
+                android:id="@+id/btnMiniPrev"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_media_previous"
+                app:tint="@color/text_primary"
+                android:contentDescription="Previous" />
+
+            <ImageButton
+                android:id="@+id/btnMiniPlayPause"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:background="@drawable/bg_circle_play"
+                android:src="@android:drawable/ic_media_play"
+                app:tint="#FFFFFF"
+                android:layout_marginHorizontal="4dp"
+                android:contentDescription="Play/Pause" />
+
+            <ImageButton
+                android:id="@+id/btnMiniNext"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_media_next"
+                app:tint="@color/text_primary"
+                android:contentDescription="Next" />
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+</RelativeLayout>

@@ -54,6 +54,8 @@ class AudioEngine(
     private var playlist = mutableListOf<SongEntity>()
     private var currentIndex = -1
 
+    val audioFxController = AudioFxController()
+
     init {
         // High-resolution audio attributes
         val audioAttributes = AudioAttributes.Builder()
@@ -89,6 +91,8 @@ class AudioEngine(
                     }
                 })
             }
+
+        audioFxController.attachSession(exoPlayer.audioSessionId)
     }
 
     fun playQueue(songs: List<SongEntity>, startIndex: Int = 0) {
@@ -197,6 +201,7 @@ class AudioEngine(
 
     fun release() {
         stopProgressPolling()
+        audioFxController.release()
         exoPlayer.release()
     }
 }

@@ -166,8 +166,8 @@ class PlayerFragment : Fragment() {
                 audioEngine.seekTo((total * progress).toLong())
             }
         }
-        binding.verticalDeckView.onRecClicked = {
-            flipCassette(binding.verticalCassetteView)
+        binding.verticalDeckView.onEjectClicked = {
+            (activity as? MainActivity)?.navigateToCatalog()
         }
 
         // WM-2 Red Controls
