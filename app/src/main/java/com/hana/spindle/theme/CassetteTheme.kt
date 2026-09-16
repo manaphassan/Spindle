@@ -9,32 +9,75 @@ enum class ShellTexture {
     CERAMIC_COMPOSITE
 }
 
+enum class ChassisStyle {
+    VERTICAL_DECK,     // Reference 1: Dark brushed aluminum faceplate, vertical cassette, top WALKMAN logo, linear ruler, 4 bottom buttons
+    VAPORWAVE_80S,     // Reference 2: Studio white faceplate, triple diagonal neon stripes, retro WALK•MAN logo
+    WM2_RED            // 1981 WM-2 Red horizontal cut chassis
+}
+
 data class CassetteTheme(
     val id: String,
     val name: String,
     val subtitle: String,
+    val chassisStyle: ChassisStyle = ChassisStyle.VERTICAL_DECK,
     // WM-2 Hardware Chassis Properties
-    val chassisColor: Int = Color.parseColor("#D71920"),      // Iconic WM-2 Red
-    val diagonalBezelColor: Int = Color.parseColor("#1C1C1E"),// Top-right angled panel
-    val dialColor: Int = Color.parseColor("#D1D5DB"),         // Knurled volume dial
+    val chassisColor: Int = Color.parseColor("#18181A"),
+    val diagonalBezelColor: Int = Color.parseColor("#121214"),
+    val dialColor: Int = Color.parseColor("#D1D5DB"),
     // Cassette Shell & Tape Properties
-    val shellColor: Int,                                      // Cassette body color
+    val shellColor: Int,
     val shellTexture: ShellTexture = ShellTexture.MATTE_PLASTIC,
-    val labelBackgroundColor: Int,                            // Tape sticker background
-    val labelTextColor: Int,                                  // Song / Artist typography
-    val labelAccentColor: Int,                                // Header stripe / accent
-    val windowTint: Int = Color.argb(40, 255, 255, 255),      // Acrylic window tint
-    val reelHubColor: Int = Color.WHITE,                      // Plastic 6-tooth spindle hub
-    val tapeRibbonColor: Int = Color.parseColor("#3E2723"),   // Ferric / Chrome / Metal tape pack
-    val vfdGlowColor: Int = Color.parseColor("#00E5FF"),      // VFD digital counter glow
+    val labelBackgroundColor: Int,
+    val labelTextColor: Int,
+    val labelAccentColor: Int,
+    val windowTint: Int = Color.argb(40, 255, 255, 255),
+    val reelHubColor: Int = Color.WHITE,
+    val tapeRibbonColor: Int = Color.parseColor("#3E2723"),
+    val vfdGlowColor: Int = Color.parseColor("#00E5FF"),
     val isDarkAppTheme: Boolean = true
 ) {
     companion object {
-        // 1. Hero Theme: Sony Walkman II (WM-2) Red with Official Walkman Tape
+        // 1. Primary Reference: Vertical Studio Deck (Dark Brushed Aluminum + Orange Tape)
+        val VERTICAL_STUDIO_DECK = CassetteTheme(
+            id = "vertical_studio_deck",
+            name = "Vertical Studio Deck",
+            subtitle = "Dark Brushed Aluminum + Orange Tape",
+            chassisStyle = ChassisStyle.VERTICAL_DECK,
+            chassisColor = Color.parseColor("#1C1C1E"),
+            diagonalBezelColor = Color.parseColor("#121214"),
+            shellColor = Color.parseColor("#E65100"), // Vibrant Orange cassette shell
+            labelBackgroundColor = Color.parseColor("#F5F4EE"), // Ivory textured paper label
+            labelTextColor = Color.parseColor("#1A1A1A"),
+            labelAccentColor = Color.parseColor("#D50000"), // Red accent line
+            reelHubColor = Color.WHITE,
+            tapeRibbonColor = Color.parseColor("#2E1A14"),
+            vfdGlowColor = Color.parseColor("#E65100")
+        )
+
+        // 2. Secondary Reference: 80s Vaporwave / Cyberpunk (Studio White + Neon Racing Stripes)
+        val VAPORWAVE_80S = CassetteTheme(
+            id = "vaporwave_80s",
+            name = "Walkman 80s Vaporwave",
+            subtitle = "Studio White + Neon Racing Stripes",
+            chassisStyle = ChassisStyle.VAPORWAVE_80S,
+            chassisColor = Color.parseColor("#F0F4F8"),
+            diagonalBezelColor = Color.parseColor("#181A1F"),
+            shellColor = Color.parseColor("#18181B"),
+            labelBackgroundColor = Color.parseColor("#FAFAFA"),
+            labelTextColor = Color.parseColor("#0F172A"),
+            labelAccentColor = Color.parseColor("#38BDF8"), // Neon Sky Blue
+            reelHubColor = Color.WHITE,
+            tapeRibbonColor = Color.parseColor("#1E1B4B"),
+            vfdGlowColor = Color.parseColor("#00E5FF"),
+            isDarkAppTheme = false
+        )
+
+        // 3. Hero Theme: Sony Walkman II (WM-2) Red with Official Walkman Tape
         val WM2_RED_HERO = CassetteTheme(
             id = "wm2_red_hero",
             name = "Walkman II Red",
             subtitle = "Sony WM-2 (1981) + Walkman Tape",
+            chassisStyle = ChassisStyle.WM2_RED,
             chassisColor = Color.parseColor("#D71920"),
             diagonalBezelColor = Color.parseColor("#1C1C1E"),
             shellColor = Color.parseColor("#262626"),
@@ -142,6 +185,8 @@ data class CassetteTheme(
         )
 
         val ALL_PRESETS = listOf(
+            VERTICAL_STUDIO_DECK,
+            VAPORWAVE_80S,
             WM2_RED_HERO,
             SONY_HF_90,
             SONY_METAL_MASTER,

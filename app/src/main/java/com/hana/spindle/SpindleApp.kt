@@ -23,6 +23,10 @@ class SpindleApp : Application() {
         com.hana.spindle.playback.AudioEngine(this)
     }
 
+    val themeManager: com.hana.spindle.theme.ThemeManager by lazy {
+        com.hana.spindle.theme.ThemeManager(this)
+    }
+
     companion object {
         const val PLAYBACK_CHANNEL_ID = "spindle_playback_channel"
         lateinit var instance: SpindleApp

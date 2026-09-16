@@ -41,7 +41,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         val app = application as SpindleApp
-        themeManager = ThemeManager(this)
+        themeManager = app.themeManager
 
         setupViewPager()
         setupThemeObservation()

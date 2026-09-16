@@ -13,8 +13,8 @@ class ThemeManager(context: Context) {
     val currentTheme: StateFlow<CassetteTheme> = _currentTheme.asStateFlow()
 
     private fun loadInitialTheme(): CassetteTheme {
-        val savedId = prefs.getString("selected_theme_id", CassetteTheme.WM2_RED_HERO.id)
-        return CassetteTheme.ALL_PRESETS.find { it.id == savedId } ?: CassetteTheme.WM2_RED_HERO
+        val savedId = prefs.getString("selected_theme_id", CassetteTheme.VERTICAL_STUDIO_DECK.id)
+        return CassetteTheme.ALL_PRESETS.find { it.id == savedId } ?: CassetteTheme.VERTICAL_STUDIO_DECK
     }
 
     fun setTheme(theme: CassetteTheme) {

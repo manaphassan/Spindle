@@ -51,7 +51,7 @@ class DrawerFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         val app = requireActivity().application as SpindleApp
-        themeManager = ThemeManager(requireContext())
+        themeManager = app.themeManager
         appListLoader = AppListLoader(requireContext())
 
         setupTabs()
@@ -154,7 +154,7 @@ class DrawerFragment : Fragment() {
                 text = "${theme.name} — ${theme.subtitle}"
                 textSize = 13f
                 isAllCaps = false
-                setTextColor(Color.WHITE)
+                setTextColor(if (theme.isDarkAppTheme) Color.WHITE else Color.parseColor("#1E293B"))
                 backgroundTintList = ColorStateList.valueOf(theme.chassisColor)
                 setOnClickListener {
                     themeManager.setTheme(theme)

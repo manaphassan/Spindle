@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.graphics.Color
 import android.os.BatteryManager
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -16,8 +17,10 @@ import androidx.lifecycle.lifecycleScope
 import com.hana.spindle.SpindleApp
 import com.hana.spindle.databinding.FragmentPlayerBinding
 import com.hana.spindle.playback.AudioEngine
+import com.hana.spindle.theme.ChassisStyle
 import com.hana.spindle.theme.ThemeManager
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import java.util.Locale
 import java.util.concurrent.TimeUnit
@@ -63,7 +66,7 @@ class PlayerFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         val app = requireActivity().application as SpindleApp
-        themeManager = ThemeManager(requireContext())
+        themeManager = app.themeManager
         audioEngine = app.audioEngine
 
         setupThemeObservation()
@@ -86,8 +89,18 @@ class PlayerFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             themeManager.currentTheme.collectLatest { theme ->
                 _binding?.let { b ->
+                    val isWm2 = theme.chassisStyle == ChassisStyle.WM2_RED
+                    b.verticalDeckContainer.visibility = if (isWm2) View.GONE else View.VISIBLE
+                    b.wm2Container.visibility = if (isWm2) View.VISIBLE else View.GONE
+
+                    b.verticalDeckView.theme = theme
+                    b.verticalCassetteView.theme = theme
+
+                    val isVaporwave = theme.chassisStyle == ChassisStyle.VAPORWAVE_80S
+                    b.tvVerticalTime.setTextColor(if (isVaporwave) Color.parseColor("#475569") else Color.parseColor("#80FFFFFF"))
+
                     b.wm2ChassisView.theme = theme
-                    b.cassetteView.theme = theme
+                    b.wm2CassetteView.theme = theme
                     b.root.setBackgroundColor(theme.chassisColor)
                 }
             }
@@ -98,60 +111,105 @@ class PlayerFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             audioEngine.playbackState.collectLatest { state ->
                 _binding?.let { b ->
+                    // 1. Vertical Walkman Deck (Reference 1 & 2)
+                    b.verticalDeckView.isPlaying = state.isPlaying
+                    b.verticalDeckView.progress = state.progress
+                    b.verticalCassetteView.isPlaying = state.isPlaying
+                    b.verticalCassetteView.progress = state.progress
+
+                    // 2. WM-2 Red Layout
                     b.wm2ChassisView.isPlaying = state.isPlaying
-                    b.cassetteView.isPlaying = state.isPlaying
-                    b.cassetteView.progress = state.progress
+                    b.wm2CassetteView.isPlaying = state.isPlaying
+                    b.wm2CassetteView.progress = state.progress
 
                     state.currentSong?.let { song ->
-                        b.cassetteView.trackTitle = song.title
-                        b.cassetteView.artistName = song.artist
+                        b.verticalCassetteView.trackTitle = song.title
+                        b.verticalCassetteView.artistName = song.artist
+                        b.wm2CassetteView.trackTitle = song.title
+                        b.wm2CassetteView.artistName = song.artist
                     }
 
+                    val curTimeStr = formatTime(state.currentPositionMs)
+                    val totalTimeStr = formatTime(state.durationMs)
+                    b.tvVerticalTime.text = "$curTimeStr / $totalTimeStr"
+
                     b.btnPlayPause.text = if (state.isPlaying) "❚❚ PAUSE" else "▶ PLAY"
-                    b.tvCurrentTime.text = formatTime(state.currentPositionMs)
-                    b.tvTotalDuration.text = formatTime(state.durationMs)
+                    b.tvCurrentTime.text = curTimeStr
+                    b.tvTotalDuration.text = totalTimeStr
                 }
             }
         }
     }
 
     private fun setupControls() {
+        // Vertical Deck Controls (Reference 1 & 2)
+        binding.verticalDeckView.onPlayClicked = {
+            if (audioEngine.playbackState.value.currentSong == null) {
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val app = requireActivity().application as SpindleApp
+                    val songs = app.database.songDao().getAllSongs().firstOrNull()
+                    if (!songs.isNullOrEmpty()) {
+                        audioEngine.playQueue(songs, 0)
+                    } else {
+                        audioEngine.togglePlayPause()
+                    }
+                }
+            } else {
+                audioEngine.togglePlayPause()
+            }
+        }
+        binding.verticalDeckView.onPrevClicked = { audioEngine.playPrevious() }
+        binding.verticalDeckView.onNextClicked = { audioEngine.playNext() }
+        binding.verticalDeckView.onSeek = { progress ->
+            val total = audioEngine.playbackState.value.durationMs
+            if (total > 0) {
+                audioEngine.seekTo((total * progress).toLong())
+            }
+        }
+        binding.verticalDeckView.onRecClicked = {
+            flipCassette(binding.verticalCassetteView)
+        }
+
+        // WM-2 Red Controls
         binding.wm2ChassisView.onPlayClicked = { audioEngine.togglePlayPause() }
         binding.wm2ChassisView.onStopClicked = { audioEngine.pause() }
-
         binding.btnPlayPause.setOnClickListener { audioEngine.togglePlayPause() }
         binding.btnPrev.setOnClickListener { audioEngine.playPrevious() }
         binding.btnNext.setOnClickListener { audioEngine.playNext() }
-
         binding.wm2ChassisView.onPrevClicked = { audioEngine.playPrevious() }
         binding.wm2ChassisView.onNextClicked = { audioEngine.playNext() }
-
-        // EJECT button slides the view pager smoothly to the Catalog screen (index 2)
         binding.btnEject.setOnClickListener {
             (activity as? MainActivity)?.navigateToCatalog()
         }
     }
 
     private fun setupCassetteFlip() {
-        binding.cassetteView.setOnClickListener {
-            val startAngle = if (isSideA) 0f else 180f
-            val endAngle = if (isSideA) 180f else 360f
+        binding.verticalCassetteView.setOnClickListener {
+            flipCassette(binding.verticalCassetteView)
+        }
+        binding.wm2CassetteView.setOnClickListener {
+            flipCassette(binding.wm2CassetteView)
+        }
+    }
 
-            ObjectAnimator.ofFloat(binding.cassetteView, "flipRotationY", startAngle, endAngle).apply {
-                duration = 600L
-                interpolator = AccelerateDecelerateInterpolator()
-                addUpdateListener { animator ->
-                    val value = animator.animatedValue as Float
-                    if (value >= 90f && isSideA) {
-                        isSideA = false
-                        binding.cassetteView.isSideA = false
-                    } else if (value >= 270f && !isSideA) {
-                        isSideA = true
-                        binding.cassetteView.isSideA = true
-                    }
+    private fun flipCassette(view: com.hana.spindle.ui.cassette.CassetteView) {
+        val startAngle = if (isSideA) 0f else 180f
+        val endAngle = if (isSideA) 180f else 360f
+
+        ObjectAnimator.ofFloat(view, "flipRotationY", startAngle, endAngle).apply {
+            duration = 600L
+            interpolator = AccelerateDecelerateInterpolator()
+            addUpdateListener { animator ->
+                val value = animator.animatedValue as Float
+                if (value >= 90f && isSideA) {
+                    isSideA = false
+                    view.isSideA = false
+                } else if (value >= 270f && !isSideA) {
+                    isSideA = true
+                    view.isSideA = true
                 }
-                start()
             }
+            start()
         }
     }
 

@@ -7,6 +7,7 @@ import android.util.AttributeSet
 import android.view.View
 import android.view.animation.LinearInterpolator
 import com.hana.spindle.theme.CassetteTheme
+import com.hana.spindle.theme.ChassisStyle
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -14,10 +15,12 @@ import kotlin.math.sin
  * High-performance, zero-allocation Custom View rendering a kinetic cassette tape.
  *
  * Implements:
- * 1. Differential dual-reel tape volume shift (R_left shrinking, R_right growing).
- * 2. 6-tooth rotating spindle teeth with speed varying inversely to spool radius.
- * 3. Side A (Player) <-> Side B (Tracklist) 3D camera flip.
- * 4. Dynamic cassette theme and album art label rendering.
+ * 1. Dual-orientation rendering:
+ *    - Vertical cassette tape for Vertical Studio Deck (with ruled paper label, top/bottom spools, Side A).
+ *    - Horizontal panoramic cassette tape for WM-2 Red and 80s Vaporwave.
+ * 2. Differential dual-reel tape volume shift (R_supply shrinking, R_takeup growing).
+ * 3. 6-tooth rotating spindle teeth with speed varying inversely to spool radius.
+ * 4. Side A (Player) <-> Side B (Tracklist) 3D camera flip.
  */
 class CassetteView @JvmOverloads constructor(
     context: Context,
@@ -27,10 +30,11 @@ class CassetteView @JvmOverloads constructor(
 
     private val kinematics = SpindleKinematics()
 
-    var theme: CassetteTheme = CassetteTheme.WM2_RED_HERO
+    var theme: CassetteTheme = CassetteTheme.VERTICAL_STUDIO_DECK
         set(value) {
             field = value
             updatePaints()
+            requestLayout()
             invalidate()
         }
 
@@ -52,7 +56,7 @@ class CassetteView @JvmOverloads constructor(
             invalidate()
         }
 
-    var progress: Float = 0.25f // 0.0f to 1.0f
+    var progress: Float = 0.0f
         set(value) {
             field = value.coerceIn(0f, 1f)
             invalidate()
@@ -67,30 +71,33 @@ class CassetteView @JvmOverloads constructor(
         }
 
     // Animation state
-    private var reelAngleLeft = 0f
-    private var reelAngleRight = 0f
+    private var reelAngle1 = 0f
+    private var reelAngle2 = 0f
     private var rotationAnimator: ValueAnimator? = null
 
-    // Pre-allocated Paints
+    // Pre-allocated Paints (Zero allocation in onDraw)
     private val shellPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val shellInnerBevelPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val windowPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val windowBevelPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val labelStripePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val ruledLinePaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val tapeRibbonPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val reelHubPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val reelTeethPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val titleTextPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val artistTextPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val sideBadgePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val largeSideBadgePaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val tapeLinePaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
     // Pre-allocated Geometries
     private val shellRect = RectF()
     private val windowRect = RectF()
     private val labelRect = RectF()
-    private val leftHubCenter = PointF()
-    private val rightHubCenter = PointF()
+    private val hubCenter1 = PointF()
+    private val hubCenter2 = PointF()
     private var hubRadius = 0f
     private var baseRadius = 0f
 
@@ -113,12 +120,17 @@ class CassetteView @JvmOverloads constructor(
             color = theme.shellColor
             style = Paint.Style.FILL
         }
+        shellInnerBevelPaint.apply {
+            color = Color.argb(40, 255, 255, 255)
+            style = Paint.Style.STROKE
+            strokeWidth = 2f
+        }
         windowPaint.apply {
-            color = Color.parseColor("#121214") // Acrylic smoked window interior
+            color = Color.parseColor("#121214")
             style = Paint.Style.FILL
         }
         windowBevelPaint.apply {
-            color = Color.argb(80, 255, 255, 255)
+            color = Color.argb(70, 255, 255, 255)
             style = Paint.Style.STROKE
             strokeWidth = 2f
         }
@@ -129,6 +141,11 @@ class CassetteView @JvmOverloads constructor(
         labelStripePaint.apply {
             color = theme.labelAccentColor
             style = Paint.Style.FILL
+        }
+        ruledLinePaint.apply {
+            color = Color.argb(50, 0, 0, 0)
+            style = Paint.Style.STROKE
+            strokeWidth = 1.2f
         }
         tapeRibbonPaint.apply {
             color = theme.tapeRibbonColor
@@ -145,22 +162,25 @@ class CassetteView @JvmOverloads constructor(
         tapeLinePaint.apply {
             color = theme.tapeRibbonColor
             style = Paint.Style.STROKE
-            strokeWidth = 6f
+            strokeWidth = 5f
         }
         titleTextPaint.apply {
             color = theme.labelTextColor
-            typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
-            textSize = 28f
+            typeface = Typeface.create(Typeface.SERIF, Typeface.NORMAL)
         }
         artistTextPaint.apply {
-            color = Color.argb(200, Color.red(theme.labelTextColor), Color.green(theme.labelTextColor), Color.blue(theme.labelTextColor))
-            typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
-            textSize = 22f
+            color = theme.labelTextColor
+            typeface = Typeface.create(Typeface.SERIF, Typeface.ITALIC)
         }
         sideBadgePaint.apply {
             color = theme.labelAccentColor
             typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
-            textSize = 24f
+            textAlign = Paint.Align.RIGHT
+        }
+        largeSideBadgePaint.apply {
+            color = theme.labelAccentColor
+            typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+            textAlign = Paint.Align.CENTER
         }
     }
 
@@ -168,17 +188,46 @@ class CassetteView @JvmOverloads constructor(
         super.onSizeChanged(w, h, oldw, oldh)
         if (w == 0 || h == 0) return
 
-        shellRect.set(w * 0.03f, h * 0.04f, w * 0.97f, h * 0.96f)
-        labelRect.set(w * 0.08f, h * 0.08f, w * 0.92f, h * 0.46f)
+        val isVertical = theme.chassisStyle != ChassisStyle.WM2_RED
 
-        // Panoramic Acrylic Window (center-bottom)
-        windowRect.set(w * 0.16f, h * 0.48f, w * 0.84f, h * 0.88f)
+        if (isVertical) {
+            // Vertical Cassette Geometry (Vertical Studio Deck & 80s Vaporwave)
+            shellRect.set(w * 0.04f, h * 0.03f, w * 0.96f, h * 0.97f)
 
-        leftHubCenter.set(windowRect.left + windowRect.width() * 0.28f, windowRect.centerY())
-        rightHubCenter.set(windowRect.left + windowRect.width() * 0.72f, windowRect.centerY())
+            // Paper Label (Upper 40%)
+            labelRect.set(w * 0.10f, h * 0.06f, w * 0.90f, h * 0.40f)
 
-        baseRadius = windowRect.height() * 0.5f
-        hubRadius = baseRadius * kinematics.hubRadiusRatio
+            // Central Vertical Window (42% to 76%)
+            windowRect.set(w * 0.22f, h * 0.42f, w * 0.78f, h * 0.76f)
+
+            // Top Spool & Bottom Spool
+            hubCenter1.set(windowRect.centerX(), windowRect.top + windowRect.height() * 0.28f)
+            hubCenter2.set(windowRect.centerX(), windowRect.top + windowRect.height() * 0.72f)
+
+            baseRadius = windowRect.width() * 0.38f
+            hubRadius = baseRadius * kinematics.hubRadiusRatio
+
+            artistTextPaint.textSize = w * 0.045f
+            titleTextPaint.textSize = w * 0.040f
+            sideBadgePaint.textSize = w * 0.042f
+            largeSideBadgePaint.textSize = w * 0.16f
+        } else {
+            // Horizontal Cassette Geometry (WM-2 Red & 80s Vaporwave)
+            shellRect.set(w * 0.03f, h * 0.04f, w * 0.97f, h * 0.96f)
+            labelRect.set(w * 0.08f, h * 0.08f, w * 0.92f, h * 0.46f)
+            windowRect.set(w * 0.16f, h * 0.48f, w * 0.84f, h * 0.88f)
+
+            hubCenter1.set(windowRect.left + windowRect.width() * 0.28f, windowRect.centerY())
+            hubCenter2.set(windowRect.left + windowRect.width() * 0.72f, windowRect.centerY())
+
+            baseRadius = windowRect.height() * 0.5f
+            hubRadius = baseRadius * kinematics.hubRadiusRatio
+
+            artistTextPaint.textSize = 22f
+            titleTextPaint.textSize = 26f
+            sideBadgePaint.textSize = 24f
+            largeSideBadgePaint.textSize = 36f
+        }
     }
 
     private fun startRotation() {
@@ -189,8 +238,8 @@ class CassetteView @JvmOverloads constructor(
             interpolator = LinearInterpolator()
             addUpdateListener {
                 val kinematicsState = kinematics.calculate(progress, baseRadius)
-                reelAngleLeft = (reelAngleLeft + 4f * kinematicsState.leftAngularSpeed) % 360f
-                reelAngleRight = (reelAngleRight + 4f * kinematicsState.rightAngularSpeed) % 360f
+                reelAngle1 = (reelAngle1 + 4f * kinematicsState.leftAngularSpeed) % 360f
+                reelAngle2 = (reelAngle2 + 4f * kinematicsState.rightAngularSpeed) % 360f
                 invalidate()
             }
             start()
@@ -204,7 +253,6 @@ class CassetteView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-
         val w = width.toFloat()
         val h = height.toFloat()
         if (w == 0f || h == 0f) return
@@ -223,43 +271,99 @@ class CassetteView @JvmOverloads constructor(
             canvas.concat(flipMatrix)
         }
 
+        val isVertical = theme.chassisStyle != ChassisStyle.WM2_RED
+
         // 1. Draw Outer Cassette Shell
         canvas.drawRoundRect(shellRect, 16f, 16f, shellPaint)
+        canvas.drawRoundRect(shellRect, 16f, 16f, shellInnerBevelPaint)
 
-        // 2. Draw Cassette Label (Header / Sticker)
+        // 2. Draw Paper Label
         canvas.drawRoundRect(labelRect, 8f, 8f, labelPaint)
-        // Accent Stripe on label
-        canvas.drawRect(labelRect.left, labelRect.top, labelRect.right, labelRect.top + 10f, labelStripePaint)
 
-        // Label Typography
-        val sideText = if (isSideA) "SIDE A" else "SIDE B"
-        canvas.drawText(sideText, labelRect.right - 110f, labelRect.top + 36f, sideBadgePaint)
-        canvas.drawText(trackTitle, labelRect.left + 24f, labelRect.top + 60f, titleTextPaint)
-        canvas.drawText(artistName, labelRect.left + 24f, labelRect.top + 98f, artistTextPaint)
+        if (isVertical) {
+            val isVaporwave = theme.chassisStyle == ChassisStyle.VAPORWAVE_80S
+
+            if (isVaporwave) {
+                // Top neon stripe on label
+                val stripeH = labelRect.height() * 0.14f
+                canvas.drawRect(labelRect.left, labelRect.top, labelRect.right, labelRect.top + stripeH, labelStripePaint)
+
+                // Top right "SIDE A" or "SIDE B" badge
+                val sideText = if (isSideA) "SIDE A" else "SIDE B"
+                canvas.drawText(sideText, labelRect.right - 18f, labelRect.top + stripeH + 24f, sideBadgePaint)
+            }
+
+            // Draw ruled lines on vertical paper label
+            val lineSpacing = labelRect.height() * 0.26f
+            val line1Y = labelRect.top + (if (isVaporwave) labelRect.height() * 0.42f else labelRect.height() * 0.28f)
+            val line2Y = line1Y + lineSpacing
+            val line3Y = line2Y + lineSpacing
+
+            canvas.drawLine(labelRect.left + 14f, line1Y, labelRect.right - 14f, line1Y, ruledLinePaint)
+            canvas.drawLine(labelRect.left + 14f, line2Y, labelRect.right - 14f, line2Y, ruledLinePaint)
+            if (!isVaporwave) {
+                canvas.drawLine(labelRect.left + 14f, line3Y, labelRect.right - 14f, line3Y, ruledLinePaint)
+            }
+
+            // Handwritten-style text above the lines
+            canvas.drawText(artistName, labelRect.left + 20f, line1Y - 8f, artistTextPaint)
+            canvas.drawText(trackTitle, labelRect.left + 20f, line2Y - 8f, titleTextPaint)
+        } else {
+            // Horizontal label stripe & text
+            canvas.drawRect(labelRect.left, labelRect.top, labelRect.right, labelRect.top + 10f, labelStripePaint)
+            val sideText = if (isSideA) "SIDE A" else "SIDE B"
+            canvas.drawText(sideText, labelRect.right - 24f, labelRect.top + 36f, sideBadgePaint)
+            canvas.drawText(trackTitle, labelRect.left + 24f, labelRect.top + 60f, titleTextPaint)
+            canvas.drawText(artistName, labelRect.left + 24f, labelRect.top + 98f, artistTextPaint)
+        }
 
         // 3. Draw Acrylic Cassette Window
-        canvas.drawRoundRect(windowRect, 12f, 12f, windowPaint)
-        canvas.drawRoundRect(windowRect, 12f, 12f, windowBevelPaint)
+        canvas.drawRoundRect(windowRect, 14f, 14f, windowPaint)
+        canvas.drawRoundRect(windowRect, 14f, 14f, windowBevelPaint)
 
-        // 4. Calculate Differential Kinematics for Spools
+        // 4. Calculate Differential Kinematics
         val kinematicsState = kinematics.calculate(progress, baseRadius)
 
-        // 5. Draw Tape Ribbon Connecting Left and Right Spools
-        canvas.drawLine(
-            leftHubCenter.x, leftHubCenter.y + kinematicsState.leftRadius * 0.9f,
-            rightHubCenter.x, rightHubCenter.y + kinematicsState.rightRadius * 0.9f,
-            tapeLinePaint
-        )
+        // 5. Draw Spools & Kinetic Tape Ribbon
+        if (isVertical) {
+            // Connecting vertical tape bridge
+            canvas.drawLine(
+                hubCenter1.x + kinematicsState.leftRadius * 0.8f, hubCenter1.y,
+                hubCenter2.x + kinematicsState.rightRadius * 0.8f, hubCenter2.y,
+                tapeLinePaint
+            )
 
-        // 6. Draw Supply Spool (Left) - Tape Pack & Hub
-        canvas.drawCircle(leftHubCenter.x, leftHubCenter.y, kinematicsState.leftRadius, tapeRibbonPaint)
-        canvas.drawCircle(leftHubCenter.x, leftHubCenter.y, hubRadius, reelHubPaint)
-        drawSpindleTeeth(canvas, leftHubCenter.x, leftHubCenter.y, hubRadius, reelAngleLeft)
+            // Top Spool (Supply)
+            canvas.drawCircle(hubCenter1.x, hubCenter1.y, kinematicsState.leftRadius, tapeRibbonPaint)
+            canvas.drawCircle(hubCenter1.x, hubCenter1.y, hubRadius, reelHubPaint)
+            drawSpindleTeeth(canvas, hubCenter1.x, hubCenter1.y, hubRadius, reelAngle1)
 
-        // 7. Draw Take-up Spool (Right) - Tape Pack & Hub
-        canvas.drawCircle(rightHubCenter.x, rightHubCenter.y, kinematicsState.rightRadius, tapeRibbonPaint)
-        canvas.drawCircle(rightHubCenter.x, rightHubCenter.y, hubRadius, reelHubPaint)
-        drawSpindleTeeth(canvas, rightHubCenter.x, rightHubCenter.y, hubRadius, reelAngleRight)
+            // Bottom Spool (Take-up)
+            canvas.drawCircle(hubCenter2.x, hubCenter2.y, kinematicsState.rightRadius, tapeRibbonPaint)
+            canvas.drawCircle(hubCenter2.x, hubCenter2.y, hubRadius, reelHubPaint)
+            drawSpindleTeeth(canvas, hubCenter2.x, hubCenter2.y, hubRadius, reelAngle2)
+
+            // 6. Draw Large "A" or "B" on bottom cassette shell
+            val sideText = if (isSideA) "A" else "B"
+            canvas.drawText(sideText, w * 0.5f, h * 0.90f, largeSideBadgePaint)
+        } else {
+            // Horizontal layout
+            canvas.drawLine(
+                hubCenter1.x, hubCenter1.y + kinematicsState.leftRadius * 0.9f,
+                hubCenter2.x, hubCenter2.y + kinematicsState.rightRadius * 0.9f,
+                tapeLinePaint
+            )
+
+            // Left Spool
+            canvas.drawCircle(hubCenter1.x, hubCenter1.y, kinematicsState.leftRadius, tapeRibbonPaint)
+            canvas.drawCircle(hubCenter1.x, hubCenter1.y, hubRadius, reelHubPaint)
+            drawSpindleTeeth(canvas, hubCenter1.x, hubCenter1.y, hubRadius, reelAngle1)
+
+            // Right Spool
+            canvas.drawCircle(hubCenter2.x, hubCenter2.y, kinematicsState.rightRadius, tapeRibbonPaint)
+            canvas.drawCircle(hubCenter2.x, hubCenter2.y, hubRadius, reelHubPaint)
+            drawSpindleTeeth(canvas, hubCenter2.x, hubCenter2.y, hubRadius, reelAngle2)
+        }
 
         canvas.restore()
     }

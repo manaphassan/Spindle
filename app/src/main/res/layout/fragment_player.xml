@@ -1,154 +1,204 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/wm2_red">
+    android:background="@color/surface_dark">
 
-    <!-- Sony Walkman II (WM-2) Red Chassis Frame -->
-    <com.hana.spindle.ui.cassette.Wm2ChassisView
-        android:id="@+id/wm2ChassisView"
+    <!-- 1. Vertical Walkman Deck Container (Reference 1 & 2: Vertical Studio & 80s Vaporwave) -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/verticalDeckContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        android:visibility="visible">
 
-    <!-- Panoramic Cassette Window (Tape Player & Reeling Reels) -->
-    <com.hana.spindle.ui.cassette.CassetteView
-        android:id="@+id/cassetteView"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="110dp"
-        android:layout_marginTop="56dp"
-        android:layout_marginBottom="160dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        <!-- Outer Chassis Faceplate with Ruler & Deck Buttons -->
+        <com.hana.spindle.ui.cassette.VerticalDeckView
+            android:id="@+id/verticalDeckView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Digital VFD Tape Counter / Progress Display -->
-    <LinearLayout
-        android:id="@+id/counterContainer"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:background="#E6121214"
-        android:paddingHorizontal="12dp"
-        android:paddingVertical="4dp"
-        android:layout_marginBottom="84dp"
-        android:layout_marginStart="24dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
+        <!-- Vertical Cassette Tape (Inside the Bay) -->
+        <com.hana.spindle.ui.cassette.CassetteView
+            android:id="@+id/verticalCassetteView"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:layout_constraintWidth_percent="0.66"
+            app:layout_constraintHeight_percent="0.52"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintVertical_bias="0.29" />
 
+        <!-- Subtle track time overlay in corner of ruler for audiophile precision -->
         <TextView
-            android:id="@+id/tvCurrentTime"
+            android:id="@+id/tvVerticalTime"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="00:00"
-            android:textColor="@color/vfd_emerald"
+            android:text="00:00 / 00:00"
+            android:textColor="#80FFFFFF"
             android:fontFamily="monospace"
-            android:textSize="18sp"
-            android:textStyle="bold" />
+            android:textSize="10sp"
+            android:layout_marginEnd="32dp"
+            android:layout_marginBottom="4dp"
+            app:layout_constraintBottom_toTopOf="@+id/verticalCassetteView"
+            app:layout_constraintEnd_toEndOf="parent" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text=" / "
-            android:textColor="#6600E676"
-            android:fontFamily="monospace"
-            android:textSize="18sp" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
-        <TextView
-            android:id="@+id/tvTotalDuration"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="00:00"
-            android:textColor="@color/vfd_emerald"
-            android:fontFamily="monospace"
-            android:textSize="18sp" />
-    </LinearLayout>
-
-    <!-- Bottom Physical Controls Container -->
-    <LinearLayout
-        android:id="@+id/bottomControlsContainer"
+    <!-- 2. Classic 1981 WM-2 Red Layout Container -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/wm2Container"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:paddingHorizontal="16dp"
-        android:paddingBottom="16dp"
-        app:layout_constraintBottom_toBottomOf="parent">
+        android:layout_height="match_parent"
+        android:background="@color/wm2_red"
+        android:visibility="gone">
 
-        <!-- PREV -->
-        <Button
-            android:id="@+id/btnPrev"
+        <com.hana.spindle.ui.cassette.Wm2ChassisView
+            android:id="@+id/wm2ChassisView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <com.hana.spindle.ui.cassette.CassetteView
+            android:id="@+id/wm2CassetteView"
             android:layout_width="0dp"
-            android:layout_height="52dp"
-            android:layout_weight="1"
-            android:layout_marginEnd="6dp"
-            android:backgroundTint="@color/wm2_bezel_black"
-            android:text="|&lt;&lt;"
-            android:textColor="@color/white"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:padding="0dp"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            app:cornerRadius="8dp" />
+            android:layout_height="0dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="110dp"
+            android:layout_marginTop="56dp"
+            android:layout_marginBottom="160dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
 
-        <!-- PLAY / PAUSE -->
-        <Button
-            android:id="@+id/btnPlayPause"
-            android:layout_width="0dp"
-            android:layout_height="52dp"
-            android:layout_weight="1.2"
-            android:layout_marginEnd="6dp"
-            android:backgroundTint="@color/wm2_bezel_dark"
-            android:text="&gt; PLAY"
-            android:textColor="@color/wm2_play_green"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:padding="0dp"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            app:cornerRadius="8dp" />
+        <!-- Digital VFD Tape Counter -->
+        <LinearLayout
+            android:id="@+id/counterContainer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:background="#E6121214"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="4dp"
+            android:layout_marginBottom="84dp"
+            android:layout_marginStart="24dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent">
 
-        <!-- NEXT -->
-        <Button
-            android:id="@+id/btnNext"
-            android:layout_width="0dp"
-            android:layout_height="52dp"
-            android:layout_weight="1"
-            android:layout_marginEnd="6dp"
-            android:backgroundTint="@color/wm2_bezel_black"
-            android:text="&gt;&gt;|"
-            android:textColor="@color/white"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:padding="0dp"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            app:cornerRadius="8dp" />
+            <TextView
+                android:id="@+id/tvCurrentTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="00:00"
+                android:textColor="@color/vfd_emerald"
+                android:fontFamily="monospace"
+                android:textSize="18sp"
+                android:textStyle="bold" />
 
-        <!-- EJECT -->
-        <Button
-            android:id="@+id/btnEject"
-            android:layout_width="0dp"
-            android:layout_height="52dp"
-            android:layout_weight="1"
-            android:backgroundTint="@color/wm2_red_dark"
-            android:text="EJECT"
-            android:textColor="@color/white"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:padding="0dp"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            app:cornerRadius="8dp" />
-    </LinearLayout>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=" / "
+                android:textColor="#6600E676"
+                android:fontFamily="monospace"
+                android:textSize="18sp" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+            <TextView
+                android:id="@+id/tvTotalDuration"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="00:00"
+                android:textColor="@color/vfd_emerald"
+                android:fontFamily="monospace"
+                android:textSize="18sp" />
+        </LinearLayout>
+
+        <!-- Bottom Physical Controls Container -->
+        <LinearLayout
+            android:id="@+id/bottomControlsContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:paddingHorizontal="16dp"
+            android:paddingBottom="16dp"
+            app:layout_constraintBottom_toBottomOf="parent">
+
+            <Button
+                android:id="@+id/btnPrev"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="6dp"
+                android:backgroundTint="@color/wm2_bezel_black"
+                android:text="|&lt;&lt;"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:padding="0dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                app:cornerRadius="8dp" />
+
+            <Button
+                android:id="@+id/btnPlayPause"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1.2"
+                android:layout_marginEnd="6dp"
+                android:backgroundTint="@color/wm2_bezel_dark"
+                android:text="&gt; PLAY"
+                android:textColor="@color/wm2_play_green"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:padding="0dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                app:cornerRadius="8dp" />
+
+            <Button
+                android:id="@+id/btnNext"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="6dp"
+                android:backgroundTint="@color/wm2_bezel_black"
+                android:text="&gt;&gt;|"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:padding="0dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                app:cornerRadius="8dp" />
+
+            <Button
+                android:id="@+id/btnEject"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:backgroundTint="@color/wm2_red_dark"
+                android:text="EJECT"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:padding="0dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                app:cornerRadius="8dp" />
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</FrameLayout>
