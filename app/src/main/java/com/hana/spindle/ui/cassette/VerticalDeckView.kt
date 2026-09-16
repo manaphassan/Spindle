@@ -52,6 +52,7 @@ class VerticalDeckView @JvmOverloads constructor(
         set(value) {
             if (field != value) {
                 field = value
+                animateHeadEngage(value)
                 if (value) startRotation() else stopRotation()
             }
         }
@@ -104,6 +105,8 @@ class VerticalDeckView @JvmOverloads constructor(
 
     // Kinetic Animation State
     private var rotationAnimator: ValueAnimator? = null
+    private var headAnimator: ValueAnimator? = null
+    private var headEngageProgress = 0f
     private var topReelAngle = 0f
     private var bottomReelAngle = 0f
     private var marqueeOffset = 0f
@@ -132,10 +135,17 @@ class VerticalDeckView @JvmOverloads constructor(
     private val centerWindowBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
     private val tapeSpoolPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val tapeShellSpoolPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val tapeTexturePaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val tapeBridgePaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val tapePathPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val tapePathHighlightPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+    private val pressurePadSpringPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val pressurePadFeltPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val tapeHeadChassisPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val tapeHeadBevelPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val tapeHeadCorePaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
     private val hubRimPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val hubTeethPaint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -189,6 +199,10 @@ class VerticalDeckView @JvmOverloads constructor(
     private val trapPath = Path()
     private val threadedTapePath = Path()
     private val acrylicSheenPath = Path()
+    private val pressurePadSpringPath = Path()
+    private val pressurePadRect = RectF()
+    private val tapeHeadRect = RectF()
+    private var textRightMarginX = 0f
 
     private val btnRewRect = RectF()
     private val btnFwdRect = RectF()
@@ -292,7 +306,11 @@ class VerticalDeckView @JvmOverloads constructor(
         }
 
         tapeSpoolPaint.apply {
-            color = Color.parseColor("#38231B") // Magnetic brown oxide tape pack
+            color = Color.parseColor("#38231B") // Opaque magnetic brown oxide tape pack inside clear window
+            style = Paint.Style.FILL
+        }
+        tapeShellSpoolPaint.apply {
+            color = Color.argb(75, 45, 28, 22) // Translucent smoky silhouette seen through protective plastic shell
             style = Paint.Style.FILL
         }
         tapeTexturePaint.apply {
@@ -305,15 +323,39 @@ class VerticalDeckView @JvmOverloads constructor(
             style = Paint.Style.FILL
         }
         tapePathPaint.apply {
-            color = Color.parseColor("#38231B")
+            color = Color.argb(85, 45, 28, 22) // Translucent ribbon outside the clear window inside shell
             style = Paint.Style.STROKE
             strokeWidth = 5f
             strokeCap = Paint.Cap.ROUND
         }
         tapePathHighlightPaint.apply {
-            color = Color.parseColor("#4D3025")
+            color = Color.argb(30, 255, 255, 255)
             style = Paint.Style.STROKE
-            strokeWidth = 1.5f
+            strokeWidth = 1.2f
+        }
+
+        pressurePadSpringPaint.apply {
+            color = Color.parseColor("#B45309") // Bronze beryllium leaf spring plate
+            style = Paint.Style.STROKE
+            strokeWidth = 2.5f
+            strokeCap = Paint.Cap.ROUND
+        }
+        pressurePadFeltPaint.apply {
+            color = Color.parseColor("#DC2626") // Ruby red felt pressure pad
+            style = Paint.Style.FILL
+        }
+        tapeHeadChassisPaint.apply {
+            color = Color.parseColor("#788294") // Polished metallic chrome playback head
+            style = Paint.Style.FILL
+        }
+        tapeHeadBevelPaint.apply {
+            color = Color.parseColor("#CBD5E1")
+            style = Paint.Style.STROKE
+            strokeWidth = 2f
+        }
+        tapeHeadCorePaint.apply {
+            color = Color.parseColor("#1E293B") // Magnetic pickup slit core
+            style = Paint.Style.FILL
         }
 
         hubRimPaint.apply {
@@ -361,20 +403,20 @@ class VerticalDeckView @JvmOverloads constructor(
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
         }
         spindleLogoPaint.apply {
-            color = Color.parseColor("#7E828E")
-            textAlign = Paint.Align.CENTER
+            color = Color.parseColor("#8E929E")
+            textAlign = Paint.Align.LEFT
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
-            letterSpacing = 0.18f
+            letterSpacing = 0.12f
         }
         spindleSubtextPaint.apply {
-            color = Color.parseColor("#505460")
-            textAlign = Paint.Align.CENTER
-            typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
-            letterSpacing = 0.12f
+            color = Color.parseColor("#5A5D6B")
+            textAlign = Paint.Align.LEFT
+            typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+            letterSpacing = 0.16f
         }
         cassetteBadgePaint.apply {
             color = Color.parseColor("#444955")
-            textAlign = Paint.Align.CENTER
+            textAlign = Paint.Align.LEFT
             typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
             letterSpacing = 0.08f
         }
@@ -498,12 +540,15 @@ class VerticalDeckView @JvmOverloads constructor(
         val cw = cassetteRect.width()
         val ch = cassetteRect.height()
 
-        // Center Transparent Acrylic Window Panel (Framing both spools)
-        val winLeft = cassetteRect.left + cw * 0.26f
-        val winRight = cassetteRect.left + cw * 0.69f
-        val winTop = cassetteRect.top + ch * 0.055f
-        val winBottom = cassetteRect.bottom - ch * 0.055f
+        // Center Transparent Acrylic Window Panel (Framing both spools, matching reference ratio)
+        val winLeft = cassetteRect.left + cw * 0.245f
+        val winRight = cassetteRect.left + cw * 0.675f
+        val winTop = cassetteRect.top + ch * 0.048f
+        val winBottom = cassetteRect.bottom - ch * 0.048f
         centerWindowRect.set(winLeft, winTop, winRight, winBottom)
+
+        // Baseline right-alignment margin for left column typography directly next to clear window frame
+        textRightMarginX = centerWindowRect.left - cw * 0.022f
 
         // Reels Center Coordinates (Centered horizontally inside the central window panel)
         val reelCenterX = centerWindowRect.centerX()
@@ -514,8 +559,8 @@ class VerticalDeckView @JvmOverloads constructor(
         hubOuterRadius = baseHubDimension * 0.33f
 
         // Head opening on the right side of cassette
-        val headLeft = cassetteRect.right - cw * 0.09f
-        val headRight = cassetteRect.right - cw * 0.02f
+        val headLeft = cassetteRect.right - cw * 0.095f
+        val headRight = cassetteRect.right - cw * 0.018f
         val headH = ch * 0.16f
         headCavityRect.set(
             headLeft,
@@ -523,6 +568,18 @@ class VerticalDeckView @JvmOverloads constructor(
             headRight,
             cassetteRect.centerY() + headH * 0.5f
         )
+
+        // Pre-compute bronze beryllium leaf spring plate
+        val padMidY = headCavityRect.centerY()
+        pressurePadSpringPath.reset()
+        pressurePadSpringPath.moveTo(headCavityRect.left + 3f, padMidY - headH * 0.28f)
+        pressurePadSpringPath.quadTo(headCavityRect.left + 10f, padMidY, headCavityRect.left + 3f, padMidY + headH * 0.28f)
+
+        // Pre-compute ruby red felt pressure pad
+        val padW = cw * 0.018f
+        val padH = headH * 0.24f
+        val padX = headCavityRect.left + 8.5f
+        pressurePadRect.set(padX - padW * 0.5f, padMidY - padH * 0.5f, padX + padW * 0.5f, padMidY + padH * 0.5f)
 
         // Pre-compute right trapezoid contour
         trapPath.reset()
@@ -721,20 +778,60 @@ class VerticalDeckView @JvmOverloads constructor(
         canvas.drawRoundRect(tempRectF, 3f, 3f, cassetteCutoutPaint)
         canvas.drawRoundRect(tempRectF, 3f, 3f, cassetteGuidePaint)
 
-        // Tape path threading through the cassette cavity
-        canvas.drawPath(threadedTapePath, tapePathPaint)
-        canvas.drawPath(threadedTapePath, tapePathHighlightPaint)
-
-        // Tape head opening & red magnetic pressure pad
+        // 1. Tape head opening & pressure pad mechanism
         canvas.drawRoundRect(headCavityRect, 6f, 6f, centerWindowPaint)
         canvas.drawRoundRect(headCavityRect, 6f, 6f, centerWindowBorderPaint)
-        tempRectF.set(
-            headCavityRect.left + 4f,
-            headCavityRect.centerY() - 14f,
-            headCavityRect.left + 12f,
-            headCavityRect.centerY() + 14f
+
+        // 2. Bronze beryllium leaf spring plate mounted behind tape
+        canvas.drawPath(pressurePadSpringPath, pressurePadSpringPaint)
+
+        // 3. Ruby red felt pressure pad at contact point under the tape
+        canvas.drawRoundRect(pressurePadRect, 2f, 2f, pressurePadFeltPaint)
+
+        // 4. Playback Tape Head (advances into cavity when isPlaying)
+        val retractedHeadX = headCavityRect.right + 12f
+        val engagedHeadX = pressurePadRect.right + 2f
+        val currentHeadX = retractedHeadX + (engagedHeadX - retractedHeadX) * headEngageProgress
+        val headW = cw * 0.040f
+        val headH = headCavityRect.height() * 0.46f
+        tapeHeadRect.set(
+            currentHeadX,
+            headCavityRect.centerY() - headH * 0.5f,
+            currentHeadX + headW,
+            headCavityRect.centerY() + headH * 0.5f
         )
-        canvas.drawRoundRect(tempRectF, 2f, 2f, orangeNotchPaint)
+
+        if (currentHeadX < headCavityRect.right) {
+            canvas.save()
+            canvas.clipRect(headCavityRect)
+            canvas.drawRoundRect(tapeHeadRect, 4f, 4f, tapeHeadChassisPaint)
+            canvas.drawRoundRect(tapeHeadRect, 4f, 4f, tapeHeadBevelPaint)
+            val coreW = 3.5f
+            tempRectF.set(
+                tapeHeadRect.left + 2f,
+                headCavityRect.centerY() - headH * 0.22f,
+                tapeHeadRect.left + 2f + coreW,
+                headCavityRect.centerY() + headH * 0.22f
+            )
+            canvas.drawRoundRect(tempRectF, 1f, 1f, tapeHeadCorePaint)
+            canvas.restore()
+        }
+
+        // 5. Tape path threading through the cassette cavity (flexes over engaged head)
+        threadedTapePath.reset()
+        threadedTapePath.moveTo(topHubCenter.x, topHubCenter.y)
+        threadedTapePath.lineTo(rollerX, rollerYTop)
+        if (headEngageProgress > 0.05f) {
+            val tapeTouchX = currentHeadX.coerceAtMost(rollerX)
+            threadedTapePath.lineTo(tapeTouchX, headCavityRect.centerY() - headH * 0.38f)
+            threadedTapePath.lineTo(tapeTouchX, headCavityRect.centerY() + headH * 0.38f)
+        }
+        threadedTapePath.lineTo(rollerX, rollerYBottom)
+        threadedTapePath.lineTo(bottomHubCenter.x, bottomHubCenter.y)
+
+        // Draw translucent tape ribbon outside clear window seen through protective plastic shell
+        canvas.drawPath(threadedTapePath, tapePathPaint)
+        canvas.drawPath(threadedTapePath, tapePathHighlightPaint)
 
         // Diagonal specular acrylic reflection sheen & sharp line across upper shell
         canvas.drawPath(acrylicSheenPath, acrylicSheenPaint)
@@ -759,14 +856,21 @@ class VerticalDeckView @JvmOverloads constructor(
      * Draws the central transparent acrylic window panel and the kinetic rotating reels visible within it.
      */
     private fun drawWindowPanelAndKineticReels(canvas: Canvas) {
-        // 1. Central transparent window panel cavity
-        canvas.drawRoundRect(centerWindowRect, 14f, 14f, centerWindowPaint)
-        canvas.drawRoundRect(centerWindowRect, 14f, 14f, centerWindowBorderPaint)
-
-        // 2. Kinetic Spools
         val spoolState = kinematics.calculate(progress, baseHubDimension)
         val rTopTape = spoolState.leftRadius
         val rBottomTape = spoolState.rightRadius
+
+        // 1. Translucent tape spools visible through protective plastic shell OUTSIDE the clear window
+        canvas.drawCircle(topHubCenter.x, topHubCenter.y, rTopTape, tapeShellSpoolPaint)
+        canvas.drawCircle(bottomHubCenter.x, bottomHubCenter.y, rBottomTape, tapeShellSpoolPaint)
+
+        // 2. Central transparent window panel cavity
+        canvas.drawRoundRect(centerWindowRect, 14f, 14f, centerWindowPaint)
+        canvas.drawRoundRect(centerWindowRect, 14f, 14f, centerWindowBorderPaint)
+
+        // 3. Crisp, fully opaque magnetic tape packs & hubs INSIDE the clear window
+        canvas.save()
+        canvas.clipRect(centerWindowRect)
 
         // Vertical tape bridge between spools inside the center window
         val bridgeWidth = hubOuterRadius * 0.44f
@@ -793,6 +897,8 @@ class VerticalDeckView @JvmOverloads constructor(
 
         // Bottom Reel Hub Mechanism & Signature Orange Calibration Notch
         drawHubMechanism(canvas, bottomHubCenter.x, bottomHubCenter.y, hubOuterRadius, bottomReelAngle)
+
+        canvas.restore()
 
         // Subtle specular highlight on acrylic window
         tempRectF.set(
@@ -850,7 +956,8 @@ class VerticalDeckView @JvmOverloads constructor(
 
     /**
      * Draws the real-time 7-segment digital device clock (Rotated -90° Vertical).
-     * Replicates the exact vertical orientation in the reference image (digits reading from bottom to top).
+     * Replicates the exact vertical orientation in the reference image (digits reading from bottom to top),
+     * right-aligned with the top border of the central clear window frame.
      */
     private fun drawVerticalDigitalClock(canvas: Canvas) {
         calendar.timeInMillis = System.currentTimeMillis()
@@ -864,20 +971,20 @@ class VerticalDeckView @JvmOverloads constructor(
 
         val cw = cassetteRect.width()
         val ch = cassetteRect.height()
-        val originX = cassetteRect.left + cw * 0.145f
-        val originY = cassetteRect.top + ch * 0.205f
+
+        val digitH = cw * 0.052f  // Height across column (facing left)
+        val digitW = digitH * 0.52f // Width along column
+        val digitGap = digitW * 0.22f
+        val colonW = digitW * 0.32f
+        val totalClockLength = digitW * 4f + digitGap * 2.4f + colonW
+
+        // Right-align top of clock with top border of center clear window frame
+        val originX = textRightMarginX
+        val originY = centerWindowRect.top + totalClockLength + ch * 0.008f
 
         canvas.save()
         canvas.translate(originX, originY)
         canvas.rotate(-90f)
-
-        // In this local frame:
-        // +X points UP along the screen
-        // +Y points RIGHT across the screen (towards the window)
-        // -Y points LEFT towards the phone edge
-        val digitH = cw * 0.055f  // Height across column (facing left)
-        val digitW = digitH * 0.52f // Width along column
-        val digitGap = digitW * 0.24f
 
         var currentX = 0f
 
@@ -890,8 +997,8 @@ class VerticalDeckView @JvmOverloads constructor(
         currentX += digitW + digitGap * 0.7f
 
         // Colon ':'
-        drawColonVertical(canvas, currentX, digitW * 0.32f, digitH)
-        currentX += digitW * 0.32f + digitGap * 0.7f
+        drawColonVertical(canvas, currentX, colonW, digitH)
+        currentX += colonW + digitGap * 0.7f
 
         // Digit 3 (Minute tens)
         draw7SegmentDigitVertical(canvas, currentX, digitW, digitH, m1)
@@ -963,10 +1070,10 @@ class VerticalDeckView @JvmOverloads constructor(
 
     /**
      * Draws the track title and artist • duration centered vertically along the cassette spine.
-     * Running vertically along the left column (Rotated -90° Vertical), perfectly centered to the cassette deck.
+     * Running vertically along the left column (Rotated -90° Vertical), baseline aligned with clear window.
      */
     private fun drawVerticalTrackInfo(canvas: Canvas) {
-        val originX = cassetteRect.left + cassetteRect.width() * 0.14f
+        val originX = textRightMarginX - titleTextPaint.textSize * 1.18f
         val originY = cassetteRect.centerY()
         val maxAvailableLength = cassetteRect.height() * 0.38f
 
@@ -1011,7 +1118,7 @@ class VerticalDeckView @JvmOverloads constructor(
             canvas.drawText(trackTitle, 0f, 0f, titleTextPaint)
         }
 
-        // Line 2: Artist • Duration (shifted in +Y direction towards the window, centered at x = 0)
+        // Line 2: Artist • Duration (shifted in +Y direction landing right at textRightMarginX)
         val durStr = formatTime(durationMs)
         val subtitle = "$artistName • $durStr"
         val line2Y = titleTextPaint.textSize * 1.18f
@@ -1032,26 +1139,24 @@ class VerticalDeckView @JvmOverloads constructor(
     }
 
     /**
-     * Draws the SPINDLE PLAYER branding and audiophile TYPE II badge at the bottom left (Rotated -90° Vertical).
+     * Draws the SPINDLE PLAYER branding at the bottom left (Rotated -90° Vertical).
+     * Right-aligned with the clear window frame (textRightMarginX) and bottom-aligned with centerWindowRect.bottom.
+     * Matches the authentic MIUI RECORDER typography from reference image media_1789561453495.png.
      */
     private fun drawVerticalSpindleBranding(canvas: Canvas) {
-        val originX = cassetteRect.left + cassetteRect.width() * 0.14f
-        val originY = cassetteRect.bottom - cassetteRect.height() * 0.080f
+        val originX = textRightMarginX
+        val originY = centerWindowRect.bottom - cassetteRect.height() * 0.008f
 
         canvas.save()
         canvas.translate(originX, originY)
         canvas.rotate(-90f)
 
-        // Primary Brand: SPINDLE
-        canvas.drawText("SPINDLE", 0f, 0f, spindleLogoPaint)
+        // Line 2 (closest to clear window frame): PLAYER
+        canvas.drawText("PLAYER", 0f, 0f, spindleSubtextPaint)
 
-        // Secondary Tag: PLAYER (alongside SPINDLE towards the window)
-        val subtextY = spindleLogoPaint.textSize * 0.85f
-        canvas.drawText("PLAYER", 0f, subtextY, spindleSubtextPaint)
-
-        // Audiophile Badge: TYPE II [CrO2] HIGH BIAS
-        val badgeY = subtextY + cassetteBadgePaint.textSize * 1.25f
-        canvas.drawText("TYPE II [CrO2] HIGH BIAS", 0f, badgeY, cassetteBadgePaint)
+        // Line 1 (stepping to the left towards outer chassis): SPINDLE
+        val logoY = -spindleSubtextPaint.textSize * 1.35f
+        canvas.drawText("SPINDLE", 0f, logoY, spindleLogoPaint)
 
         canvas.restore()
     }
@@ -1270,13 +1375,32 @@ class VerticalDeckView @JvmOverloads constructor(
         return String.format(Locale.US, "%02d:%02d", minutes, seconds)
     }
 
+    private fun animateHeadEngage(engage: Boolean) {
+        headAnimator?.cancel()
+        val target = if (engage) 1f else 0f
+        headAnimator = ValueAnimator.ofFloat(headEngageProgress, target).apply {
+            duration = 180L
+            interpolator = android.view.animation.DecelerateInterpolator()
+            addUpdateListener {
+                headEngageProgress = it.animatedValue as Float
+                invalidate()
+            }
+            start()
+        }
+    }
+
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        if (isPlaying) startRotation()
+        if (isPlaying) {
+            headEngageProgress = 1f
+            startRotation()
+        }
     }
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
+        headAnimator?.cancel()
+        headAnimator = null
         stopRotation()
     }
 }
