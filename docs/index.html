@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spindle · Audiophile Android Home Launcher</title>
+  <meta name="description" content="An ultra-lightweight Android Home Launcher transforming legacy compact smartphones and DAPs into dedicated, physical-feeling audiophile music players. Zero AI. 100% Deterministic.">
+  
+  <!-- OpenGraph / Social Media -->
+  <meta property="og:title" content="Spindle · Audiophile Android Launcher">
+  <meta property="og:description" content="Analog Soul. Hi-Res Heart. Zero Bloat. Lightweight launcher for old devices & low-RAM DAPs.">
+  <meta property="og:image" content="assets/spindle_hero_banner.jpg">
+  <meta property="og:type" content="website">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/spindle_app_icon.png">
+  
+  <style>
+    :root {
+      --bg-color: #0d0e11;
+      --card-bg: #14151a;
+      --surface-elevated: #1e2027;
+      --accent-red: #d71920;
+      --accent-emerald: #00e676;
+      --accent-amber: #ffb300;
+      --text-main: #f1f1f4;
+      --text-muted: #8e929e;
+      --border-color: #272a33;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* Top Navigation Bar */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(13, 14, 17, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 14px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text-main);
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      font-size: 1.2rem;
+    }
+
+    .brand img {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+    }
+
+    nav {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+
+    nav a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+
+    nav a:hover {
+      color: var(--accent-emerald);
+    }
+
+    .btn-github {
+      background: var(--surface-elevated);
+      color: var(--text-main);
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .btn-github:hover {
+      background: var(--accent-red);
+      color: #fff;
+      border-color: var(--accent-red);
+    }
+
+    /* Hero Section */
+    .hero-container {
+      max-width: 1100px;
+      margin: 40px auto 20px auto;
+      padding: 0 20px;
+      text-align: center;
+    }
+
+    .hero-banner {
+      width: 100%;
+      border-radius: 20px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+      border: 1px solid var(--border-color);
+      margin-bottom: 30px;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      background: rgba(0, 230, 118, 0.12);
+      color: var(--accent-emerald);
+      border: 1px solid rgba(0, 230, 118, 0.3);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-size: 2.8rem;
+      font-weight: 900;
+      letter-spacing: 1px;
+      line-height: 1.2;
+      margin-bottom: 14px;
+    }
+
+    .subtitle {
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      max-width: 760px;
+      margin: 0 auto 30px auto;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 40px;
+    }
+
+    .btn-primary {
+      background: var(--accent-red);
+      color: #fff;
+      padding: 14px 28px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 1.05rem;
+      text-decoration: none;
+      box-shadow: 0 8px 24px rgba(215, 25, 32, 0.35);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(215, 25, 32, 0.5);
+    }
+
+    .btn-secondary {
+      background: var(--surface-elevated);
+      color: var(--text-main);
+      padding: 14px 28px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 1.05rem;
+      text-decoration: none;
+      border: 1px solid var(--border-color);
+      transition: all 0.2s;
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--text-muted);
+      background: #252833;
+    }
+
+    /* Highlights / Pill Stats */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      max-width: 1000px;
+      margin: 0 auto 60px auto;
+      padding: 0 20px;
+    }
+
+    .stat-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .stat-val {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--accent-emerald);
+      font-family: monospace;
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Feature Grid Section */
+    .section-container {
+      max-width: 1100px;
+      margin: 60px auto;
+      padding: 0 20px;
+    }
+
+    .section-title {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .section-subtitle {
+      text-align: center;
+      color: var(--text-muted);
+      max-width: 680px;
+      margin: 0 auto 40px auto;
+      font-size: 1.05rem;
+    }
+
+    .showcase-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 30px;
+      margin-bottom: 60px;
+    }
+
+    .showcase-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 18px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.25s, border-color 0.25s;
+    }
+
+    .showcase-card:hover {
+      transform: translateY(-4px);
+      border-color: #404452;
+    }
+
+    .showcase-img {
+      width: 100%;
+      height: 440px;
+      object-fit: cover;
+      background: #000;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .showcase-content {
+      padding: 24px;
+      flex: 1;
+    }
+
+    .showcase-tag {
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: var(--accent-red);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    .showcase-title {
+      font-size: 1.3rem;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    .showcase-desc {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    /* Benchmark Comparison Table */
+    .table-container {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      overflow-x: auto;
+      margin-bottom: 60px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th, td {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    th {
+      background: var(--surface-elevated);
+      color: var(--text-main);
+      font-weight: 700;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    td {
+      font-size: 0.95rem;
+    }
+
+    .highlight-cell {
+      color: var(--accent-emerald);
+      font-weight: 700;
+      font-family: monospace;
+    }
+
+    /* Terminal / ADB Block */
+    .terminal-box {
+      background: #000;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 0.9rem;
+      color: #00e676;
+      line-height: 1.6;
+      overflow-x: auto;
+      margin: 20px 0;
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border-color);
+      padding: 40px 20px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    footer a {
+      color: var(--text-main);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      color: var(--accent-emerald);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation Header -->
+  <header>
+    <a href="#" class="brand">
+      <img src="assets/spindle_app_icon.png" alt="Spindle Icon">
+      <span>SPINDLE</span>
+    </a>
+    <nav>
+      <a href="#features">Features</a>
+      <a href="#benchmarks">Low RAM</a>
+      <a href="BRANDING.md">Branding</a>
+      <a href="https://github.com/manaphassan/Spindle" class="btn-github">
+        <svg height="16" width="16" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+        </svg>
+        GitHub
+      </a>
+    </nav>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero-container">
+    <img src="assets/spindle_hero_banner.jpg" alt="Spindle Hero Banner" class="hero-banner">
+
+    <div class="hero-badge">100% AI-FREE · 100% DETERMINISTIC · BIT-PERFECT</div>
+    <h1>Analog Soul. Hi-Res Heart. Zero Bloat.</h1>
+    <p class="subtitle">
+      The ultra-lightweight Android Home Launcher specifically crafted to repurpose compact smartphones and low-RAM DAPs into dedicated, physical-feeling audiophile music players.
+    </p>
+
+    <div class="hero-actions">
+      <a href="https://github.com/manaphassan/Spindle/releases" class="btn-primary">Download APK (v1.0.0)</a>
+      <a href="https://github.com/manaphassan/Spindle" class="btn-secondary">View on GitHub</a>
+    </div>
+  </section>
+
+  <!-- Key Metrics / Stats Bar -->
+  <section class="stats-bar">
+    <div class="stat-card">
+      <div class="stat-val">&lt; 25 MB</div>
+      <div class="stat-label">Idle RAM Overhead</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val">&lt; 4.5 MB</div>
+      <div class="stat-label">Release APK Size</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val">60 FPS</div>
+      <div class="stat-label">Native Hardware Canvas</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val">24/192k</div>
+      <div class="stat-label">Bit-Perfect Native FLAC/DSD</div>
+    </div>
+  </section>
+
+  <!-- Interface Showcase Grid -->
+  <section id="features" class="section-container">
+    <h2 class="section-title">Industrial Hardware Aesthetics</h2>
+    <p class="section-subtitle">
+      Every screen in Spindle is rendered with hardware-accelerated custom Canvas geometries—zero heavy image assets, zero GC stutters.
+    </p>
+
+    <div class="showcase-grid">
+      <!-- Card 1: Cassette Deck -->
+      <div class="showcase-card">
+        <img src="assets/screenshot_walkman_home.png" alt="Flagship Cassette Deck" class="showcase-img">
+        <div class="showcase-content">
+          <div class="showcase-tag">Home Launcher · Page 1</div>
+          <h3 class="showcase-title">Sony Walkman II (WM-2) Heritage</h3>
+          <p class="showcase-desc">
+            Authentic 1981 crimson red chassis with non-linear differential kinetic reels (4.76 cm/s), analog tape ruler scrubber, and tactile mechanical buttons with physical detent haptics.
+          </p>
+        </div>
+      </div>
+
+      <!-- Card 2: Braun Radio -->
+      <div class="showcase-card">
+        <img src="assets/screenshot_braun_radio.png" alt="Braun Online FM Radio" class="showcase-img">
+        <div class="showcase-content">
+          <div class="showcase-tag">Online Streaming · Page 2</div>
+          <h3 class="showcase-title">Braun / Dieter Rams FM Radio</h3>
+          <p class="showcase-desc">
+            7-ring acoustic perforated speaker grille, 3D cylindrical ribbed tuning thumbwheel with detent vibration ticks, and vintage green backlit LCD matrix readout playing live low-latency streams.
+          </p>
+        </div>
+      </div>
+
+      <!-- Card 3: DJ Mixer EQ -->
+      <div class="showcase-card">
+        <img src="assets/screenshot_dj_eq.png" alt="Dark DJ Mixer Console" class="showcase-img">
+        <div class="showcase-content">
+          <div class="showcase-tag">Hardware DSP · Page 0</div>
+          <h3 class="showcase-title">Dark Audiophile DJ Console</h3>
+          <p class="showcase-desc">
+            3 studio rotary potentiometers (LOW, MID, HI) and BassBoost Filter knob controlling Android hardware Equalizer, 12-segment dB LED VU meter, and live symmetrical waveform visualizer.
+          </p>
+        </div>
+      </div>
+
+      <!-- Card 4: Music Catalog Wireframe -->
+      <div class="showcase-card">
+        <img src="assets/screenshot_catalog.png" alt="Music Catalog" class="showcase-img">
+        <div class="showcase-content">
+          <div class="showcase-tag">⏏ EJECT Button Overlay</div>
+          <h3 class="showcase-title">Dark Audiophile Catalog</h3>
+          <p class="showcase-desc">
+            Triggered via the mechanical Eject button. Features 5 category pill tabs (Songs, Albums, Artists, Folders, Rated ★), 2-column album art grid, real-time search, and pinned bottom mini-player.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Low RAM Architecture Table -->
+  <section id="benchmarks" class="section-container">
+    <h2 class="section-title">Engineered for Low-RAM DAPs</h2>
+    <p class="section-subtitle">
+      Tailor-made for repurposing older compact flagships (Sony Xperia X Compact, LG V20/V30) and low-RAM music players (HiBy, FiiO, Shanling).
+    </p>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Architecture Spec</th>
+            <th>Standard Android Players</th>
+            <th>Spindle Launcher</th>
+            <th>Advantage</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Idle Memory Overhead</td>
+            <td>120MB – 250MB</td>
+            <td class="highlight-cell">&lt; 25 MB</td>
+            <td>85% less RAM</td>
+          </tr>
+          <tr>
+            <td>Active Playback RAM</td>
+            <td>180MB – 350MB</td>
+            <td class="highlight-cell">&lt; 38 MB</td>
+            <td>80% less RAM</td>
+          </tr>
+          <tr>
+            <td>APK Package Size</td>
+            <td>45MB – 95MB</td>
+            <td class="highlight-cell">&lt; 4.5 MB</td>
+            <td>92% lighter</td>
+          </tr>
+          <tr>
+            <td>Rendering Technology</td>
+            <td>Jetpack Compose / WebView</td>
+            <td class="highlight-cell">Pure Canvas (Zero Alloc)</td>
+            <td>Zero GC stutter</td>
+          </tr>
+          <tr>
+            <td>Bitmap Pipeline</td>
+            <td>ARGB_8888 (32-bit)</td>
+            <td class="highlight-cell">RGB_565 (16-bit)</td>
+            <td>50% image cache savings</td>
+          </tr>
+          <tr>
+            <td>Connected BT Battery</td>
+            <td>Not Tracked</td>
+            <td class="highlight-cell">Live Battery % + Health</td>
+            <td>Gear telemetry</td>
+          </tr>
+          <tr>
+            <td>Background AI / Cloud</td>
+            <td>150MB+ models & telemetry</td>
+            <td class="highlight-cell">NONE (0% AI)</td>
+            <td>Zero battery drain & 100% private</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Installation Section -->
+  <section class="section-container">
+    <h2 class="section-title">Get Started</h2>
+    <p class="section-subtitle">Install Spindle via ADB onto any Android 8.0+ device or dedicated DAP.</p>
+
+    <div class="terminal-box">
+# 1. Clone the repository<br/>
+git clone https://github.com/manaphassan/Spindle.git<br/>
+cd Spindle<br/><br/>
+# 2. Compile debug APK<br/>
+./gradlew assembleDebug<br/><br/>
+# 3. Install to connected device<br/>
+adb install -r app/build/outputs/apk/debug/app-debug.apk<br/><br/>
+# 4. Launch Spindle Home<br/>
+adb shell am start -n com.hana.spindle.debug/com.hana.spindle.ui.MainActivity
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <p><b>Spindle</b> is an open-source project licensed under the <a href="https://github.com/manaphassan/Spindle/blob/main/LICENSE">Apache License 2.0</a>.</p>
+    <p style="margin-top: 8px;">Designed by HaNa Innovation · Dedicated to audio purists, analog collectors, and hardware preservation.</p>
+  </footer>
+
+</body>
+</html>

@@ -16,12 +16,15 @@ data class AudioMetrics(
     val replayGainOffsetDb: Float = 0.0f,
     val outputRoute: String = "3.5mm Headphone Jack",
     val outputSampleRate: Int = 96000,
-    val isBitPerfect: Boolean = true
+    val isBitPerfect: Boolean = true,
+    val bluetoothDeviceName: String? = null,
+    val bluetoothBatteryPct: Int? = null
 )
 
 /**
  * Real-time audiophile telemetry analyzer.
- * Tracks source file audio specs, active output hardware, and Android AudioFlinger resampling status.
+ * Tracks source file audio specs, active output hardware, Bluetooth battery health,
+ * and Android AudioFlinger resampling status.
  */
 class AudioMetricsTracker(private val context: Context) {
 
@@ -29,6 +32,46 @@ class AudioMetricsTracker(private val context: Context) {
 
     private val _metrics = MutableStateFlow(AudioMetrics())
     val metrics: StateFlow<AudioMetrics> = _metrics.asStateFlow()
+
+    private val bluetoothReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: android.content.Intent?) {
+            intent ?: return
+            val action = intent.action ?: return
+            if (action == "android.bluetooth.device.action.BATTERY_LEVEL_CHANGED" ||
+                action == android.bluetooth.BluetoothDevice.ACTION_ACL_CONNECTED ||
+                action == android.bluetooth.BluetoothDevice.ACTION_ACL_DISCONNECTED) {
+                
+                val device = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    intent.getParcelableExtra(android.bluetooth.BluetoothDevice.EXTRA_DEVICE, android.bluetooth.BluetoothDevice::class.java)
+                } else {
+                    @Suppress("DEPRECATION")
+                    intent.getParcelableExtra(android.bluetooth.BluetoothDevice.EXTRA_DEVICE)
+                }
+                
+                val batteryLevel = intent.getIntExtra("android.bluetooth.device.extra.BATTERY_LEVEL", -1)
+                val isDisconnected = action == android.bluetooth.BluetoothDevice.ACTION_ACL_DISCONNECTED
+
+                _metrics.value = _metrics.value.copy(
+                    bluetoothDeviceName = if (isDisconnected) null else (device?.name ?: _metrics.value.bluetoothDeviceName),
+                    bluetoothBatteryPct = if (isDisconnected) null else (if (batteryLevel >= 0) batteryLevel else _metrics.value.bluetoothBatteryPct),
+                    outputRoute = detectActiveOutputRoute()
+                )
+            }
+        }
+    }
+
+    init {
+        try {
+            val filter = android.content.IntentFilter().apply {
+                addAction("android.bluetooth.device.action.BATTERY_LEVEL_CHANGED")
+                addAction(android.bluetooth.BluetoothDevice.ACTION_ACL_CONNECTED)
+                addAction(android.bluetooth.BluetoothDevice.ACTION_ACL_DISCONNECTED)
+            }
+            context.registerReceiver(bluetoothReceiver, filter)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 
     /**
      * Updates source stream specs upon track load.
@@ -71,5 +114,13 @@ class AudioMetricsTracker(private val context: Context) {
             }
         }
         return "Internal Speaker"
+    }
+
+    fun release() {
+        try {
+            context.unregisterReceiver(bluetoothReceiver)
+        } catch (e: Exception) {
+            // Receiver not registered
+        }
     }
 }

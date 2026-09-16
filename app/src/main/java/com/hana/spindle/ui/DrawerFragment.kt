@@ -137,6 +137,17 @@ class DrawerFragment : Fragment() {
                     b.tvMetricBitrate.text = "${metrics.dynamicBitrateKbps} kbps"
                     b.tvMetricRoute.text = metrics.outputRoute
 
+                    if (metrics.bluetoothBatteryPct != null) {
+                        b.tvMetricBtBattery.text = "● ${metrics.bluetoothDeviceName ?: "Audio Gear"}: ${metrics.bluetoothBatteryPct}% (Healthy)"
+                        b.tvMetricBtBattery.setTextColor(Color.parseColor("#00E676"))
+                    } else if (metrics.outputRoute.contains("Bluetooth", ignoreCase = true)) {
+                        b.tvMetricBtBattery.text = "● ${metrics.bluetoothDeviceName ?: "Connected Wireless Audio"} • Connected"
+                        b.tvMetricBtBattery.setTextColor(Color.parseColor("#00E676"))
+                    } else {
+                        b.tvMetricBtBattery.text = "Disconnected (Using Wired 3.5mm ALSA Direct)"
+                        b.tvMetricBtBattery.setTextColor(Color.parseColor("#71717A"))
+                    }
+
                     if (metrics.isBitPerfect) {
                         b.tvBitPerfectBadge.text = "● BIT-PERFECT NATIVE"
                         b.tvBitPerfectBadge.setTextColor(Color.parseColor("#00E676"))
