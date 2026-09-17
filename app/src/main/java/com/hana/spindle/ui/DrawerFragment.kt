@@ -182,10 +182,10 @@ class DrawerFragment : Fragment() {
 
         val isDark = themeManager.currentTheme.value.isDarkAppTheme
         val isEink = themeManager.currentTheme.value.id == CassetteTheme.MONOCHROME_EINK.id
-        val activeColor = ColorStateList.valueOf(if (isEink) Color.WHITE else Color.parseColor("#F97316"))
-        val inactiveColor = ColorStateList.valueOf(if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#202334"))
-        val activeText = if (isEink) Color.BLACK else Color.WHITE
-        val inactiveText = if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#2A2E45") else Color.parseColor("#FAFAF9")
+        val activeColor = ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#F97316"))
+        val inactiveColor = ColorStateList.valueOf(if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#202334"))
+        val activeText = Color.WHITE
+        val inactiveText = if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#2A2E45") else Color.parseColor("#FAFAF9")
 
         binding.btnTabApps.backgroundTintList = if (index == 0) activeColor else inactiveColor
         binding.btnTabApps.setTextColor(if (index == 0) activeText else inactiveText)
@@ -558,11 +558,12 @@ class DrawerFragment : Fragment() {
 
     private fun updateThemeButtonsVisual() {
         val curId = themeManager.currentTheme.value.id
-        val activeColor = ColorStateList.valueOf(Color.parseColor("#F97316"))
+        val isEink = curId == CassetteTheme.MONOCHROME_EINK.id
+        val activeColor = ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#F97316"))
 
         binding.btnThemeDark.backgroundTintList = if (curId == CassetteTheme.DARK.id) activeColor else ColorStateList.valueOf(Color.parseColor("#202334"))
         binding.btnThemeLight.backgroundTintList = if (curId == CassetteTheme.LIGHT.id) activeColor else ColorStateList.valueOf(Color.parseColor("#E5E5E2"))
-        binding.btnThemeEink.backgroundTintList = if (curId == CassetteTheme.MONOCHROME_EINK.id) activeColor else ColorStateList.valueOf(Color.BLACK)
+        binding.btnThemeEink.backgroundTintList = if (isEink) activeColor else ColorStateList.valueOf(Color.parseColor("#E5E5E2"))
 
         binding.tvActiveThemeName.text = themeManager.currentTheme.value.name
     }
@@ -572,27 +573,30 @@ class DrawerFragment : Fragment() {
         val isDark = theme.isDarkAppTheme
         val primary = theme.textPrimaryColor
         val secondary = theme.textSecondaryColor
-        val cardBg = if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#FAFAF9") else Color.parseColor("#171926")
+        val cardBg = if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#FAFAF9") else Color.parseColor("#171926")
 
         binding.root.setBackgroundColor(theme.chassisColor)
         binding.tabBar.backgroundTintList = ColorStateList.valueOf(
-            if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#171926")
+            if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#171926")
         )
-        binding.tvBypassTitle.setTextColor(if (audioFxController.isBypassEnabled) (if (isDark) Color.parseColor("#00E676") else Color.parseColor("#059669")) else primary)
+        binding.tvBypassTitle.setTextColor(if (audioFxController.isBypassEnabled) (if (isEink) Color.BLACK else if (isDark) Color.parseColor("#00E676") else Color.parseColor("#059669")) else primary)
         binding.tvBypassSub.setTextColor(secondary)
 
-        updateCardsRecursively(binding.root, cardBg)
+        updateCardsRecursively(binding.root, cardBg, isEink)
         selectTab(currentTabIndex)
         updateThemeButtonsVisual()
     }
 
-    private fun updateCardsRecursively(view: View, cardBg: Int) {
+    private fun updateCardsRecursively(view: View, cardBg: Int, isEink: Boolean) {
         if (view is androidx.cardview.widget.CardView) {
             view.setCardBackgroundColor(cardBg)
         }
+        if (isEink && view is TextView && view.id != R.id.btnTabApps && view.id != R.id.btnTabEq && view.id != R.id.btnTabSettings) {
+            view.setTextColor(Color.BLACK)
+        }
         if (view is ViewGroup) {
             for (i in 0 until view.childCount) {
-                updateCardsRecursively(view.getChildAt(i), cardBg)
+                updateCardsRecursively(view.getChildAt(i), cardBg, isEink)
             }
         }
     }

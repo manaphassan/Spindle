@@ -134,10 +134,10 @@ class RadioSpeakerGrilleView @JvmOverloads constructor(
     private fun updateThemePaints() {
         if (isEink) {
             holeShadowPaint.color = Color.BLACK
-            holeHighlightPaint.color = Color.WHITE
-            driverRimPaint.color = Color.WHITE
-            ledBezelPaint.color = Color.WHITE
-            ledWellPaint.color = Color.BLACK
+            holeHighlightPaint.color = Color.parseColor("#E5E5E5")
+            driverRimPaint.color = Color.BLACK
+            ledBezelPaint.color = Color.BLACK
+            ledWellPaint.color = Color.WHITE
         } else if (!isDarkMode) {
             holeShadowPaint.color = Color.parseColor("#E5E5E2")
             holeHighlightPaint.color = Color.WHITE
@@ -277,7 +277,7 @@ class RadioSpeakerGrilleView @JvmOverloads constructor(
 
                 if (intensity > 0.06f) {
                     if (isEink) {
-                        activeHolePaint.color = Color.WHITE
+                        activeHolePaint.color = Color.BLACK
                     } else {
                         // Warm filament tube orange/amber to radiant gold illumination
                         val r = 249
@@ -309,8 +309,8 @@ class RadioSpeakerGrilleView @JvmOverloads constructor(
 
         // Diode color
         if (isEink) {
-            ledDiodePaint.color = if (isOnline) Color.WHITE else Color.BLACK
-            ledLabelPaint.color = Color.WHITE
+            ledDiodePaint.color = if (isOnline) Color.BLACK else Color.WHITE
+            ledLabelPaint.color = Color.BLACK
         } else {
             val diodeColor = if (isOnline) Color.parseColor("#00E676") else Color.parseColor("#FB7185")
             ledDiodePaint.color = diodeColor

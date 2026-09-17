@@ -1,5 +1,6 @@
 package com.hana.spindle.ui.catalog
 
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
@@ -26,19 +27,22 @@ class SongAdapter(
 
     private val scope = CoroutineScope(Dispatchers.Main)
     var activeSongId: Long? = null
+    var showTrackNumbers: Boolean = false
 
     private var textColorPrimary: Int = Color.parseColor("#FAFAF9")
     private var textColorSecondary: Int = Color.parseColor("#B0B4CE")
     private var formatBadgeBg: Int = Color.parseColor("#1E2132")
     private var formatBadgeText: Int = Color.parseColor("#F97316")
     private var cardThumbBg: Int = Color.parseColor("#202334")
+    private var isEinkMode: Boolean = false
 
     fun updateThemeColors(primary: Int, secondary: Int, isDark: Boolean, isEink: Boolean) {
+        this.isEinkMode = isEink
         this.textColorPrimary = primary
         this.textColorSecondary = secondary
         this.formatBadgeBg = if (isEink) Color.TRANSPARENT else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#1E2132")
         this.formatBadgeText = if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#2A2E45") else Color.parseColor("#F97316")
-        this.cardThumbBg = if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#202334")
+        this.cardThumbBg = if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#202334")
         notifyDataSetChanged()
     }
 
@@ -53,14 +57,29 @@ class SongAdapter(
         val song = getItem(position)
         val b = holder.binding
 
+        if (showTrackNumbers) {
+            b.tvTrackNumber.visibility = View.VISIBLE
+            val rawTrack = song.trackNumber
+            val trackNum = when {
+                rawTrack >= 1000 -> rawTrack % 1000
+                rawTrack > 0 -> rawTrack
+                else -> position + 1
+            }
+            b.tvTrackNumber.text = String.format(Locale.US, "%02d", trackNum)
+            b.tvTrackNumber.setTextColor(textColorSecondary)
+        } else {
+            b.tvTrackNumber.visibility = View.GONE
+        }
+
         b.tvSongTitle.text = song.title
         b.tvSongArtist.text = song.artist
 
         val isCurrentlyPlaying = song.id == activeSongId
+        val activeColor = if (isEinkMode) Color.BLACK else Color.parseColor("#F97316")
         if (isCurrentlyPlaying) {
             b.tvPlayingWave.visibility = View.VISIBLE
-            b.tvPlayingWave.setTextColor(Color.parseColor("#F97316"))
-            b.tvSongTitle.setTextColor(Color.parseColor("#F97316"))
+            b.tvPlayingWave.setTextColor(activeColor)
+            b.tvSongTitle.setTextColor(activeColor)
         } else {
             b.tvPlayingWave.visibility = View.GONE
             b.tvSongTitle.setTextColor(textColorPrimary)
@@ -79,7 +98,7 @@ class SongAdapter(
         b.tvDuration.text = formatDuration(song.durationMs)
 
         // Star rating
-        b.tvRating.setTextColor(Color.parseColor("#FDE68A"))
+        b.tvRating.setTextColor(if (isEinkMode) Color.BLACK else Color.parseColor("#FDE68A"))
         b.tvRating.text = getStarString(song.rating)
         b.tvRating.setOnClickListener {
             val nextRating = (song.rating + 1) % 6
@@ -90,12 +109,18 @@ class SongAdapter(
         b.ivSongThumb.setImageDrawable(null)
         b.ivSongThumb.setPadding(10, 10, 10, 10)
         b.ivSongThumb.setImageResource(android.R.drawable.ic_media_play)
+        b.ivSongThumb.imageTintList = ColorStateList.valueOf(if (isEinkMode) Color.BLACK else Color.parseColor("#64748B"))
         scope.launch {
             val thumb = imageLoader.loadCover(song.path, 96, 96)
-            if (thumb != null) {
-                withContext(Dispatchers.Main) {
+            withContext(Dispatchers.Main) {
+                if (thumb != null) {
+                    b.ivSongThumb.imageTintList = null
                     b.ivSongThumb.setPadding(0, 0, 0, 0)
                     b.ivSongThumb.setImageBitmap(thumb)
+                } else {
+                    b.ivSongThumb.setPadding(10, 10, 10, 10)
+                    b.ivSongThumb.setImageResource(android.R.drawable.ic_media_play)
+                    b.ivSongThumb.imageTintList = ColorStateList.valueOf(if (isEinkMode) Color.BLACK else Color.parseColor("#64748B"))
                 }
             }
         }

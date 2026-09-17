@@ -100,20 +100,20 @@ data class CassetteTheme(
             isDarkAppTheme = false
         )
 
-        // 3. Monochrome E-Ink Theme (Pure 1-Bit High-Contrast Black & White)
+        // 3. Monochrome E-Ink Theme (Pure 1-Bit Monochrome Black & White on White Background)
         val MONOCHROME_EINK = CassetteTheme(
             id = "theme_monochrome_eink",
             name = "Monochrome E-Ink",
-            subtitle = "High-Contrast 1-Bit B&W",
+            subtitle = "Pure 1-Bit B&W White Canvas",
             chassisStyle = ChassisStyle.VERTICAL_DECK,
-            chassisColor = Color.BLACK,
-            diagonalBezelColor = Color.BLACK,
-            dialColor = Color.WHITE,
-            surfaceColor = Color.BLACK,
-            cardBorderColor = Color.WHITE,
-            textPrimaryColor = Color.WHITE,
-            textSecondaryColor = Color.parseColor("#CCCCCC"),
-            accentColor = Color.WHITE,
+            chassisColor = Color.WHITE, // Pure white background for E-Ink screen
+            diagonalBezelColor = Color.parseColor("#E0E0E0"),
+            dialColor = Color.BLACK,
+            surfaceColor = Color.WHITE,
+            cardBorderColor = Color.BLACK,
+            textPrimaryColor = Color.BLACK,
+            textSecondaryColor = Color.BLACK,
+            accentColor = Color.BLACK,
             shellColor = Color.WHITE,
             shellTexture = ShellTexture.MATTE_PLASTIC,
             labelBackgroundColor = Color.WHITE,
@@ -122,8 +122,8 @@ data class CassetteTheme(
             windowTint = Color.argb(0, 0, 0, 0),
             reelHubColor = Color.BLACK,
             tapeRibbonColor = Color.BLACK,
-            vfdGlowColor = Color.WHITE,
-            isDarkAppTheme = true
+            vfdGlowColor = Color.BLACK,
+            isDarkAppTheme = false
         )
 
         // Three Curated Themes

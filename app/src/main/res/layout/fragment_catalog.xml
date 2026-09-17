@@ -372,7 +372,6 @@
                 android:scaleType="centerCrop"
                 android:background="#2E2F35"
                 android:src="@android:drawable/ic_media_play"
-                app:tint="#64748B"
                 android:padding="8dp"
                 android:contentDescription="Mini Cover" />
 
@@ -460,6 +459,215 @@
 
         </LinearLayout>
     </androidx.cardview.widget.CardView>
+
+    <!-- 3.5. Album Detail View (Track List Inside Album) -->
+    <LinearLayout
+        android:id="@+id/albumDetailContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="#151724"
+        android:paddingTop="28dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:elevation="15dp"
+        android:visibility="gone">
+
+        <!-- Top Navigation Bar: Back Arrow, Title, Format -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="14dp">
+
+            <ImageButton
+                android:id="@+id/btnAlbumDetailBack"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_revert"
+                app:tint="@color/text_primary"
+                android:contentDescription="Back to Albums" />
+
+            <TextView
+                android:id="@+id/tvAlbumDetailHeaderTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="ALBUM"
+                android:textColor="@color/text_primary"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:letterSpacing="0.06" />
+
+            <TextView
+                android:id="@+id/tvAlbumDetailFormat"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="#202334"
+                android:textColor="@color/vfd_emerald"
+                android:textSize="10.5sp"
+                android:fontFamily="monospace"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="3dp"
+                android:text="FLAC" />
+        </LinearLayout>
+
+        <!-- Stage Header: Dedicated Single Audio Now Playing Concept -->
+        <LinearLayout
+            android:id="@+id/albumDetailHeaderStage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:paddingHorizontal="20dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="14dp">
+
+            <!-- Hero Button Album Art Cover (Circular Vinyl Disc with Quick Play Button) -->
+            <RelativeLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
+
+                <!-- Circular Disc Outer Ring (Vinyl Aesthetic) -->
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/cardAlbumDetailCover"
+                    android:layout_width="120dp"
+                    android:layout_height="120dp"
+                    app:cardCornerRadius="60dp"
+                    app:cardElevation="6dp"
+                    app:cardBackgroundColor="#202334"
+                    android:foreground="?attr/selectableItemBackground">
+
+                    <ImageView
+                        android:id="@+id/ivAlbumDetailCover"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="centerCrop"
+                        android:contentDescription="Album Art Cover" />
+
+                    <!-- Center Vinyl Pip / Ring -->
+                    <View
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:layout_gravity="center"
+                        android:background="@drawable/bg_circle_play"
+                        android:backgroundTint="#80000000" />
+                </androidx.cardview.widget.CardView>
+
+                <!-- Interactive Play Overlay Badge on Cover Button -->
+                <ImageView
+                    android:id="@+id/btnAlbumDetailCoverPlay"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_alignBottom="@+id/cardAlbumDetailCover"
+                    android:layout_alignEnd="@+id/cardAlbumDetailCover"
+                    android:background="@drawable/bg_circle_play"
+                    android:backgroundTint="@color/wm2_red"
+                    android:padding="8dp"
+                    android:src="@android:drawable/ic_media_play"
+                    app:tint="#FFFFFF"
+                    android:elevation="8dp"
+                    android:contentDescription="Play Album" />
+            </RelativeLayout>
+
+            <!-- Album Title & Artist -->
+            <TextView
+                android:id="@+id/tvAlbumDetailTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Album Title"
+                android:textColor="@color/text_primary"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:maxLines="2"
+                android:ellipsize="end" />
+
+            <TextView
+                android:id="@+id/tvAlbumDetailArtist"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:text="Artist Name"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp"
+                android:fontFamily="sans-serif-medium"
+                android:gravity="center"
+                android:maxLines="1" />
+
+            <!-- Audiophile Metadata: Year • Tracks • Duration -->
+            <TextView
+                android:id="@+id/tvAlbumDetailMeta"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:text="1973 • 10 Tracks • 42:15"
+                android:textColor="@color/text_secondary"
+                android:textSize="11.5sp"
+                android:fontFamily="monospace"
+                android:gravity="center" />
+
+            <!-- Tactile Action Pill Buttons: Play All & Shuffle -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="10dp">
+
+                <Button
+                    android:id="@+id/btnAlbumDetailPlayAll"
+                    android:layout_width="wrap_content"
+                    android:layout_height="34dp"
+                    android:text="▶ Play All"
+                    android:textSize="11.5sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/white"
+                    android:backgroundTint="@color/wm2_red"
+                    android:paddingHorizontal="16dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    app:cornerRadius="17dp" />
+
+                <Button
+                    android:id="@+id/btnAlbumDetailShuffle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="34dp"
+                    android:layout_marginStart="10dp"
+                    android:text="🔀 Shuffle"
+                    android:textSize="11.5sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary"
+                    android:backgroundTint="#202334"
+                    android:paddingHorizontal="16dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    app:cornerRadius="17dp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Separator -->
+        <View
+            android:id="@+id/vAlbumDetailDivider"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#24252B" />
+
+        <!-- Album Tracks RecyclerView -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvAlbumTracks"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            android:paddingTop="6dp"
+            android:paddingBottom="80dp" />
+
+    </LinearLayout>
 
     <!-- 4. Now Playing Fullscreen Single Audio Container (Reference Image UI) -->
     <LinearLayout

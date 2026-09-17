@@ -29,6 +29,7 @@ import com.hana.spindle.playback.RepeatMode
 import com.hana.spindle.playback.ShuffleMode
 import com.hana.spindle.theme.CassetteTheme
 import com.hana.spindle.ui.catalog.*
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.io.File
@@ -44,6 +45,11 @@ class CatalogFragment : Fragment() {
     private lateinit var albumAdapter: AlbumAdapter
     private lateinit var folderAdapter: FolderAdapter
     private lateinit var npLyricsAdapter: LyricsAdapter
+    private lateinit var albumTracksAdapter: SongAdapter
+
+    private var currentAlbumSongs: List<SongEntity> = emptyList()
+    private var currentAlbumItem: AlbumItem? = null
+    private var albumTracksJob: Job? = null
 
     private var isNowPlayingSingleVisible = false
     private var isShowingNpLyrics = false
@@ -108,23 +114,54 @@ class CatalogFragment : Fragment() {
             }
         )
 
+        albumTracksAdapter = SongAdapter(
+            imageLoader = app.imageLoader,
+            onSongClicked = { song, index ->
+                currentDisplayedSongs = currentAlbumSongs
+                audioEngine.playQueue(currentAlbumSongs, index)
+                showNowPlayingSingleAudio(true)
+            },
+            onRatingChanged = { song, newRating ->
+                viewLifecycleOwner.lifecycleScope.launch {
+                    app.database.songDao().updateRating(song.id, newRating)
+                }
+            }
+        ).apply {
+            showTrackNumbers = true
+        }
+
+        binding.rvAlbumTracks.layoutManager = LinearLayoutManager(requireContext())
+        binding.rvAlbumTracks.adapter = albumTracksAdapter
+
         albumAdapter = AlbumAdapter(
             imageLoader = app.imageLoader,
             onAlbumClicked = { album ->
-                viewLifecycleOwner.lifecycleScope.launch {
-                    app.database.songDao().getSongsByAlbum(album.album).collectLatest { albumSongs ->
-                        currentDisplayedSongs = albumSongs
-                        audioEngine.playQueue(albumSongs, 0)
-                        showNowPlayingSingleAudio(true)
+                albumTracksJob?.cancel()
+                albumTracksJob = viewLifecycleOwner.lifecycleScope.launch {
+                    val songsFlow = when (album.format) {
+                        "DISCOGRAPHY" -> app.database.songDao().getSongsByArtist(album.album)
+                        "GENRE" -> app.database.songDao().getSongsByGenre(album.album)
+                        else -> app.database.songDao().getSongsByAlbum(album.album)
+                    }
+                    songsFlow.collectLatest { albumSongs ->
+                        showAlbumDetail(album, albumSongs)
                     }
                 }
             },
             onPlayAlbumClicked = { album ->
-                viewLifecycleOwner.lifecycleScope.launch {
-                    app.database.songDao().getSongsByAlbum(album.album).collectLatest { albumSongs ->
-                        currentDisplayedSongs = albumSongs
-                        audioEngine.playQueue(albumSongs, 0)
-                        showNowPlayingSingleAudio(true)
+                albumTracksJob?.cancel()
+                albumTracksJob = viewLifecycleOwner.lifecycleScope.launch {
+                    val songsFlow = when (album.format) {
+                        "DISCOGRAPHY" -> app.database.songDao().getSongsByArtist(album.album)
+                        "GENRE" -> app.database.songDao().getSongsByGenre(album.album)
+                        else -> app.database.songDao().getSongsByAlbum(album.album)
+                    }
+                    songsFlow.collectLatest { albumSongs ->
+                        if (albumSongs.isNotEmpty()) {
+                            currentDisplayedSongs = albumSongs
+                            audioEngine.playQueue(albumSongs, 0)
+                            showNowPlayingSingleAudio(true)
+                        }
                     }
                 }
             }
@@ -210,8 +247,15 @@ class CatalogFragment : Fragment() {
 
     private fun selectTab(index: Int) {
         currentTab = index
-        val activeBg = ContextCompat.getColor(requireContext(), R.color.wm2_red)
-        val inactiveBg = Color.parseColor("#212228")
+        hideAlbumDetail()
+        val app = requireActivity().application as SpindleApp
+        val theme = app.themeManager.currentTheme.value
+        val isEink = (theme.id == CassetteTheme.MONOCHROME_EINK.id)
+        val isDark = theme.isDarkAppTheme
+        val activeBg = if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#F97316") else ContextCompat.getColor(requireContext(), R.color.wm2_red)
+        val inactiveBg = if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#212228")
+        val activeText = Color.WHITE
+        val inactiveText = if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#2A2E45") else Color.parseColor("#94A3B8")
 
         val tabs = listOf(
             binding.tabSongs,
@@ -225,7 +269,7 @@ class CatalogFragment : Fragment() {
 
         tabs.forEachIndexed { i, btn ->
             btn.backgroundTintList = ColorStateList.valueOf(if (i == index) activeBg else inactiveBg)
-            btn.setTextColor(if (i == index) Color.WHITE else Color.parseColor("#94A3B8"))
+            btn.setTextColor(if (i == index) activeText else inactiveText)
         }
 
         updateSortLabel()
@@ -249,12 +293,13 @@ class CatalogFragment : Fragment() {
         val accent = theme.accentColor
 
         binding.root.setBackgroundColor(theme.chassisColor)
-        binding.catalogHeaderContainer.setBackgroundColor(if (isEink) Color.BLACK else theme.surfaceColor)
+        binding.catalogHeaderContainer.setBackgroundColor(if (isEink) Color.WHITE else theme.surfaceColor)
         binding.tvCatalogHeaderTitle.setTextColor(primary)
         binding.btnBackToPlayer.imageTintList = ColorStateList.valueOf(primary)
+        binding.tvScanStatus.setTextColor(if (isEink) Color.BLACK else ContextCompat.getColor(requireContext(), R.color.vfd_emerald))
 
         binding.searchContainer.backgroundTintList = ColorStateList.valueOf(
-            if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#202334")
+            if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#202334")
         )
         binding.ivSearchIcon.imageTintList = ColorStateList.valueOf(secondary)
         binding.etCatalogSearch.setTextColor(primary)
@@ -262,31 +307,53 @@ class CatalogFragment : Fragment() {
 
         binding.tvCatalogCount.setTextColor(secondary)
         binding.btnSortGroup.backgroundTintList = ColorStateList.valueOf(
-            if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#202334")
+            if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#202334")
         )
         binding.tvCurrentSortLabel.setTextColor(primary)
         binding.btnShuffle.backgroundTintList = ColorStateList.valueOf(
-            if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#202334")
+            if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#202334")
         )
         binding.btnShuffle.setTextColor(primary)
         binding.btnPlayAll.backgroundTintList = ColorStateList.valueOf(accent)
+        binding.btnPlayAll.setTextColor(Color.WHITE)
 
         // Mini player
         binding.cardMiniPlayer.setCardBackgroundColor(
-            if (isEink) Color.BLACK else if (!isDark) Color.WHITE else Color.parseColor("#1E2132")
+            if (isEink) Color.WHITE else if (!isDark) Color.WHITE else Color.parseColor("#1E2132")
         )
         binding.tvMiniTitle.setTextColor(primary)
         binding.tvMiniArtist.setTextColor(secondary)
         binding.btnMiniPrev.imageTintList = ColorStateList.valueOf(primary)
         binding.btnMiniNext.imageTintList = ColorStateList.valueOf(primary)
         binding.btnMiniPlayPause.backgroundTintList = ColorStateList.valueOf(accent)
+        binding.btnMiniPlayPause.imageTintList = ColorStateList.valueOf(Color.WHITE)
+
+        // Album Detail View
+        binding.albumDetailContainer.setBackgroundColor(
+            if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#FAFAF9") else Color.parseColor("#151724")
+        )
+        binding.btnAlbumDetailBack.imageTintList = ColorStateList.valueOf(primary)
+        binding.tvAlbumDetailHeaderTitle.setTextColor(primary)
+        binding.tvAlbumDetailFormat.setTextColor(if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#2A2E45") else Color.parseColor("#00E676"))
+        binding.tvAlbumDetailFormat.backgroundTintList = ColorStateList.valueOf(if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#202334"))
+        binding.cardAlbumDetailCover.setCardBackgroundColor(if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#202334"))
+        binding.btnAlbumDetailCoverPlay.backgroundTintList = ColorStateList.valueOf(if (isEink) Color.BLACK else accent)
+        binding.btnAlbumDetailCoverPlay.imageTintList = ColorStateList.valueOf(Color.WHITE)
+        binding.tvAlbumDetailTitle.setTextColor(primary)
+        binding.tvAlbumDetailArtist.setTextColor(secondary)
+        binding.tvAlbumDetailMeta.setTextColor(secondary)
+        binding.btnAlbumDetailPlayAll.backgroundTintList = ColorStateList.valueOf(if (isEink) Color.BLACK else accent)
+        binding.btnAlbumDetailPlayAll.setTextColor(Color.WHITE)
+        binding.btnAlbumDetailShuffle.backgroundTintList = ColorStateList.valueOf(if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#202334"))
+        binding.btnAlbumDetailShuffle.setTextColor(primary)
+        binding.vAlbumDetailDivider.setBackgroundColor(if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#24252B"))
 
         // Single Audio Now Playing
         binding.nowPlayingSingleContainer.setBackgroundColor(
-            if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#FAFAF9") else Color.parseColor("#2A2E45")
+            if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#FAFAF9") else Color.parseColor("#2A2E45")
         )
         binding.btnNpBack.imageTintList = ColorStateList.valueOf(primary)
-        binding.btnNpFavorite.imageTintList = ColorStateList.valueOf(Color.parseColor("#FB7185"))
+        binding.btnNpFavorite.imageTintList = ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#FB7185"))
         binding.btnNpMenu.imageTintList = ColorStateList.valueOf(primary)
         binding.tvNpTitle.setTextColor(primary)
         binding.tvNpArtist.setTextColor(secondary)
@@ -298,6 +365,11 @@ class CatalogFragment : Fragment() {
         binding.btnNpPrev.imageTintList = ColorStateList.valueOf(primary)
         binding.btnNpNext.imageTintList = ColorStateList.valueOf(primary)
         binding.btnNpPlayPause.backgroundTintList = ColorStateList.valueOf(accent)
+        binding.btnNpPlayPause.imageTintList = ColorStateList.valueOf(Color.WHITE)
+        binding.btnNpLyrics.imageTintList = ColorStateList.valueOf(secondary)
+        binding.btnNpRepeat.imageTintList = ColorStateList.valueOf(secondary)
+        binding.btnNpShuffle.imageTintList = ColorStateList.valueOf(secondary)
+        binding.btnNpQueue.imageTintList = ColorStateList.valueOf(secondary)
 
         binding.circularCoverArcView.isDarkMode = isDark
         binding.circularCoverArcView.isEink = isEink
@@ -312,7 +384,13 @@ class CatalogFragment : Fragment() {
         // Propagate to Adapters
         songAdapter.updateThemeColors(primary, secondary, isDark, isEink)
         albumAdapter.updateThemeColors(primary, secondary, isDark, isEink)
+        if (::albumTracksAdapter.isInitialized) {
+            albumTracksAdapter.updateThemeColors(primary, secondary, isDark, isEink)
+        }
         folderAdapter.updateThemeColors(primary, secondary)
+
+        // Update active tab buttons visual
+        selectTab(currentTab)
     }
 
     private fun setupSortAndGroup() {
@@ -524,6 +602,10 @@ class CatalogFragment : Fragment() {
 
                         songAdapter.activeSongId = song.id
                         songAdapter.notifyDataSetChanged()
+                        if (::albumTracksAdapter.isInitialized) {
+                            albumTracksAdapter.activeSongId = song.id
+                            albumTracksAdapter.notifyDataSetChanged()
+                        }
 
                         // Update Now Playing Single Audio metadata
                         b.tvNpTitle.text = song.title
@@ -559,13 +641,16 @@ class CatalogFragment : Fragment() {
 
                         // Load mini cover art
                         viewLifecycleOwner.lifecycleScope.launch {
+                            val isEink = app.themeManager.currentTheme.value.id == CassetteTheme.MONOCHROME_EINK.id
                             val thumb = app.imageLoader.loadCover(song.path, 96, 96)
                             if (thumb != null) {
+                                b.ivMiniArt.imageTintList = null
                                 b.ivMiniArt.setPadding(0, 0, 0, 0)
                                 b.ivMiniArt.setImageBitmap(thumb)
                             } else {
                                 b.ivMiniArt.setPadding(8, 8, 8, 8)
                                 b.ivMiniArt.setImageResource(android.R.drawable.ic_media_play)
+                                b.ivMiniArt.imageTintList = ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#64748B"))
                             }
                         }
                     }
@@ -765,6 +850,111 @@ class CatalogFragment : Fragment() {
         }
     }
 
+    fun showAlbumDetail(album: AlbumItem, songs: List<SongEntity>) {
+        currentAlbumItem = album
+        currentAlbumSongs = songs
+
+        val app = requireActivity().application as SpindleApp
+        val theme = app.themeManager.currentTheme.value
+        val isEink = (theme.id == CassetteTheme.MONOCHROME_EINK.id)
+
+        binding.tvAlbumDetailHeaderTitle.text = when (album.format) {
+            "DISCOGRAPHY" -> "ARTIST"
+            "GENRE" -> "GENRE"
+            else -> "ALBUM"
+        }
+        binding.tvAlbumDetailTitle.text = album.album
+        binding.tvAlbumDetailArtist.text = album.artist
+
+        val totalDurationMs = songs.sumOf { it.durationMs }
+        val durationFormatted = formatTime(totalDurationMs)
+        val yearStr = if (album.year > 0) "${album.year} • " else ""
+        binding.tvAlbumDetailMeta.text = "$yearStr${songs.size} Tracks • $durationFormatted"
+        binding.tvAlbumDetailFormat.text = album.format
+
+        // Load thumbnail into circular disc cover
+        viewLifecycleOwner.lifecycleScope.launch {
+            val cover = app.imageLoader.loadCover(album.representativePath, 300, 300)
+            if (cover != null) {
+                binding.ivAlbumDetailCover.imageTintList = null
+                binding.ivAlbumDetailCover.setPadding(0, 0, 0, 0)
+                binding.ivAlbumDetailCover.setImageBitmap(cover)
+            } else {
+                binding.ivAlbumDetailCover.setPadding(24, 24, 24, 24)
+                binding.ivAlbumDetailCover.setImageResource(android.R.drawable.ic_media_play)
+                binding.ivAlbumDetailCover.imageTintList = ColorStateList.valueOf(
+                    if (isEink) Color.BLACK else Color.parseColor("#94A3B8")
+                )
+            }
+        }
+
+        // Submit songs to albumTracksAdapter
+        albumTracksAdapter.submitList(songs)
+
+        // Wire Action Pill Buttons
+        binding.btnAlbumDetailPlayAll.setOnClickListener {
+            if (songs.isNotEmpty()) {
+                currentDisplayedSongs = songs
+                audioEngine.playQueue(songs, 0)
+                showNowPlayingSingleAudio(true)
+            }
+        }
+
+        binding.btnAlbumDetailShuffle.setOnClickListener {
+            if (songs.isNotEmpty()) {
+                currentDisplayedSongs = songs
+                val shuffled = songs.shuffled()
+                audioEngine.playQueue(shuffled, 0)
+                showNowPlayingSingleAudio(true)
+            }
+        }
+
+        binding.cardAlbumDetailCover.setOnClickListener {
+            if (songs.isNotEmpty()) {
+                currentDisplayedSongs = songs
+                audioEngine.playQueue(songs, 0)
+                showNowPlayingSingleAudio(true)
+            }
+        }
+
+        binding.btnAlbumDetailCoverPlay.setOnClickListener {
+            if (songs.isNotEmpty()) {
+                currentDisplayedSongs = songs
+                audioEngine.playQueue(songs, 0)
+                showNowPlayingSingleAudio(true)
+            }
+        }
+
+        binding.btnAlbumDetailBack.setOnClickListener {
+            hideAlbumDetail()
+        }
+
+        // Animate Container in
+        binding.albumDetailContainer.visibility = View.VISIBLE
+        binding.albumDetailContainer.translationX = 200f
+        binding.albumDetailContainer.alpha = 0f
+        binding.albumDetailContainer.animate()
+            .translationX(0f)
+            .alpha(1f)
+            .setDuration(220)
+            .setInterpolator(android.view.animation.DecelerateInterpolator())
+            .start()
+    }
+
+    fun hideAlbumDetail() {
+        if (_binding == null || binding.albumDetailContainer.visibility != View.VISIBLE) return
+        albumTracksJob?.cancel()
+        binding.albumDetailContainer.animate()
+            .translationX(200f)
+            .alpha(0f)
+            .setDuration(180)
+            .setInterpolator(android.view.animation.AccelerateInterpolator())
+            .withEndAction {
+                _binding?.albumDetailContainer?.visibility = View.GONE
+            }
+            .start()
+    }
+
     fun handleBackPressed(): Boolean {
         if (binding.nowPlayingSingleContainer.visibility == View.VISIBLE) {
             if (binding.cardNpLyrics.visibility == View.VISIBLE) {
@@ -774,6 +964,10 @@ class CatalogFragment : Fragment() {
                 return true
             }
             showNowPlayingSingleAudio(false)
+            return true
+        }
+        if (binding.albumDetailContainer.visibility == View.VISIBLE) {
+            hideAlbumDetail()
             return true
         }
         return false

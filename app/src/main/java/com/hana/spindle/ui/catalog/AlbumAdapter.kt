@@ -25,11 +25,13 @@ class AlbumAdapter(
     private var textColorPrimary: Int = android.graphics.Color.WHITE
     private var textColorSecondary: Int = android.graphics.Color.parseColor("#94A3B8")
     private var cardBg: Int = android.graphics.Color.parseColor("#1C1D22")
+    private var isEinkMode: Boolean = false
 
     fun updateThemeColors(primary: Int, secondary: Int, isDark: Boolean, isEink: Boolean) {
+        this.isEinkMode = isEink
         this.textColorPrimary = primary
         this.textColorSecondary = secondary
-        this.cardBg = if (isEink) android.graphics.Color.BLACK else if (!isDark) android.graphics.Color.parseColor("#E5E5E2") else android.graphics.Color.parseColor("#202334")
+        this.cardBg = if (isEink) android.graphics.Color.WHITE else if (!isDark) android.graphics.Color.parseColor("#E5E5E2") else android.graphics.Color.parseColor("#202334")
         notifyDataSetChanged()
     }
 
@@ -51,9 +53,30 @@ class AlbumAdapter(
         b.cardAlbumRoot.setCardBackgroundColor(cardBg)
         b.tvGridTrackCount.text = "${album.trackCount} tracks"
 
+        if (isEinkMode) {
+            b.tvGridTrackCount.setTextColor(android.graphics.Color.BLACK)
+            b.tvGridFormat.setTextColor(android.graphics.Color.BLACK)
+            b.tvGridFormat.setBackgroundColor(android.graphics.Color.WHITE)
+            b.btnGridPlay.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.BLACK)
+            b.btnGridPlay.imageTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE)
+        } else {
+            b.tvGridTrackCount.setTextColor(android.graphics.Color.parseColor("#E2E8F0"))
+            b.tvGridFormat.setTextColor(holder.itemView.context.getColor(com.hana.spindle.R.color.vfd_emerald))
+            b.tvGridFormat.setBackgroundColor(android.graphics.Color.parseColor("#CC1E293B"))
+            b.btnGridPlay.backgroundTintList = android.content.res.ColorStateList.valueOf(holder.itemView.context.getColor(com.hana.spindle.R.color.wm2_red))
+            b.btnGridPlay.imageTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE)
+        }
+
         if (album.year > 0) {
             b.tvGridYear.visibility = View.VISIBLE
             b.tvGridYear.text = album.year.toString()
+            if (isEinkMode) {
+                b.tvGridYear.setTextColor(android.graphics.Color.BLACK)
+                b.tvGridYear.setBackgroundColor(android.graphics.Color.WHITE)
+            } else {
+                b.tvGridYear.setTextColor(android.graphics.Color.parseColor("#E2E8F0"))
+                b.tvGridYear.setBackgroundColor(android.graphics.Color.parseColor("#B3000000"))
+            }
         } else {
             b.tvGridYear.visibility = View.GONE
         }

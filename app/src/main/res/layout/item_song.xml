@@ -9,13 +9,28 @@
     android:paddingHorizontal="16dp"
     android:background="?attr/selectableItemBackground">
 
-    <!-- Album Art Thumbnail Card -->
+    <!-- Optional Track Number (for Album Details) -->
+    <TextView
+        android:id="@+id/tvTrackNumber"
+        android:layout_width="28dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:gravity="center"
+        android:textColor="@color/text_secondary"
+        android:textSize="12sp"
+        android:fontFamily="monospace"
+        android:textStyle="bold"
+        android:singleLine="true"
+        android:visibility="gone"
+        android:text="01" />
+
+    <!-- Circular Disc Button Album Art Cover -->
     <androidx.cardview.widget.CardView
         android:id="@+id/cardSongThumb"
         android:layout_width="46dp"
         android:layout_height="46dp"
-        app:cardCornerRadius="10dp"
-        app:cardElevation="0dp"
+        app:cardCornerRadius="23dp"
+        app:cardElevation="2dp"
         app:cardBackgroundColor="#212226">
 
         <ImageView
@@ -23,10 +38,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:scaleType="centerCrop"
-            android:src="@android:drawable/ic_media_play"
-            app:tint="#64748B"
-            android:padding="10dp"
-            android:contentDescription="Song Thumbnail" />
+            android:contentDescription="Cover Art" />
     </androidx.cardview.widget.CardView>
 
     <!-- Title, Artist, and Format Tag -->

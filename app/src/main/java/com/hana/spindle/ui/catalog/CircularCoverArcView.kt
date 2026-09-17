@@ -119,14 +119,14 @@ class CircularCoverArcView @JvmOverloads constructor(
         val b = Color.blue(accentColor)
 
         if (isEink) {
-            arcTrackPaint.color = Color.parseColor("#333333")
-            speakerPaint.color = Color.WHITE
-            thumbPaint.color = Color.WHITE
+            arcTrackPaint.color = Color.parseColor("#CCCCCC")
+            speakerPaint.color = Color.BLACK
+            thumbPaint.color = Color.BLACK
             thumbShadowPaint.color = Color.TRANSPARENT
-            thumbInnerPaint.color = Color.BLACK
+            thumbInnerPaint.color = Color.WHITE
             coverShadowPaint.color = Color.TRANSPARENT
             arcProgressPaint.shader = null
-            arcProgressPaint.color = Color.WHITE
+            arcProgressPaint.color = Color.BLACK
         } else if (isDarkMode) {
             arcTrackPaint.color = Color.parseColor("#1E2132")
             speakerPaint.color = Color.parseColor("#B0B4CE")

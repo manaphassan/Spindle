@@ -186,6 +186,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun navigateToPlayer() {
+        binding.viewPager.isUserInputEnabled = true
+        binding.viewPager.setCurrentItem(1, false)
         if (binding.catalogContainer.visibility == View.VISIBLE) {
             binding.catalogContainer.animate()
                 .translationY(binding.root.height.toFloat())
@@ -206,10 +208,10 @@ class MainActivity : AppCompatActivity() {
                 supportFragmentManager.beginTransaction().remove(frag).commitAllowingStateLoss()
             }
         }
-        binding.viewPager.setCurrentItem(1, true)
     }
 
     fun navigateToCatalog() {
+        binding.viewPager.isUserInputEnabled = false
         binding.catalogContainer.visibility = View.VISIBLE
         binding.catalogContainer.bringToFront()
         val h = binding.root.height.toFloat().let { if (it > 0) it else 800f }

@@ -172,10 +172,10 @@ class RadioFragment : Fragment() {
         binding.speakerGrilleView.isEink = isEink
 
         if (isEink) {
-            binding.cardLcd.setCardBackgroundColor(Color.BLACK)
-            binding.tvRadioFrequency.setTextColor(Color.WHITE)
-            binding.tvRadioNowPlaying.setTextColor(Color.WHITE)
-            binding.tvRadioRdsName.setTextColor(Color.WHITE)
+            binding.cardLcd.setCardBackgroundColor(Color.WHITE)
+            binding.tvRadioFrequency.setTextColor(Color.BLACK)
+            binding.tvRadioNowPlaying.setTextColor(Color.BLACK)
+            binding.tvRadioRdsName.setTextColor(Color.BLACK)
         } else if (!theme.isDarkAppTheme) {
             binding.cardLcd.setCardBackgroundColor(Color.parseColor("#2A2E45"))
             binding.tvRadioFrequency.setTextColor(Color.parseColor("#FDE68A"))

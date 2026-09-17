@@ -83,8 +83,8 @@ class AudioWaveformView @JvmOverloads constructor(
 
     private fun updatePaints() {
         if (isEink) {
-            activeBarPaint.color = Color.WHITE
-            inactiveBarPaint.color = Color.parseColor("#333333")
+            activeBarPaint.color = Color.BLACK
+            inactiveBarPaint.color = Color.parseColor("#CCCCCC")
         } else if (isDarkMode) {
             activeBarPaint.color = accentColor
             inactiveBarPaint.color = Color.parseColor("#353A54")
