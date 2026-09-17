@@ -1,3 +1,4 @@
+
 package com.hana.spindle.theme
 
 import android.graphics.Color
@@ -15,67 +16,87 @@ enum class ChassisStyle {
     WM2_RED            // 1981 WM-2 Red horizontal cut chassis
 }
 
+/**
+ * Complete Audiophile 60:30:10 Design Tokens
+ */
 data class CassetteTheme(
     val id: String,
     val name: String,
     val subtitle: String,
     val chassisStyle: ChassisStyle = ChassisStyle.VERTICAL_DECK,
-    // Chassis Properties
-    val chassisColor: Int = Color.parseColor("#18181A"),
-    val diagonalBezelColor: Int = Color.parseColor("#121214"),
-    val dialColor: Int = Color.parseColor("#D1D5DB"),
+    // 60% Dominant Base
+    val chassisColor: Int = Color.parseColor("#2A2E45"),
+    val diagonalBezelColor: Int = Color.parseColor("#1F2233"),
+    val dialColor: Int = Color.parseColor("#FAFAF9"),
+    // 30% Secondary Structural (Surfaces, Cards, Dividers, Secondary Text)
+    val surfaceColor: Int = Color.parseColor("#202334"),
+    val cardBorderColor: Int = Color.parseColor("#3B405D"),
+    val textPrimaryColor: Int = Color.parseColor("#FAFAF9"),
+    val textSecondaryColor: Int = Color.parseColor("#B0B4CE"),
+    // 10% High-Impact Accent
+    val accentColor: Int = Color.parseColor("#F97316"),
     // Cassette Shell & Tape Properties
     val shellColor: Int,
     val shellTexture: ShellTexture = ShellTexture.MATTE_PLASTIC,
     val labelBackgroundColor: Int,
     val labelTextColor: Int,
     val labelAccentColor: Int,
-    val windowTint: Int = Color.argb(40, 255, 255, 255),
+    val windowTint: Int = Color.argb(40, 250, 250, 249),
     val reelHubColor: Int = Color.WHITE,
-    val tapeRibbonColor: Int = Color.parseColor("#3E2723"),
-    val vfdGlowColor: Int = Color.parseColor("#00E5FF"),
+    val tapeRibbonColor: Int = Color.parseColor("#2E1F1A"),
+    val vfdGlowColor: Int = Color.parseColor("#FDE68A"),
     val isDarkAppTheme: Boolean = true
 ) {
     companion object {
-        // 1. Dark Theme (Studio Slate / Charcoal & Deep Smoky Shell)
+        // 1. Dark Theme (Indigo Mixtape & Warm Orange) - 60:30:10 Brand Benchmark
         val DARK = CassetteTheme(
             id = "theme_dark",
             name = "Dark Theme",
-            subtitle = "Matte Slate & Smoky Shell",
+            subtitle = "Dark Indigo & Mixtape Accent",
             chassisStyle = ChassisStyle.VERTICAL_DECK,
-            chassisColor = Color.parseColor("#141518"),
-            diagonalBezelColor = Color.parseColor("#0E0F12"),
-            dialColor = Color.parseColor("#D1D5DB"),
-            shellColor = Color.parseColor("#16181C"),
+            chassisColor = Color.parseColor("#2A2E45"), // 60% Dark Indigo Chassis
+            diagonalBezelColor = Color.parseColor("#1F2233"),
+            dialColor = Color.parseColor("#FAFAF9"),
+            surfaceColor = Color.parseColor("#202334"), // 30% Deep Indigo Surfaces
+            cardBorderColor = Color.parseColor("#3B405D"),
+            textPrimaryColor = Color.parseColor("#FAFAF9"), // Crisp Pale Warm Stone
+            textSecondaryColor = Color.parseColor("#B0B4CE"),
+            accentColor = Color.parseColor("#F97316"), // 10% Warm Tangerine Orange Hero
+            shellColor = Color.parseColor("#1E2132"),
             shellTexture = ShellTexture.MATTE_PLASTIC,
-            labelBackgroundColor = Color.parseColor("#1C1E24"),
-            labelTextColor = Color.parseColor("#F1F5F9"),
-            labelAccentColor = Color.parseColor("#E53935"), // Red racing accent
-            windowTint = Color.argb(40, 255, 255, 255),
-            reelHubColor = Color.parseColor("#CBD5E1"),
-            tapeRibbonColor = Color.parseColor("#38231B"),
-            vfdGlowColor = Color.parseColor("#00E676"),
+            labelBackgroundColor = Color.parseColor("#FDE68A"), // Butter Yellow Tape Label
+            labelTextColor = Color.parseColor("#2A2E45"),      // Dark Indigo Ink
+            labelAccentColor = Color.parseColor("#F97316"),
+            windowTint = Color.argb(35, 250, 250, 249),
+            reelHubColor = Color.parseColor("#FAFAF9"),
+            tapeRibbonColor = Color.parseColor("#2E1F1A"),
+            vfdGlowColor = Color.parseColor("#FDE68A"), // Butter Yellow Warm Glow
             isDarkAppTheme = true
         )
 
-        // 2. Light Theme (Braun / Dieter Rams Minimalist Off-White)
+        // 2. Light Theme (Sunny Mixtape & Dark Indigo Frame) - 60:30:10 Light
         val LIGHT = CassetteTheme(
             id = "theme_light",
             name = "Light Theme",
-            subtitle = "Braun Off-White & Minimalist",
+            subtitle = "Sunny Mixtape & Dark Indigo Frame",
             chassisStyle = ChassisStyle.VAPORWAVE_80S,
-            chassisColor = Color.parseColor("#F1F3F5"),
-            diagonalBezelColor = Color.parseColor("#E2E5E9"),
-            dialColor = Color.parseColor("#475569"),
-            shellColor = Color.parseColor("#FAFAFA"),
+            chassisColor = Color.parseColor("#FAFAF9"), // 60% Pale Warm Stone Base
+            diagonalBezelColor = Color.parseColor("#E5E5E2"),
+            dialColor = Color.parseColor("#2A2E45"),
+            surfaceColor = Color.parseColor("#FFFFFF"),
+            cardBorderColor = Color.parseColor("#E5E5E2"),
+            textPrimaryColor = Color.parseColor("#2A2E45"), // Dark Indigo High Contrast
+            textSecondaryColor = Color.parseColor("#5A5E78"),
+            accentColor = Color.parseColor("#F97316"), // 10% Warm Tangerine Orange Hero
+            shellColor = Color.parseColor("#FAFAF9"),
             shellTexture = ShellTexture.MATTE_PLASTIC,
-            labelBackgroundColor = Color.parseColor("#FFFFFF"),
-            labelTextColor = Color.parseColor("#0F172A"),
-            labelAccentColor = Color.parseColor("#E53935"),
-            windowTint = Color.argb(25, 0, 0, 0),
-            reelHubColor = Color.parseColor("#64748B"),
-            tapeRibbonColor = Color.parseColor("#1E1B4B"),
-            vfdGlowColor = Color.parseColor("#0F172A"),
+            labelBackgroundColor = Color.parseColor("#FDE68A"), // Butter Yellow Tape Label
+            labelTextColor = Color.parseColor("#2A2E45"),      // Dark Indigo Ink
+            labelAccentColor = Color.parseColor("#F97316"),
+            windowTint = Color.argb(20, 42, 46, 69),
+            reelHubColor = Color.parseColor("#2A2E45"),
+            tapeRibbonColor = Color.parseColor("#38231B"),
+            vfdGlowColor = Color.parseColor("#F97316"),
             isDarkAppTheme = false
         )
 
@@ -88,6 +109,11 @@ data class CassetteTheme(
             chassisColor = Color.BLACK,
             diagonalBezelColor = Color.BLACK,
             dialColor = Color.WHITE,
+            surfaceColor = Color.BLACK,
+            cardBorderColor = Color.WHITE,
+            textPrimaryColor = Color.WHITE,
+            textSecondaryColor = Color.parseColor("#CCCCCC"),
+            accentColor = Color.WHITE,
             shellColor = Color.WHITE,
             shellTexture = ShellTexture.MATTE_PLASTIC,
             labelBackgroundColor = Color.WHITE,

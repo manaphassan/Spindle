@@ -60,19 +60,19 @@ class AudioWaveformView @JvmOverloads constructor(
 
     private fun initPaints() {
         barPlayedPaint.apply {
-            color = Color.parseColor("#E4E4E8") // Crisp white/light silver played bars
+            color = Color.parseColor("#F97316") // Hero Warm Orange played bars
             style = Paint.Style.STROKE
             strokeCap = Paint.Cap.ROUND
         }
 
         barUnplayedPaint.apply {
-            color = Color.parseColor("#383B44") // Darker slate unplayed bars
+            color = Color.parseColor("#353A54") // Muted Dark Indigo unplayed bars
             style = Paint.Style.STROKE
             strokeCap = Paint.Cap.ROUND
         }
 
         centerLinePaint.apply {
-            color = Color.parseColor("#272A30")
+            color = Color.parseColor("#2A2E45") // Brand Dark Indigo framing line
             style = Paint.Style.STROKE
             strokeWidth = 1.0f
         }

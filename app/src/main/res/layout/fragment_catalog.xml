@@ -33,6 +33,7 @@
                 android:contentDescription="Back to Player" />
 
             <TextView
+                android:id="@+id/tvCatalogHeaderTitle"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -55,6 +56,7 @@
 
         <!-- Inline Real-time Search Input -->
         <LinearLayout
+            android:id="@+id/searchContainer"
             android:layout_width="match_parent"
             android:layout_height="38dp"
             android:orientation="horizontal"
@@ -65,6 +67,7 @@
             android:paddingHorizontal="12dp">
 
             <ImageView
+                android:id="@+id/ivSearchIcon"
                 android:layout_width="16dp"
                 android:layout_height="16dp"
                 android:src="@android:drawable/ic_menu_search"
@@ -85,117 +88,7 @@
                 android:singleLine="true" />
         </LinearLayout>
 
-        <!-- Quick Filter Chips Row (All, Hi-Res, Lossless, FLAC, WAV, MP3) -->
-        <HorizontalScrollView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:scrollbars="none"
-            android:layout_marginTop="8dp"
-            android:paddingHorizontal="12dp">
 
-            <LinearLayout
-                android:id="@+id/filterChipsContainer"
-                android:layout_width="wrap_content"
-                android:layout_height="28dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <TextView
-                    android:id="@+id/chipAll"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:gravity="center"
-                    android:paddingHorizontal="10dp"
-                    android:layout_marginEnd="6dp"
-                    android:background="#2A2B32"
-                    android:text="ALL"
-                    android:textColor="#FFFFFF"
-                    android:textSize="10sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/chipHiRes"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:gravity="center"
-                    android:paddingHorizontal="10dp"
-                    android:layout_marginEnd="6dp"
-                    android:background="#1A1C22"
-                    android:text="HI-RES 24-BIT"
-                    android:textColor="#94A3B8"
-                    android:textSize="10sp"
-                    android:fontFamily="monospace"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/chipLossless"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:gravity="center"
-                    android:paddingHorizontal="10dp"
-                    android:layout_marginEnd="6dp"
-                    android:background="#1A1C22"
-                    android:text="LOSSLESS"
-                    android:textColor="#94A3B8"
-                    android:textSize="10sp"
-                    android:fontFamily="monospace"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/chipFlac"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:gravity="center"
-                    android:paddingHorizontal="10dp"
-                    android:layout_marginEnd="6dp"
-                    android:background="#1A1C22"
-                    android:text="FLAC"
-                    android:textColor="#94A3B8"
-                    android:textSize="10sp"
-                    android:fontFamily="monospace"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/chipWav"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:gravity="center"
-                    android:paddingHorizontal="10dp"
-                    android:layout_marginEnd="6dp"
-                    android:background="#1A1C22"
-                    android:text="WAV"
-                    android:textColor="#94A3B8"
-                    android:textSize="10sp"
-                    android:fontFamily="monospace"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/chipMp3"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:gravity="center"
-                    android:paddingHorizontal="10dp"
-                    android:layout_marginEnd="6dp"
-                    android:background="#1A1C22"
-                    android:text="MP3"
-                    android:textColor="#94A3B8"
-                    android:textSize="10sp"
-                    android:fontFamily="monospace"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/chipFavorites"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:gravity="center"
-                    android:paddingHorizontal="10dp"
-                    android:background="#1A1C22"
-                    android:text="★ RATED"
-                    android:textColor="#94A3B8"
-                    android:textSize="10sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-        </HorizontalScrollView>
 
         <!-- Horizontal Scrollable Category Tabs -->
         <HorizontalScrollView
@@ -820,7 +713,7 @@
                 android:layout_height="64dp"
                 android:layout_marginHorizontal="32dp"
                 android:background="@drawable/bg_circle_play"
-                android:backgroundTint="#8B5CF6"
+                android:backgroundTint="@color/wm2_red"
                 android:src="@drawable/ic_np_play"
                 app:tint="#FFFFFF"
                 android:contentDescription="Play/Pause" />

@@ -46,6 +46,20 @@ class CircularCoverArcView @JvmOverloads constructor(
             invalidate()
         }
 
+    var isEink: Boolean = false
+        set(value) {
+            field = value
+            updatePaints()
+            invalidate()
+        }
+
+    var accentColor: Int = Color.parseColor("#D71920") // Walkman Crimson default
+        set(value) {
+            field = value
+            updatePaints()
+            invalidate()
+        }
+
     // Arc geometry: starts at 135 deg (bottom-left) and sweeps 270 deg (bottom-right)
     private val startAngle = 135f
     private val sweepAngle = 270f
@@ -100,13 +114,39 @@ class CircularCoverArcView @JvmOverloads constructor(
     }
 
     private fun updatePaints() {
-        val trackColor = if (isDarkMode) Color.parseColor("#2D313E") else Color.parseColor("#E2E8F0")
-        arcTrackPaint.color = trackColor
-        speakerPaint.color = if (isDarkMode) Color.parseColor("#94A3B8") else Color.parseColor("#64748B")
+        val r = Color.red(accentColor)
+        val g = Color.green(accentColor)
+        val b = Color.blue(accentColor)
 
-        thumbPaint.color = Color.parseColor("#8B5CF6") // Vibrant purple from reference
-        thumbShadowPaint.color = Color.parseColor("#408B5CF6")
-        coverShadowPaint.color = if (isDarkMode) Color.parseColor("#40000000") else Color.parseColor("#208B5CF6")
+        if (isEink) {
+            arcTrackPaint.color = Color.parseColor("#333333")
+            speakerPaint.color = Color.WHITE
+            thumbPaint.color = Color.WHITE
+            thumbShadowPaint.color = Color.TRANSPARENT
+            thumbInnerPaint.color = Color.BLACK
+            coverShadowPaint.color = Color.TRANSPARENT
+            arcProgressPaint.shader = null
+            arcProgressPaint.color = Color.WHITE
+        } else if (isDarkMode) {
+            arcTrackPaint.color = Color.parseColor("#1E2132")
+            speakerPaint.color = Color.parseColor("#B0B4CE")
+            thumbPaint.color = Color.parseColor("#FDE68A") // Butter Yellow thumb bead
+            thumbShadowPaint.color = Color.argb(90, 253, 230, 138)
+            thumbInnerPaint.color = Color.parseColor("#2A2E45")
+            coverShadowPaint.color = Color.parseColor("#80151724")
+            arcProgressPaint.shader = null
+            arcProgressPaint.color = accentColor // Brand Warm Orange
+        } else {
+            // Light Theme
+            arcTrackPaint.color = Color.parseColor("#E5E5E2")
+            speakerPaint.color = Color.parseColor("#5A5E78")
+            thumbPaint.color = Color.parseColor("#F97316")
+            thumbShadowPaint.color = Color.argb(60, 249, 115, 22)
+            thumbInnerPaint.color = Color.WHITE
+            coverShadowPaint.color = Color.argb(30, 42, 46, 69)
+            arcProgressPaint.shader = null
+            arcProgressPaint.color = accentColor // Brand Warm Orange
+        }
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -122,7 +162,7 @@ class CircularCoverArcView @JvmOverloads constructor(
 
         val strokeWidth = minDim * 0.016f
         arcTrackPaint.strokeWidth = strokeWidth
-        arcProgressPaint.strokeWidth = strokeWidth * 1.1f
+        arcProgressPaint.strokeWidth = strokeWidth * 1.15f
 
         arcBounds.set(
             centerX - arcRadius,
@@ -141,19 +181,7 @@ class CircularCoverArcView @JvmOverloads constructor(
         coverClipPath.reset()
         coverClipPath.addCircle(centerX, centerY, coverRadius, Path.Direction.CW)
 
-        // Gradient shader for progress arc: vibrant purple to pink
-        val gradient = SweepGradient(
-            centerX,
-            centerY,
-            intArrayOf(
-                Color.parseColor("#8B5CF6"),
-                Color.parseColor("#EC4899"),
-                Color.parseColor("#8B5CF6")
-            ),
-            floatArrayOf(0.35f, 0.75f, 1.0f)
-        )
-        arcProgressPaint.shader = gradient
-
+        updatePaints()
         updateShader()
     }
 

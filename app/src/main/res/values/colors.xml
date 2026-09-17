@@ -1,27 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Sony Walkman II (WM-2) Red Hero Palette -->
-    <color name="wm2_red">#D71920</color>
-    <color name="wm2_red_dark">#A80E14</color>
-    <color name="wm2_bezel_black">#1C1C1E</color>
-    <color name="wm2_bezel_dark">#121214</color>
-    <color name="wm2_silver_dial">#D1D5DB</color>
-    <color name="wm2_play_green">#00C853</color>
-    <color name="wm2_stop_red">#D50000</color>
-    <color name="wm2_battery_led">#00E676</color>
-    <color name="wm2_amber">#FFB300</color>
+    <!-- Spindle Official Brand Color Palette (HEX: #2A2E45 #F97316 #FB7185 #FDE68A #FAFAF9) -->
+    <!-- Mood: nostalgic, sunny, friendly | Throwback mixtape aesthetic -->
+    <color name="brand_indigo">#2A2E45</color> <!-- Framing, structure, dark chassis, crisp text on light -->
+    <color name="brand_orange">#F97316</color> <!-- 10% Hero accent, active playback, reel notches, tuner -->
+    <color name="brand_pink">#FB7185</color>   <!-- Secondary accent, heart/favorite, peak audio meters -->
+    <color name="brand_yellow">#FDE68A</color> <!-- Cassette tape label, star ratings, warm VFD glow -->
+    <color name="brand_pale">#FAFAF9</color>   <!-- 60% Light chassis base, crisp text in dark mode -->
 
-    <!-- General Dark Theme Elements -->
+    <!-- Sony Walkman / Industrial Legacy Tokens mapped to brand palette -->
+    <color name="wm2_red">#F97316</color>
+    <color name="wm2_red_dark">#EA580C</color>
+    <color name="wm2_bezel_black">#2A2E45</color>
+    <color name="wm2_bezel_dark">#1E2132</color>
+    <color name="wm2_silver_dial">#FAFAF9</color>
+    <color name="wm2_play_green">#F97316</color>
+    <color name="wm2_stop_red">#FB7185</color>
+    <color name="wm2_battery_led">#F97316</color>
+    <color name="wm2_amber">#FDE68A</color>
+
+    <!-- General App Surface & Typography Elements -->
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="surface_dark">#18181A</color>
-    <color name="surface_elevated">#242428</color>
-    <color name="text_primary">#F3F4F6</color>
-    <color name="text_secondary">#9CA3AF</color>
-    <color name="divider">#2E2E34</color>
+    <color name="surface_dark">#2A2E45</color>
+    <color name="surface_elevated">#353A54</color>
+    <color name="text_primary">#FAFAF9</color>
+    <color name="text_secondary">#B0B4CE</color>
+    <color name="divider">#3B405D</color>
 
-    <!-- VFD Glow Colors -->
-    <color name="vfd_cyan">#00E5FF</color>
-    <color name="vfd_amber">#FF9100</color>
-    <color name="vfd_emerald">#00E676</color>
+    <!-- VFD Glow & Accent Colors -->
+    <color name="vfd_cyan">#FDE68A</color>
+    <color name="vfd_amber">#FDE68A</color>
+    <color name="vfd_emerald">#F97316</color>
 </resources>
+

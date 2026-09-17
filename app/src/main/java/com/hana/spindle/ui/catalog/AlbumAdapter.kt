@@ -22,6 +22,17 @@ class AlbumAdapter(
 
     private val scope = CoroutineScope(Dispatchers.Main)
 
+    private var textColorPrimary: Int = android.graphics.Color.WHITE
+    private var textColorSecondary: Int = android.graphics.Color.parseColor("#94A3B8")
+    private var cardBg: Int = android.graphics.Color.parseColor("#1C1D22")
+
+    fun updateThemeColors(primary: Int, secondary: Int, isDark: Boolean, isEink: Boolean) {
+        this.textColorPrimary = primary
+        this.textColorSecondary = secondary
+        this.cardBg = if (isEink) android.graphics.Color.BLACK else if (!isDark) android.graphics.Color.parseColor("#E5E5E2") else android.graphics.Color.parseColor("#202334")
+        notifyDataSetChanged()
+    }
+
     class AlbumViewHolder(val binding: ItemAlbumGridBinding) : RecyclerView.ViewHolder(binding.root)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AlbumViewHolder {
@@ -34,7 +45,10 @@ class AlbumAdapter(
         val b = holder.binding
 
         b.tvGridTitle.text = album.album
+        b.tvGridTitle.setTextColor(textColorPrimary)
         b.tvGridSubtitle.text = album.artist
+        b.tvGridSubtitle.setTextColor(textColorSecondary)
+        b.cardAlbumRoot.setCardBackgroundColor(cardBg)
         b.tvGridTrackCount.text = "${album.trackCount} tracks"
 
         if (album.year > 0) {

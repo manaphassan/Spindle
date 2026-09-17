@@ -62,6 +62,7 @@ class DrawerFragment : Fragment() {
     private val binding get() = _binding!!
 
     private lateinit var themeManager: ThemeManager
+    private lateinit var audioFxController: com.hana.spindle.playback.AudioFxController
     private lateinit var appListLoader: AppListLoader
     private lateinit var appAdapter: AppListAdapter
     private var allApps: List<AppInfo> = emptyList()
@@ -118,6 +119,7 @@ class DrawerFragment : Fragment() {
 
         val app = requireActivity().application as SpindleApp
         themeManager = app.themeManager
+        audioFxController = app.audioEngine.audioFxController
         appListLoader = AppListLoader(requireContext())
         audioManager = requireContext().getSystemService(Context.AUDIO_SERVICE) as? AudioManager
 
@@ -178,17 +180,21 @@ class DrawerFragment : Fragment() {
         binding.containerEq.visibility = if (index == 1) View.VISIBLE else View.GONE
         binding.containerSettings.visibility = if (index == 2) View.VISIBLE else View.GONE
 
-        val activeColor = ColorStateList.valueOf(Color.parseColor("#E53935")) // Walkman Red
-        val inactiveColor = ColorStateList.valueOf(Color.parseColor("#1A1C22"))
+        val isDark = themeManager.currentTheme.value.isDarkAppTheme
+        val isEink = themeManager.currentTheme.value.id == CassetteTheme.MONOCHROME_EINK.id
+        val activeColor = ColorStateList.valueOf(if (isEink) Color.WHITE else Color.parseColor("#F97316"))
+        val inactiveColor = ColorStateList.valueOf(if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#202334"))
+        val activeText = if (isEink) Color.BLACK else Color.WHITE
+        val inactiveText = if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#2A2E45") else Color.parseColor("#FAFAF9")
 
         binding.btnTabApps.backgroundTintList = if (index == 0) activeColor else inactiveColor
-        binding.btnTabApps.setTextColor(if (index == 0) Color.WHITE else Color.parseColor("#A1A1AA"))
+        binding.btnTabApps.setTextColor(if (index == 0) activeText else inactiveText)
 
         binding.btnTabEq.backgroundTintList = if (index == 1) activeColor else inactiveColor
-        binding.btnTabEq.setTextColor(if (index == 1) Color.WHITE else Color.parseColor("#A1A1AA"))
+        binding.btnTabEq.setTextColor(if (index == 1) activeText else inactiveText)
 
         binding.btnTabSettings.backgroundTintList = if (index == 2) activeColor else inactiveColor
-        binding.btnTabSettings.setTextColor(if (index == 2) Color.WHITE else Color.parseColor("#A1A1AA"))
+        binding.btnTabSettings.setTextColor(if (index == 2) activeText else inactiveText)
     }
 
     // =========================================================================
@@ -352,15 +358,67 @@ class DrawerFragment : Fragment() {
             }
         })
 
-        binding.btnDjPlayPause.setOnClickListener {
-            audioEngine.togglePlayPause()
+        // 5. Bit-Perfect Direct Bypass Switch
+        binding.switchBypass.isChecked = fxController.isBypassEnabled
+        updateBypassVisuals(fxController.isBypassEnabled)
+        binding.switchBypass.setOnCheckedChangeListener { _, isChecked ->
+            fxController.setBypass(isChecked)
+            updateBypassVisuals(isChecked)
+            val msg = if (isChecked) "Bit-Perfect Direct ALSA Bypass Active (0.00% DSP Distortion)" else "DSP Equalization & Target Profile Enabled"
+            Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
         }
 
-        binding.btnBrowse.setOnClickListener {
-            (activity as? MainActivity)?.navigateToCatalog()
+        // 6. Binaural Crossfeed / Soundstage Fader
+        binding.seekCrossfeed.progress = fxController.crossfeedStrength / 10
+        updateCrossfeedLabel(binding.seekCrossfeed.progress)
+        binding.seekCrossfeed.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                if (fromUser) {
+                    fxController.setCrossfeedStrength(progress * 10)
+                }
+                updateCrossfeedLabel(progress)
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                seekBar?.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            }
+        })
+
+        // 7. Target Curves Quick Buttons
+        val curveButtons = mapOf(
+            binding.btnCurveHarman to "HARMAN",
+            binding.btnCurveDiffuse to "DIFFUSE",
+            binding.btnCurveTube to "TUBE",
+            binding.btnCurveAir to "AIR",
+            binding.btnCurveFlat to "FLAT"
+        )
+        fun highlightCurve(selected: String) {
+            val activeColor = ColorStateList.valueOf(Color.parseColor("#F97316"))
+            val inactiveColor = ColorStateList.valueOf(Color.parseColor("#202334"))
+            curveButtons.forEach { (btn, name) ->
+                val isSel = name.equals(selected, ignoreCase = true)
+                btn.backgroundTintList = if (isSel) activeColor else inactiveColor
+                btn.setTextColor(if (isSel) Color.WHITE else Color.parseColor("#A1A1AA"))
+            }
+        }
+        highlightCurve("FLAT")
+
+        curveButtons.forEach { (btn, curveName) ->
+            btn.setOnClickListener {
+                fxController.applyPreset(curveName)
+                binding.knobLow.currentValue = fxController.lowGainDb
+                binding.knobMid.currentValue = fxController.midGainDb
+                binding.knobHi.currentValue = fxController.highGainDb
+                binding.knobFilter.currentValue = fxController.bassBoostStrength.toFloat()
+                binding.seekCrossfeed.progress = fxController.crossfeedStrength / 10
+                updateCrossfeedLabel(binding.seekCrossfeed.progress)
+                binding.btnFx.text = "FX: $curveName"
+                highlightCurve(curveName)
+                it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            }
         }
 
-        // 5. Observe playback state and animate VU Meter, Waveform, and L/R Peak Meter
+        // 8. Observe playback state and animate VU Meter, Waveform, and L/R Peak Meter
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
@@ -368,10 +426,6 @@ class DrawerFragment : Fragment() {
                         _binding?.let { b ->
                             b.waveformView.isPlaying = state.isPlaying
                             b.waveformView.progress = state.progress
-
-                            b.btnDjPlayPause.setImageResource(
-                                if (state.isPlaying) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play
-                            )
 
                             if (state.currentSong != null) {
                                 b.tvDjTrackTitle.text = "${state.currentSong.title} • ${state.currentSong.artist}"
@@ -440,11 +494,51 @@ class DrawerFragment : Fragment() {
         _binding?.tvVolumeLevel?.text = "$progress% • ${dbAttenuation} dB"
     }
 
+    private fun updateBypassVisuals(isBypass: Boolean) {
+        _binding?.let { b ->
+            if (isBypass) {
+                b.tvBypassTitle.setTextColor(Color.parseColor("#00E676"))
+                b.tvBypassTitle.text = "● BIT-PERFECT DIRECT BYPASS (ACTIVE)"
+                b.tvBypassSub.text = "DSP processing completely disabled for uncolored 0.00% distortion"
+                b.knobLow.alpha = 0.35f
+                b.knobMid.alpha = 0.35f
+                b.knobHi.alpha = 0.35f
+                b.knobFilter.alpha = 0.35f
+                b.seekCrossfeed.alpha = 0.35f
+                b.btnFx.alpha = 0.35f
+            } else {
+                b.tvBypassTitle.setTextColor(Color.WHITE)
+                b.tvBypassTitle.text = "BIT-PERFECT DIRECT BYPASS"
+                b.tvBypassSub.text = "0.00% DSP distortion direct ALSA bypass for USB DACs"
+                b.knobLow.alpha = 1.0f
+                b.knobMid.alpha = 1.0f
+                b.knobHi.alpha = 1.0f
+                b.knobFilter.alpha = 1.0f
+                b.seekCrossfeed.alpha = 1.0f
+                b.btnFx.alpha = 1.0f
+            }
+        }
+    }
+
+    private fun updateCrossfeedLabel(progress: Int) {
+        _binding?.let { b ->
+            b.tvCrossfeedLevel.text = if (progress <= 0) "OFF (0%)" else "$progress% • ${progress * 10}ms"
+        }
+    }
+
     // =========================================================================
     // 4. GROUPED SETTINGS: 3 CURATED THEMES
     // =========================================================================
     private fun setupThemeSelector() {
         updateThemeButtonsVisual()
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                themeManager.currentTheme.collect { theme ->
+                    applyDrawerTheme(theme)
+                }
+            }
+        }
 
         binding.btnThemeDark.setOnClickListener {
             themeManager.setTheme(CassetteTheme.DARK)
@@ -464,13 +558,43 @@ class DrawerFragment : Fragment() {
 
     private fun updateThemeButtonsVisual() {
         val curId = themeManager.currentTheme.value.id
-        val activeColor = ColorStateList.valueOf(Color.parseColor("#E53935"))
+        val activeColor = ColorStateList.valueOf(Color.parseColor("#F97316"))
 
-        binding.btnThemeDark.backgroundTintList = if (curId == CassetteTheme.DARK.id) activeColor else ColorStateList.valueOf(Color.parseColor("#1E2026"))
-        binding.btnThemeLight.backgroundTintList = if (curId == CassetteTheme.LIGHT.id) activeColor else ColorStateList.valueOf(Color.parseColor("#E4E4E7"))
+        binding.btnThemeDark.backgroundTintList = if (curId == CassetteTheme.DARK.id) activeColor else ColorStateList.valueOf(Color.parseColor("#202334"))
+        binding.btnThemeLight.backgroundTintList = if (curId == CassetteTheme.LIGHT.id) activeColor else ColorStateList.valueOf(Color.parseColor("#E5E5E2"))
         binding.btnThemeEink.backgroundTintList = if (curId == CassetteTheme.MONOCHROME_EINK.id) activeColor else ColorStateList.valueOf(Color.BLACK)
 
         binding.tvActiveThemeName.text = themeManager.currentTheme.value.name
+    }
+
+    private fun applyDrawerTheme(theme: CassetteTheme) {
+        val isEink = (theme.id == CassetteTheme.MONOCHROME_EINK.id)
+        val isDark = theme.isDarkAppTheme
+        val primary = theme.textPrimaryColor
+        val secondary = theme.textSecondaryColor
+        val cardBg = if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#FAFAF9") else Color.parseColor("#171926")
+
+        binding.root.setBackgroundColor(theme.chassisColor)
+        binding.tabBar.backgroundTintList = ColorStateList.valueOf(
+            if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#171926")
+        )
+        binding.tvBypassTitle.setTextColor(if (audioFxController.isBypassEnabled) (if (isDark) Color.parseColor("#00E676") else Color.parseColor("#059669")) else primary)
+        binding.tvBypassSub.setTextColor(secondary)
+
+        updateCardsRecursively(binding.root, cardBg)
+        selectTab(currentTabIndex)
+        updateThemeButtonsVisual()
+    }
+
+    private fun updateCardsRecursively(view: View, cardBg: Int) {
+        if (view is androidx.cardview.widget.CardView) {
+            view.setCardBackgroundColor(cardBg)
+        }
+        if (view is ViewGroup) {
+            for (i in 0 until view.childCount) {
+                updateCardsRecursively(view.getChildAt(i), cardBg)
+            }
+        }
     }
 
     // =========================================================================
@@ -681,7 +805,7 @@ class DrawerFragment : Fragment() {
                     textSize = 10f
                     typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
                     setTextColor(Color.WHITE)
-                    backgroundTintList = ColorStateList.valueOf(Color.parseColor("#E53935"))
+                    backgroundTintList = ColorStateList.valueOf(Color.parseColor("#F97316"))
                     val btnParams = LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.WRAP_CONTENT,
                         (34 * resources.displayMetrics.density).toInt()
@@ -701,8 +825,8 @@ class DrawerFragment : Fragment() {
                     text = "DEL"
                     textSize = 10f
                     typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
-                    setTextColor(Color.parseColor("#EF4444"))
-                    backgroundTintList = ColorStateList.valueOf(Color.parseColor("#261414"))
+                    setTextColor(Color.parseColor("#FB7185"))
+                    backgroundTintList = ColorStateList.valueOf(Color.parseColor("#2A2E45"))
                     val btnParams = LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.WRAP_CONTENT,
                         (34 * resources.displayMetrics.density).toInt()

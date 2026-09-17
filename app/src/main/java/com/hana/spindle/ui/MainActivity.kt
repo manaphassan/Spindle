@@ -122,6 +122,30 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // Tactile hardware depth page transformer
+        binding.viewPager.setPageTransformer { page, position ->
+            when {
+                position < -1 -> {
+                    page.alpha = 0f
+                }
+                position <= 0 -> {
+                    page.alpha = 1f + position * 0.25f
+                    val scaleFactor = 0.96f + (1 - kotlin.math.abs(position)) * 0.04f
+                    page.scaleX = scaleFactor
+                    page.scaleY = scaleFactor
+                }
+                position <= 1 -> {
+                    page.alpha = 1f - position * 0.25f
+                    val scaleFactor = 0.96f + (1 - kotlin.math.abs(position)) * 0.04f
+                    page.scaleX = scaleFactor
+                    page.scaleY = scaleFactor
+                }
+                else -> {
+                    page.alpha = 0f
+                }
+            }
+        }
+
         // Center default: Main Cassette Player screen
         binding.viewPager.setCurrentItem(1, false)
         binding.viewPager.offscreenPageLimit = 2
@@ -162,10 +186,25 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun navigateToPlayer() {
-        binding.catalogContainer.visibility = View.GONE
-        val frag = supportFragmentManager.findFragmentById(R.id.catalogContainer)
-        if (frag != null) {
-            supportFragmentManager.beginTransaction().remove(frag).commitAllowingStateLoss()
+        if (binding.catalogContainer.visibility == View.VISIBLE) {
+            binding.catalogContainer.animate()
+                .translationY(binding.root.height.toFloat())
+                .alpha(0f)
+                .setDuration(200)
+                .setInterpolator(android.view.animation.AccelerateInterpolator())
+                .withEndAction {
+                    binding.catalogContainer.visibility = View.GONE
+                    val frag = supportFragmentManager.findFragmentById(R.id.catalogContainer)
+                    if (frag != null) {
+                        supportFragmentManager.beginTransaction().remove(frag).commitAllowingStateLoss()
+                    }
+                }.start()
+        } else {
+            binding.catalogContainer.visibility = View.GONE
+            val frag = supportFragmentManager.findFragmentById(R.id.catalogContainer)
+            if (frag != null) {
+                supportFragmentManager.beginTransaction().remove(frag).commitAllowingStateLoss()
+            }
         }
         binding.viewPager.setCurrentItem(1, true)
     }
@@ -173,6 +212,16 @@ class MainActivity : AppCompatActivity() {
     fun navigateToCatalog() {
         binding.catalogContainer.visibility = View.VISIBLE
         binding.catalogContainer.bringToFront()
+        val h = binding.root.height.toFloat().let { if (it > 0) it else 800f }
+        binding.catalogContainer.translationY = h
+        binding.catalogContainer.alpha = 0f
+        binding.catalogContainer.animate()
+            .translationY(0f)
+            .alpha(1f)
+            .setDuration(250)
+            .setInterpolator(android.view.animation.DecelerateInterpolator())
+            .start()
+
         supportFragmentManager.beginTransaction()
             .replace(R.id.catalogContainer, CatalogFragment())
             .commitAllowingStateLoss()

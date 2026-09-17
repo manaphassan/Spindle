@@ -44,6 +44,20 @@ class AudioWaveformView @JvmOverloads constructor(
             invalidate()
         }
 
+    var isEink: Boolean = false
+        set(value) {
+            field = value
+            updatePaints()
+            invalidate()
+        }
+
+    var accentColor: Int = Color.parseColor("#F97316")
+        set(value) {
+            field = value
+            updatePaints()
+            invalidate()
+        }
+
     var onSeek: ((Float) -> Unit)? = null
 
     // Base waveform envelope shape (symmetrical peak in center like image)
@@ -68,8 +82,16 @@ class AudioWaveformView @JvmOverloads constructor(
     }
 
     private fun updatePaints() {
-        activeBarPaint.color = if (isDarkMode) Color.parseColor("#E2E8F0") else Color.parseColor("#1E2028")
-        inactiveBarPaint.color = if (isDarkMode) Color.parseColor("#2D313E") else Color.parseColor("#CBD5E1")
+        if (isEink) {
+            activeBarPaint.color = Color.WHITE
+            inactiveBarPaint.color = Color.parseColor("#333333")
+        } else if (isDarkMode) {
+            activeBarPaint.color = accentColor
+            inactiveBarPaint.color = Color.parseColor("#353A54")
+        } else {
+            activeBarPaint.color = accentColor
+            inactiveBarPaint.color = Color.parseColor("#E5E5E2")
+        }
     }
 
     override fun onDraw(canvas: Canvas) {

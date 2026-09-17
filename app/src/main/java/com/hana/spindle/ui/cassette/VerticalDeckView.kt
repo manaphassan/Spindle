@@ -107,10 +107,10 @@ class VerticalDeckView @JvmOverloads constructor(
         }
 
     // Dynamic Album Cover Accent Color with smooth transition animation
-    var coverAccentColor: Int = Color.parseColor("#EAB308")
+    var coverAccentColor: Int = Color.parseColor("#F97316")
         private set
 
-    private var currentAccentColor: Int = Color.parseColor("#EAB308")
+    private var currentAccentColor: Int = Color.parseColor("#F97316")
     private var colorAnimator: ValueAnimator? = null
 
     fun setCoverAccentColor(newColor: Int, animate: Boolean = true) {
@@ -312,319 +312,246 @@ class VerticalDeckView @JvmOverloads constructor(
     }
 
     private fun updatePaints() {
-        chassisPaint.apply {
-            color = Color.parseColor("#17181C") // Industrial dark matte faceplate
-            style = Paint.Style.FILL
-        }
-        chassisBevelPaint.apply {
-            color = Color.parseColor("#282B33")
-            style = Paint.Style.STROKE
-            strokeWidth = 3f
-        }
-        slotBevelPaint.apply {
-            color = Color.parseColor("#22252C")
-            style = Paint.Style.STROKE
-            strokeWidth = 2.5f
-        }
-        slotShadowPaint.apply {
-            color = Color.parseColor("#090A0D") // Deep recessed cassette slot cavity
-            style = Paint.Style.FILL
-        }
+        val isLight = theme.id == CassetteTheme.LIGHT.id
+        val isEink = theme.id == CassetteTheme.MONOCHROME_EINK.id
 
-        screwWellPaint.apply {
-            color = Color.parseColor("#0B0C0F")
-            style = Paint.Style.FILL
-        }
-        screwHeadPaint.apply {
-            color = Color.parseColor("#2B2E37")
-            style = Paint.Style.FILL
-        }
-        screwHighlightPaint.apply {
-            color = Color.parseColor("#4A4F5D")
-            style = Paint.Style.STROKE
-            strokeWidth = 2f
-        }
-        screwGroovePaint.apply {
-            color = Color.parseColor("#101115")
-            style = Paint.Style.STROKE
-            strokeWidth = 2.5f
-            strokeCap = Paint.Cap.ROUND
-        }
+        if (isEink) {
+            // Pure 1-bit high-contrast Monochrome E-Ink
+            chassisPaint.apply { color = Color.BLACK; style = Paint.Style.FILL }
+            chassisBevelPaint.apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 2f }
+            slotBevelPaint.apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 2f }
+            slotShadowPaint.apply { color = Color.BLACK; style = Paint.Style.FILL }
 
-        cassetteShellPaint.apply {
-            color = Color.parseColor("#15171C") // Dark smoky acrylic cassette shell body
-            style = Paint.Style.FILL
-        }
-        cassetteBorderPaint.apply {
-            color = Color.parseColor("#64748B") // Crisp slate outer border
-            style = Paint.Style.STROKE
-            strokeWidth = 2.0f
-        }
-        cassetteHighlightLinePaint.apply {
-            color = Color.argb(120, 255, 255, 255) // Top-left plastic bevel light catch
-            style = Paint.Style.STROKE
-            strokeWidth = 1.0f
-        }
-        cassetteInnerLipPaint.apply {
-            color = Color.parseColor("#475569") // Stepped perimeter chamfer seam
-            style = Paint.Style.STROKE
-            strokeWidth = 1.5f
-        }
-        cassetteOutlinePaint.apply {
-            color = Color.parseColor("#94A3B8") // Primary wireframe lines (label recess, trapezoid, capstans)
-            style = Paint.Style.STROKE
-            strokeWidth = 1.6f
-        }
-        cassetteSubtleOutlinePaint.apply {
-            color = Color.parseColor("#64748B") // Secondary molded ridges (reel wells, center ridge, inner trapezoid)
-            style = Paint.Style.STROKE
-            strokeWidth = 1.3f
-        }
-        cassetteScrewBossPaint.apply {
-            color = Color.parseColor("#788497") // Molded circular screw bosses & corner struts
-            style = Paint.Style.STROKE
-            strokeWidth = 1.5f
-        }
-        cassetteCutoutPaint.apply {
-            color = Color.parseColor("#08090C")
-            style = Paint.Style.FILL
-        }
-        cassetteGuidePaint.apply {
-            color = Color.parseColor("#64748B")
-            style = Paint.Style.STROKE
-            strokeWidth = 1.5f
-        }
+            screwWellPaint.apply { color = Color.BLACK; style = Paint.Style.FILL }
+            screwHeadPaint.apply { color = Color.BLACK; style = Paint.Style.FILL }
+            screwHighlightPaint.apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 1.5f }
+            screwGroovePaint.apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 2f }
 
-        // Large transparent acrylic window panel
-        windowPanelPaint.apply {
-            color = Color.parseColor("#101115") // Transparent panel cavity showing hubs & reels
-            style = Paint.Style.FILL
-        }
-        windowPanelBorderPaint.apply {
-            color = Color.parseColor("#333A48")
-            style = Paint.Style.STROKE
-            strokeWidth = 2f
-        }
-        windowGlassHighlightPaint.apply {
-            color = Color.argb(20, 255, 255, 255)
-            style = Paint.Style.FILL
-        }
+            cassetteShellPaint.apply { color = Color.BLACK; style = Paint.Style.FILL }
+            cassetteBorderPaint.apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 2.0f }
+            cassetteHighlightLinePaint.apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 1.0f }
+            cassetteInnerLipPaint.apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 1.5f }
+            cassetteOutlinePaint.apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 1.6f }
+            cassetteSubtleOutlinePaint.apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 1.2f }
+            cassetteScrewBossPaint.apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 1.5f }
+            cassetteCutoutPaint.apply { color = Color.BLACK; style = Paint.Style.FILL }
+            cassetteGuidePaint.apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 1.5f }
 
-        centerWindowPaint.apply {
-            color = Color.parseColor("#0C0E13")
-            style = Paint.Style.FILL
-        }
-        centerWindowBorderPaint.apply {
-            color = Color.parseColor("#475569")
-            style = Paint.Style.STROKE
-            strokeWidth = 1.6f
-        }
+            windowPanelPaint.apply { color = Color.BLACK; style = Paint.Style.FILL }
+            windowPanelBorderPaint.apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 2f }
+            windowGlassHighlightPaint.apply { color = Color.TRANSPARENT; style = Paint.Style.FILL }
 
-        tapeSpoolPaint.apply {
-            color = Color.parseColor("#5A3832") // Warm ferric oxide tape pack matching mockup
-            style = Paint.Style.FILL
-        }
-        tapeShellSpoolPaint.apply {
-            color = Color.argb(85, 90, 56, 50) // Translucent smoky silhouette seen through protective plastic shell
-            style = Paint.Style.FILL
-        }
-        tapeTexturePaint.apply {
-            color = Color.parseColor("#38231E")
-            style = Paint.Style.STROKE
-            strokeWidth = 1.2f
-        }
-        tapeBridgePaint.apply {
-            color = Color.parseColor("#181412")
-            style = Paint.Style.FILL
-        }
-        tapePathPaint.apply {
-            color = Color.argb(125, 75, 45, 40) // Translucent ribbon outside the clear window inside shell
-            style = Paint.Style.STROKE
-            strokeWidth = 5f
-            strokeCap = Paint.Cap.ROUND
-        }
-        tapePathHighlightPaint.apply {
-            color = Color.argb(30, 255, 255, 255)
-            style = Paint.Style.STROKE
-            strokeWidth = 1.2f
-        }
+            centerWindowPaint.apply { color = Color.BLACK; style = Paint.Style.FILL }
+            centerWindowBorderPaint.apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 1.6f }
 
-        pressurePadSpringPaint.apply {
-            color = Color.parseColor("#B45309") // Bronze beryllium leaf spring plate
-            style = Paint.Style.STROKE
-            strokeWidth = 2.5f
-            strokeCap = Paint.Cap.ROUND
-        }
-        pressurePadFeltPaint.apply {
-            color = Color.parseColor("#DC2626") // Ruby red felt pressure pad
-            style = Paint.Style.FILL
-        }
-        tapeHeadChassisPaint.apply {
-            color = Color.parseColor("#788294") // Polished metallic chrome playback head
-            style = Paint.Style.FILL
-        }
-        tapeHeadBevelPaint.apply {
-            color = Color.parseColor("#CBD5E1")
-            style = Paint.Style.STROKE
-            strokeWidth = 2f
-        }
-        tapeHeadCorePaint.apply {
-            color = Color.parseColor("#1E293B") // Magnetic pickup slit core
-            style = Paint.Style.FILL
-        }
+            tapeSpoolPaint.apply { color = Color.WHITE; style = Paint.Style.FILL }
+            tapeShellSpoolPaint.apply { color = Color.argb(40, 255, 255, 255); style = Paint.Style.FILL }
+            tapeTexturePaint.apply { color = Color.BLACK; style = Paint.Style.STROKE; strokeWidth = 1.2f }
+            tapeBridgePaint.apply { color = Color.BLACK; style = Paint.Style.FILL }
+            tapePathPaint.apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 4f }
+            tapePathHighlightPaint.apply { color = Color.TRANSPARENT; style = Paint.Style.STROKE; strokeWidth = 1f }
 
-        hubRimPaint.apply {
-            color = Color.parseColor("#CCD4DF") // Silver/chrome metallic hub teeth
-            style = Paint.Style.FILL
-        }
-        hubTeethPaint.apply {
-            color = Color.parseColor("#8E97A6")
-            style = Paint.Style.FILL
-        }
-        hubInnerCapPaint.apply {
-            color = Color.parseColor("#1A1C22")
-            style = Paint.Style.FILL
-        }
-        hubCenterPipPaint.apply {
-            color = Color.parseColor("#0A0B0E")
-            style = Paint.Style.FILL
-        }
-        hubClutchDimplePaint.apply {
-            color = Color.parseColor("#0E0F13")
-            style = Paint.Style.FILL
-        }
-        orangeNotchPaint.apply {
-            color = Color.parseColor("#FF5722") // Signature curved orange calibration notch
-            style = Paint.Style.FILL
-        }
+            pressurePadSpringPaint.apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 2f }
+            pressurePadFeltPaint.apply { color = Color.WHITE; style = Paint.Style.FILL }
+            tapeHeadChassisPaint.apply { color = Color.BLACK; style = Paint.Style.FILL }
+            tapeHeadBevelPaint.apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 1.5f }
+            tapeHeadCorePaint.apply { color = Color.WHITE; style = Paint.Style.FILL }
 
-        clockGhostPaint.apply {
-            color = Color.parseColor("#1C1E24") // Faint unlit ghost 88:88 segments
-            style = Paint.Style.FILL
-        }
-        clockLitPaint.apply {
-            color = Color.parseColor("#F8FAFC") // Bright ice-white illuminated segments
-            style = Paint.Style.FILL
-        }
+            hubRimPaint.apply { color = Color.WHITE; style = Paint.Style.FILL }
+            hubTeethPaint.apply { color = Color.BLACK; style = Paint.Style.FILL }
+            hubInnerCapPaint.apply { color = Color.BLACK; style = Paint.Style.FILL }
+            hubCenterPipPaint.apply { color = Color.WHITE; style = Paint.Style.FILL }
+            hubClutchDimplePaint.apply { color = Color.WHITE; style = Paint.Style.FILL }
+            orangeNotchPaint.apply { color = Color.WHITE; style = Paint.Style.FILL }
 
-        titleTextPaint.apply {
-            color = Color.WHITE
-            textAlign = Paint.Align.CENTER
-            typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
-        }
-        artistTextPaint.apply {
-            color = Color.parseColor("#94A3B8")
-            textAlign = Paint.Align.CENTER
-            typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
-        }
-        spindleLogoPaint.apply {
-            color = Color.WHITE // Crisp white WALKMAN branding
-            textAlign = Paint.Align.LEFT
-            typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
-            letterSpacing = 0.12f
-        }
-        spindleSubtextPaint.apply {
-            color = Color.parseColor("#94A3B8") // Muted grey Player subtext
-            textAlign = Paint.Align.LEFT
-            typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
-            letterSpacing = 0.16f
-        }
-        cassetteBadgePaint.apply {
-            color = Color.parseColor("#444955")
-            textAlign = Paint.Align.LEFT
-            typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
-            letterSpacing = 0.08f
-        }
+            clockGhostPaint.apply { color = Color.TRANSPARENT; style = Paint.Style.FILL }
+            clockLitPaint.apply { color = Color.WHITE; style = Paint.Style.FILL }
 
-        acrylicSheenPaint.apply {
-            color = Color.argb(14, 255, 255, 255)
-            style = Paint.Style.FILL
-        }
-        acrylicLinePaint.apply {
-            color = Color.argb(45, 255, 255, 255)
-            style = Paint.Style.STROKE
-            strokeWidth = 1.5f
-        }
+            titleTextPaint.apply { color = Color.WHITE; textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD) }
+            artistTextPaint.apply { color = Color.WHITE; textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL) }
+            spindleLogoPaint.apply { color = Color.WHITE; textAlign = Paint.Align.LEFT; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD); letterSpacing = 0.12f }
+            spindleSubtextPaint.apply { color = Color.WHITE; textAlign = Paint.Align.LEFT; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL); letterSpacing = 0.16f }
+            cassetteBadgePaint.apply { color = Color.WHITE; textAlign = Paint.Align.LEFT; typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD); letterSpacing = 0.08f }
 
-        ledInactivePaint.apply {
-            color = Color.parseColor("#0F1013")
-            style = Paint.Style.FILL
-        }
-        ledActivePaint.apply {
-            color = Color.parseColor("#DC2626") // Vivid red progress LED
-            style = Paint.Style.FILL
-        }
-        ledActiveGlowPaint.apply {
-            color = Color.argb(90, 220, 38, 38)
-            style = Paint.Style.STROKE
-            strokeWidth = 3f
-        }
-        ledBorderPaint.apply {
-            color = Color.parseColor("#22252D")
-            style = Paint.Style.STROKE
-            strokeWidth = 1.5f
-        }
+            acrylicSheenPaint.apply { color = Color.TRANSPARENT; style = Paint.Style.FILL }
+            acrylicLinePaint.apply { color = Color.TRANSPARENT; style = Paint.Style.STROKE; strokeWidth = 1f }
 
-        ledRunActivePaint.apply {
-            color = Color.parseColor("#10B981")
-            style = Paint.Style.FILL
-            setShadowLayer(6f, 0f, 0f, Color.parseColor("#8010B981"))
-        }
-        ledRunInactivePaint.apply {
-            color = Color.parseColor("#064E3B")
-            style = Paint.Style.FILL
-        }
-        ledPeakActivePaint.apply {
-            color = Color.parseColor("#EF4444")
-            style = Paint.Style.FILL
-            setShadowLayer(6f, 0f, 0f, Color.parseColor("#80EF4444"))
-        }
-        ledPeakInactivePaint.apply {
-            color = Color.parseColor("#450A0A")
-            style = Paint.Style.FILL
-        }
+            ledInactivePaint.apply { color = Color.BLACK; style = Paint.Style.FILL }
+            ledActivePaint.apply { color = Color.WHITE; style = Paint.Style.FILL }
+            ledActiveGlowPaint.apply { color = Color.TRANSPARENT; style = Paint.Style.STROKE; strokeWidth = 1f }
+            ledBorderPaint.apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 1.5f }
 
-        buttonBasePaint.apply {
-            color = Color.parseColor("#252830")
-            style = Paint.Style.FILL
-        }
-        buttonPressedPaint.apply {
-            color = Color.parseColor("#16181D") // Muted sunken depressed button
-            style = Paint.Style.FILL
-        }
-        buttonHighlightPaint.apply {
-            color = Color.parseColor("#383C48")
-            style = Paint.Style.STROKE
-            strokeWidth = 2f
-        }
-        buttonBorderPaint.apply {
-            color = Color.parseColor("#15171C")
-            style = Paint.Style.STROKE
-            strokeWidth = 2f
-        }
-        buttonIconPaint.apply {
-            color = Color.parseColor("#CBD5E1")
-            style = Paint.Style.FILL
-            textAlign = Paint.Align.CENTER
-            typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
-        }
-        buttonLabelPaint.apply {
-            color = Color.parseColor("#8E929E")
-            style = Paint.Style.FILL
-            textAlign = Paint.Align.CENTER
-            typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
-        }
-        buttonMutedIconPaint.apply {
-            color = Color.parseColor("#717482") // Muted icon when pressed/latched
-            style = Paint.Style.FILL
-            textAlign = Paint.Align.CENTER
-            typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
-        }
-        buttonMutedLabelPaint.apply {
-            color = Color.parseColor("#5A5D6B") // Muted label when pressed/latched
-            style = Paint.Style.FILL
-            textAlign = Paint.Align.CENTER
-            typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+            ledRunActivePaint.apply { color = Color.WHITE; style = Paint.Style.FILL }
+            ledRunInactivePaint.apply { color = Color.BLACK; style = Paint.Style.FILL }
+            ledPeakActivePaint.apply { color = Color.WHITE; style = Paint.Style.FILL }
+            ledPeakInactivePaint.apply { color = Color.BLACK; style = Paint.Style.FILL }
+
+            buttonBasePaint.apply { color = Color.BLACK; style = Paint.Style.FILL }
+            buttonPressedPaint.apply { color = Color.WHITE; style = Paint.Style.FILL }
+            buttonHighlightPaint.apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 2f }
+            buttonBorderPaint.apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 2f }
+            buttonIconPaint.apply { color = Color.WHITE; style = Paint.Style.FILL; textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD) }
+            buttonLabelPaint.apply { color = Color.WHITE; style = Paint.Style.FILL; textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD) }
+            buttonMutedIconPaint.apply { color = Color.BLACK; style = Paint.Style.FILL; textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD) }
+            buttonMutedLabelPaint.apply { color = Color.BLACK; style = Paint.Style.FILL; textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD) }
+        } else if (isLight) {
+            // Sunny Mixtape / Dark Indigo Framing & Pale Warm Stone (HEX: #2A2E45, #F97316, #FB7185, #FDE68A, #FAFAF9)
+            chassisPaint.apply { color = Color.parseColor("#FAFAF9"); style = Paint.Style.FILL }
+            chassisBevelPaint.apply { color = Color.parseColor("#E5E5E2"); style = Paint.Style.STROKE; strokeWidth = 3f }
+            slotBevelPaint.apply { color = Color.parseColor("#2A2E45"); style = Paint.Style.STROKE; strokeWidth = 2.5f }
+            slotShadowPaint.apply { color = Color.parseColor("#EDEDE8"); style = Paint.Style.FILL }
+
+            screwWellPaint.apply { color = Color.parseColor("#E5E5E2"); style = Paint.Style.FILL }
+            screwHeadPaint.apply { color = Color.parseColor("#F0F0ED"); style = Paint.Style.FILL }
+            screwHighlightPaint.apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 2f }
+            screwGroovePaint.apply { color = Color.parseColor("#2A2E45"); style = Paint.Style.STROKE; strokeWidth = 2.5f }
+
+            cassetteShellPaint.apply { color = Color.parseColor("#FAFAF9"); style = Paint.Style.FILL }
+            cassetteBorderPaint.apply { color = Color.parseColor("#2A2E45"); style = Paint.Style.STROKE; strokeWidth = 2.0f }
+            cassetteHighlightLinePaint.apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 1.0f }
+            cassetteInnerLipPaint.apply { color = Color.parseColor("#3D4260"); style = Paint.Style.STROKE; strokeWidth = 1.5f }
+            cassetteOutlinePaint.apply { color = Color.parseColor("#2A2E45"); style = Paint.Style.STROKE; strokeWidth = 1.6f }
+            cassetteSubtleOutlinePaint.apply { color = Color.parseColor("#4A4F6B"); style = Paint.Style.STROKE; strokeWidth = 1.3f }
+            cassetteScrewBossPaint.apply { color = Color.parseColor("#3D4260"); style = Paint.Style.STROKE; strokeWidth = 1.5f }
+            cassetteCutoutPaint.apply { color = Color.parseColor("#E8E8E4"); style = Paint.Style.FILL }
+            cassetteGuidePaint.apply { color = Color.parseColor("#2A2E45"); style = Paint.Style.STROKE; strokeWidth = 1.5f }
+
+            windowPanelPaint.apply { color = Color.parseColor("#F5F5F3"); style = Paint.Style.FILL }
+            windowPanelBorderPaint.apply { color = Color.parseColor("#2A2E45"); style = Paint.Style.STROKE; strokeWidth = 2f }
+            windowGlassHighlightPaint.apply { color = Color.argb(40, 255, 255, 255); style = Paint.Style.FILL }
+
+            centerWindowPaint.apply { color = Color.parseColor("#FFFFFF"); style = Paint.Style.FILL }
+            centerWindowBorderPaint.apply { color = Color.parseColor("#2A2E45"); style = Paint.Style.STROKE; strokeWidth = 1.6f }
+
+            tapeSpoolPaint.apply { color = Color.parseColor("#5A3832"); style = Paint.Style.FILL }
+            tapeShellSpoolPaint.apply { color = Color.argb(70, 90, 56, 50); style = Paint.Style.FILL }
+            tapeTexturePaint.apply { color = Color.parseColor("#38231E"); style = Paint.Style.STROKE; strokeWidth = 1.2f }
+            tapeBridgePaint.apply { color = Color.parseColor("#2A211D"); style = Paint.Style.FILL }
+            tapePathPaint.apply { color = Color.argb(120, 75, 45, 40); style = Paint.Style.STROKE; strokeWidth = 5f }
+            tapePathHighlightPaint.apply { color = Color.argb(40, 255, 255, 255); style = Paint.Style.STROKE; strokeWidth = 1.2f }
+
+            pressurePadSpringPaint.apply { color = Color.parseColor("#B45309"); style = Paint.Style.STROKE; strokeWidth = 2.5f }
+            pressurePadFeltPaint.apply { color = Color.parseColor("#FB7185"); style = Paint.Style.FILL }
+            tapeHeadChassisPaint.apply { color = Color.parseColor("#5A5E78"); style = Paint.Style.FILL }
+            tapeHeadBevelPaint.apply { color = Color.parseColor("#E5E5E2"); style = Paint.Style.STROKE; strokeWidth = 2f }
+            tapeHeadCorePaint.apply { color = Color.parseColor("#2A2E45"); style = Paint.Style.FILL }
+
+            hubRimPaint.apply { color = Color.parseColor("#2A2E45"); style = Paint.Style.FILL }
+            hubTeethPaint.apply { color = Color.parseColor("#FAFAF9"); style = Paint.Style.FILL }
+            hubInnerCapPaint.apply { color = Color.parseColor("#3D4260"); style = Paint.Style.FILL }
+            hubCenterPipPaint.apply { color = Color.parseColor("#2A2E45"); style = Paint.Style.FILL }
+            hubClutchDimplePaint.apply { color = Color.parseColor("#F97316"); style = Paint.Style.FILL }
+            orangeNotchPaint.apply { color = Color.parseColor("#F97316"); style = Paint.Style.FILL }
+
+            clockGhostPaint.apply { color = Color.parseColor("#E5E5E2"); style = Paint.Style.FILL }
+            clockLitPaint.apply { color = Color.parseColor("#2A2E45"); style = Paint.Style.FILL }
+
+            titleTextPaint.apply { color = Color.parseColor("#2A2E45"); textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD) }
+            artistTextPaint.apply { color = Color.parseColor("#5A5E78"); textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL) }
+            spindleLogoPaint.apply { color = Color.parseColor("#2A2E45"); textAlign = Paint.Align.LEFT; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD); letterSpacing = 0.12f }
+            spindleSubtextPaint.apply { color = Color.parseColor("#5A5E78"); textAlign = Paint.Align.LEFT; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL); letterSpacing = 0.16f }
+            cassetteBadgePaint.apply { color = Color.parseColor("#FB7185"); textAlign = Paint.Align.LEFT; typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD); letterSpacing = 0.08f }
+
+            acrylicSheenPaint.apply { color = Color.argb(10, 42, 46, 69); style = Paint.Style.FILL }
+            acrylicLinePaint.apply { color = Color.argb(30, 42, 46, 69); style = Paint.Style.STROKE; strokeWidth = 1.5f }
+
+            ledInactivePaint.apply { color = Color.parseColor("#E5E5E2"); style = Paint.Style.FILL }
+            ledActivePaint.apply { color = Color.parseColor("#F97316"); style = Paint.Style.FILL }
+            ledActiveGlowPaint.apply { color = Color.argb(90, 249, 115, 22); style = Paint.Style.STROKE; strokeWidth = 3f }
+            ledBorderPaint.apply { color = Color.parseColor("#2A2E45"); style = Paint.Style.STROKE; strokeWidth = 1.5f }
+
+            ledRunActivePaint.apply { color = Color.parseColor("#F97316"); style = Paint.Style.FILL }
+            ledRunInactivePaint.apply { color = Color.parseColor("#E5E5E2"); style = Paint.Style.FILL }
+            ledPeakActivePaint.apply { color = Color.parseColor("#FB7185"); style = Paint.Style.FILL }
+            ledPeakInactivePaint.apply { color = Color.parseColor("#E5E5E2"); style = Paint.Style.FILL }
+
+            buttonBasePaint.apply { color = Color.parseColor("#FAFAF9"); style = Paint.Style.FILL }
+            buttonPressedPaint.apply { color = Color.parseColor("#E5E5E2"); style = Paint.Style.FILL }
+            buttonHighlightPaint.apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 2f }
+            buttonBorderPaint.apply { color = Color.parseColor("#2A2E45"); style = Paint.Style.STROKE; strokeWidth = 2f }
+            buttonIconPaint.apply { color = Color.parseColor("#2A2E45"); style = Paint.Style.FILL; textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD) }
+            buttonLabelPaint.apply { color = Color.parseColor("#5A5E78"); style = Paint.Style.FILL; textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD) }
+            buttonMutedIconPaint.apply { color = Color.parseColor("#F97316"); style = Paint.Style.FILL; textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD) }
+            buttonMutedLabelPaint.apply { color = Color.parseColor("#F97316"); style = Paint.Style.FILL; textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD) }
+        } else {
+            // Dark Indigo Mixtape (HEX: #2A2E45, #F97316, #FB7185, #FDE68A, #FAFAF9)
+            chassisPaint.apply { color = Color.parseColor("#2A2E45"); style = Paint.Style.FILL }
+            chassisBevelPaint.apply { color = Color.parseColor("#1F2233"); style = Paint.Style.STROKE; strokeWidth = 3f }
+            slotBevelPaint.apply { color = Color.parseColor("#1F2233"); style = Paint.Style.STROKE; strokeWidth = 2.5f }
+            slotShadowPaint.apply { color = Color.parseColor("#151724"); style = Paint.Style.FILL }
+
+            screwWellPaint.apply { color = Color.parseColor("#151724"); style = Paint.Style.FILL }
+            screwHeadPaint.apply { color = Color.parseColor("#353A54"); style = Paint.Style.FILL }
+            screwHighlightPaint.apply { color = Color.parseColor("#4F567A"); style = Paint.Style.STROKE; strokeWidth = 2f }
+            screwGroovePaint.apply { color = Color.parseColor("#151724"); style = Paint.Style.STROKE; strokeWidth = 2.5f }
+
+            cassetteShellPaint.apply { color = Color.parseColor("#1E2132"); style = Paint.Style.FILL }
+            cassetteBorderPaint.apply { color = Color.parseColor("#484E70"); style = Paint.Style.STROKE; strokeWidth = 2.0f }
+            cassetteHighlightLinePaint.apply { color = Color.argb(120, 250, 250, 249); style = Paint.Style.STROKE; strokeWidth = 1.0f }
+            cassetteInnerLipPaint.apply { color = Color.parseColor("#3B405D"); style = Paint.Style.STROKE; strokeWidth = 1.5f }
+            cassetteOutlinePaint.apply { color = Color.parseColor("#5C648E"); style = Paint.Style.STROKE; strokeWidth = 1.6f }
+            cassetteSubtleOutlinePaint.apply { color = Color.parseColor("#484E70"); style = Paint.Style.STROKE; strokeWidth = 1.3f }
+            cassetteScrewBossPaint.apply { color = Color.parseColor("#5C648E"); style = Paint.Style.STROKE; strokeWidth = 1.5f }
+            cassetteCutoutPaint.apply { color = Color.parseColor("#12141F"); style = Paint.Style.FILL }
+            cassetteGuidePaint.apply { color = Color.parseColor("#484E70"); style = Paint.Style.STROKE; strokeWidth = 1.5f }
+
+            windowPanelPaint.apply { color = Color.parseColor("#171926"); style = Paint.Style.FILL }
+            windowPanelBorderPaint.apply { color = Color.parseColor("#353A54"); style = Paint.Style.STROKE; strokeWidth = 2f }
+            windowGlassHighlightPaint.apply { color = Color.argb(20, 250, 250, 249); style = Paint.Style.FILL }
+
+            centerWindowPaint.apply { color = Color.parseColor("#12141F"); style = Paint.Style.FILL }
+            centerWindowBorderPaint.apply { color = Color.parseColor("#484E70"); style = Paint.Style.STROKE; strokeWidth = 1.6f }
+
+            tapeSpoolPaint.apply { color = Color.parseColor("#5A3832"); style = Paint.Style.FILL }
+            tapeShellSpoolPaint.apply { color = Color.argb(85, 90, 56, 50); style = Paint.Style.FILL }
+            tapeTexturePaint.apply { color = Color.parseColor("#38231E"); style = Paint.Style.STROKE; strokeWidth = 1.2f }
+            tapeBridgePaint.apply { color = Color.parseColor("#181412"); style = Paint.Style.FILL }
+            tapePathPaint.apply { color = Color.argb(125, 75, 45, 40); style = Paint.Style.STROKE; strokeWidth = 5f }
+            tapePathHighlightPaint.apply { color = Color.argb(30, 250, 250, 249); style = Paint.Style.STROKE; strokeWidth = 1.2f }
+
+            pressurePadSpringPaint.apply { color = Color.parseColor("#B45309"); style = Paint.Style.STROKE; strokeWidth = 2.5f }
+            pressurePadFeltPaint.apply { color = Color.parseColor("#FB7185"); style = Paint.Style.FILL }
+            tapeHeadChassisPaint.apply { color = Color.parseColor("#788294"); style = Paint.Style.FILL }
+            tapeHeadBevelPaint.apply { color = Color.parseColor("#B0B4CE"); style = Paint.Style.STROKE; strokeWidth = 2f }
+            tapeHeadCorePaint.apply { color = Color.parseColor("#1E2132"); style = Paint.Style.FILL }
+
+            hubRimPaint.apply { color = Color.parseColor("#FAFAF9"); style = Paint.Style.FILL }
+            hubTeethPaint.apply { color = Color.parseColor("#B0B4CE"); style = Paint.Style.FILL }
+            hubInnerCapPaint.apply { color = Color.parseColor("#202334"); style = Paint.Style.FILL }
+            hubCenterPipPaint.apply { color = Color.parseColor("#12141F"); style = Paint.Style.FILL }
+            hubClutchDimplePaint.apply { color = Color.parseColor("#F97316"); style = Paint.Style.FILL }
+            orangeNotchPaint.apply { color = Color.parseColor("#F97316"); style = Paint.Style.FILL }
+
+            clockGhostPaint.apply { color = Color.parseColor("#202334"); style = Paint.Style.FILL }
+            clockLitPaint.apply { color = Color.parseColor("#FDE68A"); style = Paint.Style.FILL }
+
+            titleTextPaint.apply { color = Color.parseColor("#FAFAF9"); textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD) }
+            artistTextPaint.apply { color = Color.parseColor("#B0B4CE"); textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL) }
+            spindleLogoPaint.apply { color = Color.parseColor("#FAFAF9"); textAlign = Paint.Align.LEFT; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD); letterSpacing = 0.12f }
+            spindleSubtextPaint.apply { color = Color.parseColor("#B0B4CE"); textAlign = Paint.Align.LEFT; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL); letterSpacing = 0.16f }
+            cassetteBadgePaint.apply { color = Color.parseColor("#FB7185"); textAlign = Paint.Align.LEFT; typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD); letterSpacing = 0.08f }
+
+            acrylicSheenPaint.apply { color = Color.argb(14, 250, 250, 249); style = Paint.Style.FILL }
+            acrylicLinePaint.apply { color = Color.argb(45, 250, 250, 249); style = Paint.Style.STROKE; strokeWidth = 1.5f }
+
+            ledInactivePaint.apply { color = Color.parseColor("#1A1C2A"); style = Paint.Style.FILL }
+            ledActivePaint.apply { color = Color.parseColor("#F97316"); style = Paint.Style.FILL }
+            ledActiveGlowPaint.apply { color = Color.argb(90, 249, 115, 22); style = Paint.Style.STROKE; strokeWidth = 3f }
+            ledBorderPaint.apply { color = Color.parseColor("#353A54"); style = Paint.Style.STROKE; strokeWidth = 1.5f }
+
+            ledRunActivePaint.apply { color = Color.parseColor("#F97316"); style = Paint.Style.FILL }
+            ledRunInactivePaint.apply { color = Color.parseColor("#38231B"); style = Paint.Style.FILL }
+            ledPeakActivePaint.apply { color = Color.parseColor("#FB7185"); style = Paint.Style.FILL }
+            ledPeakInactivePaint.apply { color = Color.parseColor("#351C22"); style = Paint.Style.FILL }
+
+            buttonBasePaint.apply { color = Color.parseColor("#202334"); style = Paint.Style.FILL }
+            buttonPressedPaint.apply { color = Color.parseColor("#151724"); style = Paint.Style.FILL }
+            buttonHighlightPaint.apply { color = Color.parseColor("#353A54"); style = Paint.Style.STROKE; strokeWidth = 2f }
+            buttonBorderPaint.apply { color = Color.parseColor("#151724"); style = Paint.Style.STROKE; strokeWidth = 2f }
+            buttonIconPaint.apply { color = Color.parseColor("#FAFAF9"); style = Paint.Style.FILL; textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD) }
+            buttonLabelPaint.apply { color = Color.parseColor("#B0B4CE"); style = Paint.Style.FILL; textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD) }
+            buttonMutedIconPaint.apply { color = Color.parseColor("#F97316"); style = Paint.Style.FILL; textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD) }
+            buttonMutedLabelPaint.apply { color = Color.parseColor("#F97316"); style = Paint.Style.FILL; textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD) }
         }
 
         labelBgPaint.apply {
@@ -654,12 +581,12 @@ class VerticalDeckView @JvmOverloads constructor(
             typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
         }
         tapeWindowGaugePaint.apply {
-            color = Color.argb(190, 255, 255, 255)
+            color = Color.argb(190, 250, 250, 249)
             style = Paint.Style.STROKE
             strokeWidth = 1.2f
         }
         tapeWindowGaugeTextPaint.apply {
-            color = Color.argb(210, 255, 255, 255)
+            color = Color.argb(210, 250, 250, 249)
             style = Paint.Style.FILL
             textAlign = Paint.Align.CENTER
             typeface = Typeface.create(Typeface.MONOSPACE, Typeface.NORMAL)
@@ -696,28 +623,25 @@ class VerticalDeckView @JvmOverloads constructor(
         labelAccentBarPaint.color = accent
         labelAccentSubtlePaint.color = Color.argb(50, r, g, b)
 
-        // Tinted matte charcoal cassette label body
-        val labelBgR = (19 + r * 0.08f).toInt().coerceIn(0, 255)
-        val labelBgG = (21 + g * 0.08f).toInt().coerceIn(0, 255)
-        val labelBgB = (27 + b * 0.08f).toInt().coerceIn(0, 255)
-        labelBgPaint.color = Color.rgb(labelBgR, labelBgG, labelBgB)
-
-        labelBorderPaint.color = Color.argb(160, (r * 0.6f + 70).toInt().coerceAtMost(255), (g * 0.6f + 70).toInt().coerceAtMost(255), (b * 0.6f + 70).toInt().coerceAtMost(255))
-        labelRuledLinePaint.color = Color.argb(30, 255, 255, 255)
+        // Tinted nostalgic Butter Yellow cassette label body
+        val isLight = theme.id == CassetteTheme.LIGHT.id
+        labelBgPaint.color = if (isLight) Color.parseColor("#FDE68A") else Color.parseColor("#23273A")
+        labelBorderPaint.color = if (isLight) Color.parseColor("#2A2E45") else Color.parseColor("#3B405D")
+        labelRuledLinePaint.color = if (isLight) Color.argb(45, 42, 46, 69) else Color.argb(30, 253, 230, 138)
 
         // Internal tinted Teflon/polyester slip-sheet visible through clear shell
         cassetteSlipSheetPaint.color = Color.argb(22, r, g, b)
 
         // Spool marker notch & badges
         orangeNotchPaint.color = accent
-        labelBadgeBgPaint.color = accent
-        formatBadgeBgPaint.color = Color.argb(50, r, g, b)
-        formatBadgeBorderPaint.color = Color.argb(180, r, g, b)
+        labelBadgeBgPaint.color = Color.parseColor("#FB7185")
+        formatBadgeBgPaint.color = Color.argb(40, r, g, b)
+        formatBadgeBorderPaint.color = accent
         formatBadgeTextPaint.color = accent
 
         // Dynamic LED meter peak glow
-        ledPeakActivePaint.color = accent
-        ledPeakActivePaint.setShadowLayer(6f, 0f, 0f, Color.argb(140, r, g, b))
+        ledPeakActivePaint.color = Color.parseColor("#FB7185")
+        ledPeakActivePaint.setShadowLayer(6f, 0f, 0f, Color.argb(140, 251, 113, 133))
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {

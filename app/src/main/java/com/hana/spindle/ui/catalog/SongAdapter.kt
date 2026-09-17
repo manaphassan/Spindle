@@ -27,6 +27,21 @@ class SongAdapter(
     private val scope = CoroutineScope(Dispatchers.Main)
     var activeSongId: Long? = null
 
+    private var textColorPrimary: Int = Color.parseColor("#FAFAF9")
+    private var textColorSecondary: Int = Color.parseColor("#B0B4CE")
+    private var formatBadgeBg: Int = Color.parseColor("#1E2132")
+    private var formatBadgeText: Int = Color.parseColor("#F97316")
+    private var cardThumbBg: Int = Color.parseColor("#202334")
+
+    fun updateThemeColors(primary: Int, secondary: Int, isDark: Boolean, isEink: Boolean) {
+        this.textColorPrimary = primary
+        this.textColorSecondary = secondary
+        this.formatBadgeBg = if (isEink) Color.TRANSPARENT else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#1E2132")
+        this.formatBadgeText = if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#2A2E45") else Color.parseColor("#F97316")
+        this.cardThumbBg = if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#202334")
+        notifyDataSetChanged()
+    }
+
     class SongViewHolder(val binding: ItemSongBinding) : RecyclerView.ViewHolder(binding.root)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SongViewHolder {
@@ -44,11 +59,18 @@ class SongAdapter(
         val isCurrentlyPlaying = song.id == activeSongId
         if (isCurrentlyPlaying) {
             b.tvPlayingWave.visibility = View.VISIBLE
-            b.tvSongTitle.setTextColor(Color.parseColor("#00E676"))
+            b.tvPlayingWave.setTextColor(Color.parseColor("#F97316"))
+            b.tvSongTitle.setTextColor(Color.parseColor("#F97316"))
         } else {
             b.tvPlayingWave.visibility = View.GONE
-            b.tvSongTitle.setTextColor(Color.WHITE)
+            b.tvSongTitle.setTextColor(textColorPrimary)
         }
+
+        b.tvSongArtist.setTextColor(textColorSecondary)
+        b.tvDuration.setTextColor(textColorSecondary)
+        b.tvFormatBadge.setBackgroundColor(formatBadgeBg)
+        b.tvFormatBadge.setTextColor(formatBadgeText)
+        b.cardSongThumb.setCardBackgroundColor(cardThumbBg)
 
         val bitrateStr = if (song.bitrateKbps > 0) " ${song.bitrateKbps}k" else ""
         val lyricsStr = if (song.hasLyrics) " • LRC" else ""
@@ -57,6 +79,7 @@ class SongAdapter(
         b.tvDuration.text = formatDuration(song.durationMs)
 
         // Star rating
+        b.tvRating.setTextColor(Color.parseColor("#FDE68A"))
         b.tvRating.text = getStarString(song.rating)
         b.tvRating.setOnClickListener {
             val nextRating = (song.rating + 1) % 6

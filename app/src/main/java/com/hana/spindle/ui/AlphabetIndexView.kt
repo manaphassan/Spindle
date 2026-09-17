@@ -44,19 +44,26 @@ class AlphabetIndexView @JvmOverloads constructor(
     }
 
     private val selectedTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#E53935") // Walkman Red accent
+        color = Color.parseColor("#F97316") // Brand Warm Orange accent
         textSize = 11f * resources.displayMetrics.density
         typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
         textAlign = Paint.Align.CENTER
     }
 
     private val activeDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#E53935")
+        color = Color.parseColor("#F97316")
         style = Paint.Style.FILL
     }
 
     init {
         isClickable = true
+    }
+
+    fun updateTheme(textColor: Int, accentColor: Int) {
+        textPaint.color = textColor
+        selectedTextPaint.color = accentColor
+        activeDotPaint.color = accentColor
+        invalidate()
     }
 
     override fun onDraw(canvas: Canvas) {

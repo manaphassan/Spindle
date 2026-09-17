@@ -13,7 +13,9 @@ import android.widget.Button
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -25,6 +27,7 @@ import com.hana.spindle.databinding.FragmentCatalogBinding
 import com.hana.spindle.playback.AudioEngine
 import com.hana.spindle.playback.RepeatMode
 import com.hana.spindle.playback.ShuffleMode
+import com.hana.spindle.theme.CassetteTheme
 import com.hana.spindle.ui.catalog.*
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -80,7 +83,7 @@ class CatalogFragment : Fragment() {
 
         setupAdapters(app)
         setupTabs()
-        setupFilterChips()
+        observeTheme(app)
         setupSortAndGroup()
         setupAlphabetIndex()
         setupQuickActions()
@@ -228,29 +231,88 @@ class CatalogFragment : Fragment() {
         updateSortLabel()
     }
 
-    private fun setupFilterChips() {
-        val chips = mapOf(
-            binding.chipAll to CatalogFilterChip.ALL,
-            binding.chipHiRes to CatalogFilterChip.HI_RES,
-            binding.chipLossless to CatalogFilterChip.LOSSLESS,
-            binding.chipFlac to CatalogFilterChip.FLAC,
-            binding.chipWav to CatalogFilterChip.WAV,
-            binding.chipMp3 to CatalogFilterChip.MP3,
-            binding.chipFavorites to CatalogFilterChip.RATED
-        )
-
-        chips.forEach { (view, chip) ->
-            view.setOnClickListener {
-                currentFilterChip = chip
-                // Update chip backgrounds
-                chips.keys.forEach { otherView ->
-                    val isSelected = otherView == view
-                    otherView.setBackgroundColor(if (isSelected) Color.parseColor("#2A2B32") else Color.parseColor("#1A1C22"))
-                    otherView.setTextColor(if (isSelected) Color.WHITE else Color.parseColor("#94A3B8"))
+    private fun observeTheme(app: SpindleApp) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                app.themeManager.currentTheme.collect { theme ->
+                    applyTheme(theme)
                 }
-                applyFilterAndSort()
             }
         }
+    }
+
+    private fun applyTheme(theme: CassetteTheme) {
+        val isEink = (theme.id == CassetteTheme.MONOCHROME_EINK.id)
+        val isDark = theme.isDarkAppTheme
+        val primary = theme.textPrimaryColor
+        val secondary = theme.textSecondaryColor
+        val accent = theme.accentColor
+
+        binding.root.setBackgroundColor(theme.chassisColor)
+        binding.catalogHeaderContainer.setBackgroundColor(if (isEink) Color.BLACK else theme.surfaceColor)
+        binding.tvCatalogHeaderTitle.setTextColor(primary)
+        binding.btnBackToPlayer.imageTintList = ColorStateList.valueOf(primary)
+
+        binding.searchContainer.backgroundTintList = ColorStateList.valueOf(
+            if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#202334")
+        )
+        binding.ivSearchIcon.imageTintList = ColorStateList.valueOf(secondary)
+        binding.etCatalogSearch.setTextColor(primary)
+        binding.etCatalogSearch.setHintTextColor(secondary)
+
+        binding.tvCatalogCount.setTextColor(secondary)
+        binding.btnSortGroup.backgroundTintList = ColorStateList.valueOf(
+            if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#202334")
+        )
+        binding.tvCurrentSortLabel.setTextColor(primary)
+        binding.btnShuffle.backgroundTintList = ColorStateList.valueOf(
+            if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#202334")
+        )
+        binding.btnShuffle.setTextColor(primary)
+        binding.btnPlayAll.backgroundTintList = ColorStateList.valueOf(accent)
+
+        // Mini player
+        binding.cardMiniPlayer.setCardBackgroundColor(
+            if (isEink) Color.BLACK else if (!isDark) Color.WHITE else Color.parseColor("#1E2132")
+        )
+        binding.tvMiniTitle.setTextColor(primary)
+        binding.tvMiniArtist.setTextColor(secondary)
+        binding.btnMiniPrev.imageTintList = ColorStateList.valueOf(primary)
+        binding.btnMiniNext.imageTintList = ColorStateList.valueOf(primary)
+        binding.btnMiniPlayPause.backgroundTintList = ColorStateList.valueOf(accent)
+
+        // Single Audio Now Playing
+        binding.nowPlayingSingleContainer.setBackgroundColor(
+            if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#FAFAF9") else Color.parseColor("#2A2E45")
+        )
+        binding.btnNpBack.imageTintList = ColorStateList.valueOf(primary)
+        binding.btnNpFavorite.imageTintList = ColorStateList.valueOf(Color.parseColor("#FB7185"))
+        binding.btnNpMenu.imageTintList = ColorStateList.valueOf(primary)
+        binding.tvNpTitle.setTextColor(primary)
+        binding.tvNpArtist.setTextColor(secondary)
+        binding.btnNpSpecs.imageTintList = ColorStateList.valueOf(secondary)
+        binding.btnNpArtistFilter.imageTintList = ColorStateList.valueOf(secondary)
+        binding.btnNpShare.imageTintList = ColorStateList.valueOf(secondary)
+        binding.tvNpCurrentTime.setTextColor(primary)
+        binding.tvNpTotalDuration.setTextColor(secondary)
+        binding.btnNpPrev.imageTintList = ColorStateList.valueOf(primary)
+        binding.btnNpNext.imageTintList = ColorStateList.valueOf(primary)
+        binding.btnNpPlayPause.backgroundTintList = ColorStateList.valueOf(accent)
+
+        binding.circularCoverArcView.isDarkMode = isDark
+        binding.circularCoverArcView.isEink = isEink
+        binding.circularCoverArcView.accentColor = accent
+
+        binding.audioWaveformView.isDarkMode = isDark
+        binding.audioWaveformView.isEink = isEink
+        binding.audioWaveformView.accentColor = accent
+
+        binding.catalogAlphabetIndex.updateTheme(secondary, accent)
+
+        // Propagate to Adapters
+        songAdapter.updateThemeColors(primary, secondary, isDark, isEink)
+        albumAdapter.updateThemeColors(primary, secondary, isDark, isEink)
+        folderAdapter.updateThemeColors(primary, secondary)
     }
 
     private fun setupSortAndGroup() {
@@ -477,6 +539,9 @@ class CatalogFragment : Fragment() {
                                 b.circularCoverArcView.coverBitmap = cover
                                 val accent = app.imageLoader.extractAccentColor(song.path)
                                 npLyricsAdapter.accentColor = accent
+                                b.circularCoverArcView.accentColor = accent
+                                b.audioWaveformView.accentColor = accent
+                                b.btnNpPlayPause.backgroundTintList = ColorStateList.valueOf(accent)
                             }
                         }
 
@@ -609,11 +674,13 @@ class CatalogFragment : Fragment() {
         }
 
         // Live Synchronized Lyrics Panel
+        val app = requireActivity().application as SpindleApp
         val toggleLyrics = View.OnClickListener {
             isShowingNpLyrics = !isShowingNpLyrics
             binding.cardNpLyrics.visibility = if (isShowingNpLyrics) View.VISIBLE else View.GONE
+            val accent = app.themeManager.currentTheme.value.accentColor
             binding.btnNpLyrics.imageTintList = ColorStateList.valueOf(
-                if (isShowingNpLyrics) Color.parseColor("#8B5CF6") else Color.parseColor("#94A3B8")
+                if (isShowingNpLyrics) accent else Color.parseColor("#94A3B8")
             )
         }
         binding.btnNpLyrics.setOnClickListener(toggleLyrics)
@@ -621,16 +688,21 @@ class CatalogFragment : Fragment() {
     }
 
     private fun updateFavoriteIcon(isFav: Boolean) {
+        val app = requireActivity().application as SpindleApp
+        val isEink = app.themeManager.currentTheme.value.id == CassetteTheme.MONOCHROME_EINK.id
+        val favColor = if (isEink) Color.WHITE else Color.parseColor("#FB7185")
         if (isFav) {
             binding.btnNpFavorite.setImageResource(R.drawable.ic_np_heart_filled)
-            binding.btnNpFavorite.imageTintList = ColorStateList.valueOf(Color.parseColor("#8B5CF6"))
+            binding.btnNpFavorite.imageTintList = ColorStateList.valueOf(favColor)
         } else {
             binding.btnNpFavorite.setImageResource(R.drawable.ic_np_heart)
-            binding.btnNpFavorite.imageTintList = ColorStateList.valueOf(Color.parseColor("#94A3B8"))
+            binding.btnNpFavorite.imageTintList = ColorStateList.valueOf(if (isEink) Color.WHITE else Color.parseColor("#B0B4CE"))
         }
     }
 
     private fun updateShuffleIcon(mode: ShuffleMode) {
+        val app = requireActivity().application as SpindleApp
+        val accent = app.themeManager.currentTheme.value.accentColor
         when (mode) {
             ShuffleMode.OFF -> {
                 binding.btnNpShuffle.alpha = 0.5f
@@ -638,16 +710,18 @@ class CatalogFragment : Fragment() {
             }
             ShuffleMode.ALL -> {
                 binding.btnNpShuffle.alpha = 1.0f
-                binding.btnNpShuffle.imageTintList = ColorStateList.valueOf(Color.parseColor("#8B5CF6"))
+                binding.btnNpShuffle.imageTintList = ColorStateList.valueOf(accent)
             }
             ShuffleMode.ALBUM -> {
                 binding.btnNpShuffle.alpha = 1.0f
-                binding.btnNpShuffle.imageTintList = ColorStateList.valueOf(Color.parseColor("#FFB300"))
+                binding.btnNpShuffle.imageTintList = ColorStateList.valueOf(Color.parseColor("#FDE68A"))
             }
         }
     }
 
     private fun updateRepeatIcon(mode: RepeatMode) {
+        val app = requireActivity().application as SpindleApp
+        val accent = app.themeManager.currentTheme.value.accentColor
         when (mode) {
             RepeatMode.OFF -> {
                 binding.btnNpRepeat.alpha = 0.5f
@@ -655,11 +729,11 @@ class CatalogFragment : Fragment() {
             }
             RepeatMode.ALL -> {
                 binding.btnNpRepeat.alpha = 1.0f
-                binding.btnNpRepeat.imageTintList = ColorStateList.valueOf(Color.parseColor("#8B5CF6"))
+                binding.btnNpRepeat.imageTintList = ColorStateList.valueOf(accent)
             }
             RepeatMode.ONE -> {
                 binding.btnNpRepeat.alpha = 1.0f
-                binding.btnNpRepeat.imageTintList = ColorStateList.valueOf(Color.parseColor("#00E676"))
+                binding.btnNpRepeat.imageTintList = ColorStateList.valueOf(Color.parseColor("#FB7185"))
             }
         }
     }
@@ -668,15 +742,26 @@ class CatalogFragment : Fragment() {
         isNowPlayingSingleVisible = show
         if (show) {
             binding.nowPlayingSingleContainer.visibility = View.VISIBLE
+            binding.nowPlayingSingleContainer.translationY = 320f
             binding.nowPlayingSingleContainer.alpha = 0f
-            binding.nowPlayingSingleContainer.animate().alpha(1f).setDuration(220).start()
+            binding.nowPlayingSingleContainer.animate()
+                .translationY(0f)
+                .alpha(1f)
+                .setDuration(240)
+                .setInterpolator(android.view.animation.DecelerateInterpolator())
+                .start()
         } else {
-            binding.nowPlayingSingleContainer.animate().alpha(0f).setDuration(180).withEndAction {
-                binding.nowPlayingSingleContainer.visibility = View.GONE
-                binding.cardNpLyrics.visibility = View.GONE
-                isShowingNpLyrics = false
-                binding.btnNpLyrics.imageTintList = ColorStateList.valueOf(Color.parseColor("#94A3B8"))
-            }.start()
+            binding.nowPlayingSingleContainer.animate()
+                .translationY(320f)
+                .alpha(0f)
+                .setDuration(200)
+                .setInterpolator(android.view.animation.AccelerateInterpolator())
+                .withEndAction {
+                    binding.nowPlayingSingleContainer.visibility = View.GONE
+                    binding.cardNpLyrics.visibility = View.GONE
+                    isShowingNpLyrics = false
+                    binding.btnNpLyrics.imageTintList = ColorStateList.valueOf(Color.parseColor("#94A3B8"))
+                }.start()
         }
     }
 
@@ -795,7 +880,7 @@ class CatalogFragment : Fragment() {
                 val scanning = prog.isScanning
                 _binding?.tvScanStatus?.text = if (scanning) "Scanning Library..." else "Ready"
                 _binding?.tvScanStatus?.setTextColor(
-                    if (scanning) Color.parseColor("#FFB300") else Color.parseColor("#00E676")
+                    if (scanning) Color.parseColor("#FDE68A") else Color.parseColor("#F97316")
                 )
             }
         }

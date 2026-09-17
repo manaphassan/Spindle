@@ -105,7 +105,7 @@ class ImageLoader(context: Context) {
      */
     suspend fun extractAccentColor(
         audioPath: String,
-        defaultColor: Int = android.graphics.Color.parseColor("#EAB308")
+        defaultColor: Int = android.graphics.Color.parseColor("#F97316")
     ): Int = withContext(Dispatchers.IO) {
         colorCache.get(audioPath)?.let { return@withContext it }
 

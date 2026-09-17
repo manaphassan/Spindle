@@ -44,41 +44,62 @@ The Spindle emblem combines the precision geometry of an internal cassette tape 
 
 ---
 
-## 3. Official System Themes & Color Palettes
+## 3. Official System Themes & Brand Color Palette
 
-Spindle provides 3 meticulously balanced system themes tailored for diverse display technologies:
+Spindle's visual identity is anchored in a nostalgic, sunny, and friendly throwback mixtape aesthetic:
 
-### 3.1 The 3 System Hardware Themes
+<div align="center">
+  <b>HEX: <code>#2A2E45</code> · <code>#F97316</code> · <code>#FB7185</code> · <code>#FDE68A</code> · <code>#FAFAF9</code></b>
+  <p><i>Mood: nostalgic, sunny, friendly · Vintage mixtapes, handwritten tracklists, and weekend drives</i></p>
+</div>
 
-1. **Audiophile Dark (Obsidian)** *(Default)*:
-   - Primary Background: Deep Obsidian Charcoal (`#141518` / `#0D0E11`).
-   - Accent: Radiant Mint-Emerald (`#00E676`) and Walkman Crimson Red (`#D71920`).
-   - Optimized for OLED / AMOLED displays with zero pixel bleed and maximum contrast.
+### 3.1 The 60 : 30 : 10 Color Harmony Rule
 
-2. **Monochrome E-Ink**:
-   - Primary Background: Pure Paper White (`#FFFFFF`).
-   - Ink & Details: Pure Ink Black (`#000000`).
-   - Borders: High-contrast 1-bit solid hairline borders (`#000000`).
-   - Engineered specifically for e-paper music players (Onyx Boox, Hisense A-series, InkPalm) with disabled drop shadows and maximum e-ink refresh clarity.
+The palette follows strict audiophile industrial design ratios ensuring high legibility and zero eye fatigue:
 
-3. **Clean Light (Brushed Aluminum)**:
-   - Primary Background: Matte Anodized Silver (`#F5F5F7` / `#E5E5EA`).
-   - Surfaces: Soft Warm Slate (`#FFFFFF` with subtle `#D1D1D6` bevels).
-   - Accents: Deep Graphite (`#1C1C1E`) and Crimson Red (`#C8102E`).
-   - Inspired by classic Dieter Rams Braun functionalism.
+- **60% Dominant Base**:
+  - **Dark Theme ("Indigo Mixtape")**: Deep Dark Indigo (`#2A2E45`). Provides a deep, velvety chassis foundation that lets warm tones look intentional, grounded, and physical.
+  - **Light Theme ("Sunny Mixtape")**: Pale Warm Stone (`#FAFAF9`). Keeps small typography, track metadata, and technical badges razor-sharp at compact DAP screen sizes.
+- **30% Secondary Structure & Framing**:
+  - **Dark Theme**: Rich Indigo Surfaces (`#202334`), Structural Bevels (`#1F2233`), Dividers (`#353A54`), and Crisp Pale Typography (`#FAFAF9` / `#B0B4CE`).
+  - **Light Theme**: Solid Dark Indigo Framing Bevels (`#2A2E45`), Crisp Dark Indigo Text (`#2A2E45`), and Soft Warm Neutral Cards (`#FFFFFF` with `#E5E5E2` borders).
+  - **Cassette Label Body**: Nostalgic Butter Yellow (`#FDE68A`) mimicking authentic paper mixtape labels with dark indigo handwritten titles.
+- **10% High-Impact Accent**:
+  - **Hero Warm Tangerine Orange (`#F97316`)**: Dedicated exclusively to active playback states, transport keys, kinetic reel indicator notches, tuner dial hairline needle, and progress sliders/LEDs.
+  - **Secondary Peachy Coral Pink (`#FB7185`)**: Favorite heart toggle, audio peak VU meter alerts, and capsule badges.
+  - **Tertiary Butter Yellow (`#FDE68A`)**: Star ratings, warm VFD 7-segment clock digits, and FM frequency display glow.
 
-### 3.2 Primary Industrial Color Palette
+---
 
-| Color Name | Hex Code | RGB | Role / Application |
+### 3.2 Official Brand Color Tokens
+
+| Token Name | Hex Code | Color Swatch | Role / Application |
 | :--- | :--- | :--- | :--- |
-| **Walkman Crimson Red** | `#D71920` | `215, 25, 32` | Flagship WM-2 Red Chassis, Playhead cursor, Brand Primary |
-| **Obsidian Hardware** | `#141518` | `20, 21, 24` | Music Catalog background, Now Playing background |
-| **Braun Ivory Neumorphic**| `#E8E8EC` | `232, 232, 236` | Online FM Radio chassis, soft recessed control wells |
-| **Mint Emerald Radiant** | `#00E676` | `0, 230, 118` | Active Play states, Waveform bars, Bit-Perfect Native badge |
-| **Backlit LCD Green** | `#DCE6DA` | `220, 230, 218` | Braun FM Radio vintage matrix display window |
-| **Matrix LCD Dark Text** | `#1F2E1E` | `31, 46, 30` | 7-Segment frequency numbers & RDS marquee text |
-| **VFD Amber Gold** | `#FFB300` | `255, 179, 0` | Dynamic Bitrate, Warning telemetry, Active folder icons |
-| **Peak Alert Coral** | `#EF4444` | `239, 68, 68` | VU Meter 0dB clipping indicator, Radio active preset text |
+| **Dark Indigo** | `#2A2E45` | `■` `#2A2E45` | 60% Dark chassis base, Light theme structural framing bevels, crisp dark text |
+| **Warm Tangerine** | `#F97316` | `■` `#F97316` | 10% Hero accent, active playback, kinetic reel notches, tuner needle, progress LEDs |
+| **Peachy Coral Pink** | `#FB7185` | `■` `#FB7185` | Secondary accent, favorite heart, 0dB peak meter alert LED, audio format capsule |
+| **Butter Yellow** | `#FDE68A` | `■` `#FDE68A` | Cassette tape label body, star ratings, warm VFD clock glow & radio frequency |
+| **Pale Warm Stone** | `#FAFAF9` | `■` `#FAFAF9` | 60% Light chassis base, crisp high-contrast text in Dark theme |
+
+---
+
+### 3.3 The 3 System Hardware Themes
+
+1. **Dark Theme ("Indigo Mixtape")** *(Default)*:
+   - 60% Dark Indigo chassis (`#2A2E45`) with `#202334` elevated cards.
+   - 10% Warm Tangerine Orange (`#F97316`) hero controls & Butter Yellow (`#FDE68A`) tape label.
+   - Tailored for OLED and compact LCD screens with zero eye strain in low-light listening sessions.
+
+2. **Light Theme ("Sunny Mixtape")**:
+   - 60% Pale Warm Stone chassis (`#FAFAF9`) framed by bold Dark Indigo borders (`#2A2E45`).
+   - Authentic Butter Yellow cassette label (`#FDE68A`) with handwritten dark indigo tracklists.
+   - Warm Tangerine Orange (`#F97316`) transport buttons and progress indicators.
+   - High legibility outdoors and in bright environments.
+
+3. **Monochrome E-Ink Theme**:
+   - 100% 1-bit Pure Black (`#000000`) and Pure White (`#FFFFFF`).
+   - Zero gradients, zero anti-aliased gray shadows, solid hairline borders for instantaneous e-paper refresh.
+   - Engineered for Onyx Boox, Hisense, and InkPalm devices.
 
 ---
 

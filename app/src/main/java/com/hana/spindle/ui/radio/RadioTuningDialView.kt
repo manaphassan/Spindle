@@ -61,38 +61,38 @@ class RadioTuningDialView @JvmOverloads constructor(
 
     private fun initPaints() {
         rollerBgPaint.apply {
-            color = Color.parseColor("#181A22") // Dark machined cylinder roller body
+            color = Color.parseColor("#171926") // Deep indigo cylinder roller body
             style = Paint.Style.FILL
         }
 
         ridgePaint.apply {
-            color = Color.parseColor("#262936") // Ribbed ridge shadow
+            color = Color.parseColor("#1F2233") // Ribbed ridge shadow
             style = Paint.Style.STROKE
             strokeWidth = 2.0f
         }
 
         ridgeHighlightPaint.apply {
-            color = Color.parseColor("#3C4254") // Metallic ridge highlight
+            color = Color.parseColor("#353A54") // Metallic ridge highlight
             style = Paint.Style.STROKE
             strokeWidth = 1.2f
         }
 
         textPaint.apply {
-            color = Color.parseColor("#94A3B8") // Crisp silver calibrated scale numbers
+            color = Color.parseColor("#FAFAF9") // Crisp pale stone calibrated scale numbers
             textSize = 28f
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
             textAlign = Paint.Align.CENTER
         }
 
         cursorPaint.apply {
-            color = Color.parseColor("#EF4444") // Iconic red tuning cursor hairline
+            color = Color.parseColor("#F97316") // Iconic warm orange tuning cursor hairline
             style = Paint.Style.STROKE
             strokeWidth = 3.0f
             strokeCap = Paint.Cap.ROUND
         }
 
         bevelPaint.apply {
-            color = Color.parseColor("#2A2D3A")
+            color = Color.parseColor("#2A2E45") // Dark indigo framing bevel
             style = Paint.Style.STROKE
             strokeWidth = 2f
         }

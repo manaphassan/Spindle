@@ -37,6 +37,36 @@ class RadioSpeakerGrilleView @JvmOverloads constructor(
             }
         }
 
+    // Real-time audio amplitude sync (0.0f to 1.0f)
+    var liveAudioLevel: Float = 0.0f
+        set(value) {
+            field = value.coerceIn(0f, 1f)
+            invalidate()
+        }
+
+    // Internet connectivity state
+    var isOnline: Boolean = true
+        set(value) {
+            if (field != value) {
+                field = value
+                invalidate()
+            }
+        }
+
+    var isDarkMode: Boolean = true
+        set(value) {
+            field = value
+            updateThemePaints()
+            invalidate()
+        }
+
+    var isEink: Boolean = false
+        set(value) {
+            field = value
+            updateThemePaints()
+            invalidate()
+        }
+
     // Resting dark acoustic mesh styling
     private val holeShadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.parseColor("#151720") // Deep acoustic hole interior
@@ -54,14 +84,33 @@ class RadioSpeakerGrilleView @JvmOverloads constructor(
         style = Paint.Style.FILL
     }
 
-    private val activeGlowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.FILL
-    }
-
     private val driverRimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.parseColor("#161922")
         style = Paint.Style.STROKE
         strokeWidth = 2.0f
+    }
+
+    // Top-Right Online/Offline Hardware Status LED Paints
+    private val ledBezelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 1.5f
+    }
+    private val ledWellPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+    }
+    private val ledDiodePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+    }
+    private val ledPipPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        color = Color.WHITE
+    }
+    private val ledLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        textSize = 22f
+        textAlign = Paint.Align.RIGHT
+        typeface = android.graphics.Typeface.create(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.BOLD)
+        letterSpacing = 0.08f
     }
 
     // Hole coordinates & Ring grouping
@@ -79,6 +128,29 @@ class RadioSpeakerGrilleView @JvmOverloads constructor(
 
     init {
         setLayerType(LAYER_TYPE_HARDWARE, null)
+        updateThemePaints()
+    }
+
+    private fun updateThemePaints() {
+        if (isEink) {
+            holeShadowPaint.color = Color.BLACK
+            holeHighlightPaint.color = Color.WHITE
+            driverRimPaint.color = Color.WHITE
+            ledBezelPaint.color = Color.WHITE
+            ledWellPaint.color = Color.BLACK
+        } else if (!isDarkMode) {
+            holeShadowPaint.color = Color.parseColor("#E5E5E2")
+            holeHighlightPaint.color = Color.WHITE
+            driverRimPaint.color = Color.parseColor("#2A2E45")
+            ledBezelPaint.color = Color.parseColor("#2A2E45")
+            ledWellPaint.color = Color.parseColor("#EDEDE8")
+        } else {
+            holeShadowPaint.color = Color.parseColor("#151724")
+            holeHighlightPaint.color = Color.argb(40, 250, 250, 249)
+            driverRimPaint.color = Color.parseColor("#1E2132")
+            ledBezelPaint.color = Color.parseColor("#353A54")
+            ledWellPaint.color = Color.parseColor("#151724")
+        }
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -127,10 +199,10 @@ class RadioSpeakerGrilleView @JvmOverloads constructor(
             repeatCount = ValueAnimator.INFINITE
             interpolator = LinearInterpolator()
             addUpdateListener {
-                animPhase += 0.09f
+                animPhase += 0.12f
                 if (animPhase > 1000f) animPhase = 0f
                 if (glowFactor < 1.0f) {
-                    glowFactor = (glowFactor + 0.08f).coerceAtMost(1.0f)
+                    glowFactor = (glowFactor + 0.12f).coerceAtMost(1.0f)
                 }
                 invalidate()
             }
@@ -154,21 +226,24 @@ class RadioSpeakerGrilleView @JvmOverloads constructor(
             canvas.drawCircle(centerPtX, centerPtY, driverMaxRadius * 1.04f, driverRimPaint)
         }
 
-        val isVisualizing = isPlaying && glowFactor > 0.01f
+        val isVisualizing = (isPlaying || liveAudioLevel > 0.01f) && (glowFactor > 0.01f || liveAudioLevel > 0.01f)
 
         // 2. Pre-calculate ring intensities for the 8 rings (0 to 7) to avoid re-calculation per hole
         var r0 = 0f; var r1 = 0f; var r2 = 0f; var r3 = 0f
         var r4 = 0f; var r5 = 0f; var r6 = 0f; var r7 = 0f
 
         if (isVisualizing) {
+            val audioBoost = if (liveAudioLevel > 0.01f) liveAudioLevel else 0.5f
             // Core beat / voice coil bass pulse
-            val beat = (sin(animPhase * 3.0f) * 0.5f + 0.5f)
+            val beat = (sin(animPhase * 3.0f) * 0.5f + 0.5f) * audioBoost
             // Ripple wave propagation outward
             fun calcRing(ringIdx: Int): Float {
                 val bass = (1.0f - ringIdx * 0.11f).coerceAtLeast(0f) * beat
-                val ripple = (sin(animPhase * 4.2f - ringIdx * 0.72f) * 0.5f + 0.5f)
+                val ripple = (sin(animPhase * 4.2f - ringIdx * 0.72f) * 0.5f + 0.5f) * audioBoost
                 val shimmer = (sin(animPhase * 6.5f + ringIdx * 1.1f) * 0.5f + 0.5f) * (ringIdx / 7f) * 0.35f
-                return ((bass * 0.55f + ripple * 0.45f + shimmer).coerceIn(0f, 1f)) * glowFactor
+                val baseLevel = (bass * 0.55f + ripple * 0.45f + shimmer).coerceIn(0f, 1f)
+                val effectiveFactor = if (liveAudioLevel > 0.01f) (glowFactor * 0.4f + liveAudioLevel * 0.6f) else glowFactor
+                return baseLevel * effectiveFactor
             }
             r0 = calcRing(0)
             r1 = calcRing(1)
@@ -201,12 +276,16 @@ class RadioSpeakerGrilleView @JvmOverloads constructor(
                 }
 
                 if (intensity > 0.06f) {
-                    // Warm filament tube orange/amber to radiant gold illumination
-                    val r = 249
-                    val g = (115 + (130 * intensity)).toInt().coerceIn(0, 255)
-                    val b = (22 + (110 * intensity)).toInt().coerceIn(0, 255)
-                    val a = (50 + (205 * intensity)).toInt().coerceIn(0, 255)
-                    activeHolePaint.color = Color.argb(a, r, g, b)
+                    if (isEink) {
+                        activeHolePaint.color = Color.WHITE
+                    } else {
+                        // Warm filament tube orange/amber to radiant gold illumination
+                        val r = 249
+                        val g = (115 + (130 * intensity)).toInt().coerceIn(0, 255)
+                        val b = (22 + (110 * intensity)).toInt().coerceIn(0, 255)
+                        val a = (50 + (205 * intensity)).toInt().coerceIn(0, 255)
+                        activeHolePaint.color = Color.argb(a, r, g, b)
+                    }
 
                     // Draw glowing internal core inside the hole
                     val glowR = holeRadius * (0.35f + 0.65f * intensity)
@@ -217,6 +296,36 @@ class RadioSpeakerGrilleView @JvmOverloads constructor(
             // Neumorphic bottom-right highlight bevel
             canvas.drawCircle(pt.x, pt.y + 0.8f, holeRadius, holeHighlightPaint)
         }
+
+        // 4. Hardware Network Status LED (Top-Right of Speaker)
+        val ledMargin = 28f
+        val ledCenterY = ledMargin + 8f
+        val ledCenterX = width - ledMargin - 8f
+        val ledRadius = 5.0f
+
+        // Recessed well
+        canvas.drawCircle(ledCenterX, ledCenterY, ledRadius + 4f, ledWellPaint)
+        canvas.drawCircle(ledCenterX, ledCenterY, ledRadius + 4f, ledBezelPaint)
+
+        // Diode color
+        if (isEink) {
+            ledDiodePaint.color = if (isOnline) Color.WHITE else Color.BLACK
+            ledLabelPaint.color = Color.WHITE
+        } else {
+            val diodeColor = if (isOnline) Color.parseColor("#00E676") else Color.parseColor("#FB7185")
+            ledDiodePaint.color = diodeColor
+            ledLabelPaint.color = if (!isDarkMode) Color.parseColor("#5A5E78") else Color.parseColor("#B0B4CE")
+        }
+        canvas.drawCircle(ledCenterX, ledCenterY, ledRadius, ledDiodePaint)
+
+        // Glass highlight reflection pip
+        if (!isEink) {
+            canvas.drawCircle(ledCenterX - 1.5f, ledCenterY - 1.5f, 1.3f, ledPipPaint)
+        }
+
+        // Tiny status text label next to LED
+        val labelText = if (isOnline) "ONLINE" else "OFFLINE"
+        canvas.drawText(labelText, ledCenterX - 16f, ledCenterY + 4f, ledLabelPaint)
     }
 
     override fun onAttachedToWindow() {

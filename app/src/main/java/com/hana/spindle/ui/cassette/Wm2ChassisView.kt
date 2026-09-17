@@ -221,10 +221,10 @@ class Wm2ChassisView @JvmOverloads constructor(
 
         // 5. Draw Battery Indicator LED
         batteryLedPaint.color = when {
-            isCharging -> Color.parseColor("#00E676")
-            batteryLevel >= 20 -> Color.parseColor("#00E676")
-            batteryLevel >= 10 -> Color.parseColor("#FFB300")
-            else -> Color.parseColor("#D50000")
+            isCharging -> Color.parseColor("#F97316")
+            batteryLevel >= 20 -> Color.parseColor("#FDE68A")
+            batteryLevel >= 10 -> Color.parseColor("#F97316")
+            else -> Color.parseColor("#FB7185")
         }
         canvas.drawCircle(batteryLedCenter.x, batteryLedCenter.y, 8f, batteryLedPaint)
 

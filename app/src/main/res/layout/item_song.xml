@@ -11,6 +11,7 @@
 
     <!-- Album Art Thumbnail Card -->
     <androidx.cardview.widget.CardView
+        android:id="@+id/cardSongThumb"
         android:layout_width="46dp"
         android:layout_height="46dp"
         app:cardCornerRadius="10dp"

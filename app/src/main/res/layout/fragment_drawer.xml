@@ -394,39 +394,192 @@
                                 android:fontFamily="monospace" />
                         </LinearLayout>
 
-                        <!-- Transport Quick Controls: Browse & Play/Pause -->
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="#1E2026"
+                            android:layout_marginVertical="12dp" />
+
+                        <!-- SECTION D: AUDIOPHILE BIT-PERFECT & ACOUSTIC DSP ENHANCEMENTS -->
+                        <!-- 1. Bit-Perfect Direct Bypass Switch -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="horizontal"
                             android:gravity="center_vertical"
-                            android:layout_marginTop="14dp">
+                            android:layout_marginBottom="12dp">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:id="@+id/tvBypassTitle"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="BIT-PERFECT DIRECT BYPASS"
+                                    android:textColor="@color/white"
+                                    android:textStyle="bold"
+                                    android:textSize="11.5sp"
+                                    android:fontFamily="monospace" />
+
+                                <TextView
+                                    android:id="@+id/tvBypassSub"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="0.00% DSP distortion direct ALSA bypass for USB DACs"
+                                    android:textColor="#94A3B8"
+                                    android:textSize="9.5sp"
+                                    android:layout_marginTop="2dp" />
+                            </LinearLayout>
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/switchBypass"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:checked="false" />
+                        </LinearLayout>
+
+                        <!-- 2. Binaural Crossfeed / Soundstage Expansion -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="4dp">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="BINAURAL CROSSFEED / SOUNDSTAGE"
+                                android:textColor="#71717A"
+                                android:textStyle="bold"
+                                android:textSize="10sp"
+                                android:fontFamily="monospace" />
+
+                            <TextView
+                                android:id="@+id/tvCrossfeedLevel"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="OFF (0%)"
+                                android:textColor="#00E676"
+                                android:textStyle="bold"
+                                android:textSize="10.5sp"
+                                android:fontFamily="monospace" />
+                        </LinearLayout>
+
+                        <SeekBar
+                            android:id="@+id/seekCrossfeed"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:max="100"
+                            android:progress="0"
+                            android:progressTint="#00E676"
+                            android:thumbTint="#00E676"
+                            android:layout_marginBottom="12dp" />
+
+                        <!-- 3. Target Curve Quick Selector Bar -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="ACOUSTIC TARGET PROFILES"
+                            android:textColor="#71717A"
+                            android:textStyle="bold"
+                            android:textSize="10sp"
+                            android:fontFamily="monospace"
+                            android:layout_marginBottom="6dp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="32dp"
+                            android:orientation="horizontal">
 
                             <Button
-                                android:id="@+id/btnBrowse"
+                                android:id="@+id/btnCurveHarman"
                                 android:layout_width="0dp"
-                                android:layout_height="40dp"
+                                android:layout_height="match_parent"
                                 android:layout_weight="1"
-                                android:text="⏏ BROWSE CATALOG"
-                                android:textColor="#A1A1AA"
-                                android:textSize="11sp"
+                                android:text="HARMAN"
+                                android:textColor="@color/white"
+                                android:textSize="9.5sp"
                                 android:textStyle="bold"
-                                android:fontFamily="sans-serif-medium"
-                                android:backgroundTint="#1F2128"
+                                android:fontFamily="monospace"
+                                android:backgroundTint="#202228"
                                 android:insetTop="0dp"
                                 android:insetBottom="0dp"
                                 android:padding="0dp"
-                                app:cornerRadius="8dp" />
+                                app:cornerRadius="6dp" />
 
-                            <ImageButton
-                                android:id="@+id/btnDjPlayPause"
-                                android:layout_width="54dp"
-                                android:layout_height="40dp"
-                                android:layout_marginStart="10dp"
-                                android:background="@drawable/bg_dj_mint_button"
-                                android:src="@android:drawable/ic_media_play"
-                                app:tint="#121316"
-                                android:contentDescription="Play or Pause" />
+                            <Button
+                                android:id="@+id/btnCurveDiffuse"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:layout_weight="1"
+                                android:layout_marginStart="4dp"
+                                android:text="DIFFUSE"
+                                android:textColor="#A1A1AA"
+                                android:textSize="9.5sp"
+                                android:textStyle="bold"
+                                android:fontFamily="monospace"
+                                android:backgroundTint="#16181D"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="6dp" />
+
+                            <Button
+                                android:id="@+id/btnCurveTube"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:layout_weight="1"
+                                android:layout_marginStart="4dp"
+                                android:text="TUBE"
+                                android:textColor="#A1A1AA"
+                                android:textSize="9.5sp"
+                                android:textStyle="bold"
+                                android:fontFamily="monospace"
+                                android:backgroundTint="#16181D"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="6dp" />
+
+                            <Button
+                                android:id="@+id/btnCurveAir"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:layout_weight="1"
+                                android:layout_marginStart="4dp"
+                                android:text="AIR"
+                                android:textColor="#A1A1AA"
+                                android:textSize="9.5sp"
+                                android:textStyle="bold"
+                                android:fontFamily="monospace"
+                                android:backgroundTint="#16181D"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="6dp" />
+
+                            <Button
+                                android:id="@+id/btnCurveFlat"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:layout_weight="1"
+                                android:layout_marginStart="4dp"
+                                android:text="FLAT"
+                                android:textColor="#A1A1AA"
+                                android:textSize="9.5sp"
+                                android:textStyle="bold"
+                                android:fontFamily="monospace"
+                                android:backgroundTint="#16181D"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="6dp" />
                         </LinearLayout>
 
                     </LinearLayout>

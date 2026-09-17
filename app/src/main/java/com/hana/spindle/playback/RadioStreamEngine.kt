@@ -222,6 +222,9 @@ class RadioStreamEngine(private val context: Context) {
             }
     }
 
+    val audioSessionId: Int
+        get() = exoPlayer.audioSessionId
+
     fun tuneTo(frequency: Float) {
         val matchingStation = findNearestStation(frequency)
         val prevStation = _radioState.value.currentStation
