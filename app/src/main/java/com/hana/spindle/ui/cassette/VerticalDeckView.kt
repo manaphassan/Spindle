@@ -74,10 +74,11 @@ class VerticalDeckView @JvmOverloads constructor(
     var progress: Float = 0.0f
         set(value) {
             field = value.coerceIn(0f, 1f)
-            if (isEinkMode || theme.id == CassetteTheme.MONOCHROME_EINK.id) {
+            if (isEinkMode) {
                 val spoolState = kinematics.calculate(field, baseHubDimension)
                 topReelAngle = (field * 360f * 3f * spoolState.leftAngularSpeed) % 360f
                 bottomReelAngle = (field * 360f * 3f * spoolState.rightAngularSpeed) % 360f
+                tapeTravelOffset = (field * 400f) % 40f
             }
             invalidate()
         }
@@ -315,6 +316,7 @@ class VerticalDeckView @JvmOverloads constructor(
     private var headEngageProgress = 0f
     private var topReelAngle = 0f
     private var bottomReelAngle = 0f
+    private var tapeTravelOffset = 0f
     private var marqueeOffset = 0f
     private var lastMarqueeTime = 0L
 
@@ -432,6 +434,17 @@ class VerticalDeckView @JvmOverloads constructor(
         strokeWidth = 1.0f
         color = Color.argb(45, 255, 255, 255)
     }
+    private val tapeMotionSheenPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 1.4f
+    }
+    private val tapeSpoolSheenPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 1.2f
+    }
+    private val spoolFlangeSpokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+    }
 
     private val cassetteSlipSheetPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val deckGuidePinPaint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -538,7 +551,11 @@ class VerticalDeckView @JvmOverloads constructor(
             hubInnerCapPaint.apply { color = Color.BLACK; style = Paint.Style.FILL }
             hubCenterPipPaint.apply { color = Color.WHITE; style = Paint.Style.FILL }
             hubClutchDimplePaint.apply { color = Color.WHITE; style = Paint.Style.FILL }
-            orangeNotchPaint.apply { color = Color.BLACK; style = Paint.Style.FILL }
+            orangeNotchPaint.apply { color = Color.WHITE; style = Paint.Style.FILL }
+
+            tapeMotionSheenPaint.apply { color = Color.argb(120, 0, 0, 0); style = Paint.Style.STROKE; strokeWidth = 1.4f }
+            tapeSpoolSheenPaint.apply { color = Color.argb(90, 0, 0, 0); style = Paint.Style.STROKE; strokeWidth = 1.2f }
+            spoolFlangeSpokePaint.apply { color = Color.argb(120, 0, 0, 0); style = Paint.Style.FILL }
 
             clockGhostPaint.apply { color = Color.TRANSPARENT; style = Paint.Style.FILL }
             clockLitPaint.apply { color = Color.BLACK; style = Paint.Style.FILL }
@@ -823,7 +840,7 @@ class VerticalDeckView @JvmOverloads constructor(
             labelBorderPaint.color = Color.BLACK
             labelRuledLinePaint.color = Color.BLACK
             cassetteSlipSheetPaint.color = Color.TRANSPARENT
-            orangeNotchPaint.color = Color.BLACK
+            orangeNotchPaint.color = Color.WHITE
             labelBadgeBgPaint.color = Color.BLACK
             labelBadgeTextPaint.color = Color.WHITE
             formatBadgeBgPaint.color = Color.WHITE
@@ -833,6 +850,9 @@ class VerticalDeckView @JvmOverloads constructor(
             deckGuidePinPaint.color = Color.BLACK
             tapeWindowGaugePaint.color = Color.BLACK
             tapeWindowGaugeTextPaint.color = Color.BLACK
+            tapeMotionSheenPaint.color = Color.argb(120, 0, 0, 0)
+            tapeSpoolSheenPaint.color = Color.argb(90, 0, 0, 0)
+            spoolFlangeSpokePaint.color = Color.argb(120, 0, 0, 0)
             ledPeakActivePaint.color = Color.BLACK
             ledPeakActivePaint.clearShadowLayer()
             return
@@ -861,6 +881,10 @@ class VerticalDeckView @JvmOverloads constructor(
         formatBadgeBorderPaint.color = accent
         formatBadgeTextPaint.color = accent
         routeBadgeTextPaint.color = if (isBitPerfect) Color.parseColor("#38BDF8") else Color.parseColor("#94A3B8")
+
+        tapeMotionSheenPaint.color = if (isLight) Color.argb(60, 42, 46, 69) else Color.argb(95, 255, 255, 255)
+        tapeSpoolSheenPaint.color = if (isLight) Color.argb(55, 42, 46, 69) else Color.argb(70, 255, 255, 255)
+        spoolFlangeSpokePaint.color = if (isLight) Color.argb(85, 42, 46, 69) else Color.argb(95, 255, 255, 255)
 
         // Dynamic LED meter peak glow
         ledPeakActivePaint.color = Color.parseColor("#FB7185")
@@ -1553,6 +1577,17 @@ class VerticalDeckView @JvmOverloads constructor(
         )
         canvas.drawRect(tempRectF, tapeBridgePaint)
 
+        // Animated traveling tape ribbon texture gliding from supply to take-up spool
+        val bridgeH = bottomHubCenter.y - topHubCenter.y
+        if (bridgeH > 0f) {
+            val step = bridgeWidth * 0.75f
+            val count = (bridgeH / step).toInt() + 1
+            for (i in 0 until count) {
+                val lineY = topHubCenter.y + ((i * step + tapeTravelOffset) % bridgeH)
+                canvas.drawLine(tempRectF.left + 2f, lineY, tempRectF.right - 2f, lineY, tapeMotionSheenPaint)
+            }
+        }
+
         // Top Spool Tape Pack (Supply)
         canvas.drawCircle(topHubCenter.x, topHubCenter.y, rTopTape, tapeSpoolPaint)
         canvas.drawCircle(topHubCenter.x, topHubCenter.y, rTopTape * 0.94f, tapeTexturePaint)
@@ -1564,6 +1599,7 @@ class VerticalDeckView @JvmOverloads constructor(
                 canvas.drawCircle(topHubCenter.x, topHubCenter.y, hubOuterRadius + deltaR * (g / 4f), tapeMicroGroovePaint)
             }
         }
+        drawSpoolRotatingSheenAndSpokes(canvas, topHubCenter.x, topHubCenter.y, hubOuterRadius, rTopTape, topReelAngle)
 
         // Bottom Spool Tape Pack (Take-up)
         canvas.drawCircle(bottomHubCenter.x, bottomHubCenter.y, rBottomTape, tapeSpoolPaint)
@@ -1576,6 +1612,7 @@ class VerticalDeckView @JvmOverloads constructor(
                 canvas.drawCircle(bottomHubCenter.x, bottomHubCenter.y, hubOuterRadius + deltaR * (g / 4f), tapeMicroGroovePaint)
             }
         }
+        drawSpoolRotatingSheenAndSpokes(canvas, bottomHubCenter.x, bottomHubCenter.y, hubOuterRadius, rBottomTape, bottomReelAngle)
 
         // Top Reel Hub Mechanism & Signature Orange Calibration Notch
         drawHubMechanism(canvas, topHubCenter.x, topHubCenter.y, hubOuterRadius, topReelAngle)
@@ -2485,7 +2522,7 @@ class VerticalDeckView @JvmOverloads constructor(
     }
 
     private fun startRotation() {
-        if (isEinkMode || theme.id == CassetteTheme.MONOCHROME_EINK.id) {
+        if (isEinkMode) {
             stopRotation()
             return
         }
@@ -2498,10 +2535,59 @@ class VerticalDeckView @JvmOverloads constructor(
                 val spoolState = kinematics.calculate(progress, baseHubDimension)
                 topReelAngle = (topReelAngle + 4.5f * spoolState.leftAngularSpeed) % 360f
                 bottomReelAngle = (bottomReelAngle + 4.5f * spoolState.rightAngularSpeed) % 360f
+                tapeTravelOffset = (tapeTravelOffset + 2.8f * spoolState.leftAngularSpeed) % 40f
                 invalidate()
             }
             start()
         }
+    }
+
+    /**
+     * Draws kinetic rotating elements on the tape pack: anisotropic specular sheen wedges,
+     * classic 3-spoke flange strobe markers, and the physical tape anchor notch.
+     */
+    private fun drawSpoolRotatingSheenAndSpokes(canvas: Canvas, cx: Float, cy: Float, innerR: Float, outerR: Float, rotationAngle: Float) {
+        if (outerR <= innerR + 4f) return
+
+        canvas.save()
+        canvas.rotate(rotationAngle, cx, cy)
+
+        // 1. Anisotropic Specular Sheen (2 opposing radial glare cones at 0° and 180°)
+        for (cone in 0..1) {
+            val baseAngle = cone * 180.0
+            for (lineOffset in -1..1) {
+                val rad = Math.toRadians(baseAngle + lineOffset * 9.0)
+                val cos = Math.cos(rad).toFloat()
+                val sin = Math.sin(rad).toFloat()
+                canvas.drawLine(
+                    cx + innerR * cos,
+                    cy + innerR * sin,
+                    cx + outerR * cos,
+                    cy + outerR * sin,
+                    tapeSpoolSheenPaint
+                )
+            }
+        }
+
+        // 2. Three Classic Reel Flange Spoke Windows / Strobe Cutouts (at 0°, 120°, 240°)
+        val spokeR = innerR + (outerR - innerR) * 0.38f
+        val markerRadius = ((outerR - innerR) * 0.12f).coerceIn(2.5f, 6.0f)
+        for (s in 0 until 3) {
+            val sAngle = Math.toRadians(s * 120.0)
+            val mx = cx + (spokeR * Math.cos(sAngle)).toFloat()
+            val my = cy + (spokeR * Math.sin(sAngle)).toFloat()
+            canvas.drawCircle(mx, my, markerRadius, spoolFlangeSpokePaint)
+        }
+
+        // 3. Spool Tape Anchor Clamp Notch (holds tape to hub core)
+        val clampAngle = Math.toRadians(45.0)
+        val clampX = cx + (innerR * Math.cos(clampAngle)).toFloat()
+        val clampY = cy + (innerR * Math.sin(clampAngle)).toFloat()
+        val clampOuterX = cx + ((innerR + (outerR - innerR) * 0.28f) * Math.cos(clampAngle)).toFloat()
+        val clampOuterY = cy + ((innerR + (outerR - innerR) * 0.28f) * Math.sin(clampAngle)).toFloat()
+        canvas.drawLine(clampX, clampY, clampOuterX, clampOuterY, spoolFlangeSpokePaint)
+
+        canvas.restore()
     }
 
     private fun stopRotation() {

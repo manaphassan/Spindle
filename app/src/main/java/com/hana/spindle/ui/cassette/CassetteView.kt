@@ -84,6 +84,7 @@ class CassetteView @JvmOverloads constructor(
     // Animation state
     private var reelAngle1 = 0f
     private var reelAngle2 = 0f
+    private var tapeTravelOffset = 0f
     private var rotationAnimator: ValueAnimator? = null
 
     // Pre-allocated Paints (Zero allocation in onDraw)
@@ -106,6 +107,20 @@ class CassetteView @JvmOverloads constructor(
         color = Color.argb(40, 255, 255, 255)
         style = Paint.Style.STROKE
         strokeWidth = 1f
+    }
+    private val tapeMotionSheenPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 1.4f
+        color = Color.argb(90, 255, 255, 255)
+    }
+    private val tapeSpoolSheenPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 1.2f
+        color = Color.argb(65, 255, 255, 255)
+    }
+    private val spoolFlangeSpokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        color = Color.argb(85, 255, 255, 255)
     }
 
     // Pre-allocated Geometries
@@ -211,8 +226,14 @@ class CassetteView @JvmOverloads constructor(
             sideBadgePaint.color = Color.BLACK
             largeSideBadgePaint.color = Color.BLACK
             tapeMicroGroovePaint.color = Color.argb(60, 0, 0, 0)
+            tapeMotionSheenPaint.color = Color.argb(100, 0, 0, 0)
+            tapeSpoolSheenPaint.color = Color.argb(80, 0, 0, 0)
+            spoolFlangeSpokePaint.color = Color.argb(110, 0, 0, 0)
         } else {
             tapeMicroGroovePaint.color = Color.argb(40, 255, 255, 255)
+            tapeMotionSheenPaint.color = Color.argb(90, 255, 255, 255)
+            tapeSpoolSheenPaint.color = Color.argb(65, 255, 255, 255)
+            spoolFlangeSpokePaint.color = Color.argb(85, 255, 255, 255)
         }
     }
 
@@ -272,6 +293,7 @@ class CassetteView @JvmOverloads constructor(
                 val kinematicsState = kinematics.calculate(progress, baseRadius)
                 reelAngle1 = (reelAngle1 + 4f * kinematicsState.leftAngularSpeed) % 360f
                 reelAngle2 = (reelAngle2 + 4f * kinematicsState.rightAngularSpeed) % 360f
+                tapeTravelOffset = (tapeTravelOffset + 2.8f * kinematicsState.leftAngularSpeed) % 40f
                 invalidate()
             }
             start()
@@ -370,11 +392,21 @@ class CassetteView @JvmOverloads constructor(
         // 5. Draw Spools & Kinetic Tape Ribbon with concentric micro-grooves
         if (isVertical) {
             // Connecting vertical tape bridge
-            canvas.drawLine(
-                hubCenter1.x + kinematicsState.leftRadius * 0.8f, hubCenter1.y,
-                hubCenter2.x + kinematicsState.rightRadius * 0.8f, hubCenter2.y,
-                tapeLinePaint
-            )
+            val bridgeTopY = hubCenter1.y
+            val bridgeBottomY = hubCenter2.y
+            val bridgeX = hubCenter1.x + kinematicsState.leftRadius * 0.8f
+            canvas.drawLine(bridgeX, bridgeTopY, hubCenter2.x + kinematicsState.rightRadius * 0.8f, bridgeBottomY, tapeLinePaint)
+
+            // Animated traveling tape texture along the vertical ribbon
+            val bridgeH = bridgeBottomY - bridgeTopY
+            if (bridgeH > 0f) {
+                val step = 20f
+                val count = (bridgeH / step).toInt() + 1
+                for (i in 0 until count) {
+                    val lineY = bridgeTopY + ((i * step + tapeTravelOffset) % bridgeH)
+                    canvas.drawLine(bridgeX - 4f, lineY, bridgeX + 4f, lineY, tapeMotionSheenPaint)
+                }
+            }
 
             // Top Spool (Supply)
             canvas.drawCircle(hubCenter1.x, hubCenter1.y, kinematicsState.leftRadius, tapeRibbonPaint)
@@ -384,6 +416,7 @@ class CassetteView @JvmOverloads constructor(
                     canvas.drawCircle(hubCenter1.x, hubCenter1.y, hubRadius + deltaR * (g / 4f), tapeMicroGroovePaint)
                 }
             }
+            drawSpoolRotatingSheenAndSpokes(canvas, hubCenter1.x, hubCenter1.y, hubRadius, kinematicsState.leftRadius, reelAngle1)
             canvas.drawCircle(hubCenter1.x, hubCenter1.y, hubRadius, reelHubPaint)
             drawSpindleTeeth(canvas, hubCenter1.x, hubCenter1.y, hubRadius, reelAngle1)
 
@@ -395,6 +428,7 @@ class CassetteView @JvmOverloads constructor(
                     canvas.drawCircle(hubCenter2.x, hubCenter2.y, hubRadius + deltaR * (g / 4f), tapeMicroGroovePaint)
                 }
             }
+            drawSpoolRotatingSheenAndSpokes(canvas, hubCenter2.x, hubCenter2.y, hubRadius, kinematicsState.rightRadius, reelAngle2)
             canvas.drawCircle(hubCenter2.x, hubCenter2.y, hubRadius, reelHubPaint)
             drawSpindleTeeth(canvas, hubCenter2.x, hubCenter2.y, hubRadius, reelAngle2)
 
@@ -403,11 +437,21 @@ class CassetteView @JvmOverloads constructor(
             canvas.drawText(sideText, w * 0.5f, h * 0.90f, largeSideBadgePaint)
         } else {
             // Horizontal layout
-            canvas.drawLine(
-                hubCenter1.x, hubCenter1.y + kinematicsState.leftRadius * 0.9f,
-                hubCenter2.x, hubCenter2.y + kinematicsState.rightRadius * 0.9f,
-                tapeLinePaint
-            )
+            val bridgeLeftX = hubCenter1.x
+            val bridgeRightX = hubCenter2.x
+            val bridgeY = hubCenter1.y + kinematicsState.leftRadius * 0.9f
+            canvas.drawLine(bridgeLeftX, bridgeY, bridgeRightX, hubCenter2.y + kinematicsState.rightRadius * 0.9f, tapeLinePaint)
+
+            // Animated traveling tape texture along horizontal ribbon
+            val bridgeW = bridgeRightX - bridgeLeftX
+            if (bridgeW > 0f) {
+                val step = 20f
+                val count = (bridgeW / step).toInt() + 1
+                for (i in 0 until count) {
+                    val lineX = bridgeLeftX + ((i * step + tapeTravelOffset) % bridgeW)
+                    canvas.drawLine(lineX, bridgeY - 4f, lineX, bridgeY + 4f, tapeMotionSheenPaint)
+                }
+            }
 
             // Left Spool
             canvas.drawCircle(hubCenter1.x, hubCenter1.y, kinematicsState.leftRadius, tapeRibbonPaint)
@@ -417,6 +461,7 @@ class CassetteView @JvmOverloads constructor(
                     canvas.drawCircle(hubCenter1.x, hubCenter1.y, hubRadius + deltaR * (g / 4f), tapeMicroGroovePaint)
                 }
             }
+            drawSpoolRotatingSheenAndSpokes(canvas, hubCenter1.x, hubCenter1.y, hubRadius, kinematicsState.leftRadius, reelAngle1)
             canvas.drawCircle(hubCenter1.x, hubCenter1.y, hubRadius, reelHubPaint)
             drawSpindleTeeth(canvas, hubCenter1.x, hubCenter1.y, hubRadius, reelAngle1)
 
@@ -428,6 +473,7 @@ class CassetteView @JvmOverloads constructor(
                     canvas.drawCircle(hubCenter2.x, hubCenter2.y, hubRadius + deltaR * (g / 4f), tapeMicroGroovePaint)
                 }
             }
+            drawSpoolRotatingSheenAndSpokes(canvas, hubCenter2.x, hubCenter2.y, hubRadius, kinematicsState.rightRadius, reelAngle2)
             canvas.drawCircle(hubCenter2.x, hubCenter2.y, hubRadius, reelHubPaint)
             drawSpindleTeeth(canvas, hubCenter2.x, hubCenter2.y, hubRadius, reelAngle2)
         }
@@ -444,15 +490,64 @@ class CassetteView @JvmOverloads constructor(
 
         canvas.drawCircle(cx, cy, teethRadius, reelTeethPaint)
 
+        canvas.save()
+        canvas.rotate(angleDegrees, cx, cy)
+
         for (i in 0 until 6) {
-            val angleRad = Math.toRadians((angleDegrees + i * 60).toDouble())
-            val startX = (cx + teethRadius * cos(angleRad)).toFloat()
-            val startY = (cy + teethRadius * sin(angleRad)).toFloat()
-            val endX = (cx + (teethRadius + toothLength) * cos(angleRad)).toFloat()
-            val endY = (cy + (teethRadius + toothLength) * sin(angleRad)).toFloat()
+            val angle = Math.toRadians((i * 60.0))
+            val startX = cx + (teethRadius * Math.cos(angle)).toFloat()
+            val startY = cy + (teethRadius * Math.sin(angle)).toFloat()
+            val endX = cx + ((teethRadius + toothLength) * Math.cos(angle)).toFloat()
+            val endY = cy + ((teethRadius + toothLength) * Math.sin(angle)).toFloat()
 
             canvas.drawLine(startX, startY, endX, endY, reelTeethPaint)
         }
+
+        canvas.restore()
+    }
+
+    private fun drawSpoolRotatingSheenAndSpokes(canvas: Canvas, cx: Float, cy: Float, innerR: Float, outerR: Float, rotationAngle: Float) {
+        if (outerR <= innerR + 4f) return
+
+        canvas.save()
+        canvas.rotate(rotationAngle, cx, cy)
+
+        // 1. Anisotropic Specular Sheen (2 opposing radial glare cones at 0° and 180°)
+        for (cone in 0..1) {
+            val baseAngle = cone * 180.0
+            for (lineOffset in -1..1) {
+                val rad = Math.toRadians(baseAngle + lineOffset * 9.0)
+                val cos = Math.cos(rad).toFloat()
+                val sin = Math.sin(rad).toFloat()
+                canvas.drawLine(
+                    cx + innerR * cos,
+                    cy + innerR * sin,
+                    cx + outerR * cos,
+                    cy + outerR * sin,
+                    tapeSpoolSheenPaint
+                )
+            }
+        }
+
+        // 2. Three Classic Reel Flange Spoke Windows / Strobe Cutouts (at 0°, 120°, 240°)
+        val spokeR = innerR + (outerR - innerR) * 0.38f
+        val markerRadius = ((outerR - innerR) * 0.12f).coerceIn(2.5f, 6.0f)
+        for (s in 0 until 3) {
+            val sAngle = Math.toRadians(s * 120.0)
+            val mx = cx + (spokeR * Math.cos(sAngle)).toFloat()
+            val my = cy + (spokeR * Math.sin(sAngle)).toFloat()
+            canvas.drawCircle(mx, my, markerRadius, spoolFlangeSpokePaint)
+        }
+
+        // 3. Spool Tape Anchor Clamp Notch (holds tape to hub core)
+        val clampAngle = Math.toRadians(45.0)
+        val clampX = cx + (innerR * Math.cos(clampAngle)).toFloat()
+        val clampY = cy + (innerR * Math.sin(clampAngle)).toFloat()
+        val clampOuterX = cx + ((innerR + (outerR - innerR) * 0.28f) * Math.cos(clampAngle)).toFloat()
+        val clampOuterY = cy + ((innerR + (outerR - innerR) * 0.28f) * Math.sin(clampAngle)).toFloat()
+        canvas.drawLine(clampX, clampY, clampOuterX, clampOuterY, spoolFlangeSpokePaint)
+
+        canvas.restore()
     }
 
     override fun onAttachedToWindow() {
