@@ -42,7 +42,7 @@ object MixtapeDialogs {
         }
 
         val titleView = TextView(context).apply {
-            text = "CUT NEW MIXTAPE 📼"
+            text = "CUT NEW MIXTAPE"
             textSize = 15f
             setTextColor(Color.WHITE)
             typeface = android.graphics.Typeface.DEFAULT_BOLD
@@ -131,7 +131,7 @@ object MixtapeDialogs {
                     AlertDialog.Builder(context)
                         .setTitle("No Mixtapes Found")
                         .setMessage("Would you like to record your first custom Mixtape now?")
-                        .setPositiveButton("+ Create Mixtape") { _, _ ->
+                        .setPositiveButton("Create Mixtape") { _, _ ->
                             showCreateMixtapeDialog(context, database, scope) { newId ->
                                 scope.launch {
                                     database.playlistDao().addSongToPlaylist(
@@ -148,9 +148,9 @@ object MixtapeDialogs {
                         .show()
                 } else {
                     val items = mutableListOf<String>()
-                    items.add("➕ [Create New Mixtape]")
+                    items.add("[Create New Mixtape]")
                     playlists.forEach { p ->
-                        items.add("📼 ${p.name} (${p.trackCount} tracks)")
+                        items.add("${p.name} (${p.trackCount} tracks)")
                     }
 
                     AlertDialog.Builder(context)

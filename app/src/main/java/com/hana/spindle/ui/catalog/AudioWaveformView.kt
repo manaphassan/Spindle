@@ -60,18 +60,31 @@ class AudioWaveformView @JvmOverloads constructor(
 
     var onSeek: ((Float) -> Unit)? = null
 
-    // Base waveform envelope shape (symmetrical peak in center like image)
-    private val barHeights = floatArrayOf(
-        0.18f, 0.22f, 0.28f, 0.24f, 0.32f, 0.38f, 0.45f, 0.42f, 0.55f, 0.68f,
-        0.82f, 1.00f, 0.86f, 0.72f, 0.58f, 0.48f, 0.42f, 0.36f, 0.30f, 0.25f,
-        0.20f, 0.24f, 0.28f, 0.22f, 0.18f, 0.15f, 0.12f
-    )
+    // Dynamic actual song waveform data (defaults to elegant 64-bar profile)
+    private var barHeights: FloatArray = FloatArray(64) { i ->
+        val x = i.toFloat() / 64f
+        (0.22f + 0.48f * sin(x * Math.PI).toFloat()).coerceIn(0.15f, 0.9f)
+    }
+
+    fun setWaveformData(amplitudes: FloatArray) {
+        if (amplitudes.isNotEmpty()) {
+            barHeights = amplitudes
+            invalidate()
+        }
+    }
+
+    val waveformData: FloatArray
+        get() = barHeights
 
     private val activeBarPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
     }
 
     private val inactiveBarPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+    }
+
+    private val playHeadPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
     }
 
@@ -84,13 +97,26 @@ class AudioWaveformView @JvmOverloads constructor(
     private fun updatePaints() {
         if (isEink) {
             activeBarPaint.color = Color.BLACK
-            inactiveBarPaint.color = Color.parseColor("#CCCCCC")
+            activeBarPaint.style = Paint.Style.FILL
+            inactiveBarPaint.color = Color.BLACK
+            inactiveBarPaint.style = Paint.Style.STROKE
+            inactiveBarPaint.strokeWidth = 1.2f
+            playHeadPaint.color = Color.BLACK
+            playHeadPaint.style = Paint.Style.FILL
         } else if (isDarkMode) {
             activeBarPaint.color = accentColor
+            activeBarPaint.style = Paint.Style.FILL
             inactiveBarPaint.color = Color.parseColor("#353A54")
+            inactiveBarPaint.style = Paint.Style.FILL
+            playHeadPaint.color = Color.WHITE
+            playHeadPaint.style = Paint.Style.FILL
         } else {
             activeBarPaint.color = accentColor
-            inactiveBarPaint.color = Color.parseColor("#E5E5E2")
+            activeBarPaint.style = Paint.Style.FILL
+            inactiveBarPaint.color = Color.parseColor("#D5D5D2")
+            inactiveBarPaint.style = Paint.Style.FILL
+            playHeadPaint.color = Color.parseColor("#1E2132")
+            playHeadPaint.style = Paint.Style.FILL
         }
     }
 
@@ -101,25 +127,28 @@ class AudioWaveformView @JvmOverloads constructor(
         if (w == 0f || h == 0f) return
 
         val count = barHeights.size
-        val gap = w * 0.018f
+        if (count == 0) return
+
+        val gap = (w * 0.008f).coerceAtLeast(1.5f)
         val totalGaps = gap * (count - 1)
-        val barWidth = (w - totalGaps) / count.toFloat()
+        val barWidth = ((w - totalGaps) / count.toFloat()).coerceAtLeast(1.5f)
         val centerY = h * 0.5f
 
-        val activeIndex = (count * progress).toInt()
+        val activeIndex = ((count - 1) * progress).toInt().coerceIn(0, count - 1)
         val now = System.currentTimeMillis()
 
         for (i in 0 until count) {
             val startX = i * (barWidth + gap)
             var heightFraction = barHeights[i]
 
-            // Micro-bouncing dynamic animation when playing
-            if (isPlaying) {
-                val bounce = (sin((now / 180.0) + (i * 0.45)) * 0.12).toFloat()
-                heightFraction = (heightFraction + bounce).coerceIn(0.12f, 1.0f)
+            // Subtle breathing modulation on active playing section
+            if (isPlaying && i <= activeIndex) {
+                val wavePhase = (now / 220.0) + (i * 0.18)
+                val pulse = (sin(wavePhase) * 0.06).toFloat()
+                heightFraction = (heightFraction + pulse).coerceIn(0.12f, 1.0f)
             }
 
-            val barHeight = h * heightFraction * 0.88f
+            val barHeight = (h * heightFraction * 0.90f).coerceAtLeast(barWidth)
             barRect.set(
                 startX,
                 centerY - barHeight * 0.5f,
@@ -128,7 +157,14 @@ class AudioWaveformView @JvmOverloads constructor(
             )
 
             val paint = if (i <= activeIndex) activeBarPaint else inactiveBarPaint
-            canvas.drawRoundRect(barRect, barWidth * 0.5f, barWidth * 0.5f, paint)
+            val cornerRadius = barWidth * 0.5f
+            canvas.drawRoundRect(barRect, cornerRadius, cornerRadius, paint)
+
+            // Distinct active playhead marker
+            if (i == activeIndex && progress > 0.01f && progress < 0.99f) {
+                val pipRadius = barWidth * 0.65f
+                canvas.drawCircle(barRect.centerX(), centerY - barHeight * 0.5f - pipRadius * 0.5f, pipRadius, playHeadPaint)
+            }
         }
 
         if (isPlaying) {
@@ -138,14 +174,35 @@ class AudioWaveformView @JvmOverloads constructor(
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.actionMasked) {
-            MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE, MotionEvent.ACTION_UP -> {
-                val newProgress = (event.x / width.toFloat()).coerceIn(0f, 1f)
-                progress = newProgress
-                onSeek?.invoke(newProgress)
-                performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+            MotionEvent.ACTION_DOWN -> {
+                parent?.requestDisallowInterceptTouchEvent(true)
+                updateSeek(event.x)
+                return true
+            }
+            MotionEvent.ACTION_MOVE -> {
+                updateSeek(event.x)
+                return true
+            }
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                parent?.requestDisallowInterceptTouchEvent(false)
+                updateSeek(event.x)
+                performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                 return true
             }
         }
         return super.onTouchEvent(event)
+    }
+
+    private var lastHapticBarIndex: Int = -1
+
+    private fun updateSeek(x: Float) {
+        val newProgress = (x / width.toFloat()).coerceIn(0f, 1f)
+        progress = newProgress
+        onSeek?.invoke(newProgress)
+        val barIndex = (newProgress * barHeights.size).toInt().coerceIn(0, barHeights.size - 1)
+        if (barIndex != lastHapticBarIndex) {
+            lastHapticBarIndex = barIndex
+            performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+        }
     }
 }

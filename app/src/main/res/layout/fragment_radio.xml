@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#111318"
+    android:background="@color/surface_dark"
     android:paddingTop="18dp"
     android:paddingBottom="16dp"
     android:paddingHorizontal="20dp">
@@ -102,11 +102,18 @@
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
-    <!-- 3. Backlit LCD Panel (Dark VFD/OLED Vintage Matrix Display - Clickable to Toggle Play/Stop) -->
+    <!-- 3. Analog RF Signal & Center-Tuning Galvanometer Meter -->
+    <com.hana.spindle.ui.radio.RadioSignalMeterView
+        android:id="@+id/signalMeterView"
+        android:layout_width="match_parent"
+        android:layout_height="68dp"
+        android:layout_marginBottom="12dp" />
+
+    <!-- 4. Backlit LCD Panel (Dark VFD/OLED Vintage Matrix Display - Clickable to Toggle Play/Stop) -->
     <androidx.cardview.widget.CardView
         android:id="@+id/cardLcd"
         android:layout_width="match_parent"
-        android:layout_height="146dp"
+        android:layout_height="134dp"
         app:cardCornerRadius="16dp"
         app:cardElevation="4dp"
         app:cardBackgroundColor="#0A0E17"
@@ -137,6 +144,18 @@
                     android:textStyle="bold"
                     android:fontFamily="monospace" />
 
+                <TextView
+                    android:id="@+id/tvRadioBtBadge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="BT"
+                    android:textColor="#10B981"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:fontFamily="monospace"
+                    android:visibility="gone"
+                    android:layout_marginStart="8dp" />
+
                 <View
                     android:layout_width="0dp"
                     android:layout_height="1dp"
@@ -146,7 +165,7 @@
                     android:id="@+id/tvRadioStreamStatus"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="ıll LIVE IN"
+                    android:text="LIVE IN"
                     android:textColor="#10B981"
                     android:textSize="11sp"
                     android:textStyle="bold"
@@ -188,7 +207,7 @@
                 android:id="@+id/tvRadioNowPlaying"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="♪ NO TRACK INFO"
+                android:text="NO TRACK INFO"
                 android:textColor="#F8FAFC"
                 android:textSize="12sp"
                 android:textStyle="bold"

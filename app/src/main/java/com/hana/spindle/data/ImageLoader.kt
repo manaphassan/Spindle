@@ -38,20 +38,38 @@ class ImageLoader(context: Context) {
         reqHeight: Int = 300
     ): Bitmap? = withContext(Dispatchers.IO) {
         val cacheKey = "$audioPath:${reqWidth}x$reqHeight"
+        val diskKey = hashKey(cacheKey)
 
-        // 1. Check memory cache
+        // 1. Check L1 memory cache
         memoryCache.get(cacheKey)?.let { return@withContext it }
 
-        // 2. Extract embedded picture byte array
+        // 2. Check L2 persistent disk cache
+        val diskFile = File(cacheDir, "$diskKey.webp")
+        if (diskFile.exists() && diskFile.length() > 0L) {
+            try {
+                val diskOptions = BitmapFactory.Options().apply {
+                    inPreferredConfig = Bitmap.Config.RGB_565
+                }
+                val diskBitmap = BitmapFactory.decodeFile(diskFile.absolutePath, diskOptions)
+                if (diskBitmap != null) {
+                    memoryCache.put(cacheKey, diskBitmap)
+                    return@withContext diskBitmap
+                }
+            } catch (_: Exception) {
+                diskFile.delete()
+            }
+        }
+
+        // 3. Extract embedded picture byte array
         val pictureBytes = extractPictureBytes(audioPath) ?: return@withContext null
 
-        // 3. Decode dimensions only
+        // 4. Decode dimensions only
         val options = BitmapFactory.Options().apply {
             inJustDecodeBounds = true
         }
         BitmapFactory.decodeByteArray(pictureBytes, 0, pictureBytes.size, options)
 
-        // 4. Calculate optimal inSampleSize and decode in RGB_565
+        // 5. Calculate optimal inSampleSize and decode in RGB_565
         options.apply {
             inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight)
             inJustDecodeBounds = false
@@ -62,8 +80,29 @@ class ImageLoader(context: Context) {
         val decodedBitmap = BitmapFactory.decodeByteArray(pictureBytes, 0, pictureBytes.size, options)
         if (decodedBitmap != null) {
             memoryCache.put(cacheKey, decodedBitmap)
+            // Save to L2 disk cache asynchronously
+            try {
+                java.io.FileOutputStream(diskFile).use { out ->
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                        decodedBitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, 85, out)
+                    } else {
+                        @Suppress("DEPRECATION")
+                        decodedBitmap.compress(Bitmap.CompressFormat.WEBP, 85, out)
+                    }
+                }
+            } catch (_: Exception) {}
         }
         return@withContext decodedBitmap
+    }
+
+    private fun hashKey(key: String): String {
+        return try {
+            val md = java.security.MessageDigest.getInstance("MD5")
+            val bytes = md.digest(key.toByteArray())
+            bytes.joinToString("") { "%02x".format(it) }
+        } catch (_: Exception) {
+            key.hashCode().toString()
+        }
     }
 
     private fun extractPictureBytes(audioPath: String): ByteArray? {

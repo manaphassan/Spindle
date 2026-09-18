@@ -33,6 +33,13 @@ class LedVuMeterView @JvmOverloads constructor(
             }
         }
 
+    var isEink: Boolean = false
+        set(value) {
+            field = value
+            initPaints()
+            invalidate()
+        }
+
     // Pre-allocated Paints
     private val ledOffPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val ledGreenPaint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -46,6 +53,35 @@ class LedVuMeterView @JvmOverloads constructor(
     }
 
     private fun initPaints() {
+        if (isEink) {
+            ledOffPaint.apply {
+                color = Color.BLACK
+                style = Paint.Style.STROKE
+                strokeWidth = 1.5f
+            }
+            ledGreenPaint.apply {
+                color = Color.BLACK
+                style = Paint.Style.FILL
+            }
+            ledPeakPaint.apply {
+                color = Color.BLACK
+                style = Paint.Style.FILL
+            }
+            labelPaint.apply {
+                color = Color.BLACK
+                textSize = 20f
+                typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+                textAlign = Paint.Align.LEFT
+            }
+            headerPaint.apply {
+                color = Color.BLACK
+                textSize = 22f
+                typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+                textAlign = Paint.Align.CENTER
+            }
+            return
+        }
+
         ledOffPaint.apply {
             color = Color.parseColor("#152219") // Dark extinguished diode recess
             style = Paint.Style.FILL

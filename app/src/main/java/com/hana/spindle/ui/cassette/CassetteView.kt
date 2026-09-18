@@ -64,10 +64,21 @@ class CassetteView @JvmOverloads constructor(
 
     var isPlaying: Boolean = false
         set(value) {
-            if (field != value) {
-                field = value
-                if (value) startRotation() else stopRotation()
+            field = value
+            if (value) {
+                if (rotationAnimator?.isRunning != true) {
+                    startRotation()
+                }
+            } else {
+                stopRotation()
             }
+            invalidate()
+        }
+
+    var albumArtBitmap: Bitmap? = null
+        set(value) {
+            field = value
+            invalidate()
         }
 
     // Animation state
@@ -91,6 +102,11 @@ class CassetteView @JvmOverloads constructor(
     private val sideBadgePaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val largeSideBadgePaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val tapeLinePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val tapeMicroGroovePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.argb(40, 255, 255, 255)
+        style = Paint.Style.STROKE
+        strokeWidth = 1f
+    }
 
     // Pre-allocated Geometries
     private val shellRect = RectF()
@@ -181,6 +197,22 @@ class CassetteView @JvmOverloads constructor(
             color = theme.labelAccentColor
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
             textAlign = Paint.Align.CENTER
+        }
+
+        if (theme.id == com.hana.spindle.theme.CassetteTheme.MONOCHROME_EINK.id) {
+            shellInnerBevelPaint.color = Color.BLACK
+            windowPaint.color = Color.WHITE
+            windowBevelPaint.color = Color.BLACK
+            ruledLinePaint.color = Color.BLACK
+            reelTeethPaint.color = Color.WHITE
+            tapeLinePaint.color = Color.BLACK
+            titleTextPaint.color = Color.BLACK
+            artistTextPaint.color = Color.BLACK
+            sideBadgePaint.color = Color.BLACK
+            largeSideBadgePaint.color = Color.BLACK
+            tapeMicroGroovePaint.color = Color.argb(60, 0, 0, 0)
+        } else {
+            tapeMicroGroovePaint.color = Color.argb(40, 255, 255, 255)
         }
     }
 
@@ -282,6 +314,7 @@ class CassetteView @JvmOverloads constructor(
 
         if (isVertical) {
             val isVaporwave = theme.chassisStyle == ChassisStyle.VAPORWAVE_80S
+            val textRightBound = labelRect.right - 14f
 
             if (isVaporwave) {
                 // Top neon stripe on label
@@ -290,7 +323,8 @@ class CassetteView @JvmOverloads constructor(
 
                 // Top right "SIDE A" or "SIDE B" badge
                 val sideText = if (isSideA) "SIDE A" else "SIDE B"
-                canvas.drawText(sideText, labelRect.right - 18f, labelRect.top + stripeH + 24f, sideBadgePaint)
+                val sideX = labelRect.right - 18f
+                canvas.drawText(sideText, sideX, labelRect.top + stripeH + 24f, sideBadgePaint)
             }
 
             // Draw ruled lines on vertical paper label
@@ -299,22 +333,31 @@ class CassetteView @JvmOverloads constructor(
             val line2Y = line1Y + lineSpacing
             val line3Y = line2Y + lineSpacing
 
-            canvas.drawLine(labelRect.left + 14f, line1Y, labelRect.right - 14f, line1Y, ruledLinePaint)
-            canvas.drawLine(labelRect.left + 14f, line2Y, labelRect.right - 14f, line2Y, ruledLinePaint)
+            canvas.drawLine(labelRect.left + 14f, line1Y, textRightBound, line1Y, ruledLinePaint)
+            canvas.drawLine(labelRect.left + 14f, line2Y, textRightBound, line2Y, ruledLinePaint)
             if (!isVaporwave) {
-                canvas.drawLine(labelRect.left + 14f, line3Y, labelRect.right - 14f, line3Y, ruledLinePaint)
+                canvas.drawLine(labelRect.left + 14f, line3Y, textRightBound, line3Y, ruledLinePaint)
             }
 
+            // Dynamic title & artist fallback to device name & Android version
+            val displayTitle = if (trackTitle.isNotEmpty() && trackTitle != "No Track Loaded") trackTitle else com.hana.spindle.util.DeviceUtils.getDeviceName(context)
+            val displayArtist = if (artistName.isNotEmpty() && artistName != "Spindle Audio Player") artistName else com.hana.spindle.util.DeviceUtils.getAndroidVersionString()
+
             // Handwritten-style text above the lines
-            canvas.drawText(artistName, labelRect.left + 20f, line1Y - 8f, artistTextPaint)
-            canvas.drawText(trackTitle, labelRect.left + 20f, line2Y - 8f, titleTextPaint)
+            canvas.drawText(displayArtist, labelRect.left + 20f, line1Y - 8f, artistTextPaint)
+            canvas.drawText(displayTitle, labelRect.left + 20f, line2Y - 8f, titleTextPaint)
         } else {
             // Horizontal label stripe & text
             canvas.drawRect(labelRect.left, labelRect.top, labelRect.right, labelRect.top + 10f, labelStripePaint)
             val sideText = if (isSideA) "SIDE A" else "SIDE B"
-            canvas.drawText(sideText, labelRect.right - 24f, labelRect.top + 36f, sideBadgePaint)
-            canvas.drawText(trackTitle, labelRect.left + 24f, labelRect.top + 60f, titleTextPaint)
-            canvas.drawText(artistName, labelRect.left + 24f, labelRect.top + 98f, artistTextPaint)
+            val sideX = labelRect.right - 24f
+            canvas.drawText(sideText, sideX, labelRect.top + 36f, sideBadgePaint)
+
+            val displayTitle = if (trackTitle.isNotEmpty() && trackTitle != "No Track Loaded") trackTitle else com.hana.spindle.util.DeviceUtils.getDeviceName(context)
+            val displayArtist = if (artistName.isNotEmpty() && artistName != "Spindle Audio Player") artistName else com.hana.spindle.util.DeviceUtils.getAndroidVersionString()
+
+            canvas.drawText(displayTitle, labelRect.left + 24f, labelRect.top + 60f, titleTextPaint)
+            canvas.drawText(displayArtist, labelRect.left + 24f, labelRect.top + 98f, artistTextPaint)
         }
 
         // 3. Draw Acrylic Cassette Window
@@ -324,7 +367,7 @@ class CassetteView @JvmOverloads constructor(
         // 4. Calculate Differential Kinematics
         val kinematicsState = kinematics.calculate(progress, baseRadius)
 
-        // 5. Draw Spools & Kinetic Tape Ribbon
+        // 5. Draw Spools & Kinetic Tape Ribbon with concentric micro-grooves
         if (isVertical) {
             // Connecting vertical tape bridge
             canvas.drawLine(
@@ -335,11 +378,23 @@ class CassetteView @JvmOverloads constructor(
 
             // Top Spool (Supply)
             canvas.drawCircle(hubCenter1.x, hubCenter1.y, kinematicsState.leftRadius, tapeRibbonPaint)
+            if (kinematicsState.leftRadius > hubRadius + 6f) {
+                val deltaR = kinematicsState.leftRadius - hubRadius
+                for (g in 1..3) {
+                    canvas.drawCircle(hubCenter1.x, hubCenter1.y, hubRadius + deltaR * (g / 4f), tapeMicroGroovePaint)
+                }
+            }
             canvas.drawCircle(hubCenter1.x, hubCenter1.y, hubRadius, reelHubPaint)
             drawSpindleTeeth(canvas, hubCenter1.x, hubCenter1.y, hubRadius, reelAngle1)
 
             // Bottom Spool (Take-up)
             canvas.drawCircle(hubCenter2.x, hubCenter2.y, kinematicsState.rightRadius, tapeRibbonPaint)
+            if (kinematicsState.rightRadius > hubRadius + 6f) {
+                val deltaR = kinematicsState.rightRadius - hubRadius
+                for (g in 1..3) {
+                    canvas.drawCircle(hubCenter2.x, hubCenter2.y, hubRadius + deltaR * (g / 4f), tapeMicroGroovePaint)
+                }
+            }
             canvas.drawCircle(hubCenter2.x, hubCenter2.y, hubRadius, reelHubPaint)
             drawSpindleTeeth(canvas, hubCenter2.x, hubCenter2.y, hubRadius, reelAngle2)
 
@@ -356,11 +411,23 @@ class CassetteView @JvmOverloads constructor(
 
             // Left Spool
             canvas.drawCircle(hubCenter1.x, hubCenter1.y, kinematicsState.leftRadius, tapeRibbonPaint)
+            if (kinematicsState.leftRadius > hubRadius + 6f) {
+                val deltaR = kinematicsState.leftRadius - hubRadius
+                for (g in 1..3) {
+                    canvas.drawCircle(hubCenter1.x, hubCenter1.y, hubRadius + deltaR * (g / 4f), tapeMicroGroovePaint)
+                }
+            }
             canvas.drawCircle(hubCenter1.x, hubCenter1.y, hubRadius, reelHubPaint)
             drawSpindleTeeth(canvas, hubCenter1.x, hubCenter1.y, hubRadius, reelAngle1)
 
             // Right Spool
             canvas.drawCircle(hubCenter2.x, hubCenter2.y, kinematicsState.rightRadius, tapeRibbonPaint)
+            if (kinematicsState.rightRadius > hubRadius + 6f) {
+                val deltaR = kinematicsState.rightRadius - hubRadius
+                for (g in 1..3) {
+                    canvas.drawCircle(hubCenter2.x, hubCenter2.y, hubRadius + deltaR * (g / 4f), tapeMicroGroovePaint)
+                }
+            }
             canvas.drawCircle(hubCenter2.x, hubCenter2.y, hubRadius, reelHubPaint)
             drawSpindleTeeth(canvas, hubCenter2.x, hubCenter2.y, hubRadius, reelAngle2)
         }
@@ -385,6 +452,35 @@ class CassetteView @JvmOverloads constructor(
             val endY = (cy + (teethRadius + toothLength) * sin(angleRad)).toFloat()
 
             canvas.drawLine(startX, startY, endX, endY, reelTeethPaint)
+        }
+    }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        if (isPlaying && rotationAnimator?.isRunning != true) {
+            startRotation()
+        }
+    }
+
+    override fun onVisibilityAggregated(isVisible: Boolean) {
+        super.onVisibilityAggregated(isVisible)
+        if (isVisible) {
+            if (isPlaying && rotationAnimator?.isRunning != true) {
+                startRotation()
+            }
+        } else {
+            stopRotation()
+        }
+    }
+
+    override fun onWindowVisibilityChanged(visibility: Int) {
+        super.onWindowVisibilityChanged(visibility)
+        if (visibility == View.VISIBLE) {
+            if (isPlaying && rotationAnimator?.isRunning != true) {
+                startRotation()
+            }
+        } else {
+            stopRotation()
         }
     }
 

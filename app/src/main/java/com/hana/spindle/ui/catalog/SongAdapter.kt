@@ -50,7 +50,15 @@ class SongAdapter(
         notifyDataSetChanged()
     }
 
-    class SongViewHolder(val binding: ItemSongBinding) : RecyclerView.ViewHolder(binding.root)
+    class SongViewHolder(val binding: ItemSongBinding) : RecyclerView.ViewHolder(binding.root) {
+        var loadJob: kotlinx.coroutines.Job? = null
+    }
+
+    override fun onViewRecycled(holder: SongViewHolder) {
+        super.onViewRecycled(holder)
+        holder.loadJob?.cancel()
+        holder.loadJob = null
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SongViewHolder {
         val binding = ItemSongBinding.inflate(LayoutInflater.from(parent.context), parent, false)
@@ -81,11 +89,11 @@ class SongAdapter(
         val isCurrentlyPlaying = song.id == activeSongId
         val activeColor = if (isEinkMode) Color.BLACK else Color.parseColor("#F97316")
         if (isCurrentlyPlaying) {
-            b.tvPlayingWave.visibility = View.VISIBLE
-            b.tvPlayingWave.setTextColor(activeColor)
+            b.ivPlayingWave.visibility = View.VISIBLE
+            b.ivPlayingWave.imageTintList = ColorStateList.valueOf(activeColor)
             b.tvSongTitle.setTextColor(activeColor)
         } else {
-            b.tvPlayingWave.visibility = View.GONE
+            b.ivPlayingWave.visibility = View.GONE
             b.tvSongTitle.setTextColor(textColorPrimary)
         }
 
@@ -101,30 +109,39 @@ class SongAdapter(
         b.tvFormatBadge.text = formatStr
         b.tvDuration.text = formatDuration(song.durationMs)
 
-        // Star rating
+        // Rating
         b.tvRating.setTextColor(if (isEinkMode) Color.BLACK else Color.parseColor("#FDE68A"))
-        b.tvRating.text = getStarString(song.rating)
+        b.tvRating.text = getRatingString(song.rating)
         b.tvRating.setOnClickListener {
             val nextRating = (song.rating + 1) % 6
             onRatingChanged(song, nextRating)
         }
 
-        // Asynchronously load RGB_565 downsampled cover art
-        b.ivSongThumb.setImageDrawable(null)
-        b.ivSongThumb.setPadding(10, 10, 10, 10)
-        b.ivSongThumb.setImageResource(android.R.drawable.ic_media_play)
-        b.ivSongThumb.imageTintList = ColorStateList.valueOf(if (isEinkMode) Color.BLACK else Color.parseColor("#64748B"))
-        scope.launch {
-            val thumb = imageLoader.loadCover(song.path, 96, 96)
-            withContext(Dispatchers.Main) {
-                if (thumb != null) {
-                    b.ivSongThumb.imageTintList = null
-                    b.ivSongThumb.setPadding(0, 0, 0, 0)
-                    b.ivSongThumb.setImageBitmap(thumb)
-                } else {
-                    b.ivSongThumb.setPadding(10, 10, 10, 10)
-                    b.ivSongThumb.setImageResource(android.R.drawable.ic_media_play)
-                    b.ivSongThumb.imageTintList = ColorStateList.valueOf(if (isEinkMode) Color.BLACK else Color.parseColor("#64748B"))
+        // Asynchronously load RGB_565 downsampled cover art with job management
+        if (b.ivSongThumb.tag != song.path || b.ivSongThumb.drawable == null) {
+            holder.loadJob?.cancel()
+            b.ivSongThumb.tag = song.path
+            b.ivSongThumb.setImageDrawable(null)
+            b.ivSongThumb.setPadding(10, 10, 10, 10)
+            b.ivSongThumb.setImageResource(android.R.drawable.ic_media_play)
+            b.ivSongThumb.imageTintList = ColorStateList.valueOf(if (isEinkMode) Color.BLACK else Color.parseColor("#64748B"))
+
+            holder.loadJob = scope.launch {
+                val thumb = imageLoader.loadCover(song.path, 96, 96)
+                if (b.ivSongThumb.tag == song.path) {
+                    withContext(Dispatchers.Main) {
+                        if (b.ivSongThumb.tag == song.path) {
+                            if (thumb != null) {
+                                b.ivSongThumb.imageTintList = null
+                                b.ivSongThumb.setPadding(0, 0, 0, 0)
+                                b.ivSongThumb.setImageBitmap(thumb)
+                            } else {
+                                b.ivSongThumb.setPadding(10, 10, 10, 10)
+                                b.ivSongThumb.setImageResource(android.R.drawable.ic_media_play)
+                                b.ivSongThumb.imageTintList = ColorStateList.valueOf(if (isEinkMode) Color.BLACK else Color.parseColor("#64748B"))
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -133,7 +150,7 @@ class SongAdapter(
 
         holder.itemView.setOnLongClickListener {
             val context = holder.itemView.context
-            val options = arrayOf("▶ Play Now", "⏭ Play Next", "➕ Add to Queue", "📼 Add to Mixtape", "🏷️ Inspect & Edit Tags")
+            val options = arrayOf("Play Now", "Play Next", "Add to Queue", "Add to Mixtape", "Inspect & Edit Tags")
             android.app.AlertDialog.Builder(context)
                 .setTitle(song.title)
                 .setItems(options) { _, which ->
@@ -150,12 +167,8 @@ class SongAdapter(
         }
     }
 
-    private fun getStarString(rating: Int): String {
-        return buildString {
-            for (i in 1..5) {
-                append(if (i <= rating) "★" else "☆")
-            }
-        }
+    private fun getRatingString(rating: Int): String {
+        return if (rating > 0) "$rating/5" else ""
     }
 
     private fun formatDuration(millis: Long): String {

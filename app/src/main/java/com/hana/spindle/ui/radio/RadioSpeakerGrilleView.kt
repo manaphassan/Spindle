@@ -328,7 +328,7 @@ class RadioSpeakerGrilleView @JvmOverloads constructor(
         if (isEink) {
             ledDiodePaint.color = when (networkState) {
                 NetworkState.OFFLINE -> Color.WHITE
-                NetworkState.CONNECTING -> Color.GRAY
+                NetworkState.CONNECTING -> Color.WHITE
                 NetworkState.ONLINE -> Color.BLACK
             }
             ledLabelPaint.color = Color.BLACK

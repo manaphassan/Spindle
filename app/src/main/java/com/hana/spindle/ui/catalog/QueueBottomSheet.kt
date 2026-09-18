@@ -219,12 +219,12 @@ class QueueBottomSheet : BottomSheetDialogFragment() {
                 else -> Color.parseColor("#1E2132")
             }
             val subtitleColor = when {
-                isEink -> Color.parseColor("#555555")
+                isEink -> Color.BLACK
                 isDark -> Color.parseColor("#94A3B8")
                 else -> Color.parseColor("#64748B")
             }
             val formatBgColor = when {
-                isEink -> Color.parseColor("#E0E0E0")
+                isEink -> Color.WHITE
                 isDark -> Color.parseColor("#1E2132")
                 else -> Color.parseColor("#E2E8F0")
             }
@@ -237,17 +237,17 @@ class QueueBottomSheet : BottomSheetDialogFragment() {
             b.btnQueueRemove.imageTintList = ColorStateList.valueOf(subtitleColor)
 
             if (isCurrent) {
-                b.tvQueuePlaying.visibility = View.VISIBLE
-                b.tvQueuePlaying.setTextColor(activeColor)
+                b.ivQueuePlaying.visibility = View.VISIBLE
+                b.ivQueuePlaying.imageTintList = ColorStateList.valueOf(activeColor)
                 b.tvQueueTitle.setTextColor(activeColor)
                 val activeRowBg = when {
-                    isEink -> Color.parseColor("#F0F0F0")
+                    isEink -> Color.WHITE
                     isDark -> Color.parseColor("#1C1E2A")
                     else -> Color.parseColor("#E2E8F0")
                 }
                 b.root.setBackgroundColor(activeRowBg)
             } else {
-                b.tvQueuePlaying.visibility = View.GONE
+                b.ivQueuePlaying.visibility = View.GONE
                 b.tvQueueTitle.setTextColor(defaultColor)
                 b.root.setBackgroundColor(Color.TRANSPARENT)
             }

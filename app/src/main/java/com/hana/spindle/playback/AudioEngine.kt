@@ -5,15 +5,24 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.media.AudioManager
+import android.media.MediaFormat
 import android.net.Uri
+import android.os.Handler
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
+import androidx.media3.common.Format
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.Renderer
+import androidx.media3.exoplayer.audio.AudioRendererEventListener
+import androidx.media3.exoplayer.audio.AudioSink
+import androidx.media3.exoplayer.audio.MediaCodecAudioRenderer
+import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
 import com.hana.spindle.data.LyricsData
 import com.hana.spindle.data.LyricsParser
 import com.hana.spindle.data.TagParser
@@ -173,26 +182,54 @@ class AudioEngine(
             .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
             .build()
 
-        // Low-RAM load control: max 15 seconds buffer to save memory on 1GB DAPs
+        // Standard load control: stable buffering for local high-bitrate MicroSD FLAC playback
         val loadControl = DefaultLoadControl.Builder()
             .setBufferDurationsMs(
-                2500,  // Min buffer ms
-                15000, // Max buffer ms
-                1000,  // Playback buffer ms
-                1500   // Rebuffer ms
+                15_000, // minBufferMs: 15s
+                50_000, // maxBufferMs: 50s
+                500,    // bufferForPlaybackMs: 500ms
+                1_000   // bufferForPlaybackAfterRebufferMs: 1s
             )
+            .setTargetBufferBytes(16 * 1024 * 1024) // 16MB buffer for 24-bit 96/192kHz hi-res audio
+            .setPrioritizeTimeOverSizeThresholds(true)
             .build()
 
-        val renderersFactory = DefaultRenderersFactory(context).apply {
-            setEnableAudioFloatOutput(true)
-            setEnableAudioTrackPlaybackParams(true)
+        val renderersFactory = object : DefaultRenderersFactory(context) {
+            override fun buildAudioRenderers(
+                context: Context,
+                extensionRendererMode: Int,
+                mediaCodecSelector: MediaCodecSelector,
+                enableDecoderFallback: Boolean,
+                audioSink: AudioSink,
+                eventHandler: Handler,
+                eventListener: AudioRendererEventListener,
+                out: ArrayList<Renderer>
+            ) {
+                out.add(
+                    QualcommFlacMediaCodecAudioRenderer(
+                        context,
+                        mediaCodecSelector,
+                        enableDecoderFallback,
+                        eventHandler,
+                        eventListener,
+                        audioSink
+                    )
+                )
+            }
+        }.apply {
+            // Disable Float output on Android 8.0/Oreo to prevent AudioFlinger 4MB shared-memory OOM
+            // on 24-bit 96kHz/192kHz streams (not enough memory for AudioTrack).
+            setEnableAudioFloatOutput(false)
+            setEnableAudioTrackPlaybackParams(false)
         }
 
         exoPlayer = ExoPlayer.Builder(context, renderersFactory)
             .setAudioAttributes(audioAttributes, true)
             .setLoadControl(loadControl)
+            .setWakeMode(C.WAKE_MODE_LOCAL)
             .build().apply {
                 repeatMode = Player.REPEAT_MODE_OFF
+                addAnalyticsListener(androidx.media3.exoplayer.util.EventLogger("SpindlePlayer"))
                 addListener(object : Player.Listener {
                     override fun onIsPlayingChanged(isPlaying: Boolean) {
                         android.util.Log.d("AudioEngine", "onIsPlayingChanged: $isPlaying")
@@ -535,19 +572,20 @@ class AudioEngine(
                 val lastPath = prefs.getString("last_played_song_path", null)
                 val lastPos = prefs.getLong("last_played_song_pos", 0L)
 
+                // If no song path was saved or tape was ejected, keep player empty (device name will display)
+                if (lastPath.isNullOrEmpty()) return@launch
+
                 val allSongs = app.database.songDao().getAllSongs().firstOrNull() ?: return@launch
                 if (allSongs.isEmpty()) return@launch
 
-                val songIndex = if (lastPath != null) {
-                    allSongs.indexOfFirst { it.path == lastPath }.let { if (it >= 0) it else 0 }
-                } else {
-                    0
-                }
+                val songIndex = allSongs.indexOfFirst { it.path == lastPath }
+                if (songIndex < 0) return@launch
 
                 val song = allSongs[songIndex]
-                val targetPos = if (lastPath != null && lastPos in 0L..song.durationMs) lastPos else 0L
+                val targetPos = if (lastPos in 0L..song.durationMs) lastPos else 0L
 
                 kotlinx.coroutines.withContext(Dispatchers.Main) {
+                    if (playlist.isNotEmpty() || exoPlayer.isPlaying) return@withContext
                     originalPlaylist = allSongs.toMutableList()
                     playlist = allSongs.toMutableList()
                     currentIndex = songIndex
@@ -558,6 +596,50 @@ class AudioEngine(
                 android.util.Log.e("AudioEngine", "restoreLastPlayedSong error", e)
             }
         }
+    }
+
+    /**
+     * Executes authentic cassette tape ejection:
+     * 1. Plays mechanical carriage pop foley sound.
+     * 2. Stops playback and clears media items from audio engine.
+     * 3. Clears queue and active song from state.
+     * 4. Removes saved track from persistent preferences so it remains empty on next launch.
+     */
+    fun ejectCassette() {
+        foleyEngine.playCarriageEject()
+        try {
+            exoPlayer.stop()
+            exoPlayer.clearMediaItems()
+        } catch (e: Exception) {
+            // ignore
+        }
+        stopProgressPolling()
+
+        playlist.clear()
+        originalPlaylist.clear()
+        currentIndex = -1
+
+        _playbackState.value = PlaybackState(
+            isPlaying = false,
+            currentSong = null,
+            currentPositionMs = 0L,
+            durationMs = 0L,
+            progress = 0f,
+            currentLyrics = null,
+            activeLyricIndex = -1
+        )
+
+        try {
+            val prefs = context.getSharedPreferences("spindle_playback_prefs", Context.MODE_PRIVATE)
+            prefs.edit()
+                .remove("last_played_song_path")
+                .remove("last_played_song_pos")
+                .apply()
+        } catch (e: Exception) {
+            // ignore
+        }
+
+        syncQueueState()
     }
 
     private fun prepareTrackWithoutPlaying(song: SongEntity, initialPositionMs: Long = 0L) {
@@ -892,5 +974,87 @@ class AudioEngine(
         stopProgressPolling()
         audioFxController.release()
         exoPlayer.release()
+    }
+}
+
+/**
+ * Custom MediaCodec audio renderer that intercepts Qualcomm OMX FLAC decoders
+ * and injects the proprietary ExtendedACodec parameters (bit-width, min/max block size,
+ * min/max frame size) extracted directly from the stream CSD header.
+ *
+ * This prevents Qualcomm's ExtendedACodec from defaulting to 16-sample block sizes and 16-bit
+ * resolution, which otherwise crashes or stalls 24-bit 96kHz/192kHz playback.
+ */
+@UnstableApi
+private class QualcommFlacMediaCodecAudioRenderer(
+    context: Context,
+    mediaCodecSelector: MediaCodecSelector,
+    enableDecoderFallback: Boolean,
+    eventHandler: Handler,
+    eventListener: AudioRendererEventListener,
+    audioSink: AudioSink
+) : MediaCodecAudioRenderer(
+    context,
+    mediaCodecSelector,
+    enableDecoderFallback,
+    eventHandler,
+    eventListener,
+    audioSink
+) {
+    override fun getMediaFormat(
+        format: Format,
+        codecMimeType: String,
+        codecMaxInputSize: Int,
+        codecOperatingRate: Float
+    ): MediaFormat {
+        val mediaFormat = super.getMediaFormat(format, codecMimeType, codecMaxInputSize, codecOperatingRate)
+        if (codecMimeType == MimeTypes.AUDIO_FLAC || codecMimeType.contains("flac", ignoreCase = true)) {
+            val csd = format.initializationData.firstOrNull()
+            if (csd != null && csd.size >= 18) {
+                val offset = when {
+                    csd.size >= 42 && (csd[4].toInt() and 0x7F) == 0 && csd[5] == 0.toByte() && csd[7] == 0x22.toByte() -> 8
+                    csd.size >= 38 && csd[0] == 0x66.toByte() && csd[1] == 0x4C.toByte() -> 4
+                    else -> 0
+                }
+                if (csd.size >= offset + 18) {
+                    val minBlockSize = ((csd[offset].toInt() and 0xFF) shl 8) or (csd[offset + 1].toInt() and 0xFF)
+                    val maxBlockSize = ((csd[offset + 2].toInt() and 0xFF) shl 8) or (csd[offset + 3].toInt() and 0xFF)
+                    val minFrameSize = ((csd[offset + 4].toInt() and 0xFF) shl 16) or ((csd[offset + 5].toInt() and 0xFF) shl 8) or (csd[offset + 6].toInt() and 0xFF)
+                    val maxFrameSize = ((csd[offset + 7].toInt() and 0xFF) shl 16) or ((csd[offset + 8].toInt() and 0xFF) shl 8) or (csd[offset + 9].toInt() and 0xFF)
+                    val b12 = csd[offset + 12].toInt() and 0xFF
+                    val bitsPerSample = ((b12 ushr 1) and 0x1F) + 1
+
+                    val bitWidth = when (format.pcmEncoding) {
+                        C.ENCODING_PCM_24BIT -> 24
+                        C.ENCODING_PCM_32BIT -> 32
+                        else -> if (bitsPerSample > 0) bitsPerSample else 16
+                    }
+
+                    android.util.Log.i(
+                        "AudioEngine",
+                        "Injecting Qualcomm FLAC ExtendedACodec keys: bitWidth=$bitWidth, minBlock=$minBlockSize, maxBlock=$maxBlockSize, minFrame=$minFrameSize, maxFrame=$maxFrameSize"
+                    )
+
+                    mediaFormat.setInteger("bit-width", bitWidth)
+                    mediaFormat.setInteger("bits-per-sample", bitWidth)
+                    if (minBlockSize > 0) mediaFormat.setInteger("min-block-size", minBlockSize)
+                    if (maxBlockSize > 0) mediaFormat.setInteger("max-block-size", maxBlockSize)
+                    if (minFrameSize > 0) mediaFormat.setInteger("min-frame-size", minFrameSize)
+                    if (maxFrameSize > 0) mediaFormat.setInteger("max-frame-size", maxFrameSize)
+                }
+            } else {
+                val bitWidth = when (format.pcmEncoding) {
+                    C.ENCODING_PCM_24BIT -> 24
+                    C.ENCODING_PCM_32BIT -> 32
+                    else -> 16
+                }
+                android.util.Log.i("AudioEngine", "Injecting Qualcomm FLAC ExtendedACodec fallback keys: bitWidth=$bitWidth")
+                mediaFormat.setInteger("bit-width", bitWidth)
+                mediaFormat.setInteger("bits-per-sample", bitWidth)
+                mediaFormat.setInteger("min-block-size", 4096)
+                mediaFormat.setInteger("max-block-size", 4096)
+            }
+        }
+        return mediaFormat
     }
 }

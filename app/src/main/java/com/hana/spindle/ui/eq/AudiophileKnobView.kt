@@ -40,6 +40,13 @@ class AudiophileKnobView @JvmOverloads constructor(
 
     var onValueChanged: ((Float) -> Unit)? = null
 
+    var isEink: Boolean = false
+        set(value) {
+            field = value
+            initPaints()
+            invalidate()
+        }
+
     // Touch interaction
     private var lastTouchY = 0f
     private var isDragging = false
@@ -68,6 +75,49 @@ class AudiophileKnobView @JvmOverloads constructor(
     }
 
     private fun initPaints() {
+        if (isEink) {
+            knobShadowPaint.apply {
+                color = Color.WHITE
+                style = Paint.Style.FILL
+            }
+            knobBodyPaint.apply {
+                color = Color.WHITE
+                style = Paint.Style.FILL
+            }
+            knobBevelPaint.apply {
+                color = Color.BLACK
+                style = Paint.Style.STROKE
+                strokeWidth = 2.0f
+            }
+            notchPaint.apply {
+                color = Color.BLACK
+                style = Paint.Style.STROKE
+                strokeWidth = 3.5f
+                strokeCap = Paint.Cap.ROUND
+            }
+            dotPaint.apply {
+                color = Color.BLACK
+                style = Paint.Style.FILL
+            }
+            activeDotPaint.apply {
+                color = Color.BLACK
+                style = Paint.Style.FILL
+            }
+            labelPaint.apply {
+                color = Color.BLACK
+                textSize = 24f
+                typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+                textAlign = Paint.Align.CENTER
+            }
+            valuePaint.apply {
+                color = Color.BLACK
+                textSize = 18f
+                typeface = Typeface.create(Typeface.MONOSPACE, Typeface.NORMAL)
+                textAlign = Paint.Align.CENTER
+            }
+            return
+        }
+
         knobShadowPaint.apply {
             color = Color.parseColor("#0D0E10") // Deep recess shadow
             style = Paint.Style.FILL
@@ -155,13 +205,26 @@ class AudiophileKnobView @JvmOverloads constructor(
             val isCenterDetent = (i == (numDots - 1) / 2)
             val isCurrentActive = (frac <= normalized)
 
-            val paint = if (isCurrentActive) activeDotPaint else dotPaint
             val r = if (isCenterDetent) dotRadius * 1.3f else dotRadius
-            canvas.drawCircle(dx, dy, r, paint)
+            if (isEink) {
+                if (isCurrentActive) {
+                    dotPaint.style = Paint.Style.FILL
+                    canvas.drawCircle(dx, dy, r, dotPaint)
+                } else {
+                    dotPaint.style = Paint.Style.STROKE
+                    dotPaint.strokeWidth = 1.2f
+                    canvas.drawCircle(dx, dy, r, dotPaint)
+                }
+            } else {
+                val paint = if (isCurrentActive) activeDotPaint else dotPaint
+                canvas.drawCircle(dx, dy, r, paint)
+            }
         }
 
         // 2. Draw Recessed Knob Base Shadow
-        canvas.drawCircle(cx, cy + 2f, knobRadius + 3f, knobShadowPaint)
+        if (!isEink) {
+            canvas.drawCircle(cx, cy + 2f, knobRadius + 3f, knobShadowPaint)
+        }
 
         // 3. Draw Potentiometer Knob Body & Bevel
         canvas.drawCircle(cx, cy, knobRadius, knobBodyPaint)

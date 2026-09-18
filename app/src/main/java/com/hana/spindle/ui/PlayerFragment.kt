@@ -94,11 +94,21 @@ class PlayerFragment : Fragment() {
                 binding.wm2ChassisView.batteryLevel = batteryPct
             }
         } catch (_: Exception) {}
+
+        // Immediate state sync upon view creation
+        syncState()
+    }
+
+    fun syncState() {
+        if (_binding != null) {
+            syncPlaybackState(audioEngine.playbackState.value)
+        }
     }
 
     override fun onResume() {
         super.onResume()
         requireContext().registerReceiver(batteryReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        syncState()
     }
 
     override fun onPause() {
@@ -128,70 +138,84 @@ class PlayerFragment : Fragment() {
         }
     }
 
+    private fun syncPlaybackState(state: com.hana.spindle.playback.PlaybackState) {
+        _binding?.let { b ->
+            val app = (activity?.application as? SpindleApp) ?: return
+
+            // 1. Vertical Cassette Deck
+            b.verticalDeckView.isPlaying = state.isPlaying
+            b.verticalDeckView.progress = state.progress
+            b.verticalCassetteView.isPlaying = state.isPlaying
+            b.verticalCassetteView.progress = state.progress
+
+            // 2. WM-2 Red Layout
+            b.wm2ChassisView.isPlaying = state.isPlaying
+            b.wm2CassetteView.isPlaying = state.isPlaying
+            b.wm2CassetteView.progress = state.progress
+
+            state.currentSong?.let { song ->
+                // Deck values
+                b.verticalDeckView.isSongLoaded = true
+                b.verticalDeckView.trackTitle = song.title
+                b.verticalDeckView.artistName = song.artist
+                b.verticalDeckView.durationMs = song.durationMs
+                val formatStr = if (song.fileFormat.equals("MP3", ignoreCase = true) && song.bitrateKbps > 0) {
+                    "MP3 • ${song.bitrateKbps}kbps"
+                } else if (song.sampleRate > 0) {
+                    val kHz = if (song.sampleRate % 1000 == 0) "${song.sampleRate / 1000}" else String.format(Locale.US, "%.1f", song.sampleRate / 1000f)
+                    val bitStr = if (song.bitDepth > 0) "${song.bitDepth}-bit / " else ""
+                    "${song.fileFormat} • $bitStr${kHz}kHz"
+                } else {
+                    song.fileFormat
+                }
+                b.verticalDeckView.audioFormat = formatStr
+
+                // Dynamic cover accent color
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val accentColor = app.imageLoader.extractAccentColor(song.path)
+                    _binding?.verticalDeckView?.setCoverAccentColor(accentColor)
+                }
+
+                b.verticalCassetteView.trackTitle = song.title
+                b.verticalCassetteView.artistName = song.artist
+                b.wm2CassetteView.trackTitle = song.title
+                b.wm2CassetteView.artistName = song.artist
+            } ?: run {
+                val hardwareName = com.hana.spindle.util.DeviceUtils.getHardwareDeviceName()
+                b.verticalDeckView.isSongLoaded = false
+                b.verticalDeckView.trackTitle = hardwareName
+                b.verticalDeckView.deviceName = hardwareName
+                b.verticalDeckView.artistName = ""
+                b.verticalDeckView.durationMs = 0L
+                b.verticalDeckView.audioFormat = ""
+                b.verticalDeckView.albumArtBitmap = null
+                b.verticalDeckView.androidVersionText = com.hana.spindle.util.DeviceUtils.getAndroidVersionString()
+                b.verticalCassetteView.trackTitle = hardwareName
+                b.verticalCassetteView.artistName = ""
+                b.verticalCassetteView.albumArtBitmap = null
+                b.wm2CassetteView.trackTitle = hardwareName
+                b.wm2CassetteView.artistName = ""
+                b.wm2CassetteView.albumArtBitmap = null
+            }
+
+            // Sync live synchronized lyric ticker
+            val activeLyric = state.currentLyrics?.lines?.getOrNull(state.activeLyricIndex)?.text ?: ""
+            b.verticalDeckView.currentLyricText = activeLyric
+
+            b.verticalDeckView.currentTimeMs = state.currentPositionMs
+
+            val curTimeStr = formatTime(state.currentPositionMs)
+            b.tvCurrentTime.text = curTimeStr
+            b.tvTotalDuration.text = formatTime(state.durationMs)
+
+            b.btnPlayPause.text = if (state.isPlaying) "PAUSE" else "PLAY"
+        }
+    }
+
     private fun setupAudioPlaybackObservation(app: SpindleApp) {
         viewLifecycleOwner.lifecycleScope.launch {
             audioEngine.playbackState.collectLatest { state ->
-                _binding?.let { b ->
-                    // 1. Vertical Cassette Deck
-                    b.verticalDeckView.isPlaying = state.isPlaying
-                    b.verticalDeckView.progress = state.progress
-                    b.verticalCassetteView.isPlaying = state.isPlaying
-                    b.verticalCassetteView.progress = state.progress
-
-                    // 2. WM-2 Red Layout
-                    b.wm2ChassisView.isPlaying = state.isPlaying
-                    b.wm2CassetteView.isPlaying = state.isPlaying
-                    b.wm2CassetteView.progress = state.progress
-
-                    state.currentSong?.let { song ->
-                        // Deck values
-                        b.verticalDeckView.trackTitle = song.title
-                        b.verticalDeckView.artistName = song.artist
-                        b.verticalDeckView.durationMs = song.durationMs
-                        val formatStr = if (song.fileFormat.equals("MP3", ignoreCase = true) && song.bitrateKbps > 0) {
-                            "MP3 • ${song.bitrateKbps}kbps"
-                        } else if (song.sampleRate > 0) {
-                            val kHz = if (song.sampleRate % 1000 == 0) "${song.sampleRate / 1000}" else String.format(Locale.US, "%.1f", song.sampleRate / 1000f)
-                            val bitStr = if (song.bitDepth > 0) "${song.bitDepth}-bit / " else ""
-                            "${song.fileFormat} • $bitStr${kHz}kHz"
-                        } else {
-                            song.fileFormat
-                        }
-                        b.verticalDeckView.audioFormat = formatStr
-
-                        // Dynamic cover accent color
-                        viewLifecycleOwner.lifecycleScope.launch {
-                            val accentColor = app.imageLoader.extractAccentColor(song.path)
-                            b.verticalDeckView.setCoverAccentColor(accentColor)
-                        }
-
-                        b.verticalCassetteView.trackTitle = song.title
-                        b.verticalCassetteView.artistName = song.artist
-                        b.wm2CassetteView.trackTitle = song.title
-                        b.wm2CassetteView.artistName = song.artist
-                    } ?: run {
-                        b.verticalDeckView.trackTitle = ""
-                        b.verticalDeckView.artistName = ""
-                        b.verticalDeckView.durationMs = 0L
-                        b.verticalDeckView.audioFormat = ""
-                        b.verticalCassetteView.trackTitle = ""
-                        b.verticalCassetteView.artistName = ""
-                        b.wm2CassetteView.trackTitle = ""
-                        b.wm2CassetteView.artistName = ""
-                    }
-
-                    // Sync live synchronized lyric ticker
-                    val activeLyric = state.currentLyrics?.lines?.getOrNull(state.activeLyricIndex)?.text ?: ""
-                    b.verticalDeckView.currentLyricText = activeLyric
-
-                    b.verticalDeckView.currentTimeMs = state.currentPositionMs
-
-                    val curTimeStr = formatTime(state.currentPositionMs)
-                    b.tvCurrentTime.text = curTimeStr
-                    b.tvTotalDuration.text = formatTime(state.durationMs)
-
-                    b.btnPlayPause.text = if (state.isPlaying) "❚❚ PAUSE" else "▶ PLAY"
-                }
+                syncPlaybackState(state)
             }
         }
 
@@ -200,6 +224,10 @@ class PlayerFragment : Fragment() {
                 _binding?.let { b ->
                     b.verticalDeckView.outputRoute = metrics.outputRoute
                     b.verticalDeckView.isBitPerfect = metrics.isBitPerfect
+                    b.verticalDeckView.bluetoothDeviceName = metrics.bluetoothDeviceName
+                    b.verticalDeckView.bluetoothBatteryPct = metrics.bluetoothBatteryPct
+                    b.verticalDeckView.isBluetoothConnected = metrics.isBluetoothConnected
+                    b.verticalDeckView.bluetoothConnectionStatus = metrics.bluetoothConnectionStatus
                 }
             }
         }
@@ -235,22 +263,62 @@ class PlayerFragment : Fragment() {
             }
         }
         binding.verticalDeckView.onEjectClicked = {
+            // Single-press Eject: ONLY open music catalogue and keep playing song, do NOT stop it
             (activity as? MainActivity)?.navigateToCatalog()
+        }
+        binding.verticalDeckView.onEjectLongClicked = {
+            // Hold/Long-press Eject: stop song, eject cassette, and reset title to default hardware name
+            audioEngine.ejectCassette()
+            val hardwareName = com.hana.spindle.util.DeviceUtils.getHardwareDeviceName()
+            binding.verticalDeckView.isSongLoaded = false
+            binding.verticalDeckView.trackTitle = hardwareName
+            binding.verticalDeckView.deviceName = hardwareName
+            binding.verticalDeckView.artistName = ""
+            binding.verticalDeckView.durationMs = 0L
+            binding.verticalDeckView.audioFormat = ""
+            binding.verticalCassetteView.trackTitle = hardwareName
+            binding.verticalCassetteView.artistName = ""
+            binding.wm2CassetteView.trackTitle = hardwareName
+            binding.wm2CassetteView.artistName = ""
+            android.widget.Toast.makeText(requireContext(), "Cassette Ejected & Stopped", android.widget.Toast.LENGTH_SHORT).show()
         }
         binding.verticalDeckView.onDoubleTapChassis = {
             (activity as? MainActivity)?.enterAmbientSleep()
+        }
+        binding.verticalDeckView.onTitleClicked = {
+            (activity as? MainActivity)?.navigateToCatalog(openNowPlaying = true)
         }
 
         // WM-2 Red Controls
         binding.wm2ChassisView.onPlayClicked = { audioEngine.togglePlayPause() }
         binding.wm2ChassisView.onStopClicked = { audioEngine.pause() }
+        binding.wm2ChassisView.onEjectClicked = {
+            (activity as? MainActivity)?.navigateToCatalog()
+        }
         binding.btnPlayPause.setOnClickListener { audioEngine.togglePlayPause() }
         binding.btnPrev.setOnClickListener { audioEngine.playPrevious() }
         binding.btnNext.setOnClickListener { audioEngine.playNext() }
         binding.wm2ChassisView.onPrevClicked = { audioEngine.playPrevious() }
         binding.wm2ChassisView.onNextClicked = { audioEngine.playNext() }
         binding.btnEject.setOnClickListener {
+            // Single-press: only open music catalogue, don't stop music
             (activity as? MainActivity)?.navigateToCatalog()
+        }
+        binding.btnEject.setOnLongClickListener {
+            audioEngine.ejectCassette()
+            val hardwareName = com.hana.spindle.util.DeviceUtils.getHardwareDeviceName()
+            binding.verticalDeckView.isSongLoaded = false
+            binding.verticalDeckView.trackTitle = hardwareName
+            binding.verticalDeckView.deviceName = hardwareName
+            binding.verticalDeckView.artistName = ""
+            binding.verticalDeckView.durationMs = 0L
+            binding.verticalDeckView.audioFormat = ""
+            binding.verticalCassetteView.trackTitle = hardwareName
+            binding.verticalCassetteView.artistName = ""
+            binding.wm2CassetteView.trackTitle = hardwareName
+            binding.wm2CassetteView.artistName = ""
+            android.widget.Toast.makeText(requireContext(), "Cassette Ejected & Stopped", android.widget.Toast.LENGTH_SHORT).show()
+            true
         }
 
         // Background double tap to sleep gesture
@@ -269,10 +337,18 @@ class PlayerFragment : Fragment() {
 
     private fun setupCassetteFlip() {
         binding.verticalCassetteView.setOnClickListener {
-            flipCassette(binding.verticalCassetteView)
+            if (audioEngine.playbackState.value.currentSong != null) {
+                (activity as? MainActivity)?.navigateToCatalog(openNowPlaying = true)
+            } else {
+                flipCassette(binding.verticalCassetteView)
+            }
         }
         binding.wm2CassetteView.setOnClickListener {
-            flipCassette(binding.wm2CassetteView)
+            if (audioEngine.playbackState.value.currentSong != null) {
+                (activity as? MainActivity)?.navigateToCatalog(openNowPlaying = true)
+            } else {
+                flipCassette(binding.wm2CassetteView)
+            }
         }
     }
 

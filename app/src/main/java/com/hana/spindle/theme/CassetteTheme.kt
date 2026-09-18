@@ -107,7 +107,7 @@ data class CassetteTheme(
             subtitle = "Pure 1-Bit B&W White Canvas",
             chassisStyle = ChassisStyle.VERTICAL_DECK,
             chassisColor = Color.WHITE, // Pure white background for E-Ink screen
-            diagonalBezelColor = Color.parseColor("#E0E0E0"),
+            diagonalBezelColor = Color.BLACK,
             dialColor = Color.BLACK,
             surfaceColor = Color.WHITE,
             cardBorderColor = Color.BLACK,

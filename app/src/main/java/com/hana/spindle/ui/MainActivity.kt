@@ -35,7 +35,7 @@ import kotlinx.coroutines.launch
  * Page 1: Center Home Screen (Classic 1980s Chassis & Kinetic Cassette Player)
  * Page 2: Right Online FM Radio (Bauhaus Industrial Tuner with Live ExoPlayer Streaming)
  *
- * Overlay: Full-Screen Audiophile Music Catalog triggered via the Mechanical ⏏ EJECT Button.
+ * Overlay: Full-Screen Audiophile Music Catalog triggered via the Mechanical EJECT Button.
  */
 class MainActivity : AppCompatActivity() {
 
@@ -73,7 +73,29 @@ class MainActivity : AppCompatActivity() {
                 navigateToRadio()
             }
         }
+        handlePlaybackIntent(intent)
         checkAndRequestStoragePermissions(app)
+    }
+
+    private fun handlePlaybackIntent(intent: Intent?) {
+        val playPath = intent?.getStringExtra("play_path")
+        if (!playPath.isNullOrBlank()) {
+            val file = java.io.File(playPath)
+            if (file.exists() && file.canRead()) {
+                val app = application as SpindleApp
+                lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                    val song = com.hana.spindle.data.TagParser.parseSong(file)
+                    if (song != null) {
+                        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                            app.audioEngine.playSong(song)
+                            binding.viewPager.setCurrentItem(1, false)
+                        }
+                    } else {
+                        android.util.Log.e("MainActivity", "Failed to parse song: $playPath")
+                    }
+                }
+            }
+        }
     }
 
     fun setImmersiveMode(enable: Boolean) {
@@ -108,6 +130,7 @@ class MainActivity : AppCompatActivity() {
         if (isImmersiveModeEnabled) {
             applyImmersiveFlags()
         }
+        syncPlayerFragmentState()
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -275,6 +298,7 @@ class MainActivity : AppCompatActivity() {
     fun navigateToPlayer() {
         binding.viewPager.isUserInputEnabled = true
         binding.viewPager.setCurrentItem(1, false)
+        syncPlayerFragmentState()
         if (binding.catalogContainer.visibility == View.VISIBLE) {
             binding.catalogContainer.animate()
                 .translationY(binding.root.height.toFloat())
@@ -287,6 +311,7 @@ class MainActivity : AppCompatActivity() {
                     if (frag != null) {
                         supportFragmentManager.beginTransaction().remove(frag).commitAllowingStateLoss()
                     }
+                    syncPlayerFragmentState()
                 }.start()
         } else {
             binding.catalogContainer.visibility = View.GONE
@@ -297,7 +322,23 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun navigateToCatalog() {
+    fun syncPlayerFragmentState() {
+        supportFragmentManager.fragments.forEach { frag ->
+            if (frag is PlayerFragment) {
+                frag.syncState()
+            } else {
+                frag.childFragmentManager.fragments.forEach { child ->
+                    if (child is PlayerFragment) child.syncState()
+                }
+            }
+        }
+    }
+
+    fun navigateToNowPlaying() {
+        navigateToCatalog(openNowPlaying = true)
+    }
+
+    fun navigateToCatalog(openNowPlaying: Boolean = false) {
         binding.viewPager.isUserInputEnabled = false
         binding.catalogContainer.visibility = View.VISIBLE
         binding.catalogContainer.bringToFront()
@@ -312,7 +353,7 @@ class MainActivity : AppCompatActivity() {
             .start()
 
         supportFragmentManager.beginTransaction()
-            .replace(R.id.catalogContainer, CatalogFragment())
+            .replace(R.id.catalogContainer, CatalogFragment.newInstance(openNowPlaying = openNowPlaying))
             .commitAllowingStateLoss()
     }
 
@@ -335,16 +376,28 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkAndRequestStoragePermissions(app: SpindleApp) {
-        val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        val permissionsToRequest = mutableListOf<String>()
+
+        val storagePermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             Manifest.permission.READ_MEDIA_AUDIO
         } else {
             Manifest.permission.READ_EXTERNAL_STORAGE
         }
 
-        if (ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(this, storagePermission) != PackageManager.PERMISSION_GRANTED) {
+            permissionsToRequest.add(storagePermission)
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(Manifest.permission.BLUETOOTH_CONNECT)
+            }
+        }
+
+        if (permissionsToRequest.isEmpty()) {
             triggerBackgroundScan(app)
         } else {
-            ActivityCompat.requestPermissions(this, arrayOf(permission), PERMISSION_REQUEST_CODE)
+            ActivityCompat.requestPermissions(this, permissionsToRequest.toTypedArray(), PERMISSION_REQUEST_CODE)
         }
     }
 
@@ -355,12 +408,18 @@ class MainActivity : AppCompatActivity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         val app = application as SpindleApp
-        if (requestCode == PERMISSION_REQUEST_CODE && grantResults.isNotEmpty() &&
-            grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            Toast.makeText(this, "Storage access granted. Indexing library...", Toast.LENGTH_SHORT).show()
-            triggerBackgroundScan(app)
-        } else {
-            Toast.makeText(this, "Storage permission required to index music", Toast.LENGTH_LONG).show()
+        if (requestCode == PERMISSION_REQUEST_CODE) {
+            val storagePermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                Manifest.permission.READ_MEDIA_AUDIO
+            } else {
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            }
+            val storageIndex = permissions.indexOf(storagePermission)
+            if (storageIndex >= 0 && grantResults.getOrNull(storageIndex) == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "Storage access granted. Indexing library...", Toast.LENGTH_SHORT).show()
+                triggerBackgroundScan(app)
+            }
+            app.audioEngine.metricsTracker.updateRouteTelemetry()
         }
     }
 
@@ -372,6 +431,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        setIntent(intent)
+        handlePlaybackIntent(intent)
         if (intent.getStringExtra("navigate") == "radio") {
             binding.viewPager.post { navigateToRadio() }
             return
@@ -398,6 +459,20 @@ class MainActivity : AppCompatActivity() {
             return true
         }
 
+        // Dedicated Hardware Camera Button Remapped to Play/Pause
+        val cameraKeyRemap = prefs.getBoolean("pref_camera_key_play_pause", true)
+        if (cameraKeyRemap && (keyCode == android.view.KeyEvent.KEYCODE_CAMERA || keyCode == android.view.KeyEvent.KEYCODE_FOCUS)) {
+            val engine = (application as? SpindleApp)?.audioEngine
+            if (engine?.playbackState?.value?.isPlaying == true) {
+                engine.pause()
+                Toast.makeText(this, "Audio Paused", Toast.LENGTH_SHORT).show()
+            } else {
+                engine?.play()
+                Toast.makeText(this, "Audio Playing", Toast.LENGTH_SHORT).show()
+            }
+            return true
+        }
+
         when (keyCode) {
             android.view.KeyEvent.KEYCODE_MEDIA_NEXT -> {
                 (application as? SpindleApp)?.audioEngine?.playNext()
@@ -409,12 +484,7 @@ class MainActivity : AppCompatActivity() {
             }
             android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
             android.view.KeyEvent.KEYCODE_HEADSETHOOK -> {
-                val engine = (application as? SpindleApp)?.audioEngine
-                if (engine?.playbackState?.value?.isPlaying == true) {
-                    engine.pause()
-                } else {
-                    engine?.play()
-                }
+                (application as? SpindleApp)?.audioEngine?.togglePlayPause()
                 return true
             }
             android.view.KeyEvent.KEYCODE_MEDIA_PLAY -> {
@@ -426,6 +496,12 @@ class MainActivity : AppCompatActivity() {
                 return true
             }
         }
+
+        if (keyCode == android.view.KeyEvent.KEYCODE_VOLUME_UP || keyCode == android.view.KeyEvent.KEYCODE_VOLUME_DOWN) {
+            event?.startTracking()
+            return false
+        }
+
         return super.onKeyDown(keyCode, event)
     }
 
@@ -439,13 +515,13 @@ class MainActivity : AppCompatActivity() {
                 android.view.KeyEvent.KEYCODE_VOLUME_UP -> {
                     isVolumeLongPress = true
                     engine?.playNext()
-                    Toast.makeText(this, "Next Track ⏭", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Next Track", Toast.LENGTH_SHORT).show()
                     return true
                 }
                 android.view.KeyEvent.KEYCODE_VOLUME_DOWN -> {
                     isVolumeLongPress = true
                     engine?.playPrevious()
-                    Toast.makeText(this, "Previous Track ⏮", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Previous Track", Toast.LENGTH_SHORT).show()
                     return true
                 }
             }
@@ -476,6 +552,13 @@ class MainActivity : AppCompatActivity() {
                 return true
             }
         }
+
+        // Suppress system camera launch when camera button is released
+        val cameraKeyRemap = prefs.getBoolean("pref_camera_key_play_pause", true)
+        if (cameraKeyRemap && (keyCode == android.view.KeyEvent.KEYCODE_CAMERA || keyCode == android.view.KeyEvent.KEYCODE_FOCUS)) {
+            return true
+        }
+
         return super.onKeyUp(keyCode, event)
     }
 }

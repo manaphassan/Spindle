@@ -117,8 +117,10 @@ class SpindleAppWidgetProvider : AppWidgetProvider() {
                             views.setImageViewResource(R.id.widgetIvCover, R.drawable.ic_spindle_logo)
                         }
                     } else {
-                        views.setTextViewText(R.id.widgetTvTitle, "Spindle Tape Deck")
-                        views.setTextViewText(R.id.widgetTvArtist, "Ready to Play")
+                        val defaultTitle = com.hana.spindle.util.DeviceUtils.getDeviceName(context)
+                        val defaultSub = com.hana.spindle.util.DeviceUtils.getAndroidVersionString()
+                        views.setTextViewText(R.id.widgetTvTitle, defaultTitle)
+                        views.setTextViewText(R.id.widgetTvArtist, defaultSub)
                         views.setViewVisibility(R.id.widgetTvFormat, View.GONE)
                         views.setImageViewResource(R.id.widgetIvCover, R.drawable.ic_spindle_logo)
                     }

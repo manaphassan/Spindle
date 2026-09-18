@@ -39,6 +39,20 @@ class AudioWaveformView @JvmOverloads constructor(
             }
         }
 
+    var isEink: Boolean = false
+        set(value) {
+            if (field != value) {
+                field = value
+                initPaints()
+                if (width > 0) {
+                    val barWidth = (width.toFloat() / numBars) * 0.55f
+                    barPlayedPaint.strokeWidth = barWidth
+                    barUnplayedPaint.strokeWidth = if (value) 1.2f else barWidth
+                }
+                invalidate()
+            }
+        }
+
     // Pre-allocated Paints
     private val barPlayedPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val barUnplayedPaint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -59,22 +73,42 @@ class AudioWaveformView @JvmOverloads constructor(
     }
 
     private fun initPaints() {
-        barPlayedPaint.apply {
-            color = Color.parseColor("#F97316") // Hero Warm Orange played bars
-            style = Paint.Style.STROKE
-            strokeCap = Paint.Cap.ROUND
-        }
+        if (isEink) {
+            barPlayedPaint.apply {
+                color = Color.BLACK
+                style = Paint.Style.STROKE
+                strokeCap = Paint.Cap.ROUND
+            }
 
-        barUnplayedPaint.apply {
-            color = Color.parseColor("#353A54") // Muted Dark Indigo unplayed bars
-            style = Paint.Style.STROKE
-            strokeCap = Paint.Cap.ROUND
-        }
+            barUnplayedPaint.apply {
+                color = Color.BLACK
+                style = Paint.Style.STROKE
+                strokeCap = Paint.Cap.ROUND
+            }
 
-        centerLinePaint.apply {
-            color = Color.parseColor("#2A2E45") // Brand Dark Indigo framing line
-            style = Paint.Style.STROKE
-            strokeWidth = 1.0f
+            centerLinePaint.apply {
+                color = Color.BLACK
+                style = Paint.Style.STROKE
+                strokeWidth = 1.0f
+            }
+        } else {
+            barPlayedPaint.apply {
+                color = Color.parseColor("#F97316") // Hero Warm Orange played bars
+                style = Paint.Style.STROKE
+                strokeCap = Paint.Cap.ROUND
+            }
+
+            barUnplayedPaint.apply {
+                color = Color.parseColor("#353A54") // Muted Dark Indigo unplayed bars
+                style = Paint.Style.STROKE
+                strokeCap = Paint.Cap.ROUND
+            }
+
+            centerLinePaint.apply {
+                color = Color.parseColor("#2A2E45") // Brand Dark Indigo framing line
+                style = Paint.Style.STROKE
+                strokeWidth = 1.0f
+            }
         }
     }
 
@@ -84,7 +118,7 @@ class AudioWaveformView @JvmOverloads constructor(
 
         val barWidth = (w.toFloat() / numBars) * 0.55f
         barPlayedPaint.strokeWidth = barWidth
-        barUnplayedPaint.strokeWidth = barWidth
+        barUnplayedPaint.strokeWidth = if (isEink) 1.2f else barWidth
     }
 
     override fun onDraw(canvas: Canvas) {

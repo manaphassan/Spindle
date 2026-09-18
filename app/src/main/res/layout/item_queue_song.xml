@@ -14,7 +14,7 @@
         android:id="@+id/ivDragHandle"
         android:layout_width="28dp"
         android:layout_height="28dp"
-        android:src="@android:drawable/ic_menu_sort_by_size"
+        android:src="@drawable/ic_drag_handle"
         app:tint="#64748B"
         android:contentDescription="Reorder handle"
         android:padding="4dp" />
@@ -33,15 +33,15 @@
         android:gravity="center" />
 
     <!-- Playing Wave / Active Indicator -->
-    <TextView
-        android:id="@+id/tvQueuePlaying"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="▶"
-        android:textColor="#F97316"
-        android:textSize="12sp"
+    <ImageView
+        android:id="@+id/ivQueuePlaying"
+        android:layout_width="14dp"
+        android:layout_height="14dp"
+        android:src="@drawable/ic_np_play"
+        app:tint="#F97316"
         android:layout_marginStart="4dp"
-        android:visibility="gone" />
+        android:visibility="gone"
+        android:contentDescription="Now Playing" />
 
     <!-- Metadata: Title & Artist -->
     <LinearLayout
@@ -96,7 +96,7 @@
         android:layout_width="36dp"
         android:layout_height="36dp"
         android:background="?attr/selectableItemBackgroundBorderless"
-        android:src="@android:drawable/ic_menu_close_clear_cancel"
+        android:src="@drawable/ic_queue_remove"
         app:tint="#64748B"
         android:contentDescription="Remove from queue"
         android:padding="8dp" />

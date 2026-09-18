@@ -56,16 +56,16 @@
             android:orientation="horizontal"
             android:gravity="center_vertical">
 
-            <!-- Active Waveform Indicator when playing -->
-            <TextView
-                android:id="@+id/tvPlayingWave"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="ıllı "
-                android:textColor="@color/vfd_emerald"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:visibility="gone" />
+            <!-- Active Waveform/Playing Indicator when playing -->
+            <ImageView
+                android:id="@+id/ivPlayingWave"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:layout_marginEnd="6dp"
+                android:src="@drawable/ic_np_play"
+                app:tint="@color/vfd_emerald"
+                android:visibility="gone"
+                android:contentDescription="Now Playing" />
 
             <TextView
                 android:id="@+id/tvSongTitle"
@@ -125,14 +125,14 @@
             android:textSize="12sp"
             android:fontFamily="monospace" />
 
-        <!-- Star Rating (e.g. ★★★★☆) -->
+        <!-- Rating readout (e.g. 5/5) -->
         <TextView
             android:id="@+id/tvRating"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="☆☆☆☆☆"
             android:textColor="@color/vfd_amber"
-            android:textSize="11sp"
+            android:textSize="10.5sp"
+            android:fontFamily="monospace"
             android:layout_marginTop="2dp" />
     </LinearLayout>
 

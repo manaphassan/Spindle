@@ -1,10 +1,12 @@
 package com.hana.spindle.ui.radio
 
+import android.animation.TimeAnimator
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
+import android.view.VelocityTracker
 import android.view.View
 import kotlin.math.roundToInt
 
@@ -59,6 +61,11 @@ class RadioTuningDialView @JvmOverloads constructor(
     private var isDragging = false
     private var lastHapticStep = -1
 
+    // Flywheel mechanical inertia kinetics
+    private var velocityTracker: VelocityTracker? = null
+    private var flywheelAnimator: TimeAnimator? = null
+    private var flywheelVelocity: Float = 0f
+
     // Pre-allocated Paints
     private val rollerBgPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val ridgePaint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -111,8 +118,8 @@ class RadioTuningDialView @JvmOverloads constructor(
     private fun updateThemePaints() {
         if (isEink) {
             rollerBgPaint.color = Color.WHITE
-            ridgePaint.color = Color.parseColor("#CCCCCC")
-            ridgeHighlightPaint.color = Color.parseColor("#EEEEEE")
+            ridgePaint.color = Color.BLACK
+            ridgeHighlightPaint.color = Color.WHITE
             textPaint.color = Color.BLACK
             cursorPaint.color = Color.BLACK
             bevelPaint.color = Color.BLACK
@@ -219,6 +226,54 @@ class RadioTuningDialView @JvmOverloads constructor(
         canvas.drawLine(centerX, 4f, centerX, h - 4f, cursorPaint)
     }
 
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        stopFlywheel()
+        velocityTracker?.recycle()
+        velocityTracker = null
+    }
+
+    private fun startFlywheel(initialVelocityMhzPerSec: Float) {
+        stopFlywheel()
+        flywheelVelocity = initialVelocityMhzPerSec
+        flywheelAnimator = TimeAnimator().apply {
+            setTimeListener { _, _, deltaTimeMs ->
+                val dt = deltaTimeMs / 1000f
+                if (dt <= 0f || dt > 0.1f) return@setTimeListener
+
+                val deltaMhz = flywheelVelocity * dt
+                val targetFreq = currentFreq + deltaMhz
+                val clamped = targetFreq.coerceIn(minFreq, maxFreq)
+
+                if (clamped != currentFreq) {
+                    currentFreq = clamped
+                    onFrequencyChanged?.invoke(currentFreq)
+
+                    val stepIndex = (currentFreq * 10f).roundToInt()
+                    if (stepIndex != lastHapticStep) {
+                        lastHapticStep = stepIndex
+                        performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                    }
+                }
+
+                // Friction decay (exponential: ~0.90 per 60Hz frame)
+                flywheelVelocity *= Math.pow(0.88, (dt * 60.0)).toFloat()
+
+                // Stop if boundary reached or speed is negligible
+                if (kotlin.math.abs(flywheelVelocity) < 0.08f || targetFreq <= minFreq || targetFreq >= maxFreq) {
+                    stopFlywheel()
+                }
+            }
+            start()
+        }
+    }
+
+    private fun stopFlywheel() {
+        flywheelAnimator?.cancel()
+        flywheelAnimator = null
+        flywheelVelocity = 0f
+    }
+
     override fun performClick(): Boolean {
         super.performClick()
         return true
@@ -227,6 +282,11 @@ class RadioTuningDialView @JvmOverloads constructor(
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
+                stopFlywheel()
+                velocityTracker?.recycle()
+                velocityTracker = VelocityTracker.obtain().apply {
+                    addMovement(event)
+                }
                 lastTouchX = event.x
                 startTouchX = event.x
                 startTouchY = event.y
@@ -238,6 +298,7 @@ class RadioTuningDialView @JvmOverloads constructor(
 
             MotionEvent.ACTION_MOVE -> {
                 if (isDragging) {
+                    velocityTracker?.addMovement(event)
                     if (kotlin.math.abs(event.x - startTouchX) > 12f || kotlin.math.abs(event.y - startTouchY) > 12f) {
                         hasMovedSignificantly = true
                     }
@@ -267,9 +328,20 @@ class RadioTuningDialView @JvmOverloads constructor(
             MotionEvent.ACTION_UP -> {
                 isDragging = false
                 parent.requestDisallowInterceptTouchEvent(false)
+                velocityTracker?.addMovement(event)
+                velocityTracker?.computeCurrentVelocity(1000)
+                val vx = velocityTracker?.xVelocity ?: 0f
+                velocityTracker?.recycle()
+                velocityTracker = null
+
                 if (!hasMovedSignificantly) {
                     onDialClicked?.invoke()
                     performClick()
+                } else if (kotlin.math.abs(vx) > 300f) {
+                    // Flywheel inertia fling!
+                    val pixelsPerMhz = width * 0.40f
+                    val velocityMhzPerSec = -vx / pixelsPerMhz
+                    startFlywheel(velocityMhzPerSec)
                 }
                 return true
             }
@@ -277,6 +349,8 @@ class RadioTuningDialView @JvmOverloads constructor(
             MotionEvent.ACTION_CANCEL -> {
                 isDragging = false
                 parent.requestDisallowInterceptTouchEvent(false)
+                velocityTracker?.recycle()
+                velocityTracker = null
                 return true
             }
         }

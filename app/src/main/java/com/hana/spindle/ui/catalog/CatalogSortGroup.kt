@@ -38,5 +38,5 @@ enum class CatalogFilterChip(val displayName: String) {
     FLAC("FLAC"),
     WAV("WAV"),
     MP3("MP3"),
-    RATED("★ RATED")
+    RATED("RATED")
 }

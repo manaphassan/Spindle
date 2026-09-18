@@ -63,6 +63,18 @@
             </intent-filter>
         </activity>
 
+        <!-- Dedicated Full-Screen Retro Cassette Keyguard Lockscreen Activity -->
+        <activity
+            android:name=".ui.LockscreenActivity"
+            android:exported="true"
+            android:launchMode="singleInstance"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:excludeFromRecents="true"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustNothing"
+            android:theme="@style/Theme.Spindle" />
+
         <!-- Foreground Playback Service -->
         <service
             android:name=".playback.PlaybackService"

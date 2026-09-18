@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.SpindleLite" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">@color/lite_bg_chassis</item>
+        <item name="android:statusBarColor">@color/lite_bg_chassis</item>
+        <item name="android:navigationBarColor">@color/lite_bg_chassis</item>
+        <item name="colorPrimary">@color/brand_orange</item>
+        <item name="colorAccent">@color/brand_orange</item>
+    </style>
+</resources>

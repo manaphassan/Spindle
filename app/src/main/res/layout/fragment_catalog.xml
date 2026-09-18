@@ -12,85 +12,109 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingTop="28dp"
+        android:paddingTop="8dp"
         android:background="#151619">
 
-        <!-- Top Bar: Back Arrow, Title & Status -->
+        <!-- Top Bar: Standardized Back Arrow, Title & Integrated Search Bar -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="46dp"
             android:orientation="horizontal"
             android:gravity="center_vertical"
             android:paddingHorizontal="14dp">
 
             <ImageButton
                 android:id="@+id/btnBackToPlayer"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:padding="8dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@android:drawable/ic_menu_revert"
+                android:src="@drawable/ic_np_back"
                 app:tint="@color/text_primary"
                 android:contentDescription="Back to Player" />
 
             <TextView
                 android:id="@+id/tvCatalogHeaderTitle"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="8dp"
-                android:text="MUSIC CATALOG"
-                android:textColor="@color/text_primary"
-                android:textStyle="bold"
-                android:textSize="17sp"
-                android:letterSpacing="0.06" />
-
-            <TextView
-                android:id="@+id/tvScanStatus"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Ready"
-                android:textColor="@color/vfd_emerald"
-                android:textSize="11sp"
-                android:fontFamily="monospace" />
-        </LinearLayout>
-
-        <!-- Inline Real-time Search Input -->
-        <LinearLayout
-            android:id="@+id/searchContainer"
-            android:layout_width="match_parent"
-            android:layout_height="38dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:background="#212228"
-            android:layout_marginHorizontal="14dp"
-            android:layout_marginTop="8dp"
-            android:paddingHorizontal="12dp">
-
-            <ImageView
-                android:id="@+id/ivSearchIcon"
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:src="@android:drawable/ic_menu_search"
-                app:tint="@color/text_secondary"
-                android:contentDescription="Search Icon" />
-
-            <EditText
-                android:id="@+id/etCatalogSearch"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_marginStart="8dp"
-                android:background="@null"
-                android:hint="Search tracks, albums, artists..."
-                android:textColorHint="#64748B"
+                android:layout_marginStart="6dp"
+                android:layout_marginEnd="10dp"
+                android:text="CATALOG"
                 android:textColor="@color/text_primary"
-                android:textSize="12.5sp"
-                android:imeOptions="actionDone"
-                android:singleLine="true" />
+                android:textStyle="bold"
+                android:textSize="15sp"
+                android:letterSpacing="0.06" />
+
+            <!-- Integrated Header Search Bar (Replaces static 'Ready' text, saves ~46dp vertical space) -->
+            <LinearLayout
+                android:id="@+id/searchContainer"
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_weight="1"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="#212228"
+                android:paddingHorizontal="10dp">
+
+                <ImageView
+                    android:id="@+id/ivSearchIcon"
+                    android:layout_width="15dp"
+                    android:layout_height="15dp"
+                    android:src="@android:drawable/ic_menu_search"
+                    app:tint="@color/text_secondary"
+                    android:contentDescription="Search Icon" />
+
+                <EditText
+                    android:id="@+id/etCatalogSearch"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:layout_marginStart="6dp"
+                    android:background="@null"
+                    android:hint="Search library..."
+                    android:textColorHint="#64748B"
+                    android:textColor="@color/text_primary"
+                    android:textSize="12sp"
+                    android:imeOptions="actionDone"
+                    android:singleLine="true" />
+
+                <ImageView
+                    android:id="@+id/btnSearchClear"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:padding="2dp"
+                    android:src="@android:drawable/ic_menu_close_clear_cancel"
+                    app:tint="@color/text_secondary"
+                    android:visibility="gone"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Clear Search" />
+
+                <TextView
+                    android:id="@+id/tvScanStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text="Scanning..."
+                    android:textColor="@color/vfd_amber"
+                    android:textSize="10sp"
+                    android:visibility="gone"
+                    android:fontFamily="monospace" />
+            </LinearLayout>
         </LinearLayout>
 
+        <!-- Real-time Autocomplete Suggestions View -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvSearchSuggestions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="14dp"
+            android:layout_marginTop="3dp"
+            android:background="#1E212A"
+            android:elevation="12dp"
+            android:maxHeight="200dp"
+            android:visibility="gone" />
 
-
-        <!-- Horizontal Scrollable Category Tabs -->
+        <!-- Minimalist 5-Tab Core Navigation -->
         <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -165,41 +189,11 @@
                     app:cornerRadius="16dp" />
 
                 <Button
-                    android:id="@+id/tabGenres"
-                    android:layout_width="wrap_content"
-                    android:layout_height="32dp"
-                    android:layout_marginHorizontal="3dp"
-                    android:text="GENRES"
-                    android:textSize="11sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/text_secondary"
-                    android:backgroundTint="#212228"
-                    android:paddingHorizontal="14dp"
-                    android:insetTop="0dp"
-                    android:insetBottom="0dp"
-                    app:cornerRadius="16dp" />
-
-                <Button
-                    android:id="@+id/tabHiRes"
-                    android:layout_width="wrap_content"
-                    android:layout_height="32dp"
-                    android:layout_marginHorizontal="3dp"
-                    android:text="HI-RES"
-                    android:textSize="11sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/text_secondary"
-                    android:backgroundTint="#212228"
-                    android:paddingHorizontal="14dp"
-                    android:insetTop="0dp"
-                    android:insetBottom="0dp"
-                    app:cornerRadius="16dp" />
-
-                <Button
                     android:id="@+id/tabFavorites"
                     android:layout_width="wrap_content"
                     android:layout_height="32dp"
                     android:layout_marginHorizontal="3dp"
-                    android:text="RATED ★"
+                    android:text="FAVORITES"
                     android:textSize="11sp"
                     android:textStyle="bold"
                     android:textColor="@color/text_secondary"
@@ -209,20 +203,6 @@
                     android:insetBottom="0dp"
                     app:cornerRadius="16dp" />
 
-                <Button
-                    android:id="@+id/tabMixtapes"
-                    android:layout_width="wrap_content"
-                    android:layout_height="32dp"
-                    android:layout_marginHorizontal="3dp"
-                    android:text="MIXTAPES 📼"
-                    android:textSize="11sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/text_secondary"
-                    android:backgroundTint="#212228"
-                    android:paddingHorizontal="14dp"
-                    android:insetTop="0dp"
-                    android:insetBottom="0dp"
-                    app:cornerRadius="16dp" />
             </LinearLayout>
         </HorizontalScrollView>
 
@@ -284,7 +264,7 @@
                 android:id="@+id/btnNewMixtape"
                 android:layout_width="wrap_content"
                 android:layout_height="28dp"
-                android:text="➕ New Tape"
+                android:text="NEW TAPE"
                 android:textSize="10.5sp"
                 android:textStyle="bold"
                 android:textColor="@color/white"
@@ -300,7 +280,7 @@
                 android:id="@+id/btnShuffle"
                 android:layout_width="wrap_content"
                 android:layout_height="28dp"
-                android:text="🔀 Shuffle"
+                android:text="SHUFFLE"
                 android:textSize="10.5sp"
                 android:textStyle="bold"
                 android:textColor="@color/text_primary"
@@ -316,7 +296,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="28dp"
                 android:layout_marginStart="6dp"
-                android:text="▶ Play All"
+                android:text="PLAY ALL"
                 android:textSize="10.5sp"
                 android:textStyle="bold"
                 android:textColor="@color/white"
@@ -498,7 +478,7 @@
         android:layout_height="match_parent"
         android:orientation="vertical"
         android:background="#151724"
-        android:paddingTop="28dp"
+        android:paddingTop="8dp"
         android:clickable="true"
         android:focusable="true"
         android:elevation="15dp"
@@ -514,10 +494,11 @@
 
             <ImageButton
                 android:id="@+id/btnAlbumDetailBack"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:padding="8dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@android:drawable/ic_menu_revert"
+                android:src="@drawable/ic_np_back"
                 app:tint="@color/text_primary"
                 android:contentDescription="Back to Albums" />
 
@@ -654,7 +635,7 @@
                     android:id="@+id/btnAlbumDetailPlayAll"
                     android:layout_width="wrap_content"
                     android:layout_height="34dp"
-                    android:text="▶ Play All"
+                    android:text="PLAY ALL"
                     android:textSize="11.5sp"
                     android:textStyle="bold"
                     android:textColor="@color/white"
@@ -669,7 +650,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="34dp"
                     android:layout_marginStart="10dp"
-                    android:text="🔀 Shuffle"
+                    android:text="SHUFFLE"
                     android:textSize="11.5sp"
                     android:textStyle="bold"
                     android:textColor="@color/text_primary"
@@ -707,7 +688,7 @@
         android:layout_height="match_parent"
         android:orientation="vertical"
         android:background="#0F1016"
-        android:paddingTop="36dp"
+        android:paddingTop="8dp"
         android:paddingBottom="24dp"
         android:paddingHorizontal="24dp"
         android:clickable="true"
@@ -715,7 +696,7 @@
         android:elevation="20dp"
         android:visibility="gone">
 
-        <!-- Top Navigation Bar (< Back, Spacer, ♡ Favorite, ⋮ Menu) -->
+        <!-- Top Navigation Bar (< Back, Interactive Format Badge Pill, Spacer, ♡ Favorite, ⋮ Menu) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="48dp"
@@ -756,7 +737,7 @@
                 android:contentDescription="Options" />
         </LinearLayout>
 
-        <!-- Center Stage: Hero Circular Album Artwork & Radial Arc Volume/Seek Slider -->
+        <!-- Center Stage: Hero Circular Vinyl Disc Artwork & Synced Lyrics Drawer -->
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
@@ -769,7 +750,7 @@
                 android:layout_height="match_parent"
                 android:layout_gravity="center" />
 
-            <!-- Synchronized Live Lyrics Overlay Panel (Toggled by btnNpLyrics) -->
+            <!-- Synchronized Live Lyrics Overlay Panel (Toggled by btnNpLyrics or Cover Tap) -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/cardNpLyrics"
                 android:layout_width="match_parent"
@@ -807,141 +788,77 @@
 
         </FrameLayout>
 
-        <!-- Track Metadata & Action Buttons Row (Track Title, Artist / Specs, Artist, Share) -->
+        <!-- Track Metadata (Centered, Crisp Audiophile Typography) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginTop="4dp">
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:layout_marginTop="4dp"
+            android:paddingHorizontal="12dp">
 
-            <!-- Title & Artist -->
-            <LinearLayout
-                android:layout_width="0dp"
+            <TextView
+                android:id="@+id/tvNpTitle"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:paddingEnd="12dp">
+                android:gravity="center"
+                android:text="Track Title"
+                android:textColor="@color/text_primary"
+                android:textSize="21sp"
+                android:textStyle="bold"
+                android:singleLine="true"
+                android:ellipsize="marquee"
+                android:marqueeRepeatLimit="marquee_forever" />
 
-                <TextView
-                    android:id="@+id/tvNpTitle"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Track Title"
-                    android:textColor="@color/text_primary"
-                    android:textSize="20sp"
-                    android:textStyle="bold"
-                    android:singleLine="true"
-                    android:ellipsize="marquee"
-                    android:marqueeRepeatLimit="marquee_forever" />
-
-                <TextView
-                    android:id="@+id/tvNpArtist"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="3dp"
-                    android:text="Artist Name"
-                    android:textColor="#94A3B8"
-                    android:textSize="13.5sp"
-                    android:singleLine="true"
-                    android:ellipsize="end" />
-
-                <TextView
-                    android:id="@+id/tvNpRouteBadge"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="5dp"
-                    android:text="FLAC 24/96kHz • Direct ALSA"
-                    android:textColor="@color/vfd_emerald"
-                    android:textSize="10.5sp"
-                    android:fontFamily="monospace"
-                    android:textStyle="bold"
-                    android:background="#16261B"
-                    android:paddingHorizontal="7dp"
-                    android:paddingVertical="2dp" />
-            </LinearLayout>
-
-            <!-- 3 Right-Aligned Action Icons (Specs/Download, Artist Profile, Share) -->
-            <LinearLayout
-                android:layout_width="wrap_content"
+            <TextView
+                android:id="@+id/tvNpArtist"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <ImageButton
-                    android:id="@+id/btnNpSpecs"
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@drawable/ic_np_specs"
-                    app:tint="#94A3B8"
-                    android:contentDescription="Audio Specs" />
-
-                <ImageButton
-                    android:id="@+id/btnNpArtistFilter"
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
-                    android:layout_marginStart="4dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@drawable/ic_np_artist"
-                    app:tint="#94A3B8"
-                    android:contentDescription="Artist Tracks" />
-
-                <ImageButton
-                    android:id="@+id/btnNpShare"
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
-                    android:layout_marginStart="4dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@drawable/ic_np_share"
-                    app:tint="#94A3B8"
-                    android:contentDescription="Share / Info" />
-            </LinearLayout>
+                android:layout_marginTop="3dp"
+                android:gravity="center"
+                android:text="Artist Name"
+                android:textColor="#94A3B8"
+                android:textSize="14sp"
+                android:singleLine="true"
+                android:ellipsize="end" />
         </LinearLayout>
 
-        <!-- Audio Waveform Visualizer -->
+        <!-- Actual Song Audio Waveform Visualizer & Seek Scrubber -->
         <com.hana.spindle.ui.catalog.AudioWaveformView
             android:id="@+id/audioWaveformView"
             android:layout_width="match_parent"
-            android:layout_height="44dp"
-            android:layout_marginTop="16dp"
-            android:layout_marginHorizontal="8dp" />
+            android:layout_height="48dp"
+            android:layout_marginTop="14dp"
+            android:layout_marginHorizontal="6dp" />
 
-        <!-- Centered Time Readout: 01:35 / 04:43 -->
-        <LinearLayout
-            android:layout_width="wrap_content"
+        <!-- Time Readouts (Elapsed Left, Remaining/Total Right) -->
+        <RelativeLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="8dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:layout_marginTop="4dp"
+            android:paddingHorizontal="8dp">
 
             <TextView
                 android:id="@+id/tvNpCurrentTime"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
                 android:text="00:00"
                 android:textColor="@color/text_primary"
-                android:textSize="15sp"
+                android:textSize="13sp"
                 android:textStyle="bold"
-                android:fontFamily="sans-serif-medium" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text=" / "
-                android:textColor="#64748B"
-                android:textSize="14sp" />
+                android:fontFamily="monospace" />
 
             <TextView
                 android:id="@+id/tvNpTotalDuration"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
                 android:text="00:00"
                 android:textColor="#94A3B8"
-                android:textSize="14sp"
-                android:fontFamily="sans-serif-medium" />
-        </LinearLayout>
+                android:textSize="13sp"
+                android:fontFamily="monospace" />
+        </RelativeLayout>
 
         <!-- Main Playback Transport: Prev, Circular Play/Pause, Next -->
         <LinearLayout
@@ -949,7 +866,7 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center"
-            android:layout_marginTop="14dp">
+            android:layout_marginTop="12dp">
 
             <ImageButton
                 android:id="@+id/btnNpPrev"
@@ -987,7 +904,7 @@
             android:layout_height="48dp"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:layout_marginTop="10dp">
+            android:layout_marginTop="8dp">
 
             <ImageButton
                 android:id="@+id/btnNpLyrics"

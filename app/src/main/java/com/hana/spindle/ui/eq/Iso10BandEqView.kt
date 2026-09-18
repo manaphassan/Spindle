@@ -39,6 +39,13 @@ class Iso10BandEqView @JvmOverloads constructor(
     var onBandsChanged: ((FloatArray) -> Unit)? = null
     var onBandDragFinished: (() -> Unit)? = null
 
+    var isEink: Boolean = false
+        set(value) {
+            field = value
+            updateThemePaints()
+            invalidate()
+        }
+
     // Palette
     private val trackColor = Color.parseColor("#1A1C23")
     private val trackZeroColor = Color.parseColor("#3F4452")
@@ -55,6 +62,28 @@ class Iso10BandEqView @JvmOverloads constructor(
         color = trackColor
         style = Paint.Style.STROKE
         strokeCap = Paint.Cap.ROUND
+    }
+
+    private fun updateThemePaints() {
+        if (isEink) {
+            trackPaint.color = Color.BLACK
+            zeroLinePaint.color = Color.BLACK
+            curvePaint.color = Color.BLACK
+            curveFillPaint.shader = null
+            curveFillPaint.color = Color.TRANSPARENT
+        } else {
+            trackPaint.color = trackColor
+            zeroLinePaint.color = trackZeroColor
+            curvePaint.color = curveColor
+            if (faderHeight > 0f) {
+                curveFillPaint.shader = LinearGradient(
+                    0f, faderTop,
+                    0f, faderBottom,
+                    curveFillColorTop, curveFillColorBottom,
+                    Shader.TileMode.CLAMP
+                )
+            }
+        }
     }
 
     private val zeroLinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -146,12 +175,17 @@ class Iso10BandEqView @JvmOverloads constructor(
         }
 
         trackPaint.strokeWidth = 4f * density
-        curveFillPaint.shader = LinearGradient(
-            0f, faderTop,
-            0f, faderBottom,
-            curveFillColorTop, curveFillColorBottom,
-            Shader.TileMode.CLAMP
-        )
+        if (!isEink) {
+            curveFillPaint.shader = LinearGradient(
+                0f, faderTop,
+                0f, faderBottom,
+                curveFillColorTop, curveFillColorBottom,
+                Shader.TileMode.CLAMP
+            )
+        } else {
+            curveFillPaint.shader = null
+            curveFillPaint.color = Color.TRANSPARENT
+        }
     }
 
     private fun gainToY(gainDb: Float): Float {
@@ -199,7 +233,9 @@ class Iso10BandEqView @JvmOverloads constructor(
         fillPath.close()
 
         // Draw curve glow fill and curve line
-        canvas.drawPath(fillPath, curveFillPaint)
+        if (!isEink) {
+            canvas.drawPath(fillPath, curveFillPaint)
+        }
         canvas.drawPath(curvePath, curvePaint)
 
         // 3. Draw Fader Tracks, Knobs & Text
@@ -220,11 +256,11 @@ class Iso10BandEqView @JvmOverloads constructor(
             canvas.drawCircle(cx, zeroY, 2f * density, zeroLinePaint)
 
             // Thumb Outer Ring
-            thumbPaint.color = thumbBorderColor
+            thumbPaint.color = if (isEink) Color.BLACK else thumbBorderColor
             canvas.drawCircle(cx, cy, thumbRadius, thumbPaint)
 
             // Thumb Inner Core
-            thumbPaint.color = thumbCoreColor
+            thumbPaint.color = if (isEink) Color.WHITE else thumbCoreColor
             canvas.drawCircle(cx, cy, thumbRadius - 2f * density, thumbPaint)
 
             // Center metallic pip
@@ -232,7 +268,7 @@ class Iso10BandEqView @JvmOverloads constructor(
             canvas.drawCircle(cx, cy, 1.5f * density, thumbPaint)
 
             // Frequency label below
-            textPaint.color = if (gain != 0f) textActiveColor else textMutedColor
+            textPaint.color = if (isEink) Color.BLACK else (if (gain != 0f) textActiveColor else textMutedColor)
             textPaint.isFakeBoldText = gain != 0f
             if (i < labels.size) {
                 canvas.drawText(labels[i], cx, height - 8f * density, textPaint)
@@ -241,7 +277,7 @@ class Iso10BandEqView @JvmOverloads constructor(
             // dB value label above fader if boosted/cut
             if (gain != 0f) {
                 val dbStr = if (gain > 0) "+${gain.toInt()}" else "${gain.toInt()}"
-                textPaint.color = curveColor
+                textPaint.color = if (isEink) Color.BLACK else curveColor
                 canvas.drawText(dbStr, cx, faderTop - 6f * density, textPaint)
             }
         }

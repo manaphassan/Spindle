@@ -70,11 +70,7 @@ class DrawerFragment : Fragment() {
     private lateinit var recentAppsManager: RecentAppsManager
     private var allApps: List<AppInfo> = emptyList()
 
-    enum class AppViewMode { GRID, LIST, RECENT }
-    private var currentAppViewMode = AppViewMode.LIST
 
-    enum class SettingsCategory { THEME, AUDIO, LIBRARY, SYSTEM }
-    private var currentSettingsCategory = SettingsCategory.THEME
 
     private val dspPresets = listOf("FLAT", "BASS_BOOST", "HARMAN", "VOCAL", "CLUB")
     private var currentPresetIndex = 0
@@ -135,8 +131,6 @@ class DrawerFragment : Fragment() {
 
         setupTabNavigation()
         setupAppDrawer()
-        setupAppViewModes()
-        setupSettingsCategories()
         setupDjConsole(app)
         setupDefaultLauncher()
         setupImmersiveModeToggle()
@@ -167,13 +161,14 @@ class DrawerFragment : Fragment() {
     }
 
     // =========================================================================
-    // 1. TOP 3-TAB NAVIGATION
+    // 1. TOP 3-TAB NAVIGATION (AUDIOPHILE-FIRST "RACK DECK")
     // =========================================================================
     private fun setupTabNavigation() {
-        binding.btnTabApps.setOnClickListener { selectTab(0) }
-        binding.btnTabEq.setOnClickListener { selectTab(1) }
+        binding.btnTabEq.setOnClickListener { selectTab(0) }
+        binding.btnTabApps.setOnClickListener { selectTab(1) }
         binding.btnTabSettings.setOnClickListener { selectTab(2) }
 
+        // Primary Landing: Sound Deck (EQ / DSP / VU Meters)
         selectTab(0)
 
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, object : OnBackPressedCallback(true) {
@@ -191,33 +186,33 @@ class DrawerFragment : Fragment() {
 
     private fun selectTab(index: Int) {
         currentTabIndex = index
-        binding.containerApps.visibility = if (index == 0) View.VISIBLE else View.GONE
-        binding.containerEq.visibility = if (index == 1) View.VISIBLE else View.GONE
+        binding.containerEq.visibility = if (index == 0) View.VISIBLE else View.GONE
+        binding.containerApps.visibility = if (index == 1) View.VISIBLE else View.GONE
         binding.containerSettings.visibility = if (index == 2) View.VISIBLE else View.GONE
         if (index == 2) {
             binding.scrollSettingsContent.scrollTo(0, 0)
-            selectSettingsCategory(currentSettingsCategory)
         }
 
-        val isDark = themeManager.currentTheme.value.isDarkAppTheme
-        val isEink = themeManager.currentTheme.value.id == CassetteTheme.MONOCHROME_EINK.id
-        val activeColor = ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#F97316"))
+        val theme = themeManager.currentTheme.value
+        val isDark = theme.isDarkAppTheme
+        val isEink = theme.id == CassetteTheme.MONOCHROME_EINK.id
+        val activeColor = ColorStateList.valueOf(if (isEink) Color.BLACK else theme.accentColor)
         val inactiveColor = ColorStateList.valueOf(if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#202334"))
         val activeText = Color.WHITE
         val inactiveText = if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#2A2E45") else Color.parseColor("#FAFAF9")
 
-        binding.btnTabApps.backgroundTintList = if (index == 0) activeColor else inactiveColor
-        binding.btnTabApps.setTextColor(if (index == 0) activeText else inactiveText)
+        binding.btnTabEq.backgroundTintList = if (index == 0) activeColor else inactiveColor
+        binding.btnTabEq.setTextColor(if (index == 0) activeText else inactiveText)
 
-        binding.btnTabEq.backgroundTintList = if (index == 1) activeColor else inactiveColor
-        binding.btnTabEq.setTextColor(if (index == 1) activeText else inactiveText)
+        binding.btnTabApps.backgroundTintList = if (index == 1) activeColor else inactiveColor
+        binding.btnTabApps.setTextColor(if (index == 1) activeText else inactiveText)
 
         binding.btnTabSettings.backgroundTintList = if (index == 2) activeColor else inactiveColor
         binding.btnTabSettings.setTextColor(if (index == 2) activeText else inactiveText)
     }
 
     // =========================================================================
-    // 2. APP DRAWER WITH ALPHABET INDEX RAIL
+    // 2. MINIMALIST APP DRAWER WITH NIAGARA-STYLE VERNIER WAVE SCROLLBAR
     // =========================================================================
     private fun setupAppDrawer() {
         appAdapter = AppListAdapter { appInfo ->
@@ -230,11 +225,14 @@ class DrawerFragment : Fragment() {
             startActivity(launchIntent)
         }
 
+        val density = resources.displayMetrics.density
         binding.rvApps.layoutManager = LinearLayoutManager(requireContext())
         binding.rvApps.adapter = appAdapter
+        appAdapter.isGridMode = false
+        binding.rvApps.setPadding(0, 0, (32 * density).toInt(), (24 * density).toInt())
+        binding.alphabetIndexView.visibility = View.VISIBLE
 
         viewLifecycleOwner.lifecycleScope.launch {
-            // Sort installed apps alphabetically
             allApps = appListLoader.loadInstalledApps().sortedBy { it.label.lowercase(Locale.ROOT) }
             filterApps(binding.etSearchApps.text.toString())
         }
@@ -247,11 +245,8 @@ class DrawerFragment : Fragment() {
             override fun afterTextChanged(s: Editable?) {}
         })
 
-        // Fast-Scroll Alphabet Index Rail
+        // Niagara-Style Vernier Wave Alphabet Index Rail
         binding.alphabetIndexView.onLetterSelected = { letter ->
-            binding.tvAlphabetPreview.text = letter
-            binding.tvAlphabetPreview.visibility = View.VISIBLE
-
             val targetIndex = if (letter == "#") {
                 allApps.indexOfFirst {
                     val firstChar = it.label.firstOrNull() ?: ' '
@@ -267,129 +262,15 @@ class DrawerFragment : Fragment() {
                 (binding.rvApps.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(targetIndex, 0)
             }
         }
-
-        binding.alphabetIndexView.onTouchPositionChanged = { letter, touchY ->
-            binding.tvAlphabetPreview.text = letter
-            binding.tvAlphabetPreview.visibility = View.VISIBLE
-
-            val previewHeight = binding.tvAlphabetPreview.height.toFloat().takeIf { it > 0f }
-                ?: (68f * resources.displayMetrics.density)
-            val targetY = touchY - previewHeight * 0.5f
-            val parentHeight = (binding.alphabetIndexView.parent as? View)?.height?.toFloat() ?: 0f
-            val maxY = if (parentHeight > 0f) parentHeight - previewHeight else targetY
-            binding.tvAlphabetPreview.translationY = targetY.coerceIn(0f, maxY.coerceAtLeast(0f))
-        }
-
-        binding.alphabetIndexView.onTouchActiveChanged = { isActive ->
-            if (!isActive) {
-                binding.tvAlphabetPreview.postDelayed({
-                    _binding?.tvAlphabetPreview?.visibility = View.GONE
-                }, 150L)
-            }
-        }
-    }
-
-    private fun setupAppViewModes() {
-        binding.btnViewGrid.setOnClickListener { setAppViewMode(AppViewMode.GRID) }
-        binding.btnViewList.setOnClickListener { setAppViewMode(AppViewMode.LIST) }
-        binding.btnViewRecent.setOnClickListener { setAppViewMode(AppViewMode.RECENT) }
-        setAppViewMode(AppViewMode.LIST)
-    }
-
-    private fun setAppViewMode(mode: AppViewMode) {
-        currentAppViewMode = mode
-        val theme = themeManager.currentTheme.value
-        val isDark = theme.isDarkAppTheme
-        val isEink = theme.id == CassetteTheme.MONOCHROME_EINK.id
-        val activeBg = ColorStateList.valueOf(if (isEink) Color.BLACK else theme.accentColor)
-        val inactiveBg = ColorStateList.valueOf(if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#151720"))
-        val activeText = Color.WHITE
-        val inactiveText = if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#2A2E45") else Color.parseColor("#A1A1AA")
-
-        binding.btnViewGrid.backgroundTintList = if (mode == AppViewMode.GRID) activeBg else inactiveBg
-        binding.btnViewGrid.setTextColor(if (mode == AppViewMode.GRID) activeText else inactiveText)
-
-        binding.btnViewList.backgroundTintList = if (mode == AppViewMode.LIST) activeBg else inactiveBg
-        binding.btnViewList.setTextColor(if (mode == AppViewMode.LIST) activeText else inactiveText)
-
-        binding.btnViewRecent.backgroundTintList = if (mode == AppViewMode.RECENT) activeBg else inactiveBg
-        binding.btnViewRecent.setTextColor(if (mode == AppViewMode.RECENT) activeText else inactiveText)
-
-        val density = resources.displayMetrics.density
-        when (mode) {
-            AppViewMode.GRID -> {
-                binding.rvApps.layoutManager = GridLayoutManager(requireContext(), 4)
-                appAdapter.isGridMode = true
-                binding.rvApps.setPadding(0, 0, (28 * density).toInt(), (24 * density).toInt())
-                binding.alphabetIndexView.visibility = View.VISIBLE
-            }
-            AppViewMode.LIST -> {
-                binding.rvApps.layoutManager = LinearLayoutManager(requireContext())
-                appAdapter.isGridMode = false
-                binding.rvApps.setPadding(0, 0, (28 * density).toInt(), (24 * density).toInt())
-                binding.alphabetIndexView.visibility = View.VISIBLE
-            }
-            AppViewMode.RECENT -> {
-                binding.rvApps.layoutManager = LinearLayoutManager(requireContext())
-                appAdapter.isGridMode = false
-                binding.rvApps.setPadding(0, 0, (12 * density).toInt(), (24 * density).toInt())
-                binding.alphabetIndexView.visibility = View.GONE
-            }
-        }
-        filterApps(binding.etSearchApps.text.toString())
     }
 
     private fun filterApps(query: String) {
-        val baseList = if (currentAppViewMode == AppViewMode.RECENT) {
-            recentAppsManager.getRecentApps(allApps)
-        } else {
-            allApps
-        }
         val filtered = if (query.isBlank()) {
-            baseList
+            allApps
         } else {
-            baseList.filter { it.label.contains(query, ignoreCase = true) }
+            allApps.filter { it.label.contains(query, ignoreCase = true) }
         }
-        binding.tvRecentEmptyState.visibility = if (currentAppViewMode == AppViewMode.RECENT && filtered.isEmpty()) View.VISIBLE else View.GONE
         appAdapter.submitList(filtered)
-    }
-
-    private fun setupSettingsCategories() {
-        binding.btnCatTheme.setOnClickListener { selectSettingsCategory(SettingsCategory.THEME) }
-        binding.btnCatAudio.setOnClickListener { selectSettingsCategory(SettingsCategory.AUDIO) }
-        binding.btnCatLibrary.setOnClickListener { selectSettingsCategory(SettingsCategory.LIBRARY) }
-        binding.btnCatSystem.setOnClickListener { selectSettingsCategory(SettingsCategory.SYSTEM) }
-        selectSettingsCategory(SettingsCategory.THEME)
-    }
-
-    private fun selectSettingsCategory(category: SettingsCategory) {
-        currentSettingsCategory = category
-        val theme = themeManager.currentTheme.value
-        val isDark = theme.isDarkAppTheme
-        val isEink = theme.id == CassetteTheme.MONOCHROME_EINK.id
-        val activeBg = ColorStateList.valueOf(if (isEink) Color.BLACK else theme.accentColor)
-        val inactiveBg = ColorStateList.valueOf(if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#151720"))
-        val activeText = Color.WHITE
-        val inactiveText = if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#2A2E45") else Color.parseColor("#A1A1AA")
-
-        binding.btnCatTheme.backgroundTintList = if (category == SettingsCategory.THEME) activeBg else inactiveBg
-        binding.btnCatTheme.setTextColor(if (category == SettingsCategory.THEME) activeText else inactiveText)
-
-        binding.btnCatAudio.backgroundTintList = if (category == SettingsCategory.AUDIO) activeBg else inactiveBg
-        binding.btnCatAudio.setTextColor(if (category == SettingsCategory.AUDIO) activeText else inactiveText)
-
-        binding.btnCatLibrary.backgroundTintList = if (category == SettingsCategory.LIBRARY) activeBg else inactiveBg
-        binding.btnCatLibrary.setTextColor(if (category == SettingsCategory.LIBRARY) activeText else inactiveText)
-
-        binding.btnCatSystem.backgroundTintList = if (category == SettingsCategory.SYSTEM) activeBg else inactiveBg
-        binding.btnCatSystem.setTextColor(if (category == SettingsCategory.SYSTEM) activeText else inactiveText)
-
-        binding.catContainerTheme.visibility = if (category == SettingsCategory.THEME) View.VISIBLE else View.GONE
-        binding.catContainerAudio.visibility = if (category == SettingsCategory.AUDIO) View.VISIBLE else View.GONE
-        binding.catContainerLibrary.visibility = if (category == SettingsCategory.LIBRARY) View.VISIBLE else View.GONE
-        binding.catContainerSystem.visibility = if (category == SettingsCategory.SYSTEM) View.VISIBLE else View.GONE
-
-        binding.scrollSettingsContent.scrollTo(0, 0)
     }
 
     // =========================================================================
@@ -606,15 +487,16 @@ class DrawerFragment : Fragment() {
             }
         }
 
+        binding.tvVuBacklightHint.setOnClickListener {
+            binding.dualAnalogVuMeter.cycleBacklight()
+        }
+
         // 8. Observe playback state and animate VU Meter, Waveform, and L/R Peak Meter
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     audioEngine.playbackState.collectLatest { state ->
                         _binding?.let { b ->
-                            b.waveformView.isPlaying = state.isPlaying
-                            b.waveformView.progress = state.progress
-
                             if (state.currentSong != null) {
                                 b.tvDjTrackTitle.text = "${state.currentSong.title} • ${state.currentSong.artist}"
                             } else {
@@ -639,15 +521,10 @@ class DrawerFragment : Fragment() {
                             val peakJitter = (sin(phase * 2.3) * 0.12f).toFloat()
                             val totalLevel = (baseLevel + peakJitter).coerceIn(0f, 1f)
 
-                            _binding?.ledVuMeter?.audioLevel = totalLevel
-
                             val (leftLvl, rightLvl) = audioEngine.getStereoLevels(totalLevel)
-                            _binding?.lrPeakMeter?.leftLevel = leftLvl
-                            _binding?.lrPeakMeter?.rightLevel = rightLvl
+                            _binding?.dualAnalogVuMeter?.setStereoLevels(leftLvl, rightLvl)
                         } else {
-                            _binding?.ledVuMeter?.audioLevel = 0.0f
-                            _binding?.lrPeakMeter?.leftLevel = 0.0f
-                            _binding?.lrPeakMeter?.rightLevel = 0.0f
+                            _binding?.dualAnalogVuMeter?.setStereoLevels(0.0f, 0.0f)
                         }
                         delay(66L)
                     }
@@ -784,10 +661,22 @@ class DrawerFragment : Fragment() {
     private fun setupDapHardwareSettings(app: SpindleApp) {
         val prefs = requireContext().getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
 
+        // 0. Vintage Lockscreen Player
+        binding.switchLockscreenPlayer.isChecked = prefs.getBoolean("pref_lockscreen_player", true)
+        binding.switchLockscreenPlayer.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean("pref_lockscreen_player", isChecked).apply()
+        }
+
         // 1. Volume Long-Press Skip
         binding.switchVolumeSkip.isChecked = prefs.getBoolean("pref_volume_skip", true)
         binding.switchVolumeSkip.setOnCheckedChangeListener { _, isChecked ->
             prefs.edit().putBoolean("pref_volume_skip", isChecked).apply()
+        }
+
+        // Camera Key Play/Stop Remap
+        binding.switchCameraKeyPlayPause.isChecked = prefs.getBoolean("pref_camera_key_play_pause", true)
+        binding.switchCameraKeyPlayPause.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean("pref_camera_key_play_pause", isChecked).apply()
         }
 
         // 2. Headphone Auto-Pause on Unplug
@@ -856,8 +745,6 @@ class DrawerFragment : Fragment() {
             if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#171926")
         )
         binding.tabBar.backgroundTintList = barBg
-        binding.layoutAppViewModes.backgroundTintList = barBg
-        binding.layoutSettingsCategories.backgroundTintList = barBg
 
         // Search Bar adaptation
         binding.etSearchApps.setTextColor(primary)
@@ -866,15 +753,8 @@ class DrawerFragment : Fragment() {
             if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#202334")
         )
 
-        // Alphabet Index Rail & Preview
+        // Alphabet Index Rail
         binding.alphabetIndexView.updateTheme(secondary, theme.accentColor)
-        binding.tvAlphabetPreview.setTextColor(if (isEink) Color.BLACK else theme.accentColor)
-        binding.tvAlphabetPreview.backgroundTintList = ColorStateList.valueOf(
-            if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#F2FAFAF9") else Color.parseColor("#F2141720")
-        )
-
-        // Empty state
-        binding.tvRecentEmptyState.setTextColor(secondary)
 
         // Propagate text color to AppListAdapter
         appAdapter.updateThemeColors(primary)
@@ -882,11 +762,28 @@ class DrawerFragment : Fragment() {
         binding.tvBypassTitle.setTextColor(if (audioFxController.isBypassEnabled) (if (isEink) Color.BLACK else if (isDark) Color.parseColor("#00E676") else Color.parseColor("#059669")) else primary)
         binding.tvBypassSub.setTextColor(secondary)
 
+        // Propagate isEink to hardware EQ and meter components
+        binding.iso10BandEqView.isEink = isEink
+        binding.knobLow.isEink = isEink
+        binding.knobMid.isEink = isEink
+        binding.knobHi.isEink = isEink
+        binding.knobFilter.isEink = isEink
+        binding.dualAnalogVuMeter.isEink = isEink
+
+        if (isEink) {
+            binding.layoutBtTelemetry.setBackgroundColor(Color.WHITE)
+            binding.layoutJackTelemetry.setBackgroundColor(Color.WHITE)
+        } else {
+            binding.layoutBtTelemetry.setBackgroundColor(Color.parseColor("#0A0B0E"))
+            binding.layoutJackTelemetry.setBackgroundColor(Color.parseColor("#0A0B0E"))
+        }
+
         updateCardsRecursively(binding.root, cardBg, primary, secondary, isDark, isEink)
         selectTab(currentTabIndex)
         updateThemeButtonsVisual()
-        selectSettingsCategory(currentSettingsCategory)
-        setAppViewMode(currentAppViewMode)
+        val accent = if (isEink) Color.BLACK else theme.accentColor
+        binding.alphabetIndexView.updateTheme(secondary, accent)
+        appAdapter.updateThemeColors(primary)
     }
 
     private fun updateCardsRecursively(
@@ -1345,27 +1242,52 @@ class DrawerFragment : Fragment() {
                         b.tvMetricBitrate.text = "${metrics.dynamicBitrateKbps} kbps dynamic"
                         b.tvMetricRoute.text = metrics.outputRoute
 
-                        if (metrics.bluetoothDeviceName != null && metrics.bluetoothBatteryPct != null) {
-                            val batteryStatus = when {
-                                metrics.bluetoothBatteryPct < 20 -> "Low"
-                                metrics.bluetoothBatteryPct < 50 -> "Adequate"
-                                else -> "Healthy"
+                        val isEink = app.themeManager.currentTheme.value.id == CassetteTheme.MONOCHROME_EINK.id
+
+                        if (metrics.isBluetoothConnected) {
+                            b.tvMetricBtStatus.text = "CONNECTED"
+                            b.tvMetricBtStatus.setTextColor(if (isEink) Color.BLACK else Color.parseColor("#00E676"))
+                            b.tvMetricBtDevice.text = metrics.bluetoothDeviceName ?: "Bluetooth Device"
+                            b.tvMetricBtDevice.setTextColor(if (isEink) Color.BLACK else Color.WHITE)
+
+                            if (metrics.bluetoothBatteryPct != null && metrics.bluetoothBatteryPct >= 0) {
+                                val batteryStatus = when {
+                                    metrics.bluetoothBatteryPct < 20 -> "Low"
+                                    metrics.bluetoothBatteryPct < 50 -> "Adequate"
+                                    else -> "Healthy"
+                                }
+                                b.tvMetricBtBattery.text = "Battery: ${metrics.bluetoothBatteryPct}% ($batteryStatus)"
+                                b.tvMetricBtBattery.setTextColor(
+                                    if (isEink) Color.BLACK else if (metrics.bluetoothBatteryPct < 20) Color.parseColor("#EF4444") else Color.parseColor("#00E676")
+                                )
+                            } else {
+                                b.tvMetricBtBattery.text = "Battery: Telemetry not reported by device"
+                                b.tvMetricBtBattery.setTextColor(if (isEink) Color.BLACK else Color.parseColor("#A1A1AA"))
                             }
-                            b.tvMetricBtBattery.text = "● ${metrics.bluetoothDeviceName}: ${metrics.bluetoothBatteryPct}% ($batteryStatus)"
-                            b.tvMetricBtBattery.setTextColor(
-                                if (metrics.bluetoothBatteryPct < 20) Color.parseColor("#EF4444") else Color.parseColor("#00E676")
-                            )
                         } else {
-                            b.tvMetricBtBattery.text = "No Bluetooth Gear Connected (Using Direct ALSA)"
-                            b.tvMetricBtBattery.setTextColor(Color.parseColor("#A1A1AA"))
+                            b.tvMetricBtStatus.text = "DISCONNECTED"
+                            b.tvMetricBtStatus.setTextColor(if (isEink) Color.BLACK else Color.parseColor("#71717A"))
+                            b.tvMetricBtDevice.text = "No Bluetooth Device Connected"
+                            b.tvMetricBtDevice.setTextColor(if (isEink) Color.BLACK else Color.parseColor("#A1A1AA"))
+                            b.tvMetricBtBattery.text = "Direct ALSA / 3.5mm DAC Active"
+                            b.tvMetricBtBattery.setTextColor(if (isEink) Color.BLACK else Color.parseColor("#71717A"))
+                        }
+
+                        // 3.5mm Headphone Jack Hardware Telemetry
+                        if (metrics.jackType != null) {
+                            b.layoutJackTelemetry.visibility = View.VISIBLE
+                            b.tvMetricJackType.text = metrics.jackType
+                            b.tvMetricJackCapabilities.text = metrics.jackCapabilities ?: "Direct ALSA DAC • 16-32bit / up to 384kHz"
+                        } else {
+                            b.layoutJackTelemetry.visibility = View.GONE
                         }
 
                         if (metrics.isBitPerfect) {
-                            b.tvBitPerfectBadge.text = "● BIT-PERFECT NATIVE"
-                            b.tvBitPerfectBadge.setTextColor(Color.parseColor("#00E676"))
+                            b.tvBitPerfectBadge.text = "BIT-PERFECT NATIVE"
+                            b.tvBitPerfectBadge.setTextColor(if (isEink) Color.BLACK else Color.parseColor("#00E676"))
                         } else {
-                            b.tvBitPerfectBadge.text = "▲ AudioFlinger Resampled"
-                            b.tvBitPerfectBadge.setTextColor(Color.parseColor("#F59E0B"))
+                            b.tvBitPerfectBadge.text = "AudioFlinger Resampled"
+                            b.tvBitPerfectBadge.setTextColor(if (isEink) Color.BLACK else Color.parseColor("#F59E0B"))
                         }
                     }
                 }

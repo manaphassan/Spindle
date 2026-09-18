@@ -38,6 +38,13 @@ class LrVoltagePeakMeterView @JvmOverloads constructor(
             }
         }
 
+    var isEink: Boolean = false
+        set(value) {
+            field = value
+            updateThemePaints()
+            invalidate()
+        }
+
     // Pre-allocated paints
     private val ledGreenOnPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.parseColor("#00E676") // Vibrant mint emerald
@@ -78,6 +85,28 @@ class LrVoltagePeakMeterView @JvmOverloads constructor(
         textSize = 18f
         typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
         textAlign = Paint.Align.CENTER
+    }
+
+    private fun updateThemePaints() {
+        if (isEink) {
+            ledGreenOnPaint.apply { color = Color.BLACK; style = Paint.Style.FILL }
+            ledGreenOffPaint.apply { color = Color.BLACK; style = Paint.Style.STROKE; strokeWidth = 1.5f }
+            ledAmberOnPaint.apply { color = Color.BLACK; style = Paint.Style.FILL }
+            ledAmberOffPaint.apply { color = Color.BLACK; style = Paint.Style.STROKE; strokeWidth = 1.5f }
+            ledRedOnPaint.apply { color = Color.BLACK; style = Paint.Style.FILL }
+            ledRedOffPaint.apply { color = Color.BLACK; style = Paint.Style.STROKE; strokeWidth = 1.5f }
+            textPaint.color = Color.BLACK
+            headerPaint.color = Color.BLACK
+        } else {
+            ledGreenOnPaint.apply { color = Color.parseColor("#00E676"); style = Paint.Style.FILL }
+            ledGreenOffPaint.apply { color = Color.parseColor("#14291B"); style = Paint.Style.FILL }
+            ledAmberOnPaint.apply { color = Color.parseColor("#F59E0B"); style = Paint.Style.FILL }
+            ledAmberOffPaint.apply { color = Color.parseColor("#2E200B"); style = Paint.Style.FILL }
+            ledRedOnPaint.apply { color = Color.parseColor("#EF4444"); style = Paint.Style.FILL }
+            ledRedOffPaint.apply { color = Color.parseColor("#2B1313"); style = Paint.Style.FILL }
+            textPaint.color = Color.parseColor("#71717A")
+            headerPaint.color = Color.parseColor("#8E929E")
+        }
     }
 
     private val segmentRect = RectF()

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Spindle Lite</string>
+    <string name="format_flac">FLAC 16/44.1</string>
+    <string name="format_mp3">MP3 320K</string>
+    <string name="format_wav">WAV PCM</string>
+    <string name="format_unknown">AUDIO</string>
+
+    <string name="transport_play">PLAY</string>
+    <string name="transport_pause">PAUSE</string>
+    <string name="transport_stop">STOP</string>
+    <string name="transport_rewind">REW</string>
+    <string name="transport_fast_forward">FFWD</string>
+    <string name="transport_eject">EJECT</string>
+
+    <string name="drawer_title">CASSETTE VAULT</string>
+    <string name="drawer_empty">No audio files found. Insert MicroSD or add music to /Music/</string>
+    <string name="scan_library">Scan MicroSD</string>
+    <string name="scanning">Indexing storage...</string>
+    <string name="ready">READY</string>
+
+    <string name="default_artist">Unknown Artist</string>
+    <string name="default_title">No Cassette Inserted</string>
+    <string name="default_album">Spindle Vault</string>
+</resources>

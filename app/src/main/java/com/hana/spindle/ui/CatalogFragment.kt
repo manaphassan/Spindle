@@ -46,6 +46,9 @@ class CatalogFragment : Fragment() {
     private lateinit var folderAdapter: FolderAdapter
     private lateinit var npLyricsAdapter: LyricsAdapter
     private lateinit var albumTracksAdapter: SongAdapter
+    private lateinit var waveformExtractor: com.hana.spindle.data.WaveformExtractor
+    private lateinit var searchSuggestionAdapter: SearchSuggestionAdapter
+    private var waveformExtractionJob: Job? = null
 
     private var currentAlbumSongs: List<SongEntity> = emptyList()
     private var currentAlbumItem: AlbumItem? = null
@@ -54,8 +57,9 @@ class CatalogFragment : Fragment() {
     private var isNowPlayingSingleVisible = false
     private var isShowingNpLyrics = false
     private var currentLoadedSongId: Long = -1L
+    private var currentMiniSongId: Long = -1L
 
-    // 0: Tracks, 1: Albums, 2: Artists, 3: Folders, 4: Genres, 5: Hi-Res, 6: Rated
+    // 0: Tracks, 1: Albums, 2: Artists, 3: Folders, 4: Favorites
     private var currentTab = 0
 
     private var allSongsList: List<SongEntity> = emptyList()
@@ -72,6 +76,18 @@ class CatalogFragment : Fragment() {
     private var albumSortOrder = AlbumSortOrder.TITLE_ASC
     private var groupByMode = GroupByMode.NONE
 
+    companion object {
+        private const val ARG_OPEN_NOW_PLAYING = "arg_open_now_playing"
+
+        fun newInstance(openNowPlaying: Boolean = false): CatalogFragment {
+            return CatalogFragment().apply {
+                arguments = Bundle().apply {
+                    putBoolean(ARG_OPEN_NOW_PLAYING, openNowPlaying)
+                }
+            }
+        }
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -86,6 +102,7 @@ class CatalogFragment : Fragment() {
 
         val app = requireActivity().application as SpindleApp
         audioEngine = app.audioEngine
+        waveformExtractor = com.hana.spindle.data.WaveformExtractor(requireContext())
 
         setupAdapters(app)
         setupTabs()
@@ -96,8 +113,13 @@ class CatalogFragment : Fragment() {
         setupSearch()
         setupMiniPlayer(app)
         setupNowPlayingSingleAudio(app)
+        observeAudioMetrics(app)
         observeScanProgress(app)
         loadSongs(app)
+
+        if (arguments?.getBoolean(ARG_OPEN_NOW_PLAYING) == true) {
+            showNowPlayingSingleAudio(true)
+        }
     }
 
     private fun setupAdapters(app: SpindleApp) {
@@ -240,6 +262,38 @@ class CatalogFragment : Fragment() {
         binding.rvCatalog.layoutManager = LinearLayoutManager(requireContext())
         binding.rvCatalog.adapter = songAdapter
 
+        searchSuggestionAdapter = SearchSuggestionAdapter { suggestion ->
+            binding.rvSearchSuggestions.visibility = View.GONE
+            binding.etCatalogSearch.clearFocus()
+            val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
+            imm?.hideSoftInputFromWindow(binding.etCatalogSearch.windowToken, 0)
+
+            if (suggestion.song != null) {
+                currentDisplayedSongs = listOf(suggestion.song)
+                audioEngine.playQueue(listOf(suggestion.song), 0)
+                showNowPlayingSingleAudio(true)
+            } else if (suggestion.album != null) {
+                val album = suggestion.album
+                albumTracksJob?.cancel()
+                albumTracksJob = viewLifecycleOwner.lifecycleScope.launch {
+                    val songsFlow = when (album.format) {
+                        "DISCOGRAPHY" -> app.database.songDao().getSongsByArtist(album.album)
+                        "GENRE" -> app.database.songDao().getSongsByGenre(album.album)
+                        "MIXTAPE" -> app.database.playlistDao().getSongsForPlaylist(album.year.toLong())
+                        else -> app.database.songDao().getSongsByAlbum(album.album)
+                    }
+                    songsFlow.collectLatest { albumSongs ->
+                        showAlbumDetail(album, albumSongs)
+                    }
+                }
+            } else {
+                binding.etCatalogSearch.setText(suggestion.title)
+                binding.etCatalogSearch.setSelection(suggestion.title.length)
+            }
+        }
+        binding.rvSearchSuggestions.layoutManager = LinearLayoutManager(requireContext())
+        binding.rvSearchSuggestions.adapter = searchSuggestionAdapter
+
         npLyricsAdapter = LyricsAdapter { timeMs ->
             audioEngine.seekTo(timeMs)
         }
@@ -282,32 +336,53 @@ class CatalogFragment : Fragment() {
             loadFolders()
         }
 
-        binding.tabGenres.setOnClickListener {
-            selectTab(4)
-            binding.rvCatalog.layoutManager = GridLayoutManager(requireContext(), 2)
-            binding.rvCatalog.adapter = albumAdapter
-            loadGenres(app)
-        }
-
-        binding.tabHiRes.setOnClickListener {
-            selectTab(5)
-            binding.rvCatalog.layoutManager = LinearLayoutManager(requireContext())
-            binding.rvCatalog.adapter = songAdapter
-            loadHiRes(app)
-        }
-
         binding.tabFavorites.setOnClickListener {
-            selectTab(6)
+            selectTab(4)
             binding.rvCatalog.layoutManager = LinearLayoutManager(requireContext())
             binding.rvCatalog.adapter = songAdapter
             loadFavorites(app)
         }
 
-        binding.tabMixtapes.setOnClickListener {
-            selectTab(7)
-            binding.rvCatalog.layoutManager = GridLayoutManager(requireContext(), 2)
-            binding.rvCatalog.adapter = albumAdapter
-            loadMixtapes(app)
+        setupCatalogSwipe()
+    }
+
+    private fun setupCatalogSwipe() {
+        val gestureDetector = android.view.GestureDetector(requireContext(), object : android.view.GestureDetector.SimpleOnGestureListener() {
+            override fun onFling(
+                e1: android.view.MotionEvent?,
+                e2: android.view.MotionEvent,
+                velocityX: Float,
+                velocityY: Float
+            ): Boolean {
+                if (e1 == null) return false
+                val diffX = e2.x - e1.x
+                val diffY = e2.y - e1.y
+                if (kotlin.math.abs(diffX) > kotlin.math.abs(diffY) && kotlin.math.abs(diffX) > 120 && kotlin.math.abs(velocityX) > 200) {
+                    if (diffX < 0) {
+                        if (currentTab < 4) switchToTab(currentTab + 1)
+                    } else {
+                        if (currentTab > 0) switchToTab(currentTab - 1)
+                    }
+                    return true
+                }
+                return false
+            }
+        })
+        binding.rvCatalog.addOnItemTouchListener(object : RecyclerView.SimpleOnItemTouchListener() {
+            override fun onInterceptTouchEvent(rv: RecyclerView, e: android.view.MotionEvent): Boolean {
+                gestureDetector.onTouchEvent(e)
+                return false
+            }
+        })
+    }
+
+    private fun switchToTab(index: Int) {
+        when (index) {
+            0 -> binding.tabSongs.performClick()
+            1 -> binding.tabAlbums.performClick()
+            2 -> binding.tabArtists.performClick()
+            3 -> binding.tabFolders.performClick()
+            4 -> binding.tabFavorites.performClick()
         }
     }
 
@@ -328,10 +403,7 @@ class CatalogFragment : Fragment() {
             binding.tabAlbums,
             binding.tabArtists,
             binding.tabFolders,
-            binding.tabGenres,
-            binding.tabHiRes,
-            binding.tabFavorites,
-            binding.tabMixtapes
+            binding.tabFavorites
         )
 
         tabs.forEachIndexed { i, btn ->
@@ -339,9 +411,9 @@ class CatalogFragment : Fragment() {
             btn.setTextColor(if (i == index) activeText else inactiveText)
         }
 
-        binding.btnNewMixtape.visibility = if (index == 7) View.VISIBLE else View.GONE
-        binding.btnShuffle.visibility = if (index == 7) View.GONE else View.VISIBLE
-        binding.btnPlayAll.visibility = if (index == 7) View.GONE else View.VISIBLE
+        binding.btnNewMixtape.visibility = View.GONE
+        binding.btnShuffle.visibility = View.VISIBLE
+        binding.btnPlayAll.visibility = View.VISIBLE
 
         updateSortLabel()
     }
@@ -375,6 +447,7 @@ class CatalogFragment : Fragment() {
         binding.ivSearchIcon.imageTintList = ColorStateList.valueOf(secondary)
         binding.etCatalogSearch.setTextColor(primary)
         binding.etCatalogSearch.setHintTextColor(secondary)
+        binding.btnSearchClear.imageTintList = ColorStateList.valueOf(secondary)
 
         binding.tvCatalogCount.setTextColor(secondary)
         binding.btnSortGroup.backgroundTintList = ColorStateList.valueOf(
@@ -385,7 +458,7 @@ class CatalogFragment : Fragment() {
             if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#202334")
         )
         binding.btnShuffle.setTextColor(primary)
-        binding.btnPlayAll.backgroundTintList = ColorStateList.valueOf(accent)
+        binding.btnPlayAll.backgroundTintList = ColorStateList.valueOf(if (isEink) Color.BLACK else accent)
         binding.btnPlayAll.setTextColor(Color.WHITE)
 
         // Mini player
@@ -396,7 +469,7 @@ class CatalogFragment : Fragment() {
         binding.tvMiniArtist.setTextColor(secondary)
         binding.btnMiniPrev.imageTintList = ColorStateList.valueOf(primary)
         binding.btnMiniNext.imageTintList = ColorStateList.valueOf(primary)
-        binding.btnMiniPlayPause.backgroundTintList = ColorStateList.valueOf(accent)
+        binding.btnMiniPlayPause.backgroundTintList = ColorStateList.valueOf(if (isEink) Color.BLACK else accent)
         binding.btnMiniPlayPause.imageTintList = ColorStateList.valueOf(Color.WHITE)
 
         // Album Detail View
@@ -428,14 +501,11 @@ class CatalogFragment : Fragment() {
         binding.btnNpMenu.imageTintList = ColorStateList.valueOf(primary)
         binding.tvNpTitle.setTextColor(primary)
         binding.tvNpArtist.setTextColor(secondary)
-        binding.btnNpSpecs.imageTintList = ColorStateList.valueOf(secondary)
-        binding.btnNpArtistFilter.imageTintList = ColorStateList.valueOf(secondary)
-        binding.btnNpShare.imageTintList = ColorStateList.valueOf(secondary)
         binding.tvNpCurrentTime.setTextColor(primary)
         binding.tvNpTotalDuration.setTextColor(secondary)
         binding.btnNpPrev.imageTintList = ColorStateList.valueOf(primary)
         binding.btnNpNext.imageTintList = ColorStateList.valueOf(primary)
-        binding.btnNpPlayPause.backgroundTintList = ColorStateList.valueOf(accent)
+        binding.btnNpPlayPause.backgroundTintList = ColorStateList.valueOf(if (isEink) Color.BLACK else accent)
         binding.btnNpPlayPause.imageTintList = ColorStateList.valueOf(Color.WHITE)
         binding.btnNpLyrics.imageTintList = ColorStateList.valueOf(secondary)
         binding.btnNpRepeat.imageTintList = ColorStateList.valueOf(secondary)
@@ -459,6 +529,9 @@ class CatalogFragment : Fragment() {
             albumTracksAdapter.updateThemeColors(primary, secondary, isDark, isEink)
         }
         folderAdapter.updateThemeColors(primary, secondary)
+        if (::searchSuggestionAdapter.isInitialized) {
+            searchSuggestionAdapter.updateThemeColors(primary, secondary, accent, isEink)
+        }
 
         // Update active tab buttons visual
         selectTab(currentTab)
@@ -466,7 +539,7 @@ class CatalogFragment : Fragment() {
 
     private fun setupSortAndGroup() {
         binding.btnSortGroup.setOnClickListener {
-            val isAlbum = (currentTab == 1 || currentTab == 2 || currentTab == 4 || currentTab == 7)
+            val isAlbum = (currentTab == 1 || currentTab == 2)
             val dialog = SortGroupBottomSheet(
                 isAlbumTab = isAlbum,
                 currentTrackSort = trackSortOrder,
@@ -493,7 +566,7 @@ class CatalogFragment : Fragment() {
     }
 
     private fun updateSortLabel() {
-        val isAlbum = (currentTab == 1 || currentTab == 2 || currentTab == 4 || currentTab == 7)
+        val isAlbum = (currentTab == 1 || currentTab == 2)
         val sortText = if (isAlbum) albumSortOrder.displayName else trackSortOrder.displayName
         binding.tvCurrentSortLabel.text = "Sort: $sortText"
     }
@@ -518,7 +591,7 @@ class CatalogFragment : Fragment() {
         val lm = binding.rvCatalog.layoutManager ?: return
 
         when (currentTab) {
-            0, 5, 6 -> {
+            0, 4 -> {
                 val index = currentDisplayedSongs.indexOfFirst {
                     val firstChar = it.title.trim().firstOrNull()?.uppercaseChar() ?: '#'
                     if (targetChar == '#') !firstChar.isLetter() else firstChar == targetChar
@@ -527,7 +600,7 @@ class CatalogFragment : Fragment() {
                     (lm as? LinearLayoutManager)?.scrollToPositionWithOffset(index, 0)
                 }
             }
-            1, 2, 4, 7 -> {
+            1, 2 -> {
                 val index = currentDisplayedAlbums.indexOfFirst {
                     val firstChar = it.album.trim().firstOrNull()?.uppercaseChar() ?: '#'
                     if (targetChar == '#') !firstChar.isLetter() else firstChar == targetChar
@@ -565,8 +638,22 @@ class CatalogFragment : Fragment() {
     }
 
     private fun setupSearch() {
+        binding.btnSearchClear.setOnClickListener {
+            binding.etCatalogSearch.text?.clear()
+            binding.rvSearchSuggestions.visibility = View.GONE
+            binding.btnSearchClear.visibility = View.GONE
+        }
+
         binding.etCatalogSearch.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
+                val query = s?.toString()?.trim() ?: ""
+                if (query.isEmpty()) {
+                    binding.btnSearchClear.visibility = View.GONE
+                    binding.rvSearchSuggestions.visibility = View.GONE
+                } else {
+                    binding.btnSearchClear.visibility = View.VISIBLE
+                    updateSearchSuggestions(query)
+                }
                 applyFilterAndSort()
             }
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -574,11 +661,67 @@ class CatalogFragment : Fragment() {
         })
     }
 
+    private fun updateSearchSuggestions(query: String) {
+        val q = query.lowercase(Locale.ROOT)
+        val suggestions = mutableListOf<SearchSuggestion>()
+
+        // 1. Matches in Tracks (up to 4)
+        val matchingSongs = allSongsList.filter {
+            it.title.lowercase(Locale.ROOT).contains(q) || it.artist.lowercase(Locale.ROOT).contains(q)
+        }.take(4)
+        for (song in matchingSongs) {
+            suggestions.add(
+                SearchSuggestion(
+                    title = song.title,
+                    subtitle = "${song.artist} • ${song.fileFormat}",
+                    type = SuggestionType.TRACK,
+                    song = song
+                )
+            )
+        }
+
+        // 2. Matches in Albums (up to 3)
+        val matchingAlbums = allAlbumsList.filter {
+            it.album.lowercase(Locale.ROOT).contains(q)
+        }.take(3)
+        for (album in matchingAlbums) {
+            suggestions.add(
+                SearchSuggestion(
+                    title = album.album,
+                    subtitle = "${album.artist} • ${album.trackCount} tracks",
+                    type = SuggestionType.ALBUM,
+                    album = album
+                )
+            )
+        }
+
+        // 3. Matches in Artists (up to 2)
+        val matchingArtists = allSongsList.map { it.artist }.distinct().filter {
+            it.lowercase(Locale.ROOT).contains(q)
+        }.take(2)
+        for (artist in matchingArtists) {
+            suggestions.add(
+                SearchSuggestion(
+                    title = artist,
+                    subtitle = "Artist",
+                    type = SuggestionType.ARTIST
+                )
+            )
+        }
+
+        if (suggestions.isNotEmpty()) {
+            searchSuggestionAdapter.submitList(suggestions)
+            binding.rvSearchSuggestions.visibility = View.VISIBLE
+        } else {
+            binding.rvSearchSuggestions.visibility = View.GONE
+        }
+    }
+
     private fun applyFilterAndSort() {
         val query = binding.etCatalogSearch.text?.toString()?.trim()?.lowercase(Locale.ROOT) ?: ""
 
         when (currentTab) {
-            0, 5, 6 -> {
+            0, 4 -> {
                 var list = allSongsList
 
                 // 1. Filter Chips
@@ -619,7 +762,7 @@ class CatalogFragment : Fragment() {
                 songAdapter.submitList(list)
                 binding.tvCatalogCount.text = "${list.size} tracks"
             }
-            1, 2, 4, 7 -> {
+            1, 2 -> {
                 var list = allAlbumsList
 
                 // 1. Search Query
@@ -643,7 +786,7 @@ class CatalogFragment : Fragment() {
 
                 currentDisplayedAlbums = list
                 albumAdapter.submitList(list)
-                binding.tvCatalogCount.text = if (currentTab == 7) "${list.size} mixtapes" else "${list.size} albums"
+                binding.tvCatalogCount.text = "${list.size} albums"
             }
             3 -> {
                 var list = allFoldersList
@@ -678,25 +821,26 @@ class CatalogFragment : Fragment() {
                         b.tvMiniFormat.visibility = View.VISIBLE
                         b.tvMiniFormat.text = formatStr
 
-                        songAdapter.activeSongId = song.id
-                        songAdapter.notifyDataSetChanged()
-                        if (::albumTracksAdapter.isInitialized) {
+                        if (songAdapter.activeSongId != song.id) {
+                            val oldActiveId = songAdapter.activeSongId
+                            songAdapter.activeSongId = song.id
+                            val oldPos = currentDisplayedSongs.indexOfFirst { it.id == oldActiveId }
+                            val newPos = currentDisplayedSongs.indexOfFirst { it.id == song.id }
+                            if (oldPos != -1) songAdapter.notifyItemChanged(oldPos)
+                            if (newPos != -1) songAdapter.notifyItemChanged(newPos)
+                        }
+                        if (::albumTracksAdapter.isInitialized && albumTracksAdapter.activeSongId != song.id) {
+                            val oldActiveId = albumTracksAdapter.activeSongId
                             albumTracksAdapter.activeSongId = song.id
-                            albumTracksAdapter.notifyDataSetChanged()
+                            val oldPos = currentAlbumSongs.indexOfFirst { it.id == oldActiveId }
+                            val newPos = currentAlbumSongs.indexOfFirst { it.id == song.id }
+                            if (oldPos != -1) albumTracksAdapter.notifyItemChanged(oldPos)
+                            if (newPos != -1) albumTracksAdapter.notifyItemChanged(newPos)
                         }
 
                         // Update Now Playing Single Audio metadata
                         b.tvNpTitle.text = song.title
                         b.tvNpArtist.text = song.artist
-
-                        val route = app.audioEngine.metricsTracker.metrics.value.outputRoute
-                        val shortRoute = when {
-                            route.contains("USB", ignoreCase = true) -> "USB DAC"
-                            route.contains("3.5mm", ignoreCase = true) -> "3.5mm Jack"
-                            route.contains("Bluetooth", ignoreCase = true) -> "Bluetooth"
-                            else -> "Speaker"
-                        }
-                        b.tvNpRouteBadge.text = "${song.fileFormat} ${song.bitDepth}/${song.sampleRate / 1000}k • $shortRoute"
 
                         if (song.id != currentLoadedSongId) {
                             currentLoadedSongId = song.id
@@ -712,6 +856,13 @@ class CatalogFragment : Fragment() {
                                 b.audioWaveformView.accentColor = accent
                                 b.btnNpPlayPause.backgroundTintList = ColorStateList.valueOf(accent)
                             }
+
+                            // Extract real 64-bar song waveform amplitudes
+                            waveformExtractionJob?.cancel()
+                            waveformExtractionJob = viewLifecycleOwner.lifecycleScope.launch {
+                                val wave = waveformExtractor.getWaveform(song.path, 64)
+                                b.audioWaveformView.setWaveformData(wave)
+                            }
                         }
 
                         // Synchronized lyrics
@@ -726,23 +877,27 @@ class CatalogFragment : Fragment() {
                             b.rvNpLyrics.visibility = View.GONE
                         }
 
-                        // Load mini cover art
-                        viewLifecycleOwner.lifecycleScope.launch {
-                            val isEink = app.themeManager.currentTheme.value.id == CassetteTheme.MONOCHROME_EINK.id
-                            val thumb = app.imageLoader.loadCover(song.path, 96, 96)
-                            if (thumb != null) {
-                                b.ivMiniArt.imageTintList = null
-                                b.ivMiniArt.setPadding(0, 0, 0, 0)
-                                b.ivMiniArt.setImageBitmap(thumb)
-                            } else {
-                                b.ivMiniArt.setPadding(8, 8, 8, 8)
-                                b.ivMiniArt.setImageResource(android.R.drawable.ic_media_play)
-                                b.ivMiniArt.imageTintList = ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#64748B"))
+                        // Load mini cover art only when track changes
+                        if (song.id != currentMiniSongId) {
+                            currentMiniSongId = song.id
+                            viewLifecycleOwner.lifecycleScope.launch {
+                                val isEink = app.themeManager.currentTheme.value.id == CassetteTheme.MONOCHROME_EINK.id
+                                val thumb = app.imageLoader.loadCover(song.path, 96, 96)
+                                if (thumb != null) {
+                                    b.ivMiniArt.imageTintList = null
+                                    b.ivMiniArt.setPadding(0, 0, 0, 0)
+                                    b.ivMiniArt.setImageBitmap(thumb)
+                                } else {
+                                    b.ivMiniArt.setPadding(8, 8, 8, 8)
+                                    b.ivMiniArt.setImageResource(android.R.drawable.ic_media_play)
+                                    b.ivMiniArt.imageTintList = ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#64748B"))
+                                }
                             }
                         }
                     }
 
                     // Progress and timings
+                    b.circularCoverArcView.isPlaying = state.isPlaying
                     b.circularCoverArcView.progress = state.progress
                     b.audioWaveformView.progress = state.progress
                     b.audioWaveformView.isPlaying = state.isPlaying
@@ -774,7 +929,10 @@ class CatalogFragment : Fragment() {
     }
 
     private fun setupNowPlayingSingleAudio(app: SpindleApp) {
-        binding.btnNpBack.setOnClickListener { showNowPlayingSingleAudio(false) }
+        binding.btnNpBack.setOnClickListener {
+            arguments?.putBoolean(ARG_OPEN_NOW_PLAYING, false)
+            showNowPlayingSingleAudio(false)
+        }
         binding.btnNpQueue.setOnClickListener {
             QueueBottomSheet().show(childFragmentManager, "QueueBottomSheet")
         }
@@ -811,26 +969,37 @@ class CatalogFragment : Fragment() {
             }
         }
         binding.btnNpMenu.setOnClickListener(openSpecsAction)
-        binding.btnNpSpecs.setOnClickListener(openSpecsAction)
 
-        binding.btnNpArtistFilter.setOnClickListener {
-            val song = audioEngine.playbackState.value.currentSong
-            if (song != null && song.artist.isNotEmpty()) {
-                showNowPlayingSingleAudio(false)
-                binding.etCatalogSearch.setText(song.artist)
-            }
+        // Audiophile turntable vinyl swipe gestures
+        binding.circularCoverArcView.onSwipeLeft = {
+            audioEngine.playNext()
+        }
+        binding.circularCoverArcView.onSwipeRight = {
+            audioEngine.playPrevious(forcePreviousSong = true)
         }
 
-        binding.btnNpShare.setOnClickListener {
-            val song = audioEngine.playbackState.value.currentSong
-            if (song != null) {
-                val sendIntent = Intent().apply {
-                    action = Intent.ACTION_SEND
-                    putExtra(Intent.EXTRA_TEXT, "Now playing: ${song.title} by ${song.artist}")
-                    type = "text/plain"
+        // Swipe down on Now Playing screen to dismiss to music catalog
+        val npSwipeDownDetector = android.view.GestureDetector(requireContext(), object : android.view.GestureDetector.SimpleOnGestureListener() {
+            override fun onFling(
+                e1: android.view.MotionEvent?,
+                e2: android.view.MotionEvent,
+                velocityX: Float,
+                velocityY: Float
+            ): Boolean {
+                if (e1 == null) return false
+                val diffY = e2.y - e1.y
+                val diffX = e2.x - e1.x
+                if (diffY > 120 && kotlin.math.abs(diffY) > kotlin.math.abs(diffX) && velocityY > 200) {
+                    arguments?.putBoolean(ARG_OPEN_NOW_PLAYING, false)
+                    showNowPlayingSingleAudio(false)
+                    return true
                 }
-                startActivity(Intent.createChooser(sendIntent, "Share Track"))
+                return false
             }
+        })
+        binding.nowPlayingSingleContainer.setOnTouchListener { _, event ->
+            npSwipeDownDetector.onTouchEvent(event)
+            true
         }
 
         binding.circularCoverArcView.onSeek = { progress ->
@@ -859,28 +1028,32 @@ class CatalogFragment : Fragment() {
         }
         binding.btnNpLyrics.setOnClickListener(toggleLyrics)
         binding.cardNpLyrics.setOnClickListener(toggleLyrics)
+        binding.circularCoverArcView.onCoverClicked = {
+            toggleLyrics.onClick(binding.circularCoverArcView)
+        }
     }
 
     private fun updateFavoriteIcon(isFav: Boolean) {
         val app = requireActivity().application as SpindleApp
         val isEink = app.themeManager.currentTheme.value.id == CassetteTheme.MONOCHROME_EINK.id
-        val favColor = if (isEink) Color.WHITE else Color.parseColor("#FB7185")
+        val favColor = if (isEink) Color.BLACK else Color.parseColor("#FB7185")
         if (isFav) {
             binding.btnNpFavorite.setImageResource(R.drawable.ic_np_heart_filled)
             binding.btnNpFavorite.imageTintList = ColorStateList.valueOf(favColor)
         } else {
             binding.btnNpFavorite.setImageResource(R.drawable.ic_np_heart)
-            binding.btnNpFavorite.imageTintList = ColorStateList.valueOf(if (isEink) Color.WHITE else Color.parseColor("#B0B4CE"))
+            binding.btnNpFavorite.imageTintList = ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#B0B4CE"))
         }
     }
 
     private fun updateShuffleIcon(mode: ShuffleMode) {
         val app = requireActivity().application as SpindleApp
-        val accent = app.themeManager.currentTheme.value.accentColor
+        val isEink = app.themeManager.currentTheme.value.id == CassetteTheme.MONOCHROME_EINK.id
+        val accent = if (isEink) Color.BLACK else app.themeManager.currentTheme.value.accentColor
         when (mode) {
             ShuffleMode.OFF -> {
-                binding.btnNpShuffle.alpha = 0.5f
-                binding.btnNpShuffle.imageTintList = ColorStateList.valueOf(Color.parseColor("#94A3B8"))
+                binding.btnNpShuffle.alpha = 0.4f
+                binding.btnNpShuffle.imageTintList = ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#94A3B8"))
             }
             ShuffleMode.ALL -> {
                 binding.btnNpShuffle.alpha = 1.0f
@@ -888,18 +1061,19 @@ class CatalogFragment : Fragment() {
             }
             ShuffleMode.ALBUM -> {
                 binding.btnNpShuffle.alpha = 1.0f
-                binding.btnNpShuffle.imageTintList = ColorStateList.valueOf(Color.parseColor("#FDE68A"))
+                binding.btnNpShuffle.imageTintList = ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#FDE68A"))
             }
         }
     }
 
     private fun updateRepeatIcon(mode: RepeatMode) {
         val app = requireActivity().application as SpindleApp
-        val accent = app.themeManager.currentTheme.value.accentColor
+        val isEink = app.themeManager.currentTheme.value.id == CassetteTheme.MONOCHROME_EINK.id
+        val accent = if (isEink) Color.BLACK else app.themeManager.currentTheme.value.accentColor
         when (mode) {
             RepeatMode.OFF -> {
-                binding.btnNpRepeat.alpha = 0.5f
-                binding.btnNpRepeat.imageTintList = ColorStateList.valueOf(Color.parseColor("#94A3B8"))
+                binding.btnNpRepeat.alpha = 0.4f
+                binding.btnNpRepeat.imageTintList = ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#94A3B8"))
             }
             RepeatMode.ALL -> {
                 binding.btnNpRepeat.alpha = 1.0f
@@ -907,7 +1081,30 @@ class CatalogFragment : Fragment() {
             }
             RepeatMode.ONE -> {
                 binding.btnNpRepeat.alpha = 1.0f
-                binding.btnNpRepeat.imageTintList = ColorStateList.valueOf(Color.parseColor("#FB7185"))
+                binding.btnNpRepeat.imageTintList = ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#FB7185"))
+            }
+        }
+    }
+
+    private fun observeAudioMetrics(app: SpindleApp) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                app.audioEngine.metricsTracker.metrics.collectLatest { metrics ->
+                    _binding?.let { b ->
+                        val theme = app.themeManager.currentTheme.value
+                        val isEink = (theme.id == CassetteTheme.MONOCHROME_EINK.id)
+                        val isDark = theme.isDarkAppTheme
+                        val routeInfo = if (metrics.isBluetoothConnected) {
+                            val btName = metrics.bluetoothDeviceName ?: "BT Audio"
+                            val battInfo = if (metrics.bluetoothBatteryPct != null && metrics.bluetoothBatteryPct >= 0) {
+                                " (${metrics.bluetoothBatteryPct}%)"
+                            } else ""
+                            "${metrics.outputRoute} • $btName$battInfo"
+                        } else {
+                            metrics.outputRoute
+                        }
+                    }
+                }
             }
         }
     }
@@ -915,6 +1112,9 @@ class CatalogFragment : Fragment() {
     fun showNowPlayingSingleAudio(show: Boolean) {
         isNowPlayingSingleVisible = show
         if (show) {
+            val playback = audioEngine.playbackState.value
+            binding.circularCoverArcView.isPlaying = playback.isPlaying
+            binding.circularCoverArcView.progress = playback.progress
             binding.nowPlayingSingleContainer.visibility = View.VISIBLE
             binding.nowPlayingSingleContainer.translationY = 320f
             binding.nowPlayingSingleContainer.alpha = 0f
@@ -1059,6 +1259,7 @@ class CatalogFragment : Fragment() {
                 binding.btnNpLyrics.imageTintList = ColorStateList.valueOf(Color.parseColor("#94A3B8"))
                 return true
             }
+            arguments?.putBoolean(ARG_OPEN_NOW_PLAYING, false)
             showNowPlayingSingleAudio(false)
             return true
         }
@@ -1187,10 +1388,9 @@ class CatalogFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             app.musicScanner.progress.collectLatest { prog ->
                 val scanning = prog.isScanning
-                _binding?.tvScanStatus?.text = if (scanning) "Scanning Library..." else "Ready"
-                _binding?.tvScanStatus?.setTextColor(
-                    if (scanning) Color.parseColor("#FDE68A") else Color.parseColor("#F97316")
-                )
+                _binding?.tvScanStatus?.visibility = if (scanning) View.VISIBLE else View.GONE
+                _binding?.tvScanStatus?.text = if (scanning) "Scanning..." else ""
+                _binding?.tvScanStatus?.setTextColor(Color.parseColor("#FDE68A"))
             }
         }
     }

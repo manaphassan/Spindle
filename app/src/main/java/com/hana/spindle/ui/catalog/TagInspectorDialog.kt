@@ -64,7 +64,7 @@ object TagInspectorDialog {
 
         // Title Header
         val tvHeader = TextView(context).apply {
-            text = "AUDIO STREAM TELEMETRY & TAGS 🏷️"
+            text = "AUDIO STREAM TELEMETRY & TAGS"
             setTextColor(Color.parseColor("#00E676"))
             textSize = 12.5f
             typeface = android.graphics.Typeface.MONOSPACE

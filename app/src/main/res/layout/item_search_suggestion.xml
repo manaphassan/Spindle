@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="44dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingHorizontal="12dp"
+    android:background="?attr/selectableItemBackground">
+
+    <ImageView
+        android:id="@+id/ivSuggestionIcon"
+        android:layout_width="18dp"
+        android:layout_height="18dp"
+        android:src="@android:drawable/ic_media_play"
+        android:tint="#94A3B8"
+        android:contentDescription="Type" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:layout_marginStart="10dp"
+        android:paddingEnd="8dp">
+
+        <TextView
+            android:id="@+id/tvSuggestionTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/text_primary"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:singleLine="true"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/tvSuggestionSubtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/text_secondary"
+            android:textSize="11sp"
+            android:singleLine="true"
+            android:ellipsize="end" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tvSuggestionType"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/vfd_emerald"
+        android:textSize="9.5sp"
+        android:fontFamily="monospace"
+        android:background="#202334"
+        android:paddingHorizontal="6dp"
+        android:paddingVertical="2dp"
+        android:text="TRACK" />
+
+</LinearLayout>

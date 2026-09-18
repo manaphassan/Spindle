@@ -12,6 +12,7 @@ import android.view.GestureDetector
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import android.view.animation.DecelerateInterpolator
 import android.view.animation.LinearInterpolator
 import com.hana.spindle.theme.CassetteTheme
@@ -55,11 +56,19 @@ class VerticalDeckView @JvmOverloads constructor(
 
     var isPlaying: Boolean = false
         set(value) {
-            if (field != value) {
-                field = value
+            val changed = (field != value)
+            field = value
+            if (changed) {
                 animateHeadEngage(value)
-                if (value) startRotation() else stopRotation()
             }
+            if (value) {
+                if (rotationAnimator?.isRunning != true) {
+                    startRotation()
+                }
+            } else {
+                stopRotation()
+            }
+            invalidate()
         }
 
     var progress: Float = 0.0f
@@ -107,6 +116,24 @@ class VerticalDeckView @JvmOverloads constructor(
             invalidate()
         }
 
+    var isSongLoaded: Boolean = false
+        set(value) {
+            field = value
+            invalidate()
+        }
+
+    var deviceName: String = ""
+        set(value) {
+            field = value
+            invalidate()
+        }
+
+    var androidVersionText: String = ""
+        set(value) {
+            field = value
+            invalidate()
+        }
+
     var artistName: String = ""
         set(value) {
             field = value
@@ -120,6 +147,30 @@ class VerticalDeckView @JvmOverloads constructor(
         }
 
     var outputRoute: String = ""
+        set(value) {
+            field = value
+            invalidate()
+        }
+
+    var bluetoothDeviceName: String? = null
+        set(value) {
+            field = value
+            invalidate()
+        }
+
+    var bluetoothBatteryPct: Int? = null
+        set(value) {
+            field = value
+            invalidate()
+        }
+
+    var isBluetoothConnected: Boolean = false
+        set(value) {
+            field = value
+            invalidate()
+        }
+
+    var bluetoothConnectionStatus: String = "DISCONNECTED"
         set(value) {
             field = value
             invalidate()
@@ -156,6 +207,13 @@ class VerticalDeckView @JvmOverloads constructor(
     // Dynamic Album Cover Accent Color with smooth transition animation
     var coverAccentColor: Int = Color.parseColor("#F97316")
         private set
+
+    // Dynamic Album Artwork Sticker on Cassette Shell
+    var albumArtBitmap: Bitmap? = null
+        set(value) {
+            field = value
+            invalidate()
+        }
 
     private var currentAccentColor: Int = Color.parseColor("#F97316")
     private var colorAnimator: ValueAnimator? = null
@@ -195,16 +253,20 @@ class VerticalDeckView @JvmOverloads constructor(
     var onRewindClicked: (() -> Unit)? = null
     var onFastForwardClicked: (() -> Unit)? = null
     var onEjectClicked: (() -> Unit)? = null
+    var onEjectLongClicked: (() -> Unit)? = null
     var onSeek: ((Float) -> Unit)? = null
     var onDoubleTapChassis: (() -> Unit)? = null
+    var onTitleClicked: (() -> Unit)? = null
 
     // Touch & interaction tracking
     private var isDraggingProgress = false
     private var pressedButtonIndex = -1 // 0: REW, 1: FWD, 2: PLAY, 3: EJECT
     private val gestureHandler = Handler(Looper.getMainLooper())
     private var holdSeekRunnable: Runnable? = null
+    private var holdEjectRunnable: Runnable? = null
     private var pendingSingleTapRunnable: Runnable? = null
     private var isHoldSeeking = false
+    private var isHoldEjecting = false
     private var lastTapButtonIndex = -1
     private var lastTapTime = 0L
 
@@ -218,6 +280,15 @@ class VerticalDeckView @JvmOverloads constructor(
                 return false
             }
             override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                if (isSongPresent() || isSongLoaded) {
+                    val isSpineArea = (e.x <= centerWindowRect.left && e.y >= centerWindowRect.top && e.y <= centerWindowRect.bottom)
+                    val isCassetteArea = centerWindowRect.contains(e.x, e.y) || cassetteRect.contains(e.x, e.y)
+                    if (isSpineArea || isCassetteArea) {
+                        performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                        onTitleClicked?.invoke()
+                        return true
+                    }
+                }
                 if (e.x <= centerWindowRect.left && e.y >= centerWindowRect.top && e.y <= centerWindowRect.bottom) {
                     isLyricsModeEnabled = !isLyricsModeEnabled
                     performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
@@ -349,6 +420,19 @@ class VerticalDeckView @JvmOverloads constructor(
     private val formatBadgeBgPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val formatBadgeBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val formatBadgeTextPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val routeBadgeTextPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private var formatBadgeBaselineOffset = 0f
+    private var routeBadgeBaselineOffset = 0f
+    private val foilBadgePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+        letterSpacing = 0.12f
+    }
+    private val tapeMicroGroovePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 1.0f
+        color = Color.argb(45, 255, 255, 255)
+    }
+
     private val cassetteSlipSheetPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val deckGuidePinPaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
@@ -372,6 +456,7 @@ class VerticalDeckView @JvmOverloads constructor(
     private val innerTrapPath = Path()
     private val threadedTapePath = Path()
     private val acrylicSheenPath = Path()
+    private val btnIconPath = Path()
     private val pressurePadSpringPath = Path()
     private val pressurePadRect = RectF()
     private val tapeHeadRect = RectF()
@@ -394,7 +479,11 @@ class VerticalDeckView @JvmOverloads constructor(
     private val calendar = Calendar.getInstance()
 
     init {
+        isClickable = true
+        isFocusable = true
         setLayerType(LAYER_TYPE_HARDWARE, null)
+        deviceName = com.hana.spindle.util.DeviceUtils.getDeviceName(context)
+        androidVersionText = com.hana.spindle.util.DeviceUtils.getAndroidVersionString()
         updatePaints()
     }
 
@@ -704,6 +793,13 @@ class VerticalDeckView @JvmOverloads constructor(
             style = Paint.Style.FILL
             textAlign = Paint.Align.CENTER
             typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+            letterSpacing = 0.04f
+        }
+        routeBadgeTextPaint.apply {
+            style = Paint.Style.FILL
+            textAlign = Paint.Align.CENTER
+            typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+            letterSpacing = 0.06f
         }
         cassetteSlipSheetPaint.apply {
             style = Paint.Style.FILL
@@ -733,6 +829,10 @@ class VerticalDeckView @JvmOverloads constructor(
             formatBadgeBgPaint.color = Color.WHITE
             formatBadgeBorderPaint.color = Color.BLACK
             formatBadgeTextPaint.color = Color.BLACK
+            routeBadgeTextPaint.color = Color.BLACK
+            deckGuidePinPaint.color = Color.BLACK
+            tapeWindowGaugePaint.color = Color.BLACK
+            tapeWindowGaugeTextPaint.color = Color.BLACK
             ledPeakActivePaint.color = Color.BLACK
             ledPeakActivePaint.clearShadowLayer()
             return
@@ -760,6 +860,7 @@ class VerticalDeckView @JvmOverloads constructor(
         formatBadgeBgPaint.color = Color.argb(40, r, g, b)
         formatBadgeBorderPaint.color = accent
         formatBadgeTextPaint.color = accent
+        routeBadgeTextPaint.color = if (isBitPerfect) Color.parseColor("#38BDF8") else Color.parseColor("#94A3B8")
 
         // Dynamic LED meter peak glow
         ledPeakActivePaint.color = Color.parseColor("#FB7185")
@@ -774,29 +875,31 @@ class VerticalDeckView @JvmOverloads constructor(
 
         // 1. Bottom 4 Mechanical Keys anchored at the bottom of the screen
         val btnMarginH = w * 0.035f
-        val btnBottom = h * 0.985f
+        val btnBottom = h * 0.982f
         val btnH = h * 0.115f
         val btnTop = btnBottom - btnH
-        val btnGap = w * 0.014f
-        val totalBtnW = (w - (btnMarginH * 2f)) - (btnGap * 3f)
-        val btnW = totalBtnW / 4f
+        val btnGap = w * 0.015f
+        val availableW = w - (btnMarginH * 2f)
+        val btnW = (availableW - (btnGap * 3f)) / 4f
+        val totalBtnClusterW = 4f * btnW + 3f * btnGap
+        val startX = (w - totalBtnClusterW) * 0.5f
 
-        btnRewRect.set(btnMarginH, btnTop, btnMarginH + btnW, btnBottom)
+        btnRewRect.set(startX, btnTop, startX + btnW, btnBottom)
         btnFwdRect.set(btnRewRect.right + btnGap, btnTop, btnRewRect.right + btnGap + btnW, btnBottom)
         btnPlayRect.set(btnFwdRect.right + btnGap, btnTop, btnFwdRect.right + btnGap + btnW, btnBottom)
         btnEjectRect.set(btnPlayRect.right + btnGap, btnTop, btnPlayRect.right + btnGap + btnW, btnBottom)
 
-        buttonIconPaint.textSize = btnW * 0.32f
-        buttonLabelPaint.textSize = btnW * 0.19f
-        buttonMutedIconPaint.textSize = btnW * 0.32f
-        buttonMutedLabelPaint.textSize = btnW * 0.19f
+        buttonIconPaint.textSize = btnH * 0.22f
+        buttonLabelPaint.textSize = btnH * 0.155f
+        buttonMutedIconPaint.textSize = btnH * 0.22f
+        buttonMutedLabelPaint.textSize = btnH * 0.155f
 
         // 2. 12-LED Progress Bar directly above the bottom buttons (height reduced by half)
         val barH = h * 0.011f
         val barGap = h * 0.012f
         val barBottom = btnTop - barGap
         val barTop = barBottom - barH
-        val ledMarginH = w * 0.075f
+        val ledMarginH = startX
         ledBarRect.set(
             ledMarginH,
             barTop,
@@ -972,9 +1075,17 @@ class VerticalDeckView @JvmOverloads constructor(
         artistTextPaint.color = Color.parseColor("#CBD5E1")
         artistTextPaint.typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
 
-        formatBadgeTextPaint.textSize = cw * 0.024f
+        formatBadgeTextPaint.textSize = cw * 0.021f
+        routeBadgeTextPaint.textSize = cw * 0.018f
+
+        val fmFormat = formatBadgeTextPaint.fontMetrics
+        formatBadgeBaselineOffset = -(fmFormat.ascent + fmFormat.descent) * 0.5f
+
+        val fmRoute = routeBadgeTextPaint.fontMetrics
+        routeBadgeBaselineOffset = -(fmRoute.ascent + fmRoute.descent) * 0.5f
         tapeWindowGaugeTextPaint.textSize = cw * 0.020f
         labelBadgeTextPaint.textSize = cw * 0.020f
+        foilBadgePaint.textSize = cw * 0.020f
 
         spindleLogoPaint.textSize = cw * 0.042f
         spindleLogoPaint.color = Color.WHITE
@@ -1273,6 +1384,31 @@ class VerticalDeckView @JvmOverloads constructor(
             cassetteRect.right, cassetteRect.top + ch * 0.44f,
             acrylicLinePaint
         )
+
+        // 11. Specular Hot-Stamped Metallic Foil Stamping
+        val isTdk = (theme.id == com.hana.spindle.theme.CassetteTheme.TDK_SA_90.id)
+        val isMaxell = (theme.id == com.hana.spindle.theme.CassetteTheme.MAXELL_XLII.id)
+        val isBasf = (theme.id == com.hana.spindle.theme.CassetteTheme.BASF_CHROME.id)
+
+        if (isTdk || isMaxell || isBasf) {
+            val foilText = when {
+                isTdk -> "TDK SA-90 • HIGH BIAS 70µs EQ"
+                isMaxell -> "MAXELL XLII-S • POSITION HIGH"
+                else -> "BASF CHROME EXTRA • IEC II"
+            }
+            val foilX = cassetteRect.left + cw * 0.40f
+            val foilY = cassetteRect.top + ch * 0.052f
+
+            val foilColor1 = if (isTdk) Color.parseColor("#FEF08A") else if (isMaxell) Color.parseColor("#FFFFFF") else Color.parseColor("#FEF08A")
+            val foilColor2 = if (isTdk) Color.parseColor("#D4AF37") else if (isMaxell) Color.parseColor("#94A3B8") else Color.parseColor("#EAB308")
+
+            foilBadgePaint.shader = LinearGradient(
+                foilX - 80f, foilY, foilX + 80f, foilY,
+                intArrayOf(foilColor1, foilColor2, foilColor1, foilColor2),
+                null, Shader.TileMode.CLAMP
+            )
+            canvas.drawText(foilText, foilX, foilY, foilBadgePaint)
+        }
     }
 
     /**
@@ -1419,13 +1555,27 @@ class VerticalDeckView @JvmOverloads constructor(
 
         // Top Spool Tape Pack (Supply)
         canvas.drawCircle(topHubCenter.x, topHubCenter.y, rTopTape, tapeSpoolPaint)
-        canvas.drawCircle(topHubCenter.x, topHubCenter.y, rTopTape * 0.92f, tapeTexturePaint)
-        canvas.drawCircle(topHubCenter.x, topHubCenter.y, rTopTape * 0.84f, tapeTexturePaint)
+        canvas.drawCircle(topHubCenter.x, topHubCenter.y, rTopTape * 0.94f, tapeTexturePaint)
+        canvas.drawCircle(topHubCenter.x, topHubCenter.y, rTopTape * 0.88f, tapeTexturePaint)
+        canvas.drawCircle(topHubCenter.x, topHubCenter.y, rTopTape * 0.82f, tapeTexturePaint)
+        if (rTopTape > hubOuterRadius + 8f) {
+            val deltaR = rTopTape - hubOuterRadius
+            for (g in 1..3) {
+                canvas.drawCircle(topHubCenter.x, topHubCenter.y, hubOuterRadius + deltaR * (g / 4f), tapeMicroGroovePaint)
+            }
+        }
 
         // Bottom Spool Tape Pack (Take-up)
         canvas.drawCircle(bottomHubCenter.x, bottomHubCenter.y, rBottomTape, tapeSpoolPaint)
-        canvas.drawCircle(bottomHubCenter.x, bottomHubCenter.y, rBottomTape * 0.92f, tapeTexturePaint)
-        canvas.drawCircle(bottomHubCenter.x, bottomHubCenter.y, rBottomTape * 0.84f, tapeTexturePaint)
+        canvas.drawCircle(bottomHubCenter.x, bottomHubCenter.y, rBottomTape * 0.94f, tapeTexturePaint)
+        canvas.drawCircle(bottomHubCenter.x, bottomHubCenter.y, rBottomTape * 0.88f, tapeTexturePaint)
+        canvas.drawCircle(bottomHubCenter.x, bottomHubCenter.y, rBottomTape * 0.82f, tapeTexturePaint)
+        if (rBottomTape > hubOuterRadius + 8f) {
+            val deltaR = rBottomTape - hubOuterRadius
+            for (g in 1..3) {
+                canvas.drawCircle(bottomHubCenter.x, bottomHubCenter.y, hubOuterRadius + deltaR * (g / 4f), tapeMicroGroovePaint)
+            }
+        }
 
         // Top Reel Hub Mechanism & Signature Orange Calibration Notch
         drawHubMechanism(canvas, topHubCenter.x, topHubCenter.y, hubOuterRadius, topReelAngle)
@@ -1642,20 +1792,45 @@ class VerticalDeckView @JvmOverloads constructor(
      * Draws the Hi-Res Audio Format capsule badge positioned directly below the 7-segment digital clock,
      * center-aligned in the column between the left frame and the clear spindle frame.
      */
-    private fun getFormattedBadgeText(): String {
-        val routeShort = when {
-            outputRoute.contains("USB", ignoreCase = true) -> if (isBitPerfect) " • USB DIRECT" else " • USB DAC"
-            outputRoute.contains("3.5mm", ignoreCase = true) -> if (isBitPerfect) " • 3.5mm DIRECT" else " • 3.5mm"
-            outputRoute.contains("Bluetooth", ignoreCase = true) -> " • BT"
-            isBitPerfect -> " • DIRECT"
-            else -> ""
+    private fun getFormatRowText(): String {
+        return if (audioFormat.isNotEmpty()) audioFormat else "HI-RES AUDIO"
+    }
+
+    private fun getRouteRowText(): String {
+        return when {
+            outputRoute.contains("USB", ignoreCase = true) -> if (isBitPerfect) "USB DIRECT" else "USB DAC"
+            outputRoute.contains("3.5mm", ignoreCase = true) -> if (isBitPerfect) "3.5mm DIRECT" else "3.5mm OUTPUT"
+            outputRoute.contains("Bluetooth", ignoreCase = true) || isBluetoothConnected -> {
+                val btNameShort = bluetoothDeviceName?.takeIf { it.isNotBlank() } ?: "BLUETOOTH"
+                val batteryPart = if (bluetoothBatteryPct != null && bluetoothBatteryPct!! >= 0) " (${bluetoothBatteryPct}%)" else ""
+                "$btNameShort$batteryPart"
+            }
+            outputRoute.contains("Speaker", ignoreCase = true) -> if (isBitPerfect) "SPEAKER DIRECT" else "SPEAKER"
+            isBitPerfect -> "DIRECT ALSA"
+            outputRoute.isNotBlank() -> outputRoute.uppercase(Locale.ROOT)
+            else -> "3.5mm DIRECT"
         }
-        val base = if (audioFormat.isNotEmpty()) audioFormat else "HI-RES AUDIO"
-        return "$base$routeShort"
+    }
+
+    private fun isSongPresent(): Boolean {
+        val hardwareName = com.hana.spindle.util.DeviceUtils.getHardwareDeviceName()
+        return isSongLoaded && trackTitle.isNotBlank() &&
+                trackTitle != "No Track Loaded" &&
+                trackTitle != deviceName &&
+                trackTitle != hardwareName &&
+                trackTitle != com.hana.spindle.util.DeviceUtils.getDeviceName(context)
+    }
+
+    private fun getAudioBadgeWidth(cw: Float): Float {
+        val row1Text = getFormatRowText()
+        val row2Text = getRouteRowText()
+        val formatW = formatBadgeTextPaint.measureText(row1Text)
+        val routeW = routeBadgeTextPaint.measureText(row2Text)
+        return maxOf(formatW, routeW) + cw * 0.048f
     }
 
     private fun drawAudioFormatBadgeBelowTime(canvas: Canvas) {
-        val hasSong = trackTitle.isNotEmpty() && trackTitle != "No Track Loaded"
+        val hasSong = isSongPresent()
         if (!hasSong) return
 
         val cw = cassetteRect.width()
@@ -1668,10 +1843,12 @@ class VerticalDeckView @JvmOverloads constructor(
         val clockLength = digitW * 4f + digitGap * 2.4f + colonW
         val clockBottomY = centerWindowRect.top + clockLength + ch * 0.008f
 
-        val badgeText = getFormattedBadgeText()
-        val badgeW = formatBadgeTextPaint.measureText(badgeText) + cw * 0.028f
-        val badgeH = cw * 0.028f
-        val badgeGap = ch * 0.022f
+        val row1Text = getFormatRowText()
+        val row2Text = getRouteRowText()
+
+        val badgeW = getAudioBadgeWidth(cw)
+        val badgeH = cw * 0.072f
+        val badgeGap = ch * 0.016f
         val badgeCenterY = clockBottomY + badgeGap + badgeW * 0.5f
 
         canvas.save()
@@ -1679,13 +1856,30 @@ class VerticalDeckView @JvmOverloads constructor(
         canvas.rotate(-90f)
 
         formatBadgeRect.set(-badgeW * 0.5f, -badgeH * 0.5f, badgeW * 0.5f, badgeH * 0.5f)
-        canvas.drawRoundRect(formatBadgeRect, badgeH * 0.5f, badgeH * 0.5f, formatBadgeBgPaint)
-        canvas.drawRoundRect(formatBadgeRect, badgeH * 0.5f, badgeH * 0.5f, formatBadgeBorderPaint)
+        val cornerRadius = badgeH * 0.28f
+        canvas.drawRoundRect(formatBadgeRect, cornerRadius, cornerRadius, formatBadgeBgPaint)
+        canvas.drawRoundRect(formatBadgeRect, cornerRadius, cornerRadius, formatBadgeBorderPaint)
+
+        // Subtle divider hairline between Row 1 (format) and Row 2 (route destination)
+        val dividerMargin = cw * 0.024f
+        canvas.drawLine(-badgeW * 0.5f + dividerMargin, 0f, badgeW * 0.5f - dividerMargin, 0f, formatBadgeBorderPaint)
+
+        // Row 1: Audio format specification (centered with ample line height in top half [-badgeH * 0.5f, 0f])
+        val row1Y = -badgeH * 0.25f + formatBadgeBaselineOffset
         canvas.drawText(
-            badgeText,
+            row1Text,
             0f,
-            formatBadgeTextPaint.textSize * 0.35f,
+            row1Y,
             formatBadgeTextPaint
+        )
+
+        // Row 2: Real-time Output Routing Destination (centered with ample line height in bottom half [0f, badgeH * 0.5f])
+        val row2Y = badgeH * 0.25f + routeBadgeBaselineOffset
+        canvas.drawText(
+            row2Text,
+            0f,
+            row2Y,
+            routeBadgeTextPaint
         )
 
         canvas.restore()
@@ -1705,13 +1899,31 @@ class VerticalDeckView @JvmOverloads constructor(
      * - Line 1: Artist Name • song time / total duration (e.g. Linkin Park • 01:24 / 03:24)
      */
     private fun drawVerticalSpindleBranding(canvas: Canvas) {
-        val hasSong = trackTitle.isNotEmpty() && trackTitle != "No Track Loaded"
+        val hasSong = isSongPresent()
 
         val cw = cassetteRect.width()
         val ch = cassetteRect.height()
 
         val originX = columnCenterX
         val originY = centerWindowRect.bottom - ch * 0.008f
+
+        // Compute available vertical length along +X before reaching clock or format badge
+        val digitH = cw * 0.052f
+        val digitW = digitH * 0.52f
+        val digitGap = digitW * 0.22f
+        val colonW = digitW * 0.32f
+        val clockLength = digitW * 4f + digitGap * 2.4f + colonW
+        val clockBottomY = centerWindowRect.top + clockLength + ch * 0.008f
+
+        val badgeW = getAudioBadgeWidth(cw)
+        val badgeGap = ch * 0.016f
+        val badgeBottomY = clockBottomY + badgeGap + badgeW
+
+        val maxAvailableLength = if (hasSong) {
+            ((originY - badgeBottomY) - ch * 0.028f).coerceAtLeast(80f)
+        } else {
+            ((originY - clockBottomY) - ch * 0.035f).coerceAtLeast(100f)
+        }
 
         canvas.save()
         canvas.translate(originX, originY)
@@ -1733,33 +1945,59 @@ class VerticalDeckView @JvmOverloads constructor(
         val line1Y = +totalBlockH * 0.5f - 0.2f * artistSize
 
         if (!hasSong) {
-            // Default Spindle Player typography
-            spindleLogoPaint.letterSpacing = 0.12f
-            spindleSubtextPaint.letterSpacing = 0.16f
+            val defaultHw = com.hana.spindle.util.DeviceUtils.getHardwareDeviceName()
+            val displayName = if (trackTitle.isNotBlank() && trackTitle != "No Track Loaded") {
+                trackTitle
+            } else if (deviceName.isNotBlank()) {
+                deviceName
+            } else {
+                defaultHw
+            }
+            val displayVersion = if (androidVersionText.isNotBlank()) androidVersionText else com.hana.spindle.util.DeviceUtils.getAndroidVersionString()
 
-            // Line 0: SPINDLE (crisp bold white typography)
-            canvas.drawText("SPINDLE", 0f, line0Y, spindleLogoPaint)
+            spindleLogoPaint.letterSpacing = 0.08f
+            spindleSubtextPaint.letterSpacing = 0.10f
 
-            // Line 1: Deck (silver/slate subtext)
-            canvas.drawText("Deck", 0f, line1Y, spindleSubtextPaint)
+            // Line 0: Hardware / Device Name (e.g. SONY SO-02J)
+            val measuredNameW = spindleLogoPaint.measureText(displayName)
+            if (measuredNameW > maxAvailableLength) {
+                spindleLogoPaint.letterSpacing = 0.02f
+                val recheckW = spindleLogoPaint.measureText(displayName)
+                if (recheckW > maxAvailableLength) {
+                    val budget = maxAvailableLength - spindleLogoPaint.measureText("…")
+                    var trimmed = displayName
+                    while (trimmed.isNotEmpty() && spindleLogoPaint.measureText(trimmed) > budget) {
+                        trimmed = trimmed.dropLast(1)
+                    }
+                    canvas.drawText("${trimmed.trimEnd()}…", 0f, line0Y, spindleLogoPaint)
+                } else {
+                    canvas.drawText(displayName, 0f, line0Y, spindleLogoPaint)
+                }
+            } else {
+                canvas.drawText(displayName, 0f, line0Y, spindleLogoPaint)
+            }
+
+            // Line 1: Android Version & Dessert Codename (e.g. ANDROID 8.0 • OREO)
+            val measuredVerW = spindleSubtextPaint.measureText(displayVersion)
+            if (measuredVerW > maxAvailableLength) {
+                spindleSubtextPaint.letterSpacing = 0.02f
+                val recheckVerW = spindleSubtextPaint.measureText(displayVersion)
+                if (recheckVerW > maxAvailableLength) {
+                    val budget = maxAvailableLength - spindleSubtextPaint.measureText("…")
+                    var trimmed = displayVersion
+                    while (trimmed.isNotEmpty() && spindleSubtextPaint.measureText(trimmed) > budget) {
+                        trimmed = trimmed.dropLast(1)
+                    }
+                    canvas.drawText("${trimmed.trimEnd()}…", 0f, line1Y, spindleSubtextPaint)
+                } else {
+                    canvas.drawText(displayVersion, 0f, line1Y, spindleSubtextPaint)
+                }
+            } else {
+                canvas.drawText(displayVersion, 0f, line1Y, spindleSubtextPaint)
+            }
         } else {
             spindleLogoPaint.letterSpacing = 0.02f
             spindleSubtextPaint.letterSpacing = 0.02f
-
-            // Compute available vertical length along +X before reaching the badge below time
-            val digitH = cw * 0.052f
-            val digitW = digitH * 0.52f
-            val digitGap = digitW * 0.22f
-            val colonW = digitW * 0.32f
-            val clockLength = digitW * 4f + digitGap * 2.4f + colonW
-            val clockBottomY = centerWindowRect.top + clockLength + ch * 0.008f
-
-            val badgeText = getFormattedBadgeText()
-            val badgeW = formatBadgeTextPaint.measureText(badgeText) + cw * 0.028f
-            val badgeGap = ch * 0.022f
-            val badgeBottomY = clockBottomY + badgeGap + badgeW
-
-            val maxAvailableLength = ((originY - badgeBottomY) - ch * 0.035f).coerceAtLeast(100f)
 
             // Line 0: Song Title (prominent bold white with smooth marquee scrolling when playing)
             val measuredTitleW = spindleLogoPaint.measureText(trackTitle)
@@ -1804,7 +2042,7 @@ class VerticalDeckView @JvmOverloads constructor(
             val totTimeStr = formatTime(durationMs)
             val artistPart = if (artistName.isNotEmpty() && artistName != "Unknown Artist") artistName else "Unknown Artist"
             val subtitle = if (isShowingLyrics) {
-                "♪ $currentLyricText"
+                currentLyricText
             } else {
                 "$artistPart • $curTimeStr / $totTimeStr"
             }
@@ -1873,13 +2111,13 @@ class VerticalDeckView @JvmOverloads constructor(
      * Draws the 4 tactile bottom buttons: REW, FWD, PLAY, and EJECT.
      */
     private fun drawBottomButtons(canvas: Canvas) {
-        drawKeyButton(canvas, btnRewRect, 0, "◀◀", "REW")
-        drawKeyButton(canvas, btnFwdRect, 1, "▶▶", "FWD")
+        drawKeyButton(canvas, btnRewRect, 0, "REW")
+        drawKeyButton(canvas, btnFwdRect, 1, "FWD")
         drawPlayKeyButton(canvas, btnPlayRect, 2)
-        drawKeyButton(canvas, btnEjectRect, 3, "⏏", "EJECT")
+        drawKeyButton(canvas, btnEjectRect, 3, "EJECT")
     }
 
-    private fun drawKeyButton(canvas: Canvas, rect: RectF, index: Int, symbol: String, label: String) {
+    private fun drawKeyButton(canvas: Canvas, rect: RectF, index: Int, label: String) {
         val isPressed = pressedButtonIndex == index
         val r = 10f
 
@@ -1890,10 +2128,102 @@ class VerticalDeckView @JvmOverloads constructor(
         }
 
         val offsetY = if (isPressed) 3f else 0f
-        val symbolY = rect.centerY() - 2f + offsetY
-        val labelY = rect.bottom - (rect.height() * 0.18f) + offsetY
+        val btnH = rect.height()
+        val s = btnH * 0.125f // Icon half-extent
+        val iconH = s * 2f
+        val iconLabelGap = btnH * 0.085f
 
-        canvas.drawText(symbol, rect.centerX(), symbolY, buttonIconPaint)
+        // Calculate exact font cap-height so icon + label block is perfectly centered vertically
+        val fontMetrics = buttonLabelPaint.fontMetrics
+        val capHeight = -fontMetrics.ascent
+        val totalBlockH = iconH + iconLabelGap + capHeight
+
+        // Perfectly centered vertical anchor
+        val blockTop = rect.centerY() - (totalBlockH * 0.5f) + offsetY
+        val iconCenterX = rect.centerX()
+        val iconCenterY = blockTop + s
+        val labelY = blockTop + iconH + iconLabelGap + capHeight - (fontMetrics.descent * 0.4f)
+
+        when (index) {
+            0 -> {
+                // REW: two identical left-facing triangles, cleanly spaced and centered
+                val triW = s * 0.82f
+                val triH = s * 0.82f
+                val triGap = s * 0.20f
+                val totalIconW = triW * 2f + triGap
+                val leftEdge = iconCenterX - totalIconW * 0.5f
+
+                btnIconPath.reset()
+                // First triangle (left)
+                btnIconPath.moveTo(leftEdge, iconCenterY)
+                btnIconPath.lineTo(leftEdge + triW, iconCenterY - triH)
+                btnIconPath.lineTo(leftEdge + triW, iconCenterY + triH)
+                btnIconPath.close()
+
+                // Second triangle (right)
+                val rightTriLeft = leftEdge + triW + triGap
+                btnIconPath.moveTo(rightTriLeft, iconCenterY)
+                btnIconPath.lineTo(rightTriLeft + triW, iconCenterY - triH)
+                btnIconPath.lineTo(rightTriLeft + triW, iconCenterY + triH)
+                btnIconPath.close()
+
+                canvas.drawPath(btnIconPath, buttonIconPaint)
+            }
+            1 -> {
+                // FWD: two identical right-facing triangles, cleanly spaced and centered
+                val triW = s * 0.82f
+                val triH = s * 0.82f
+                val triGap = s * 0.20f
+                val totalIconW = triW * 2f + triGap
+                val leftEdge = iconCenterX - totalIconW * 0.5f
+
+                btnIconPath.reset()
+                // First triangle (left)
+                btnIconPath.moveTo(leftEdge + triW, iconCenterY)
+                btnIconPath.lineTo(leftEdge, iconCenterY - triH)
+                btnIconPath.lineTo(leftEdge, iconCenterY + triH)
+                btnIconPath.close()
+
+                // Second triangle (right)
+                val rightTriLeft = leftEdge + triW + triGap
+                btnIconPath.moveTo(rightTriLeft + triW, iconCenterY)
+                btnIconPath.lineTo(rightTriLeft, iconCenterY - triH)
+                btnIconPath.lineTo(rightTriLeft, iconCenterY + triH)
+                btnIconPath.close()
+
+                canvas.drawPath(btnIconPath, buttonIconPaint)
+            }
+            3 -> {
+                // EJECT: upward-pointing triangle above a horizontal bar, perfectly centered
+                val triW = s * 1.40f
+                val halfW = triW * 0.5f
+                val triH = s * 0.78f
+                val ejectGap = s * 0.20f
+                val barH = s * 0.26f
+                val totalEjectH = triH + ejectGap + barH
+
+                val ejectTop = iconCenterY - totalEjectH * 0.5f
+                val triBottom = ejectTop + triH
+                val barTop = triBottom + ejectGap
+                val barBottom = barTop + barH
+
+                btnIconPath.reset()
+                btnIconPath.moveTo(iconCenterX, ejectTop)
+                btnIconPath.lineTo(iconCenterX - halfW, triBottom)
+                btnIconPath.lineTo(iconCenterX + halfW, triBottom)
+                btnIconPath.close()
+                canvas.drawPath(btnIconPath, buttonIconPaint)
+
+                tempRectF.set(
+                    iconCenterX - halfW,
+                    barTop,
+                    iconCenterX + halfW,
+                    barBottom
+                )
+                canvas.drawRoundRect(tempRectF, 2f, 2f, buttonIconPaint)
+            }
+        }
+
         canvas.drawText(label, rect.centerX(), labelY, buttonLabelPaint)
     }
 
@@ -1914,17 +2244,56 @@ class VerticalDeckView @JvmOverloads constructor(
         }
 
         val offsetY = if (isSunken) 3f else 0f
-        val symbolY = rect.centerY() - 2f + offsetY
-        val labelY = rect.bottom - (rect.height() * 0.18f) + offsetY
+        val btnH = rect.height()
+        val s = btnH * 0.125f // Icon half-extent
+        val iconH = s * 2f
+        val iconLabelGap = btnH * 0.085f
+
+        val activeLabelPaint = if (isPlaying) buttonMutedLabelPaint else buttonLabelPaint
+        val activeIconPaint = if (isPlaying) buttonMutedIconPaint else buttonIconPaint
+
+        val fontMetrics = activeLabelPaint.fontMetrics
+        val capHeight = -fontMetrics.ascent
+        val totalBlockH = iconH + iconLabelGap + capHeight
+
+        val blockTop = rect.centerY() - (totalBlockH * 0.5f) + offsetY
+        val iconCenterX = rect.centerX()
+        val iconCenterY = blockTop + s
+        val labelY = blockTop + iconH + iconLabelGap + capHeight - (fontMetrics.descent * 0.4f)
 
         if (isPlaying) {
-            // Muted pressed/latched state - NO red circle button
-            canvas.drawText("❚❚", rect.centerX(), symbolY, buttonMutedIconPaint)
-            canvas.drawText("PAUSE", rect.centerX(), labelY, buttonMutedLabelPaint)
+            // Muted pressed/latched state - PAUSE (two vertical pill bars, perfectly centered)
+            val barW = s * 0.38f
+            val barH = s * 1.64f
+            val barGap = s * 0.38f
+            val totalPauseW = barW * 2f + barGap
+            val leftEdge = iconCenterX - totalPauseW * 0.5f
+            val barTop = iconCenterY - barH * 0.5f
+            val barBottom = iconCenterY + barH * 0.5f
+
+            tempRectF.set(leftEdge, barTop, leftEdge + barW, barBottom)
+            canvas.drawRoundRect(tempRectF, 2.5f, 2.5f, activeIconPaint)
+
+            val rightBarLeft = leftEdge + barW + barGap
+            tempRectF.set(rightBarLeft, barTop, rightBarLeft + barW, barBottom)
+            canvas.drawRoundRect(tempRectF, 2.5f, 2.5f, activeIconPaint)
+
+            canvas.drawText("PAUSE", rect.centerX(), labelY, activeLabelPaint)
         } else {
-            // Raised Play key
-            canvas.drawText("▶", rect.centerX(), symbolY, buttonIconPaint)
-            canvas.drawText("PLAY", rect.centerX(), labelY, buttonLabelPaint)
+            // Raised Play key - PLAY (one right-facing solid triangle, optically and geometrically centered)
+            val triW = s * 1.30f
+            val triH = s * 0.85f
+            val baseLeft = iconCenterX - triW * 0.46f
+            val tipRight = iconCenterX + triW * 0.54f
+
+            btnIconPath.reset()
+            btnIconPath.moveTo(tipRight, iconCenterY)
+            btnIconPath.lineTo(baseLeft, iconCenterY - triH)
+            btnIconPath.lineTo(baseLeft, iconCenterY + triH)
+            btnIconPath.close()
+            canvas.drawPath(btnIconPath, activeIconPaint)
+
+            canvas.drawText("PLAY", rect.centerX(), labelY, activeLabelPaint)
         }
     }
 
@@ -1981,6 +2350,19 @@ class VerticalDeckView @JvmOverloads constructor(
                         }
                         gestureHandler.postDelayed(holdSeekRunnable!!, 350L)
                     }
+
+                    // If EJECT (3), schedule hold-eject runnable after 600ms
+                    if (pressedButtonIndex == 3) {
+                        holdEjectRunnable?.let { gestureHandler.removeCallbacks(it) }
+                        isHoldEjecting = false
+                        val ejectHoldTimeout = ViewConfiguration.getLongPressTimeout().toLong().coerceAtLeast(600L)
+                        holdEjectRunnable = Runnable {
+                            isHoldEjecting = true
+                            performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                            onEjectLongClicked?.invoke()
+                        }
+                        gestureHandler.postDelayed(holdEjectRunnable!!, ejectHoldTimeout)
+                    }
                     return true
                 }
             }
@@ -1989,6 +2371,13 @@ class VerticalDeckView @JvmOverloads constructor(
                 if (isDraggingProgress) {
                     updateProgressFromTouch(x)
                     return true
+                }
+                if (pressedButtonIndex == 3 && !btnEjectRect.contains(x, y)) {
+                    holdEjectRunnable?.let { gestureHandler.removeCallbacks(it) }
+                    holdEjectRunnable = null
+                    isHoldEjecting = false
+                    pressedButtonIndex = -1
+                    invalidate()
                 }
             }
 
@@ -2053,7 +2442,15 @@ class VerticalDeckView @JvmOverloads constructor(
 
                     when (clickedIndex) {
                         2 -> if (btnPlayRect.contains(x, y)) onPlayClicked?.invoke()
-                        3 -> if (btnEjectRect.contains(x, y)) onEjectClicked?.invoke()
+                        3 -> {
+                            holdEjectRunnable?.let { gestureHandler.removeCallbacks(it) }
+                            holdEjectRunnable = null
+                            if (isHoldEjecting) {
+                                isHoldEjecting = false
+                                return true
+                            }
+                            if (btnEjectRect.contains(x, y)) onEjectClicked?.invoke()
+                        }
                     }
                     return true
                 }
@@ -2064,6 +2461,9 @@ class VerticalDeckView @JvmOverloads constructor(
                 parent?.requestDisallowInterceptTouchEvent(false)
                 holdSeekRunnable?.let { gestureHandler.removeCallbacks(it) }
                 holdSeekRunnable = null
+                holdEjectRunnable?.let { gestureHandler.removeCallbacks(it) }
+                holdEjectRunnable = null
+                isHoldEjecting = false
                 if (isHoldSeeking) {
                     isHoldSeeking = false
                     onHoldSeekEnd?.invoke()
@@ -2136,6 +2536,28 @@ class VerticalDeckView @JvmOverloads constructor(
         if (isPlaying) {
             headEngageProgress = 1f
             startRotation()
+        }
+    }
+
+    override fun onVisibilityAggregated(isVisible: Boolean) {
+        super.onVisibilityAggregated(isVisible)
+        if (isVisible) {
+            if (isPlaying && rotationAnimator?.isRunning != true) {
+                startRotation()
+            }
+        } else {
+            stopRotation()
+        }
+    }
+
+    override fun onWindowVisibilityChanged(visibility: Int) {
+        super.onWindowVisibilityChanged(visibility)
+        if (visibility == View.VISIBLE) {
+            if (isPlaying && rotationAnimator?.isRunning != true) {
+                startRotation()
+            }
+        } else {
+            stopRotation()
         }
     }
 

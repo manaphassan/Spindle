@@ -35,7 +35,15 @@ class AlbumAdapter(
         notifyDataSetChanged()
     }
 
-    class AlbumViewHolder(val binding: ItemAlbumGridBinding) : RecyclerView.ViewHolder(binding.root)
+    class AlbumViewHolder(val binding: ItemAlbumGridBinding) : RecyclerView.ViewHolder(binding.root) {
+        var loadJob: kotlinx.coroutines.Job? = null
+    }
+
+    override fun onViewRecycled(holder: AlbumViewHolder) {
+        super.onViewRecycled(holder)
+        holder.loadJob?.cancel()
+        holder.loadJob = null
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AlbumViewHolder {
         val binding = ItemAlbumGridBinding.inflate(LayoutInflater.from(parent.context), parent, false)
@@ -83,21 +91,29 @@ class AlbumAdapter(
 
         b.tvGridFormat.text = album.format
 
-        // Asynchronously load RGB_565 downsampled cover art (200x200)
-        b.ivGridArt.setImageDrawable(null)
-        if (album.format == "MIXTAPE" || album.representativePath.isBlank()) {
-            b.ivGridArt.setPadding(32, 32, 32, 32)
-            b.ivGridArt.setImageResource(com.hana.spindle.R.drawable.ic_mixtape_tape)
-        } else {
-            b.ivGridArt.setPadding(0, 0, 0, 0)
-            scope.launch {
-                val thumb = imageLoader.loadCover(album.representativePath, 200, 200)
-                withContext(Dispatchers.Main) {
-                    if (thumb != null) {
-                        b.ivGridArt.setImageBitmap(thumb)
-                    } else {
-                        b.ivGridArt.setPadding(32, 32, 32, 32)
-                        b.ivGridArt.setImageResource(android.R.drawable.ic_media_play)
+        // Asynchronously load RGB_565 downsampled cover art (200x200) with job management
+        if (b.ivGridArt.tag != album.representativePath || b.ivGridArt.drawable == null) {
+            holder.loadJob?.cancel()
+            b.ivGridArt.tag = album.representativePath
+            b.ivGridArt.setImageDrawable(null)
+            if (album.format == "MIXTAPE" || album.representativePath.isBlank()) {
+                b.ivGridArt.setPadding(32, 32, 32, 32)
+                b.ivGridArt.setImageResource(com.hana.spindle.R.drawable.ic_mixtape_tape)
+            } else {
+                b.ivGridArt.setPadding(0, 0, 0, 0)
+                holder.loadJob = scope.launch {
+                    val thumb = imageLoader.loadCover(album.representativePath, 200, 200)
+                    if (b.ivGridArt.tag == album.representativePath) {
+                        withContext(Dispatchers.Main) {
+                            if (b.ivGridArt.tag == album.representativePath) {
+                                if (thumb != null) {
+                                    b.ivGridArt.setImageBitmap(thumb)
+                                } else {
+                                    b.ivGridArt.setPadding(32, 32, 32, 32)
+                                    b.ivGridArt.setImageResource(android.R.drawable.ic_media_play)
+                                }
+                            }
+                        }
                     }
                 }
             }

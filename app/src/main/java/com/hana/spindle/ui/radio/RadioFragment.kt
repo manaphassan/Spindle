@@ -72,6 +72,7 @@ class RadioFragment : Fragment() {
         setupNetworkMonitoring()
         observeState()
         observeTheme()
+        observeBluetoothTelemetry()
     }
 
     private var isDeviceOnline: Boolean = true
@@ -158,6 +159,7 @@ class RadioFragment : Fragment() {
     private fun setupTuningDial() {
         binding.tuningDialView.onFrequencyChanged = { freq ->
             radioEngine.tuneTo(freq)
+            updateSignalTelemetry(freq)
         }
         binding.tuningDialView.onDialClicked = {
             radioEngine.togglePlayPause()
@@ -165,6 +167,34 @@ class RadioFragment : Fragment() {
         binding.cardLcd.setOnClickListener {
             radioEngine.togglePlayPause()
         }
+    }
+
+    private fun updateSignalTelemetry(freq: Float) {
+        val stations = radioEngine.userStations
+        var minDistance = Float.MAX_VALUE
+
+        for (st in stations) {
+            val dist = kotlin.math.abs(freq - st.frequencyMhz)
+            if (dist < minDistance) {
+                minDistance = dist
+            }
+        }
+
+        val maxTuningRange = 0.35f
+        val strength: Float
+        val isStereo: Boolean
+
+        if (minDistance <= maxTuningRange) {
+            val normDist = minDistance / maxTuningRange
+            strength = (1.0f - normDist) * 0.90f + 0.10f
+            isStereo = (minDistance <= 0.08f)
+        } else {
+            strength = 0.05f
+            isStereo = false
+        }
+
+        binding.signalMeterView.signalStrength = strength
+        binding.signalMeterView.isStereo = isStereo
     }
 
     private fun setupSkipButtons() {
@@ -199,8 +229,11 @@ class RadioFragment : Fragment() {
         binding.tuningDialView.isDarkMode = isDark
         binding.tuningDialView.isEink = isEink
 
+        binding.signalMeterView.isDarkMode = isDark
+        binding.signalMeterView.isEink = isEink
+
         val skipBgColor = when {
-            isEink -> Color.parseColor("#E0E0E0")
+            isEink -> Color.WHITE
             isDark -> Color.parseColor("#1F222C")
             else -> Color.parseColor("#DCDCD8")
         }
@@ -208,7 +241,7 @@ class RadioFragment : Fragment() {
         binding.btnTunePrev.backgroundTintList = skipBg
         binding.btnTuneNext.backgroundTintList = skipBg
 
-        val skipTint = ColorStateList.valueOf(theme.textPrimaryColor)
+        val skipTint = ColorStateList.valueOf(if (isEink) Color.BLACK else theme.textPrimaryColor)
         binding.btnTunePrev.imageTintList = skipTint
         binding.btnTuneNext.imageTintList = skipTint
 
@@ -247,6 +280,7 @@ class RadioFragment : Fragment() {
 
     private fun renderState(state: com.hana.spindle.playback.RadioPlaybackState) {
         updateNetworkStatus()
+        updateSignalTelemetry(state.currentFrequency)
 
         // Frequency readout
         binding.tvRadioFrequency.text = String.format(Locale.US, "%.1f", state.currentFrequency)
@@ -259,14 +293,16 @@ class RadioFragment : Fragment() {
         }
         binding.tvRadioRdsName.isSelected = true // Enables horizontal marquee auto-scroll
 
+        val isEink = spindleApp.themeManager.currentTheme.value.id == CassetteTheme.MONOCHROME_EINK.id
+
         // Stream status
         binding.tvRadioStreamStatus.text = when {
             state.isBuffering -> "BUFFERING..."
-            state.isPlaying -> "ıll LIVE IN"
-            else -> "■ STOPPED"
+            state.isPlaying -> "LIVE IN"
+            else -> "STOPPED"
         }
         binding.tvRadioStreamStatus.setTextColor(
-            when {
+            if (isEink) Color.BLACK else when {
                 state.isPlaying -> Color.parseColor("#F97316")
                 state.isBuffering -> Color.parseColor("#FDE68A")
                 else -> Color.parseColor("#64748B")
@@ -283,11 +319,11 @@ class RadioFragment : Fragment() {
 
         // Now Playing Title
         val nowPlaying = when {
-            state.isBuffering -> "◌ CONNECTING LIVE STREAM..."
-            !state.isPlaying -> "■ STOPPED"
-            !state.nowPlayingTitle.isNullOrBlank() -> "♪ ${state.nowPlayingTitle}"
-            state.currentStation != null -> "♪ LIVE BROADCAST • ${state.currentStation.genre.uppercase()}"
-            else -> "♪ LIVE FM TUNER"
+            state.isBuffering -> "CONNECTING LIVE STREAM..."
+            !state.isPlaying -> "STOPPED"
+            !state.nowPlayingTitle.isNullOrBlank() -> state.nowPlayingTitle
+            state.currentStation != null -> "LIVE BROADCAST • ${state.currentStation.genre.uppercase()}"
+            else -> "LIVE FM TUNER"
         }
         binding.tvRadioNowPlaying.text = nowPlaying
         binding.tvRadioNowPlaying.isSelected = true // Enables horizontal marquee auto-scroll
@@ -341,6 +377,27 @@ class RadioFragment : Fragment() {
             presetButtons[i].backgroundTintList = ColorStateList.valueOf(
                 if (isCurrent && state.isPlaying) activeBg else inactiveBg
             )
+        }
+    }
+
+    private fun observeBluetoothTelemetry() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                spindleApp.audioEngine.metricsTracker.metrics.collect { metrics ->
+                    _binding?.let { b ->
+                        val isEink = spindleApp.themeManager.currentTheme.value.id == CassetteTheme.MONOCHROME_EINK.id
+                        if (metrics.isBluetoothConnected) {
+                            b.tvRadioBtBadge.visibility = View.VISIBLE
+                            val devName = metrics.bluetoothDeviceName?.takeIf { it.isNotBlank() } ?: "BT"
+                            val bat = if (metrics.bluetoothBatteryPct != null && metrics.bluetoothBatteryPct >= 0) " (${metrics.bluetoothBatteryPct}%)" else ""
+                            b.tvRadioBtBadge.text = "$devName$bat"
+                            b.tvRadioBtBadge.setTextColor(if (isEink) Color.BLACK else Color.parseColor("#10B981"))
+                        } else {
+                            b.tvRadioBtBadge.visibility = View.GONE
+                        }
+                    }
+                }
+            }
         }
     }
 
