@@ -554,10 +554,10 @@ class VerticalDeckView @JvmOverloads constructor(
 
             ledRunActivePaint.apply { color = Color.parseColor("#00E676"); style = Paint.Style.FILL }
             ledRunActiveGlowPaint.apply { color = Color.argb(90, 0, 230, 118); style = Paint.Style.STROKE; strokeWidth = 2f }
-            ledRunInactivePaint.apply { color = Color.parseColor("#E5E5E2"); style = Paint.Style.FILL }
+            ledRunInactivePaint.apply { color = Color.parseColor("#A8CDB2"); style = Paint.Style.FILL }
             ledPeakActivePaint.apply { color = Color.parseColor("#EF4444"); style = Paint.Style.FILL }
             ledPeakActiveGlowPaint.apply { color = Color.argb(90, 239, 68, 68); style = Paint.Style.STROKE; strokeWidth = 2f }
-            ledPeakInactivePaint.apply { color = Color.parseColor("#E5E5E2"); style = Paint.Style.FILL }
+            ledPeakInactivePaint.apply { color = Color.parseColor("#D9A4A8"); style = Paint.Style.FILL }
             ledBatteryAmberPaint.apply { color = Color.parseColor("#F59E0B"); style = Paint.Style.FILL }
             ledBatteryAmberGlowPaint.apply { color = Color.argb(90, 245, 158, 11); style = Paint.Style.STROKE; strokeWidth = 2f }
             statusLabelPaint.apply { color = Color.parseColor("#5A5E78"); style = Paint.Style.FILL; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD); letterSpacing = 0.05f }
@@ -638,10 +638,10 @@ class VerticalDeckView @JvmOverloads constructor(
 
             ledRunActivePaint.apply { color = Color.parseColor("#00E676"); style = Paint.Style.FILL }
             ledRunActiveGlowPaint.apply { color = Color.argb(100, 0, 230, 118); style = Paint.Style.STROKE; strokeWidth = 2.5f }
-            ledRunInactivePaint.apply { color = theme.surfaceColor; style = Paint.Style.FILL }
+            ledRunInactivePaint.apply { color = Color.parseColor("#143521"); style = Paint.Style.FILL }
             ledPeakActivePaint.apply { color = Color.parseColor("#EF4444"); style = Paint.Style.FILL }
             ledPeakActiveGlowPaint.apply { color = Color.argb(100, 239, 68, 68); style = Paint.Style.STROKE; strokeWidth = 2.5f }
-            ledPeakInactivePaint.apply { color = theme.surfaceColor; style = Paint.Style.FILL }
+            ledPeakInactivePaint.apply { color = Color.parseColor("#45181C"); style = Paint.Style.FILL }
             ledBatteryAmberPaint.apply { color = Color.parseColor("#F59E0B"); style = Paint.Style.FILL }
             ledBatteryAmberGlowPaint.apply { color = Color.argb(100, 245, 158, 11); style = Paint.Style.STROKE; strokeWidth = 2.5f }
             statusLabelPaint.apply { color = Color.parseColor("#94A3B8"); style = Paint.Style.FILL; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD); letterSpacing = 0.05f }
@@ -819,7 +819,7 @@ class VerticalDeckView @JvmOverloads constructor(
         val totalClusterW = batteryTextW + labelPillGap + statusLedW + centerClusterGap + statusLedW + labelPillGap + activeTextW
         val clusterLeft = (w - totalClusterW) * 0.5f
 
-        val statusLedBottom = barTop - h * 0.008f
+        val statusLedBottom = barTop - h * 0.018f
         val statusLedTop = statusLedBottom - statusLedH
 
         batteryLabelX = clusterLeft
@@ -839,7 +839,7 @@ class VerticalDeckView @JvmOverloads constructor(
         // 4. Cassette FULL HEIGHT: fills entire space above the LEDs/meter ("cassette full height")
         val slotInset = w * 0.008f
         val cTop = h * 0.020f
-        val cBottom = statusLedTop - h * 0.010f - slotInset
+        val cBottom = statusLedTop - h * 0.014f - slotInset
         val ch = cBottom - cTop
         val cw = w * 0.930f // Wide sleek cassette door filling width
         val cLeft = (w - cw) * 0.5f
@@ -1289,8 +1289,12 @@ class VerticalDeckView @JvmOverloads constructor(
         val cornerR = ledPeakRect.height() * 0.35f
         when {
             batteryLevel > 20 -> {
-                // Normal: always OFF
-                canvas.drawRoundRect(ledPeakRect, cornerR, cornerR, ledInactivePaint)
+                // Normal: default OFF state -> muted red
+                if (isEink) {
+                    canvas.drawRoundRect(ledPeakRect, cornerR, cornerR, ledInactivePaint)
+                } else {
+                    canvas.drawRoundRect(ledPeakRect, cornerR, cornerR, ledPeakInactivePaint)
+                }
                 canvas.drawRoundRect(ledPeakRect, cornerR, cornerR, ledBorderPaint)
             }
             batteryLevel in 11..20 -> {
@@ -1325,7 +1329,11 @@ class VerticalDeckView @JvmOverloads constructor(
                         canvas.drawRoundRect(ledPeakRect, cornerR, cornerR, ledPeakActiveGlowPaint)
                     }
                 } else {
-                    canvas.drawRoundRect(ledPeakRect, cornerR, cornerR, ledInactivePaint)
+                    if (isEink) {
+                        canvas.drawRoundRect(ledPeakRect, cornerR, cornerR, ledInactivePaint)
+                    } else {
+                        canvas.drawRoundRect(ledPeakRect, cornerR, cornerR, ledPeakInactivePaint)
+                    }
                 }
                 canvas.drawRoundRect(ledPeakRect, cornerR, cornerR, ledBorderPaint)
             }
@@ -1335,8 +1343,12 @@ class VerticalDeckView @JvmOverloads constructor(
         // Always green when song is played; off if no sound; blinking green when near end of song.
         val runCornerR = ledRunRect.height() * 0.35f
         if (!isPlaying) {
-            // Off if no sound
-            canvas.drawRoundRect(ledRunRect, runCornerR, runCornerR, ledInactivePaint)
+            // Off if no sound -> default muted green
+            if (isEink) {
+                canvas.drawRoundRect(ledRunRect, runCornerR, runCornerR, ledInactivePaint)
+            } else {
+                canvas.drawRoundRect(ledRunRect, runCornerR, runCornerR, ledRunInactivePaint)
+            }
             canvas.drawRoundRect(ledRunRect, runCornerR, runCornerR, ledBorderPaint)
         } else {
             // Song is played: check if near end of song (progress >= 0.94f)
@@ -1353,7 +1365,11 @@ class VerticalDeckView @JvmOverloads constructor(
                         canvas.drawRoundRect(ledRunRect, runCornerR, runCornerR, ledRunActiveGlowPaint)
                     }
                 } else {
-                    canvas.drawRoundRect(ledRunRect, runCornerR, runCornerR, ledInactivePaint)
+                    if (isEink) {
+                        canvas.drawRoundRect(ledRunRect, runCornerR, runCornerR, ledInactivePaint)
+                    } else {
+                        canvas.drawRoundRect(ledRunRect, runCornerR, runCornerR, ledRunInactivePaint)
+                    }
                 }
             } else {
                 // Always green when song is played

@@ -6,17 +6,18 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="#111318"
-    android:paddingTop="36dp"
-    android:paddingBottom="20dp"
+    android:paddingTop="18dp"
+    android:paddingBottom="16dp"
     android:paddingHorizontal="20dp">
 
-    <!-- 1. Concentric Radial Acoustic Speaker Grille (Braun T3/TP1 proportion, safely uncropped) -->
+    <!-- 1. Concentric Radial Acoustic Speaker Grille -->
     <com.hana.spindle.ui.radio.RadioSpeakerGrilleView
         android:id="@+id/speakerGrilleView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:layout_marginVertical="6dp" />
+        android:layout_marginTop="0dp"
+        android:layout_marginBottom="18dp" />
 
     <!-- 2. Preset Station Recessed Strip (4 Starter Stations) -->
     <androidx.cardview.widget.CardView
