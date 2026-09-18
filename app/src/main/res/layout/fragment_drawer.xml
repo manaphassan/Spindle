@@ -848,7 +848,7 @@
                                 android:layout_height="42dp"
                                 android:layout_weight="1.2"
                                 android:layout_marginStart="6dp"
-                                android:text="E-INK B&amp;W"
+                                android:text="MONO"
                                 android:textColor="@color/white"
                                 android:textSize="10.5sp"
                                 android:textStyle="bold"
@@ -1198,17 +1198,18 @@
                                 android:orientation="vertical">
 
                                 <TextView
+                                    android:id="@+id/tvEinkTitle"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="1-Bit E-Ink Refresh Mode"
-                                    android:textColor="@color/white"
+                                    android:text="1-Bit Mono Refresh Mode"
+                                    android:textColor="@color/text_primary"
                                     android:textStyle="bold"
-                                    android:textSize="13.5sp" />
+                                    android:textSize="13sp" />
 
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Zero-ghosting mode for Hisense, BOOX, and Yotaphone DAPs."
+                                    android:text="Optimizes kinetics for zero ghosting on Mono displays for Hisense, BOOX, and Yotaphone DAPs."
                                     android:textColor="#A1A1AA"
                                     android:textSize="11sp"
                                     android:layout_marginTop="2dp" />

@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit
  *    oriented vertically (-90° rotation) reading from bottom to top.
  * 5. Left column track details (Song Title with marquee scrolling, and Artist • Duration)
  *    oriented vertically (-90° rotation) running along the cassette spine.
- * 6. Bottom-left retro SPINDLE branding (replacing MIUI RECORDER), oriented vertically (-90° rotation).
+ * 6. Bottom-left retro SPINDLE branding, oriented vertically (-90° rotation).
  * 7. 12-LED horizontal song progress bar directly above the bottom keys with interactive touch-seeking.
  * 8. 4 tactile beveled mechanical buttons: REW, FWD, PLAY (mutted/depressed when playing, no red circle), and EJECT.
  *
@@ -138,6 +138,14 @@ class VerticalDeckView @JvmOverloads constructor(
         }
 
     var isLowBattery: Boolean = false
+        set(value) {
+            if (field != value) {
+                field = value
+                invalidate()
+            }
+        }
+
+    var batteryLevel: Int = 100
         set(value) {
             if (field != value) {
                 field = value
@@ -299,9 +307,18 @@ class VerticalDeckView @JvmOverloads constructor(
     private val ledBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
     private val ledRunActivePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val ledRunActiveGlowPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val ledRunInactivePaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val ledPeakActivePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val ledPeakActiveGlowPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val ledPeakInactivePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val ledBatteryAmberPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val ledBatteryAmberGlowPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val statusLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private var batteryLabelX = 0f
+    private var batteryLabelY = 0f
+    private var activeLabelX = 0f
+    private var activeLabelY = 0f
 
     private val buttonBasePaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val buttonPressedPaint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -452,9 +469,14 @@ class VerticalDeckView @JvmOverloads constructor(
             ledBorderPaint.apply { color = Color.BLACK; style = Paint.Style.STROKE; strokeWidth = 1.5f }
 
             ledRunActivePaint.apply { color = Color.BLACK; style = Paint.Style.FILL }
+            ledRunActiveGlowPaint.apply { color = Color.TRANSPARENT; style = Paint.Style.STROKE; strokeWidth = 1f }
             ledRunInactivePaint.apply { color = Color.WHITE; style = Paint.Style.FILL }
             ledPeakActivePaint.apply { color = Color.BLACK; style = Paint.Style.FILL }
+            ledPeakActiveGlowPaint.apply { color = Color.TRANSPARENT; style = Paint.Style.STROKE; strokeWidth = 1f }
             ledPeakInactivePaint.apply { color = Color.WHITE; style = Paint.Style.FILL }
+            ledBatteryAmberPaint.apply { color = Color.BLACK; style = Paint.Style.FILL }
+            ledBatteryAmberGlowPaint.apply { color = Color.TRANSPARENT; style = Paint.Style.STROKE; strokeWidth = 1f }
+            statusLabelPaint.apply { color = Color.BLACK; style = Paint.Style.FILL; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD); letterSpacing = 0.05f }
 
             buttonBasePaint.apply { color = Color.WHITE; style = Paint.Style.FILL }
             buttonPressedPaint.apply { color = Color.BLACK; style = Paint.Style.FILL }
@@ -530,10 +552,15 @@ class VerticalDeckView @JvmOverloads constructor(
             ledActiveGlowPaint.apply { color = Color.argb(90, 249, 115, 22); style = Paint.Style.STROKE; strokeWidth = 3f }
             ledBorderPaint.apply { color = Color.parseColor("#2A2E45"); style = Paint.Style.STROKE; strokeWidth = 1.5f }
 
-            ledRunActivePaint.apply { color = Color.parseColor("#F97316"); style = Paint.Style.FILL }
+            ledRunActivePaint.apply { color = Color.parseColor("#00E676"); style = Paint.Style.FILL }
+            ledRunActiveGlowPaint.apply { color = Color.argb(90, 0, 230, 118); style = Paint.Style.STROKE; strokeWidth = 2f }
             ledRunInactivePaint.apply { color = Color.parseColor("#E5E5E2"); style = Paint.Style.FILL }
-            ledPeakActivePaint.apply { color = Color.parseColor("#FB7185"); style = Paint.Style.FILL }
+            ledPeakActivePaint.apply { color = Color.parseColor("#EF4444"); style = Paint.Style.FILL }
+            ledPeakActiveGlowPaint.apply { color = Color.argb(90, 239, 68, 68); style = Paint.Style.STROKE; strokeWidth = 2f }
             ledPeakInactivePaint.apply { color = Color.parseColor("#E5E5E2"); style = Paint.Style.FILL }
+            ledBatteryAmberPaint.apply { color = Color.parseColor("#F59E0B"); style = Paint.Style.FILL }
+            ledBatteryAmberGlowPaint.apply { color = Color.argb(90, 245, 158, 11); style = Paint.Style.STROKE; strokeWidth = 2f }
+            statusLabelPaint.apply { color = Color.parseColor("#5A5E78"); style = Paint.Style.FILL; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD); letterSpacing = 0.05f }
 
             buttonBasePaint.apply { color = Color.parseColor("#FAFAF9"); style = Paint.Style.FILL }
             buttonPressedPaint.apply { color = Color.parseColor("#E5E5E2"); style = Paint.Style.FILL }
@@ -609,10 +636,15 @@ class VerticalDeckView @JvmOverloads constructor(
             ledActiveGlowPaint.apply { color = Color.argb(90, Color.red(theme.accentColor), Color.green(theme.accentColor), Color.blue(theme.accentColor)); style = Paint.Style.STROKE; strokeWidth = 3f }
             ledBorderPaint.apply { color = theme.cardBorderColor; style = Paint.Style.STROKE; strokeWidth = 1.5f }
 
-            ledRunActivePaint.apply { color = theme.accentColor; style = Paint.Style.FILL }
-            ledRunInactivePaint.apply { color = Color.argb(60, Color.red(theme.accentColor), Color.green(theme.accentColor), Color.blue(theme.accentColor)); style = Paint.Style.FILL }
-            ledPeakActivePaint.apply { color = Color.parseColor("#FB7185"); style = Paint.Style.FILL }
-            ledPeakInactivePaint.apply { color = Color.argb(50, 251, 113, 133); style = Paint.Style.FILL }
+            ledRunActivePaint.apply { color = Color.parseColor("#00E676"); style = Paint.Style.FILL }
+            ledRunActiveGlowPaint.apply { color = Color.argb(100, 0, 230, 118); style = Paint.Style.STROKE; strokeWidth = 2.5f }
+            ledRunInactivePaint.apply { color = theme.surfaceColor; style = Paint.Style.FILL }
+            ledPeakActivePaint.apply { color = Color.parseColor("#EF4444"); style = Paint.Style.FILL }
+            ledPeakActiveGlowPaint.apply { color = Color.argb(100, 239, 68, 68); style = Paint.Style.STROKE; strokeWidth = 2.5f }
+            ledPeakInactivePaint.apply { color = theme.surfaceColor; style = Paint.Style.FILL }
+            ledBatteryAmberPaint.apply { color = Color.parseColor("#F59E0B"); style = Paint.Style.FILL }
+            ledBatteryAmberGlowPaint.apply { color = Color.argb(100, 245, 158, 11); style = Paint.Style.STROKE; strokeWidth = 2.5f }
+            statusLabelPaint.apply { color = Color.parseColor("#94A3B8"); style = Paint.Style.FILL; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD); letterSpacing = 0.05f }
 
             buttonBasePaint.apply { color = Color.parseColor("#202334"); style = Paint.Style.FILL }
             buttonPressedPaint.apply { color = Color.parseColor("#151724"); style = Paint.Style.FILL }
@@ -759,8 +791,8 @@ class VerticalDeckView @JvmOverloads constructor(
         buttonMutedIconPaint.textSize = btnW * 0.32f
         buttonMutedLabelPaint.textSize = btnW * 0.19f
 
-        // 2. 12-LED Progress Bar directly above the bottom buttons
-        val barH = h * 0.022f
+        // 2. 12-LED Progress Bar directly above the bottom buttons (height reduced by half)
+        val barH = h * 0.011f
         val barGap = h * 0.012f
         val barBottom = btnTop - barGap
         val barTop = barBottom - barH
@@ -772,19 +804,42 @@ class VerticalDeckView @JvmOverloads constructor(
             barBottom
         )
 
-        // 3. Dual Status LEDs directly above the progress bar on the right (LOW BATT Red, RUN Green)
-        val ledH = h * 0.012f
-        val ledBottom = barTop - h * 0.008f
-        val ledTop = ledBottom - ledH
-        val ledW = w * 0.080f
-        val ledGapL = w * 0.020f
-        ledRunRect.set(ledBarRect.right - ledW, ledTop, ledBarRect.right, ledBottom)
-        ledPeakRect.set(ledRunRect.left - ledGapL - ledW, ledTop, ledRunRect.left - ledGapL, ledBottom)
+        // 3. Center Battery & Active Status LEDs with "Battery" on left and "Active" on right
+        val statusLedH = barH
+        val statusLedW = w * 0.080f
+        statusLabelPaint.textSize = w * 0.024f
+
+        val batteryText = "Battery"
+        val activeText = "Active"
+        val batteryTextW = statusLabelPaint.measureText(batteryText)
+        val activeTextW = statusLabelPaint.measureText(activeText)
+        val labelPillGap = w * 0.014f
+        val centerClusterGap = w * 0.040f
+
+        val totalClusterW = batteryTextW + labelPillGap + statusLedW + centerClusterGap + statusLedW + labelPillGap + activeTextW
+        val clusterLeft = (w - totalClusterW) * 0.5f
+
+        val statusLedBottom = barTop - h * 0.008f
+        val statusLedTop = statusLedBottom - statusLedH
+
+        batteryLabelX = clusterLeft
+        batteryLabelY = statusLedTop + (statusLedH * 0.5f) - ((statusLabelPaint.descent() + statusLabelPaint.ascent()) * 0.5f)
+
+        val batteryLedLeft = batteryLabelX + batteryTextW + labelPillGap
+        val batteryLedRight = batteryLedLeft + statusLedW
+        ledPeakRect.set(batteryLedLeft, statusLedTop, batteryLedRight, statusLedBottom)
+
+        val activeLedLeft = batteryLedRight + centerClusterGap
+        val activeLedRight = activeLedLeft + statusLedW
+        ledRunRect.set(activeLedLeft, statusLedTop, activeLedRight, statusLedBottom)
+
+        activeLabelX = activeLedRight + labelPillGap
+        activeLabelY = batteryLabelY
 
         // 4. Cassette FULL HEIGHT: fills entire space above the LEDs/meter ("cassette full height")
         val slotInset = w * 0.008f
         val cTop = h * 0.020f
-        val cBottom = ledTop - h * 0.012f - slotInset
+        val cBottom = statusLedTop - h * 0.010f - slotInset
         val ch = cBottom - cTop
         val cw = w * 0.930f // Wide sleek cassette door filling width
         val cLeft = (w - cw) * 0.5f
@@ -811,7 +866,7 @@ class VerticalDeckView @JvmOverloads constructor(
         val winLeft = reelCenterX - winW * 0.5f
         val winRight = reelCenterX + winW * 0.5f
 
-        // Center align Walkman & Time in the column between left frame (innerShellRect.left) and clear spindle frame (winLeft)
+        // Center align Nameplate & Time in the column between left frame (innerShellRect.left) and clear spindle frame (winLeft)
         val colLeft = innerShellRect.left
         val colRight = winLeft
         columnCenterX = (colLeft + colRight) * 0.5f
@@ -959,7 +1014,7 @@ class VerticalDeckView @JvmOverloads constructor(
         // 4b. Draw Hi-Res Audio Format Capsule Badge directly below Time (when song played)
         drawAudioFormatBadgeBelowTime(canvas)
 
-        // 5. Draw Bottom-Left Walkman Branding or Now Playing Song Info (Rotated -90° Vertical)
+        // 5. Draw Bottom-Left Spindle Branding or Now Playing Song Info (Rotated -90° Vertical)
         drawVerticalSpindleBranding(canvas)
 
         // 6. Draw 12-LED Song Playback Progress Bar
@@ -1221,13 +1276,99 @@ class VerticalDeckView @JvmOverloads constructor(
     }
 
     /**
-     * Draws the dual pill-shaped deck status LEDs (LOW BATT Red, RUN Green).
+     * Draws the centered dual deck status LEDs ("Battery" on left, "Active" on right).
      */
     private fun drawStatusLeds(canvas: Canvas) {
-        // LOW BATT Red LED (illuminated with ruby glow when isLowBattery is true)
-        canvas.drawRoundRect(ledPeakRect, 4f, 4f, if (isLowBattery) ledPeakActivePaint else ledPeakInactivePaint)
-        // RUN Green LED (illuminated with neon glow when isPlaying)
-        canvas.drawRoundRect(ledRunRect, 4f, 4f, if (isPlaying) ledRunActivePaint else ledRunInactivePaint)
+        val isEink = (theme.id == CassetteTheme.MONOCHROME_EINK.id)
+
+        // 1. "Battery" text on left of battery led bar
+        canvas.drawText("Battery", batteryLabelX, batteryLabelY, statusLabelPaint)
+
+        // 2. Battery LED:
+        // Always OFF normally; amber if low (<= 20%); red if critical low (<= 10%); blinking red if almost depleted (<= 5%).
+        val cornerR = ledPeakRect.height() * 0.35f
+        when {
+            batteryLevel > 20 -> {
+                // Normal: always OFF
+                canvas.drawRoundRect(ledPeakRect, cornerR, cornerR, ledInactivePaint)
+                canvas.drawRoundRect(ledPeakRect, cornerR, cornerR, ledBorderPaint)
+            }
+            batteryLevel in 11..20 -> {
+                // Low: amber
+                if (isEink) {
+                    canvas.drawRoundRect(ledPeakRect, cornerR, cornerR, ledActivePaint)
+                } else {
+                    canvas.drawRoundRect(ledPeakRect, cornerR, cornerR, ledBatteryAmberPaint)
+                    canvas.drawRoundRect(ledPeakRect, cornerR, cornerR, ledBatteryAmberGlowPaint)
+                    canvas.drawRoundRect(ledPeakRect, cornerR, cornerR, ledBorderPaint)
+                }
+            }
+            batteryLevel in 6..10 -> {
+                // Critical low: red
+                if (isEink) {
+                    canvas.drawRoundRect(ledPeakRect, cornerR, cornerR, ledActivePaint)
+                } else {
+                    canvas.drawRoundRect(ledPeakRect, cornerR, cornerR, ledPeakActivePaint)
+                    canvas.drawRoundRect(ledPeakRect, cornerR, cornerR, ledPeakActiveGlowPaint)
+                    canvas.drawRoundRect(ledPeakRect, cornerR, cornerR, ledBorderPaint)
+                }
+            }
+            else -> {
+                // Almost depleted (<= 5%): blinking red
+                val isBlinkOn = (System.currentTimeMillis() / 450L) % 2L == 0L
+                postInvalidateDelayed(225L)
+                if (isBlinkOn) {
+                    if (isEink) {
+                        canvas.drawRoundRect(ledPeakRect, cornerR, cornerR, ledActivePaint)
+                    } else {
+                        canvas.drawRoundRect(ledPeakRect, cornerR, cornerR, ledPeakActivePaint)
+                        canvas.drawRoundRect(ledPeakRect, cornerR, cornerR, ledPeakActiveGlowPaint)
+                    }
+                } else {
+                    canvas.drawRoundRect(ledPeakRect, cornerR, cornerR, ledInactivePaint)
+                }
+                canvas.drawRoundRect(ledPeakRect, cornerR, cornerR, ledBorderPaint)
+            }
+        }
+
+        // 3. Play status LED:
+        // Always green when song is played; off if no sound; blinking green when near end of song.
+        val runCornerR = ledRunRect.height() * 0.35f
+        if (!isPlaying) {
+            // Off if no sound
+            canvas.drawRoundRect(ledRunRect, runCornerR, runCornerR, ledInactivePaint)
+            canvas.drawRoundRect(ledRunRect, runCornerR, runCornerR, ledBorderPaint)
+        } else {
+            // Song is played: check if near end of song (progress >= 0.94f)
+            val isNearEnd = progress >= 0.94f
+            if (isNearEnd) {
+                // Blinking when near end of song
+                val isBlinkOn = (System.currentTimeMillis() / 380L) % 2L == 0L
+                postInvalidateDelayed(190L)
+                if (isBlinkOn) {
+                    if (isEink) {
+                        canvas.drawRoundRect(ledRunRect, runCornerR, runCornerR, ledActivePaint)
+                    } else {
+                        canvas.drawRoundRect(ledRunRect, runCornerR, runCornerR, ledRunActivePaint)
+                        canvas.drawRoundRect(ledRunRect, runCornerR, runCornerR, ledRunActiveGlowPaint)
+                    }
+                } else {
+                    canvas.drawRoundRect(ledRunRect, runCornerR, runCornerR, ledInactivePaint)
+                }
+            } else {
+                // Always green when song is played
+                if (isEink) {
+                    canvas.drawRoundRect(ledRunRect, runCornerR, runCornerR, ledActivePaint)
+                } else {
+                    canvas.drawRoundRect(ledRunRect, runCornerR, runCornerR, ledRunActivePaint)
+                    canvas.drawRoundRect(ledRunRect, runCornerR, runCornerR, ledRunActiveGlowPaint)
+                }
+            }
+            canvas.drawRoundRect(ledRunRect, runCornerR, runCornerR, ledBorderPaint)
+        }
+
+        // 4. "Active" text on right of status led
+        canvas.drawText("Active", activeLabelX, activeLabelY, statusLabelPaint)
     }
 
     /**
@@ -1535,13 +1676,13 @@ class VerticalDeckView @JvmOverloads constructor(
     }
 
     /**
-     * Draws the WALKMAN Player branding (default idle) or Now Playing Track Info (when a song is played)
+     * Draws the SPINDLE Player branding (default idle) or Now Playing Track Info (when a song is played)
      * at the bottom-left of the cassette shell, center-aligned in the column between the left frame
      * and the clear spindle frame (Rotated -90° Vertical).
      *
      * In default idle state (no track loaded):
-     * - Line 0: WALKMAN (crisp bold white typography)
-     * - Line 1: Player (silver/slate subtext)
+     * - Line 0: SPINDLE (crisp bold white typography)
+     * - Line 1: Deck (silver/slate subtext)
      *
      * When a song is played / loaded:
      * - Line 0: Song Title (prominent bold white with smooth marquee scrolling when playing)
@@ -1576,15 +1717,15 @@ class VerticalDeckView @JvmOverloads constructor(
         val line1Y = +totalBlockH * 0.5f - 0.2f * artistSize
 
         if (!hasSong) {
-            // Default Walkman Player typography
+            // Default Spindle Player typography
             spindleLogoPaint.letterSpacing = 0.12f
             spindleSubtextPaint.letterSpacing = 0.16f
 
-            // Line 0: WALKMAN (crisp bold white typography)
-            canvas.drawText("WALKMAN", 0f, line0Y, spindleLogoPaint)
+            // Line 0: SPINDLE (crisp bold white typography)
+            canvas.drawText("SPINDLE", 0f, line0Y, spindleLogoPaint)
 
-            // Line 1: Player (silver/slate subtext)
-            canvas.drawText("Player", 0f, line1Y, spindleSubtextPaint)
+            // Line 1: Deck (silver/slate subtext)
+            canvas.drawText("Deck", 0f, line1Y, spindleSubtextPaint)
         } else {
             spindleLogoPaint.letterSpacing = 0.02f
             spindleSubtextPaint.letterSpacing = 0.02f
@@ -1694,19 +1835,20 @@ class VerticalDeckView @JvmOverloads constructor(
         val segW = (totalW - (gap * (count - 1))) / count
         val litThreshold = (progress * count).toInt().coerceIn(0, count)
 
+        val cornerR = 2f
         for (i in 0 until count) {
             val segLeft = ledBarRect.left + (i * (segW + gap))
             val segRight = segLeft + segW
             tempRectF.set(segLeft, ledBarRect.top, segRight, ledBarRect.bottom)
 
             // Draw recessed slot background
-            canvas.drawRoundRect(tempRectF, 3f, 3f, ledInactivePaint)
-            canvas.drawRoundRect(tempRectF, 3f, 3f, ledBorderPaint)
+            canvas.drawRoundRect(tempRectF, cornerR, cornerR, ledInactivePaint)
+            canvas.drawRoundRect(tempRectF, cornerR, cornerR, ledBorderPaint)
 
             // Draw glowing lit segment
             if (i < litThreshold || (i == 0 && progress > 0f && isPlaying)) {
-                canvas.drawRoundRect(tempRectF, 3f, 3f, ledActivePaint)
-                canvas.drawRoundRect(tempRectF, 3f, 3f, ledActiveGlowPaint)
+                canvas.drawRoundRect(tempRectF, cornerR, cornerR, ledActivePaint)
+                canvas.drawRoundRect(tempRectF, cornerR, cornerR, ledActiveGlowPaint)
             }
         }
     }

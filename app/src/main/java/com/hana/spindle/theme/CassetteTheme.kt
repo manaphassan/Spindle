@@ -103,7 +103,7 @@ data class CassetteTheme(
         // 3. Monochrome E-Ink Theme (Pure 1-Bit Monochrome Black & White on White Background)
         val MONOCHROME_EINK = CassetteTheme(
             id = "theme_monochrome_eink",
-            name = "Monochrome E-Ink",
+            name = "Mono",
             subtitle = "Pure 1-Bit B&W White Canvas",
             chassisStyle = ChassisStyle.VERTICAL_DECK,
             chassisColor = Color.WHITE, // Pure white background for E-Ink screen
@@ -126,10 +126,10 @@ data class CassetteTheme(
             isDarkAppTheme = false
         )
 
-        // 4. TDK SA-90 (Super Avilyn High Position)
+        // 4. Type II High-Bias 90 (High Position)
         val TDK_SA_90 = CassetteTheme(
-            id = "theme_tdk_sa90",
-            name = "TDK SA-90",
+            id = "theme_type2_highbias",
+            name = "Type II High-Bias",
             subtitle = "Smoked Graphite & Gold Foil",
             chassisStyle = ChassisStyle.VERTICAL_DECK,
             chassisColor = Color.parseColor("#15171C"),
@@ -152,10 +152,10 @@ data class CassetteTheme(
             isDarkAppTheme = true
         )
 
-        // 5. Maxell XL-II (High Epitaxial)
+        // 5. Type II Amber Gold 90 (High Epitaxial)
         val MAXELL_XLII = CassetteTheme(
-            id = "theme_maxell_xlii",
-            name = "Maxell XL-II",
+            id = "theme_type2_ambergold",
+            name = "Type II Amber Gold",
             subtitle = "Amber Smoked & Dual Gold Spools",
             chassisStyle = ChassisStyle.VERTICAL_DECK,
             chassisColor = Color.parseColor("#1A140E"),
@@ -178,10 +178,10 @@ data class CassetteTheme(
             isDarkAppTheme = true
         )
 
-        // 6. BASF Chromdioxid Extra
+        // 6. Type II Anthracite Chrome (Chromdioxid Extra)
         val BASF_CHROME = CassetteTheme(
-            id = "theme_basf_chrome",
-            name = "BASF Chrome",
+            id = "theme_type2_chrome",
+            name = "Anthracite Chrome",
             subtitle = "Matte Anthracite & Hazard Yellow",
             chassisStyle = ChassisStyle.VERTICAL_DECK,
             chassisColor = Color.parseColor("#121417"),
@@ -245,9 +245,9 @@ data class CassetteTheme(
         val VERTICAL_STUDIO_DECK = DARK
         val VAPORWAVE_80S = LIGHT
         val WM2_RED_HERO = DARK
-        val SONY_HF_90 = DARK
-        val SONY_METAL_MASTER = LIGHT
-        val SONY_CD_IT = DARK
+        val TYPE_I_NORMAL = DARK
+        val TYPE_IV_METAL = LIGHT
+        val TYPE_II_CHROME = DARK
         val ALBUM_ADAPTIVE = DARK
     }
 }

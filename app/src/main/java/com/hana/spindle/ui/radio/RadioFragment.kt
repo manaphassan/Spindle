@@ -26,7 +26,7 @@ import java.util.Locale
 import kotlin.math.sin
 
 /**
- * Braun / Dieter Rams-inspired Neumorphic Online FM Radio Interface.
+ * Bauhaus / Industrial Minimalist Online FM Radio Interface.
  * Features acoustic radial speaker grille with real-time live audio voice coil
  * illumination, hardware internet status LED, 3D cylindrical tuning dial,
  * vintage backlit LCD matrix display, and 60:30:10 tri-theme support.
@@ -73,18 +73,31 @@ class RadioFragment : Fragment() {
         observeTheme()
     }
 
+    private var isDeviceOnline: Boolean = true
+
+    private fun updateNetworkStatus() {
+        val state = radioEngine.radioState.value
+        val netState = when {
+            !isDeviceOnline -> RadioSpeakerGrilleView.NetworkState.OFFLINE
+            state.isBuffering -> RadioSpeakerGrilleView.NetworkState.CONNECTING
+            else -> RadioSpeakerGrilleView.NetworkState.ONLINE
+        }
+        _binding?.speakerGrilleView?.networkState = netState
+    }
+
     private fun setupNetworkMonitoring() {
         val cm = requireContext().getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
         if (cm == null) {
-            binding.speakerGrilleView.isOnline = true
+            isDeviceOnline = true
+            updateNetworkStatus()
             return
         }
 
         // Initial check
         val activeNetwork = cm.activeNetwork
         val caps = cm.getNetworkCapabilities(activeNetwork)
-        val isConnected = caps?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
-        binding.speakerGrilleView.isOnline = isConnected
+        isDeviceOnline = caps?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
+        updateNetworkStatus()
 
         val request = NetworkRequest.Builder()
             .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
@@ -93,13 +106,22 @@ class RadioFragment : Fragment() {
         val callback = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
                 view?.post {
-                    _binding?.speakerGrilleView?.isOnline = true
+                    isDeviceOnline = true
+                    updateNetworkStatus()
                 }
             }
 
             override fun onLost(network: Network) {
                 view?.post {
-                    _binding?.speakerGrilleView?.isOnline = false
+                    isDeviceOnline = false
+                    updateNetworkStatus()
+                }
+            }
+
+            override fun onUnavailable() {
+                view?.post {
+                    isDeviceOnline = false
+                    updateNetworkStatus()
                 }
             }
         }
@@ -107,7 +129,8 @@ class RadioFragment : Fragment() {
         try {
             cm.registerNetworkCallback(request, callback)
         } catch (e: Exception) {
-            binding.speakerGrilleView.isOnline = true
+            isDeviceOnline = true
+            updateNetworkStatus()
         }
     }
 
@@ -200,6 +223,8 @@ class RadioFragment : Fragment() {
     }
 
     private fun renderState(state: com.hana.spindle.playback.RadioPlaybackState) {
+        updateNetworkStatus()
+
         // Frequency readout
         binding.tvRadioFrequency.text = String.format(Locale.US, "%.1f", state.currentFrequency)
 

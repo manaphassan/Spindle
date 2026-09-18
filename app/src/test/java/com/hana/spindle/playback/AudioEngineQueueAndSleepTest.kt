@@ -127,15 +127,15 @@ class AudioEngineQueueAndSleepTest {
 
         val tdk = presets.find { it.id == com.hana.spindle.theme.CassetteTheme.TDK_SA_90.id }
         assertTrue(tdk != null)
-        assertEquals("TDK SA-90", tdk!!.name)
+        assertEquals("Type II High-Bias", tdk!!.name)
 
         val maxell = presets.find { it.id == com.hana.spindle.theme.CassetteTheme.MAXELL_XLII.id }
         assertTrue(maxell != null)
-        assertEquals("Maxell XL-II", maxell!!.name)
+        assertEquals("Type II Amber Gold", maxell!!.name)
 
         val basf = presets.find { it.id == com.hana.spindle.theme.CassetteTheme.BASF_CHROME.id }
         assertTrue(basf != null)
-        assertEquals("BASF Chrome", basf!!.name)
+        assertEquals("Anthracite Chrome", basf!!.name)
 
         val skeleton = presets.find { it.id == com.hana.spindle.theme.CassetteTheme.SKELETON_REEL.id }
         assertTrue(skeleton != null)
@@ -143,6 +143,7 @@ class AudioEngineQueueAndSleepTest {
 
         val eink = presets.find { it.id == com.hana.spindle.theme.CassetteTheme.MONOCHROME_EINK.id }
         assertTrue(eink != null)
+        assertEquals("Mono", eink!!.name)
         assertFalse(eink!!.isDarkAppTheme)
     }
 

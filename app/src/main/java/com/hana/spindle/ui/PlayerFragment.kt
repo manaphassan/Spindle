@@ -56,7 +56,8 @@ class PlayerFragment : Fragment() {
 
                 _binding?.wm2ChassisView?.batteryLevel = batteryPct
                 _binding?.wm2ChassisView?.isCharging = isCharging
-                _binding?.verticalDeckView?.isLowBattery = (batteryPct <= 15)
+                _binding?.verticalDeckView?.batteryLevel = batteryPct
+                _binding?.verticalDeckView?.isLowBattery = (batteryPct <= 20)
             }
         }
     }
@@ -81,6 +82,18 @@ class PlayerFragment : Fragment() {
         setupAudioPlaybackObservation(app)
         setupControls()
         setupCassetteFlip()
+
+        // Read initial battery status
+        try {
+            val initialBattery = requireContext().registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+            if (initialBattery != null) {
+                val level = initialBattery.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+                val scale = initialBattery.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
+                val batteryPct = if (level >= 0 && scale > 0) (level * 100) / scale else 80
+                binding.verticalDeckView.batteryLevel = batteryPct
+                binding.wm2ChassisView.batteryLevel = batteryPct
+            }
+        } catch (_: Exception) {}
     }
 
     override fun onResume() {
@@ -119,7 +132,7 @@ class PlayerFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             audioEngine.playbackState.collectLatest { state ->
                 _binding?.let { b ->
-                    // 1. Vertical Walkman Deck
+                    // 1. Vertical Cassette Deck
                     b.verticalDeckView.isPlaying = state.isPlaying
                     b.verticalDeckView.progress = state.progress
                     b.verticalCassetteView.isPlaying = state.isPlaying
