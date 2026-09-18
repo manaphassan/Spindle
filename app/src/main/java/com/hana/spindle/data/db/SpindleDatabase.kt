@@ -6,13 +6,18 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [SongEntity::class],
-    version = 2,
+    entities = [
+        SongEntity::class,
+        PlaylistEntity::class,
+        PlaylistSongCrossRef::class
+    ],
+    version = 3,
     exportSchema = false
 )
 abstract class SpindleDatabase : RoomDatabase() {
 
     abstract fun songDao(): SongDao
+    abstract fun playlistDao(): PlaylistDao
 
     companion object {
         @Volatile

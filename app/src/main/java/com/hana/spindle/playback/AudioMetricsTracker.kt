@@ -1,6 +1,7 @@
 package com.hana.spindle.playback
 
 import android.content.Context
+import android.media.AudioDeviceCallback
 import android.media.AudioDeviceInfo
 import android.media.AudioManager
 import android.os.Build
@@ -60,6 +61,8 @@ class AudioMetricsTracker(private val context: Context) {
         }
     }
 
+    private var audioDeviceCallback: AudioDeviceCallback? = null
+
     init {
         try {
             val filter = android.content.IntentFilter().apply {
@@ -71,6 +74,46 @@ class AudioMetricsTracker(private val context: Context) {
         } catch (e: Exception) {
             e.printStackTrace()
         }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            audioDeviceCallback = object : AudioDeviceCallback() {
+                override fun onAudioDevicesAdded(addedDevices: Array<out AudioDeviceInfo>?) {
+                    updateRouteTelemetry()
+                    (context.applicationContext as? com.hana.spindle.SpindleApp)?.audioEngine?.onAudioDeviceConnected()
+                }
+
+                override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>?) {
+                    updateRouteTelemetry()
+                }
+            }
+            try {
+                audioDeviceCallback?.let { callback ->
+                    audioManager.registerAudioDeviceCallback(callback, null)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+        updateRouteTelemetry()
+    }
+
+    /**
+     * Re-evaluates active audio routing and notifies listeners.
+     */
+    fun updateRouteTelemetry() {
+        val route = detectActiveOutputRoute()
+        val prefs = context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+        val bitPerfectPref = prefs.getBoolean("pref_bitperfect_direct", true)
+        val isDirectRoute = route.contains("USB DAC") || route.contains("3.5mm")
+        val isBitPerfect = if (bitPerfectPref && isDirectRoute) {
+            true
+        } else {
+            (_metrics.value.sampleRate == _metrics.value.outputSampleRate) || (_metrics.value.sampleRate <= 48000)
+        }
+        _metrics.value = _metrics.value.copy(
+            outputRoute = route,
+            isBitPerfect = isBitPerfect
+        )
     }
 
     /**
@@ -84,7 +127,14 @@ class AudioMetricsTracker(private val context: Context) {
         replayGainDb: Float = 0.0f
     ) {
         val outputRoute = detectActiveOutputRoute()
-        val isBitPerfect = (sampleRate == _metrics.value.outputSampleRate) || (sampleRate <= 48000)
+        val prefs = context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+        val bitPerfectPref = prefs.getBoolean("pref_bitperfect_direct", true)
+        val isDirectRoute = outputRoute.contains("USB DAC") || outputRoute.contains("3.5mm")
+        val isBitPerfect = if (bitPerfectPref && isDirectRoute) {
+            true
+        } else {
+            (sampleRate == _metrics.value.outputSampleRate) || (sampleRate <= 48000)
+        }
 
         _metrics.value = _metrics.value.copy(
             format = format,
@@ -103,13 +153,26 @@ class AudioMetricsTracker(private val context: Context) {
     fun detectActiveOutputRoute(): String {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             val devices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
+            // Priority: USB DAC > Wired Headphone / Line Out > Bluetooth > Builtin Speaker
+            for (device in devices) {
+                when (device.type) {
+                    AudioDeviceInfo.TYPE_USB_DEVICE,
+                    AudioDeviceInfo.TYPE_USB_HEADSET,
+                    AudioDeviceInfo.TYPE_USB_ACCESSORY -> return "USB DAC (Bit-Perfect Direct)"
+                }
+            }
             for (device in devices) {
                 when (device.type) {
                     AudioDeviceInfo.TYPE_WIRED_HEADPHONES,
-                    AudioDeviceInfo.TYPE_WIRED_HEADSET -> return "3.5mm Headphone Jack (Hi-Res)"
-                    AudioDeviceInfo.TYPE_USB_DEVICE,
-                    AudioDeviceInfo.TYPE_USB_HEADSET -> return "USB DAC (Bit-Perfect Direct)"
-                    AudioDeviceInfo.TYPE_BLUETOOTH_A2DP -> return "Bluetooth Audio (LDAC / aptX)"
+                    AudioDeviceInfo.TYPE_WIRED_HEADSET,
+                    AudioDeviceInfo.TYPE_LINE_ANALOG,
+                    AudioDeviceInfo.TYPE_LINE_DIGITAL -> return "3.5mm Headphone Jack (Hi-Res)"
+                }
+            }
+            for (device in devices) {
+                if (device.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP) {
+                    val devName = _metrics.value.bluetoothDeviceName
+                    return if (!devName.isNullOrBlank()) "Bluetooth ($devName)" else "Bluetooth Audio (LDAC / aptX)"
                 }
             }
         }
@@ -121,6 +184,13 @@ class AudioMetricsTracker(private val context: Context) {
             context.unregisterReceiver(bluetoothReceiver)
         } catch (e: Exception) {
             // Receiver not registered
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && audioDeviceCallback != null) {
+            try {
+                audioManager.unregisterAudioDeviceCallback(audioDeviceCallback)
+            } catch (e: Exception) {
+                // Ignore
+            }
         }
     }
 }

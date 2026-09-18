@@ -208,6 +208,21 @@
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
                     app:cornerRadius="16dp" />
+
+                <Button
+                    android:id="@+id/tabMixtapes"
+                    android:layout_width="wrap_content"
+                    android:layout_height="32dp"
+                    android:layout_marginHorizontal="3dp"
+                    android:text="MIXTAPES 📼"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_secondary"
+                    android:backgroundTint="#212228"
+                    android:paddingHorizontal="14dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    app:cornerRadius="16dp" />
             </LinearLayout>
         </HorizontalScrollView>
 
@@ -263,6 +278,22 @@
                 android:layout_width="0dp"
                 android:layout_height="1dp"
                 android:layout_weight="1" />
+
+            <!-- New Mixtape Button -->
+            <Button
+                android:id="@+id/btnNewMixtape"
+                android:layout_width="wrap_content"
+                android:layout_height="28dp"
+                android:text="➕ New Tape"
+                android:textSize="10.5sp"
+                android:textStyle="bold"
+                android:textColor="@color/white"
+                android:backgroundTint="@color/vfd_emerald"
+                android:visibility="gone"
+                android:paddingHorizontal="10dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                app:cornerRadius="14dp" />
 
             <!-- Shuffle Pill Button -->
             <Button
@@ -814,6 +845,20 @@
                     android:textSize="13.5sp"
                     android:singleLine="true"
                     android:ellipsize="end" />
+
+                <TextView
+                    android:id="@+id/tvNpRouteBadge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:text="FLAC 24/96kHz • Direct ALSA"
+                    android:textColor="@color/vfd_emerald"
+                    android:textSize="10.5sp"
+                    android:fontFamily="monospace"
+                    android:textStyle="bold"
+                    android:background="#16261B"
+                    android:paddingHorizontal="7dp"
+                    android:paddingVertical="2dp" />
             </LinearLayout>
 
             <!-- 3 Right-Aligned Action Icons (Specs/Download, Artist Profile, Share) -->

@@ -73,6 +73,22 @@
             </intent-filter>
         </service>
 
+        <!-- Retro Audiophile Lockscreen & Home AppWidget Provider -->
+        <receiver
+            android:name=".widget.SpindleAppWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.hana.spindle.widget.ACTION_UPDATE_WIDGET" />
+                <action android:name="com.hana.spindle.widget.ACTION_WIDGET_PLAY_PAUSE" />
+                <action android:name="com.hana.spindle.widget.ACTION_WIDGET_PREV" />
+                <action android:name="com.hana.spindle.widget.ACTION_WIDGET_NEXT" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/spindle_widget_info" />
+        </receiver>
+
     </application>
 
 </manifest>

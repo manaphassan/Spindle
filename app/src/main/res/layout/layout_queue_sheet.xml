@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#12131A"
+    android:paddingTop="12dp"
+    android:paddingBottom="16dp">
+
+    <!-- Bottom Sheet Drag Handle Bar -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:background="#334155"
+        android:layout_marginBottom="14dp" />
+
+    <!-- Header Row: Title, Meta Info, and Clear Upcoming Button -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="20dp"
+        android:layout_marginBottom="12dp">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="UP NEXT • PLAYBACK QUEUE"
+                android:textColor="#F97316"
+                android:textSize="11.5sp"
+                android:fontFamily="monospace"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvQueueSummary"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0 Tracks • 00:00 Remaining"
+                android:textColor="#94A3B8"
+                android:textSize="12.5sp"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnClearUpcoming"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:text="CLEAR UPCOMING"
+            android:textColor="#FB7185"
+            android:textSize="10.5sp"
+            android:textStyle="bold"
+            android:backgroundTint="#241B26"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="0dp"
+            app:cornerRadius="6dp" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#1E202C" />
+
+    <!-- Empty State -->
+    <TextView
+        android:id="@+id/tvQueueEmpty"
+        android:layout_width="match_parent"
+        android:layout_height="180dp"
+        android:gravity="center"
+        android:text="No songs in playback queue\nSelect tracks from the catalog to build your queue."
+        android:textColor="#64748B"
+        android:textSize="13sp"
+        android:lineSpacingMultiplier="1.2"
+        android:visibility="gone" />
+
+    <!-- Active Queue List with Drag-and-Drop and Swipe Support -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvQueueItems"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingVertical="4dp"
+        android:clipToPadding="false" />
+
+</LinearLayout>

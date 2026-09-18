@@ -112,7 +112,23 @@ class CatalogFragment : Fragment() {
                     app.database.songDao().updateRating(song.id, newRating)
                 }
             }
-        )
+        ).apply {
+            onPlayNext = { song ->
+                audioEngine.playNextInQueue(song)
+                android.widget.Toast.makeText(requireContext(), "Will play next: ${song.title}", android.widget.Toast.LENGTH_SHORT).show()
+            }
+            onAddToQueue = { song ->
+                audioEngine.addToQueue(song)
+                android.widget.Toast.makeText(requireContext(), "Added to queue: ${song.title}", android.widget.Toast.LENGTH_SHORT).show()
+            }
+            onAddToMixtape = { song ->
+                MixtapeDialogs.showAddToMixtapeDialog(requireContext(), app.database, viewLifecycleOwner.lifecycleScope, song) {
+                    if (currentTab == 7) {
+                        loadMixtapes(app)
+                    }
+                }
+            }
+        }
 
         albumTracksAdapter = SongAdapter(
             imageLoader = app.imageLoader,
@@ -128,6 +144,21 @@ class CatalogFragment : Fragment() {
             }
         ).apply {
             showTrackNumbers = true
+            onPlayNext = { song ->
+                audioEngine.playNextInQueue(song)
+                android.widget.Toast.makeText(requireContext(), "Will play next: ${song.title}", android.widget.Toast.LENGTH_SHORT).show()
+            }
+            onAddToQueue = { song ->
+                audioEngine.addToQueue(song)
+                android.widget.Toast.makeText(requireContext(), "Added to queue: ${song.title}", android.widget.Toast.LENGTH_SHORT).show()
+            }
+            onAddToMixtape = { song ->
+                MixtapeDialogs.showAddToMixtapeDialog(requireContext(), app.database, viewLifecycleOwner.lifecycleScope, song) {
+                    if (currentTab == 7) {
+                        loadMixtapes(app)
+                    }
+                }
+            }
         }
 
         binding.rvAlbumTracks.layoutManager = LinearLayoutManager(requireContext())
@@ -141,6 +172,7 @@ class CatalogFragment : Fragment() {
                     val songsFlow = when (album.format) {
                         "DISCOGRAPHY" -> app.database.songDao().getSongsByArtist(album.album)
                         "GENRE" -> app.database.songDao().getSongsByGenre(album.album)
+                        "MIXTAPE" -> app.database.playlistDao().getSongsForPlaylist(album.year.toLong())
                         else -> app.database.songDao().getSongsByAlbum(album.album)
                     }
                     songsFlow.collectLatest { albumSongs ->
@@ -154,6 +186,7 @@ class CatalogFragment : Fragment() {
                     val songsFlow = when (album.format) {
                         "DISCOGRAPHY" -> app.database.songDao().getSongsByArtist(album.album)
                         "GENRE" -> app.database.songDao().getSongsByGenre(album.album)
+                        "MIXTAPE" -> app.database.playlistDao().getSongsForPlaylist(album.year.toLong())
                         else -> app.database.songDao().getSongsByAlbum(album.album)
                     }
                     songsFlow.collectLatest { albumSongs ->
@@ -165,7 +198,23 @@ class CatalogFragment : Fragment() {
                     }
                 }
             }
-        )
+        ).apply {
+            onAlbumLongClicked = { album ->
+                if (album.format == "MIXTAPE") {
+                    android.app.AlertDialog.Builder(requireContext())
+                        .setTitle("Delete Mixtape")
+                        .setMessage("Are you sure you want to delete '${album.album}'? (Music files will not be deleted)")
+                        .setPositiveButton("Delete") { _, _ ->
+                            viewLifecycleOwner.lifecycleScope.launch {
+                                app.database.playlistDao().deletePlaylist(album.year.toLong())
+                                android.widget.Toast.makeText(requireContext(), "Deleted mixtape '${album.album}'", android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                        .setNegativeButton("Cancel", null)
+                        .show()
+                }
+            }
+        }
 
         folderAdapter = FolderAdapter { folder ->
             viewLifecycleOwner.lifecycleScope.launch {
@@ -243,6 +292,13 @@ class CatalogFragment : Fragment() {
             binding.rvCatalog.adapter = songAdapter
             loadFavorites(app)
         }
+
+        binding.tabMixtapes.setOnClickListener {
+            selectTab(7)
+            binding.rvCatalog.layoutManager = GridLayoutManager(requireContext(), 2)
+            binding.rvCatalog.adapter = albumAdapter
+            loadMixtapes(app)
+        }
     }
 
     private fun selectTab(index: Int) {
@@ -264,13 +320,18 @@ class CatalogFragment : Fragment() {
             binding.tabFolders,
             binding.tabGenres,
             binding.tabHiRes,
-            binding.tabFavorites
+            binding.tabFavorites,
+            binding.tabMixtapes
         )
 
         tabs.forEachIndexed { i, btn ->
             btn.backgroundTintList = ColorStateList.valueOf(if (i == index) activeBg else inactiveBg)
             btn.setTextColor(if (i == index) activeText else inactiveText)
         }
+
+        binding.btnNewMixtape.visibility = if (index == 7) View.VISIBLE else View.GONE
+        binding.btnShuffle.visibility = if (index == 7) View.GONE else View.VISIBLE
+        binding.btnPlayAll.visibility = if (index == 7) View.GONE else View.VISIBLE
 
         updateSortLabel()
     }
@@ -395,7 +456,7 @@ class CatalogFragment : Fragment() {
 
     private fun setupSortAndGroup() {
         binding.btnSortGroup.setOnClickListener {
-            val isAlbum = (currentTab == 1 || currentTab == 2 || currentTab == 4)
+            val isAlbum = (currentTab == 1 || currentTab == 2 || currentTab == 4 || currentTab == 7)
             val dialog = SortGroupBottomSheet(
                 isAlbumTab = isAlbum,
                 currentTrackSort = trackSortOrder,
@@ -422,7 +483,7 @@ class CatalogFragment : Fragment() {
     }
 
     private fun updateSortLabel() {
-        val isAlbum = (currentTab == 1 || currentTab == 2 || currentTab == 4)
+        val isAlbum = (currentTab == 1 || currentTab == 2 || currentTab == 4 || currentTab == 7)
         val sortText = if (isAlbum) albumSortOrder.displayName else trackSortOrder.displayName
         binding.tvCurrentSortLabel.text = "Sort: $sortText"
     }
@@ -456,7 +517,7 @@ class CatalogFragment : Fragment() {
                     (lm as? LinearLayoutManager)?.scrollToPositionWithOffset(index, 0)
                 }
             }
-            1, 2, 4 -> {
+            1, 2, 4, 7 -> {
                 val index = currentDisplayedAlbums.indexOfFirst {
                     val firstChar = it.album.trim().firstOrNull()?.uppercaseChar() ?: '#'
                     if (targetChar == '#') !firstChar.isLetter() else firstChar == targetChar
@@ -469,6 +530,13 @@ class CatalogFragment : Fragment() {
     }
 
     private fun setupQuickActions() {
+        val app = requireActivity().application as SpindleApp
+        binding.btnNewMixtape.setOnClickListener {
+            MixtapeDialogs.showCreateMixtapeDialog(requireContext(), app.database, viewLifecycleOwner.lifecycleScope) {
+                loadMixtapes(app)
+            }
+        }
+
         binding.btnShuffle.setOnClickListener {
             if (currentDisplayedSongs.isNotEmpty()) {
                 audioEngine.setShuffleMode(com.hana.spindle.playback.ShuffleMode.ALL)
@@ -541,7 +609,7 @@ class CatalogFragment : Fragment() {
                 songAdapter.submitList(list)
                 binding.tvCatalogCount.text = "${list.size} tracks"
             }
-            1, 2, 4 -> {
+            1, 2, 4, 7 -> {
                 var list = allAlbumsList
 
                 // 1. Search Query
@@ -565,7 +633,7 @@ class CatalogFragment : Fragment() {
 
                 currentDisplayedAlbums = list
                 albumAdapter.submitList(list)
-                binding.tvCatalogCount.text = "${list.size} albums"
+                binding.tvCatalogCount.text = if (currentTab == 7) "${list.size} mixtapes" else "${list.size} albums"
             }
             3 -> {
                 var list = allFoldersList
@@ -610,6 +678,15 @@ class CatalogFragment : Fragment() {
                         // Update Now Playing Single Audio metadata
                         b.tvNpTitle.text = song.title
                         b.tvNpArtist.text = song.artist
+
+                        val route = app.audioEngine.metricsTracker.metrics.value.outputRoute
+                        val shortRoute = when {
+                            route.contains("USB", ignoreCase = true) -> "USB DAC"
+                            route.contains("3.5mm", ignoreCase = true) -> "3.5mm Jack"
+                            route.contains("Bluetooth", ignoreCase = true) -> "Bluetooth"
+                            else -> "Speaker"
+                        }
+                        b.tvNpRouteBadge.text = "${song.fileFormat} ${song.bitDepth}/${song.sampleRate / 1000}k • $shortRoute"
 
                         if (song.id != currentLoadedSongId) {
                             currentLoadedSongId = song.id
@@ -688,7 +765,9 @@ class CatalogFragment : Fragment() {
 
     private fun setupNowPlayingSingleAudio(app: SpindleApp) {
         binding.btnNpBack.setOnClickListener { showNowPlayingSingleAudio(false) }
-        binding.btnNpQueue.setOnClickListener { showNowPlayingSingleAudio(false) }
+        binding.btnNpQueue.setOnClickListener {
+            QueueBottomSheet().show(childFragmentManager, "QueueBottomSheet")
+        }
 
         binding.btnNpPlayPause.setOnClickListener { audioEngine.togglePlayPause() }
         binding.btnNpPrev.setOnClickListener { audioEngine.playPrevious(forcePreviousSong = true) }
@@ -861,6 +940,7 @@ class CatalogFragment : Fragment() {
         binding.tvAlbumDetailHeaderTitle.text = when (album.format) {
             "DISCOGRAPHY" -> "ARTIST"
             "GENRE" -> "GENRE"
+            "MIXTAPE" -> "MIXTAPE"
             else -> "ALBUM"
         }
         binding.tvAlbumDetailTitle.text = album.album
@@ -868,23 +948,29 @@ class CatalogFragment : Fragment() {
 
         val totalDurationMs = songs.sumOf { it.durationMs }
         val durationFormatted = formatTime(totalDurationMs)
-        val yearStr = if (album.year > 0) "${album.year} • " else ""
+        val yearStr = if (album.year > 0 && album.format != "MIXTAPE") "${album.year} • " else ""
         binding.tvAlbumDetailMeta.text = "$yearStr${songs.size} Tracks • $durationFormatted"
-        binding.tvAlbumDetailFormat.text = album.format
+        binding.tvAlbumDetailFormat.text = if (album.format == "MIXTAPE") "CUSTOM CASSETTE" else album.format
 
         // Load thumbnail into circular disc cover
         viewLifecycleOwner.lifecycleScope.launch {
-            val cover = app.imageLoader.loadCover(album.representativePath, 300, 300)
-            if (cover != null) {
+            if (album.format == "MIXTAPE" || album.representativePath.isBlank()) {
+                binding.ivAlbumDetailCover.setPadding(32, 32, 32, 32)
+                binding.ivAlbumDetailCover.setImageResource(com.hana.spindle.R.drawable.ic_mixtape_tape)
                 binding.ivAlbumDetailCover.imageTintList = null
-                binding.ivAlbumDetailCover.setPadding(0, 0, 0, 0)
-                binding.ivAlbumDetailCover.setImageBitmap(cover)
             } else {
-                binding.ivAlbumDetailCover.setPadding(24, 24, 24, 24)
-                binding.ivAlbumDetailCover.setImageResource(android.R.drawable.ic_media_play)
-                binding.ivAlbumDetailCover.imageTintList = ColorStateList.valueOf(
-                    if (isEink) Color.BLACK else Color.parseColor("#94A3B8")
-                )
+                val cover = app.imageLoader.loadCover(album.representativePath, 300, 300)
+                if (cover != null) {
+                    binding.ivAlbumDetailCover.imageTintList = null
+                    binding.ivAlbumDetailCover.setPadding(0, 0, 0, 0)
+                    binding.ivAlbumDetailCover.setImageBitmap(cover)
+                } else {
+                    binding.ivAlbumDetailCover.setPadding(24, 24, 24, 24)
+                    binding.ivAlbumDetailCover.setImageResource(android.R.drawable.ic_media_play)
+                    binding.ivAlbumDetailCover.imageTintList = ColorStateList.valueOf(
+                        if (isEink) Color.BLACK else Color.parseColor("#94A3B8")
+                    )
+                }
             }
         }
 
@@ -1063,6 +1149,25 @@ class CatalogFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             app.database.songDao().getRatedSongs().collectLatest { ratedSongs ->
                 allSongsList = ratedSongs
+                applyFilterAndSort()
+            }
+        }
+    }
+
+    private fun loadMixtapes(app: SpindleApp) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            app.database.playlistDao().getAllPlaylists().collectLatest { playlists ->
+                val items = playlists.map { playlist ->
+                    AlbumItem(
+                        album = playlist.name,
+                        artist = "${playlist.trackCount} tracks",
+                        trackCount = playlist.trackCount,
+                        representativePath = "",
+                        year = playlist.id.toInt(),
+                        format = "MIXTAPE"
+                    )
+                }
+                allAlbumsList = items
                 applyFilterAndSort()
             }
         }

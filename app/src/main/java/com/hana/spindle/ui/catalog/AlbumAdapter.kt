@@ -85,16 +85,33 @@ class AlbumAdapter(
 
         // Asynchronously load RGB_565 downsampled cover art (200x200)
         b.ivGridArt.setImageDrawable(null)
-        scope.launch {
-            val thumb = imageLoader.loadCover(album.representativePath, 200, 200)
-            withContext(Dispatchers.Main) {
-                b.ivGridArt.setImageBitmap(thumb)
+        if (album.format == "MIXTAPE" || album.representativePath.isBlank()) {
+            b.ivGridArt.setPadding(32, 32, 32, 32)
+            b.ivGridArt.setImageResource(com.hana.spindle.R.drawable.ic_mixtape_tape)
+        } else {
+            b.ivGridArt.setPadding(0, 0, 0, 0)
+            scope.launch {
+                val thumb = imageLoader.loadCover(album.representativePath, 200, 200)
+                withContext(Dispatchers.Main) {
+                    if (thumb != null) {
+                        b.ivGridArt.setImageBitmap(thumb)
+                    } else {
+                        b.ivGridArt.setPadding(32, 32, 32, 32)
+                        b.ivGridArt.setImageResource(android.R.drawable.ic_media_play)
+                    }
+                }
             }
         }
 
         b.btnGridPlay.setOnClickListener { onPlayAlbumClicked(album) }
         holder.itemView.setOnClickListener { onAlbumClicked(album) }
+        holder.itemView.setOnLongClickListener {
+            onAlbumLongClicked?.invoke(album)
+            onAlbumLongClicked != null
+        }
     }
+
+    var onAlbumLongClicked: ((AlbumItem) -> Unit)? = null
 
     companion object DiffCallback : DiffUtil.ItemCallback<AlbumItem>() {
         override fun areItemsTheSame(oldItem: AlbumItem, newItem: AlbumItem): Boolean {

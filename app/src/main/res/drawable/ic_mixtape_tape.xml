@@ -1,0 +1,30 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- Cassette Outer Shell -->
+    <path
+        android:fillColor="#F97316"
+        android:pathData="M6,10h36c2.2,0 4,1.8 4,4v20c0,2.2 -1.8,4 -4,4H6c-2.2,0 -4,-1.8 -4,-4V14c0,-2.2 1.8,-4 4,-4z" />
+    <!-- Label Window -->
+    <path
+        android:fillColor="#2A2E45"
+        android:pathData="M10,16h28c1.1,0 2,0.9 2,2v12c0,1.1 -0.9,2 -2,2H10c-1.1,0 -2,-0.9 -2,-2V18c0,-1.1 0.9,-2 2,-2z" />
+    <!-- Center Transparent Hole -->
+    <path
+        android:fillColor="#FAFAF9"
+        android:pathData="M16,21h16c1.1,0 2,0.9 2,2v2c0,1.1 -0.9,2 -2,2H16c-1.1,0 -2,-0.9 -2,-2v-2c0,-1.1 0.9,-2 2,-2z" />
+    <!-- Left Spool Hub -->
+    <path
+        android:fillColor="#FDE68A"
+        android:pathData="M19,24m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0" />
+    <!-- Right Spool Hub -->
+    <path
+        android:fillColor="#FDE68A"
+        android:pathData="M29,24m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0" />
+    <!-- Bottom Notch Tape Head Access -->
+    <path
+        android:fillColor="#1E2132"
+        android:pathData="M14,38l3,-4h14l3,4z" />
+</vector>

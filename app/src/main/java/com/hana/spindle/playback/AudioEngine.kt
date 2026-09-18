@@ -1,6 +1,10 @@
 package com.hana.spindle.playback
 
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.media.AudioManager
 import android.net.Uri
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
@@ -8,6 +12,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultLoadControl
+import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import com.hana.spindle.data.LyricsData
 import com.hana.spindle.data.LyricsParser
@@ -36,6 +41,13 @@ enum class RepeatMode {
     ONE
 }
 
+data class SleepTimerState(
+    val isActive: Boolean = false,
+    val remainingSeconds: Long = 0L,
+    val initialMinutes: Int = 0,
+    val stopAfterCurrentTrack: Boolean = false
+)
+
 data class PlaybackState(
     val isPlaying: Boolean = false,
     val currentSong: SongEntity? = null,
@@ -57,6 +69,8 @@ data class PlaybackState(
  * 3. Low-RAM memory load control (<8MB audio buffer).
  * 4. 3-state Shuffle & 3-state Repeat modes (inspired by Poweramp).
  * 5. Synchronized lyrics streaming & timestamp lookup.
+ * 6. Sleep timer with gentle audio volume fade-out.
+ * 7. Active Playback Queue reordering and management.
  */
 @UnstableApi
 class AudioEngine(
@@ -72,13 +86,73 @@ class AudioEngine(
     private val _playbackState = MutableStateFlow(PlaybackState())
     val playbackState: StateFlow<PlaybackState> = _playbackState.asStateFlow()
 
+    private val _sleepTimerState = MutableStateFlow(SleepTimerState())
+    val sleepTimerState: StateFlow<SleepTimerState> = _sleepTimerState.asStateFlow()
+    private var sleepTimerJob: Job? = null
+    private var isFadingOut: Boolean = false
+
+    private val _currentQueueFlow = MutableStateFlow<List<SongEntity>>(emptyList())
+    val currentQueueFlow: StateFlow<List<SongEntity>> = _currentQueueFlow.asStateFlow()
+
+    private val _currentQueueIndexFlow = MutableStateFlow<Int>(-1)
+    val currentQueueIndexFlow: StateFlow<Int> = _currentQueueIndexFlow.asStateFlow()
+
     private var originalPlaylist = mutableListOf<SongEntity>()
     private var playlist = mutableListOf<SongEntity>()
     private var currentIndex = -1
 
     val audioFxController = AudioFxController()
 
+    private fun syncQueueState() {
+        _currentQueueFlow.value = playlist.toList()
+        _currentQueueIndexFlow.value = currentIndex
+        notifyWidgetUpdate()
+    }
+
+    private fun notifyWidgetUpdate() {
+        try {
+            val intent = android.content.Intent("com.hana.spindle.widget.ACTION_UPDATE_WIDGET")
+            intent.setPackage(context.packageName)
+            context.sendBroadcast(intent)
+        } catch (e: Exception) {
+            // ignore
+        }
+    }
+
+    private var wasPausedByUnplug = false
+
+    private val becomingNoisyReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == AudioManager.ACTION_AUDIO_BECOMING_NOISY) {
+                val prefs = this@AudioEngine.context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+                if (prefs.getBoolean("pref_auto_pause_unplug", true)) {
+                    if (exoPlayer.isPlaying) {
+                        wasPausedByUnplug = true
+                        pause()
+                    }
+                }
+            }
+        }
+    }
+
+    fun onAudioDeviceConnected() {
+        val prefs = context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+        if (prefs.getBoolean("pref_auto_resume_plug", false) && wasPausedByUnplug) {
+            wasPausedByUnplug = false
+            play()
+        }
+    }
+
     init {
+        try {
+            context.registerReceiver(
+                becomingNoisyReceiver,
+                IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY)
+            )
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
         // High-resolution audio attributes
         val audioAttributes = AudioAttributes.Builder()
             .setUsage(C.USAGE_MEDIA)
@@ -95,7 +169,12 @@ class AudioEngine(
             )
             .build()
 
-        exoPlayer = ExoPlayer.Builder(context)
+        val renderersFactory = DefaultRenderersFactory(context).apply {
+            setEnableAudioFloatOutput(true)
+            setEnableAudioTrackPlaybackParams(true)
+        }
+
+        exoPlayer = ExoPlayer.Builder(context, renderersFactory)
             .setAudioAttributes(audioAttributes, true)
             .setLoadControl(loadControl)
             .build().apply {
@@ -104,6 +183,7 @@ class AudioEngine(
                     override fun onIsPlayingChanged(isPlaying: Boolean) {
                         android.util.Log.d("AudioEngine", "onIsPlayingChanged: $isPlaying")
                         _playbackState.value = _playbackState.value.copy(isPlaying = isPlaying)
+                        notifyWidgetUpdate()
                         if (isPlaying) {
                             startProgressPolling()
                         } else {
@@ -131,6 +211,13 @@ class AudioEngine(
 
     private fun handleTrackEnded() {
         android.util.Log.d("AudioEngine", "handleTrackEnded: repeatMode=${_playbackState.value.repeatMode}, currentIndex=$currentIndex, size=${playlist.size}")
+        if (_sleepTimerState.value.isActive && _sleepTimerState.value.stopAfterCurrentTrack) {
+            pause()
+            seekTo(0)
+            cancelSleepTimer()
+            return
+        }
+
         when (_playbackState.value.repeatMode) {
             RepeatMode.ONE -> {
                 seekTo(0)
@@ -155,6 +242,7 @@ class AudioEngine(
         originalPlaylist = songs.toMutableList()
         playlist = songs.toMutableList()
         currentIndex = startIndex.coerceIn(0, playlist.size - 1)
+        syncQueueState()
 
         if (_playbackState.value.shuffleMode != ShuffleMode.OFF) {
             applyShuffleMode(_playbackState.value.shuffleMode)
@@ -167,7 +255,142 @@ class AudioEngine(
         originalPlaylist = mutableListOf(song)
         playlist = mutableListOf(song)
         currentIndex = 0
+        syncQueueState()
         playCurrentTrack()
+    }
+
+    fun playNextInQueue(song: SongEntity) {
+        if (playlist.isEmpty()) {
+            playSong(song)
+            return
+        }
+        val insertIndex = (currentIndex + 1).coerceIn(0, playlist.size)
+        playlist.add(insertIndex, song)
+        originalPlaylist.add(song)
+        syncQueueState()
+    }
+
+    fun addToQueue(song: SongEntity) {
+        if (playlist.isEmpty()) {
+            playSong(song)
+            return
+        }
+        playlist.add(song)
+        originalPlaylist.add(song)
+        syncQueueState()
+    }
+
+    fun moveQueueItem(fromPosition: Int, toPosition: Int) {
+        if (fromPosition !in playlist.indices || toPosition !in playlist.indices || fromPosition == toPosition) return
+        val item = playlist.removeAt(fromPosition)
+        playlist.add(toPosition, item)
+        if (currentIndex == fromPosition) {
+            currentIndex = toPosition
+        } else if (fromPosition < currentIndex && toPosition >= currentIndex) {
+            currentIndex--
+        } else if (fromPosition > currentIndex && toPosition <= currentIndex) {
+            currentIndex++
+        }
+        syncQueueState()
+    }
+
+    fun removeQueueItem(position: Int) {
+        if (position !in playlist.indices) return
+        if (position == currentIndex) {
+            if (playlist.size > 1) {
+                playNext()
+                val removeIdx = if (position < currentIndex) position else position
+                playlist.removeAt(removeIdx)
+                if (currentIndex > removeIdx) currentIndex--
+            } else {
+                pause()
+                playlist.clear()
+                originalPlaylist.clear()
+                currentIndex = -1
+                _playbackState.value = PlaybackState()
+            }
+        } else {
+            playlist.removeAt(position)
+            if (position < currentIndex) {
+                currentIndex--
+            }
+        }
+        syncQueueState()
+    }
+
+    fun clearUpcomingQueue() {
+        if (playlist.isEmpty() || currentIndex !in playlist.indices) return
+        val past = playlist.take(currentIndex + 1)
+        playlist.clear()
+        playlist.addAll(past)
+        originalPlaylist.clear()
+        originalPlaylist.addAll(past)
+        syncQueueState()
+    }
+
+    fun playQueueIndex(index: Int) {
+        if (index in playlist.indices) {
+            currentIndex = index
+            playCurrentTrack()
+        }
+    }
+
+    fun startSleepTimer(minutes: Int, stopAfterCurrentTrack: Boolean = false) {
+        cancelSleepTimer()
+        if (minutes <= 0 && !stopAfterCurrentTrack) return
+
+        val totalSeconds = if (stopAfterCurrentTrack) {
+            val remMs = (_playbackState.value.durationMs - _playbackState.value.currentPositionMs).coerceAtLeast(0L)
+            (remMs / 1000L).coerceAtLeast(1L)
+        } else {
+            minutes * 60L
+        }
+
+        _sleepTimerState.value = SleepTimerState(
+            isActive = true,
+            remainingSeconds = totalSeconds,
+            initialMinutes = minutes,
+            stopAfterCurrentTrack = stopAfterCurrentTrack
+        )
+
+        sleepTimerJob = scope.launch {
+            var currentSecs = totalSeconds
+            while (isActive && currentSecs > 0) {
+                delay(1000L)
+                currentSecs--
+
+                if (_sleepTimerState.value.stopAfterCurrentTrack) {
+                    val remMs = (_playbackState.value.durationMs - _playbackState.value.currentPositionMs).coerceAtLeast(0L)
+                    currentSecs = remMs / 1000L
+                }
+
+                // Smooth fade-out in final 10 seconds
+                if (currentSecs in 1..10) {
+                    val targetVol = (currentSecs.toFloat() / 10f).coerceIn(0f, 1f)
+                    exoPlayer.volume = targetVol
+                    isFadingOut = true
+                }
+
+                _sleepTimerState.value = _sleepTimerState.value.copy(remainingSeconds = currentSecs)
+
+                if (currentSecs <= 0) break
+            }
+
+            pause()
+            exoPlayer.volume = 1.0f
+            isFadingOut = false
+            _sleepTimerState.value = SleepTimerState(isActive = false, remainingSeconds = 0L)
+        }
+    }
+
+    fun cancelSleepTimer() {
+        sleepTimerJob?.cancel()
+        sleepTimerJob = null
+        if (isFadingOut) {
+            exoPlayer.volume = 1.0f
+            isFadingOut = false
+        }
+        _sleepTimerState.value = SleepTimerState(isActive = false, remainingSeconds = 0L)
     }
 
     private fun playCurrentTrack() {
@@ -212,6 +435,7 @@ class AudioEngine(
             bitrateKbps = bitrate
         )
         saveLastPlayed(song.path, 0L)
+        syncQueueState()
     }
 
     private fun saveLastPlayed(path: String?, pos: Long) {
@@ -252,6 +476,7 @@ class AudioEngine(
                     playlist = allSongs.toMutableList()
                     currentIndex = songIndex
                     prepareTrackWithoutPlaying(song, targetPos)
+                    syncQueueState()
                 }
             } catch (e: Exception) {
                 android.util.Log.e("AudioEngine", "restoreLastPlayedSong error", e)
@@ -582,6 +807,9 @@ class AudioEngine(
     }
 
     fun release() {
+        try {
+            context.unregisterReceiver(becomingNoisyReceiver)
+        } catch (ignored: Exception) {}
         stopProgressPolling()
         audioFxController.release()
         exoPlayer.release()

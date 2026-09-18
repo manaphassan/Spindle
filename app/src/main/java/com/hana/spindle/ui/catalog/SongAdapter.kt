@@ -28,6 +28,9 @@ class SongAdapter(
     private val scope = CoroutineScope(Dispatchers.Main)
     var activeSongId: Long? = null
     var showTrackNumbers: Boolean = false
+    var onPlayNext: ((SongEntity) -> Unit)? = null
+    var onAddToQueue: ((SongEntity) -> Unit)? = null
+    var onAddToMixtape: ((SongEntity) -> Unit)? = null
 
     private var textColorPrimary: Int = Color.parseColor("#FAFAF9")
     private var textColorSecondary: Int = Color.parseColor("#B0B4CE")
@@ -126,6 +129,23 @@ class SongAdapter(
         }
 
         holder.itemView.setOnClickListener { onSongClicked(song, position) }
+
+        holder.itemView.setOnLongClickListener {
+            val context = holder.itemView.context
+            val options = arrayOf("▶ Play Now", "⏭ Play Next", "➕ Add to Queue", "📼 Add to Mixtape")
+            android.app.AlertDialog.Builder(context)
+                .setTitle(song.title)
+                .setItems(options) { _, which ->
+                    when (which) {
+                        0 -> onSongClicked(song, holder.bindingAdapterPosition)
+                        1 -> onPlayNext?.invoke(song)
+                        2 -> onAddToQueue?.invoke(song)
+                        3 -> onAddToMixtape?.invoke(song)
+                    }
+                }
+                .show()
+            true
+        }
     }
 
     private fun getStarString(rating: Int): String {

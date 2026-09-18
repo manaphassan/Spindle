@@ -5,12 +5,18 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.view.GestureDetector
+import android.view.MotionEvent
 import android.view.View
+import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.adapter.FragmentStateAdapter
@@ -36,12 +42,14 @@ class MainActivity : AppCompatActivity() {
     companion object {
         private const val PERMISSION_REQUEST_CODE = 1001
         const val PREF_IMMERSIVE_STATUS_BAR = "pref_immersive_status_bar"
+        const val PREF_DOUBLE_TAP_SLEEP = "pref_double_tap_sleep"
     }
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var themeManager: ThemeManager
     var isImmersiveModeEnabled: Boolean = true
         private set
+    private var previousBrightness: Float = -1f
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,6 +65,7 @@ class MainActivity : AppCompatActivity() {
 
         setupViewPager()
         setupCatalogContainer()
+        setupAmbientOverlay()
         setupThemeObservation()
         setupBackNavigation()
         if (intent?.getStringExtra("navigate") == "radio") {
@@ -165,9 +174,87 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun setupAmbientOverlay() {
+        val ambientGestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onDoubleTap(e: MotionEvent): Boolean {
+                exitAmbientWake()
+                return true
+            }
+            override fun onDown(e: MotionEvent): Boolean = true
+        })
+
+        binding.ambientOverlayContainer.setOnTouchListener { _, event ->
+            ambientGestureDetector.onTouchEvent(event)
+            true // Consume touches while ambient mode is displayed
+        }
+
+        // Live track updates while in ambient mode
+        val app = application as? SpindleApp
+        if (app != null) {
+            lifecycleScope.launch {
+                app.audioEngine.playbackState.collectLatest { state ->
+                    if (binding.ambientOverlayContainer.visibility == View.VISIBLE) {
+                        state.currentSong?.let { song ->
+                            binding.tvAmbientTrack.text = "${song.title} — ${song.artist}"
+                        } ?: run {
+                            binding.tvAmbientTrack.text = "Spindle Ambient Deck"
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fun enterAmbientSleep() {
+        val prefs = getSharedPreferences("spindle_prefs", MODE_PRIVATE)
+        if (!prefs.getBoolean(PREF_DOUBLE_TAP_SLEEP, true)) return
+
+        val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+        binding.tvAmbientClock.text = timeFormat.format(Date())
+
+        val app = application as? SpindleApp
+        val currentSong = app?.audioEngine?.playbackState?.value?.currentSong
+        if (currentSong != null) {
+            binding.tvAmbientTrack.text = "${currentSong.title} — ${currentSong.artist}"
+        } else {
+            binding.tvAmbientTrack.text = "Spindle Ambient Deck"
+        }
+
+        // Dim display to 1% for low power OLED/E-Ink sleep
+        val lp = window.attributes
+        previousBrightness = lp.screenBrightness
+        lp.screenBrightness = 0.01f
+        window.attributes = lp
+
+        binding.ambientOverlayContainer.visibility = View.VISIBLE
+        binding.ambientOverlayContainer.alpha = 0f
+        binding.ambientOverlayContainer.animate()
+            .alpha(1f)
+            .setDuration(250)
+            .start()
+    }
+
+    fun exitAmbientWake() {
+        val lp = window.attributes
+        lp.screenBrightness = if (previousBrightness >= 0f) previousBrightness else WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+        window.attributes = lp
+
+        binding.ambientOverlayContainer.animate()
+            .alpha(0f)
+            .setDuration(200)
+            .withEndAction {
+                binding.ambientOverlayContainer.visibility = View.GONE
+            }
+            .start()
+    }
+
     private fun setupBackNavigation() {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
+                if (binding.ambientOverlayContainer.visibility == View.VISIBLE) {
+                    exitAmbientWake()
+                    return
+                }
                 if (binding.catalogContainer.visibility == View.VISIBLE) {
                     val catalogFrag = supportFragmentManager.findFragmentById(R.id.catalogContainer) as? CatalogFragment
                     if (catalogFrag != null && catalogFrag.handleBackPressed()) {
@@ -295,5 +382,100 @@ class MainActivity : AppCompatActivity() {
         }
         // Ensure pressing hardware/software Home button always brings user to Cassette Player
         navigateToPlayer()
+    }
+
+    private var isVolumeLongPress = false
+
+    override fun onKeyDown(keyCode: Int, event: android.view.KeyEvent?): Boolean {
+        val prefs = getSharedPreferences("spindle_prefs", MODE_PRIVATE)
+        val volumeSkipEnabled = prefs.getBoolean("pref_volume_skip", true)
+
+        if (volumeSkipEnabled && (keyCode == android.view.KeyEvent.KEYCODE_VOLUME_UP || keyCode == android.view.KeyEvent.KEYCODE_VOLUME_DOWN)) {
+            event?.startTracking()
+            if (event?.repeatCount == 0) {
+                isVolumeLongPress = false
+            }
+            return true
+        }
+
+        when (keyCode) {
+            android.view.KeyEvent.KEYCODE_MEDIA_NEXT -> {
+                (application as? SpindleApp)?.audioEngine?.playNext()
+                return true
+            }
+            android.view.KeyEvent.KEYCODE_MEDIA_PREVIOUS -> {
+                (application as? SpindleApp)?.audioEngine?.playPrevious()
+                return true
+            }
+            android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
+            android.view.KeyEvent.KEYCODE_HEADSETHOOK -> {
+                val engine = (application as? SpindleApp)?.audioEngine
+                if (engine?.playbackState?.value?.isPlaying == true) {
+                    engine.pause()
+                } else {
+                    engine?.play()
+                }
+                return true
+            }
+            android.view.KeyEvent.KEYCODE_MEDIA_PLAY -> {
+                (application as? SpindleApp)?.audioEngine?.play()
+                return true
+            }
+            android.view.KeyEvent.KEYCODE_MEDIA_PAUSE -> {
+                (application as? SpindleApp)?.audioEngine?.pause()
+                return true
+            }
+        }
+        return super.onKeyDown(keyCode, event)
+    }
+
+    override fun onKeyLongPress(keyCode: Int, event: android.view.KeyEvent?): Boolean {
+        val prefs = getSharedPreferences("spindle_prefs", MODE_PRIVATE)
+        val volumeSkipEnabled = prefs.getBoolean("pref_volume_skip", true)
+
+        if (volumeSkipEnabled) {
+            val engine = (application as? SpindleApp)?.audioEngine
+            when (keyCode) {
+                android.view.KeyEvent.KEYCODE_VOLUME_UP -> {
+                    isVolumeLongPress = true
+                    engine?.playNext()
+                    Toast.makeText(this, "Next Track ⏭", Toast.LENGTH_SHORT).show()
+                    return true
+                }
+                android.view.KeyEvent.KEYCODE_VOLUME_DOWN -> {
+                    isVolumeLongPress = true
+                    engine?.playPrevious()
+                    Toast.makeText(this, "Previous Track ⏮", Toast.LENGTH_SHORT).show()
+                    return true
+                }
+            }
+        }
+        return super.onKeyLongPress(keyCode, event)
+    }
+
+    override fun onKeyUp(keyCode: Int, event: android.view.KeyEvent?): Boolean {
+        val prefs = getSharedPreferences("spindle_prefs", MODE_PRIVATE)
+        val volumeSkipEnabled = prefs.getBoolean("pref_volume_skip", true)
+
+        if (volumeSkipEnabled && (keyCode == android.view.KeyEvent.KEYCODE_VOLUME_UP || keyCode == android.view.KeyEvent.KEYCODE_VOLUME_DOWN)) {
+            if (isVolumeLongPress) {
+                isVolumeLongPress = false
+                return true
+            } else {
+                val audioManager = getSystemService(AUDIO_SERVICE) as android.media.AudioManager
+                val direction = if (keyCode == android.view.KeyEvent.KEYCODE_VOLUME_UP) {
+                    android.media.AudioManager.ADJUST_RAISE
+                } else {
+                    android.media.AudioManager.ADJUST_LOWER
+                }
+                audioManager.adjustStreamVolume(
+                    android.media.AudioManager.STREAM_MUSIC,
+                    direction,
+                    android.media.AudioManager.FLAG_SHOW_UI
+                )
+                return true
+            }
+        }
+        return super.onKeyUp(keyCode, event)
     }
 }

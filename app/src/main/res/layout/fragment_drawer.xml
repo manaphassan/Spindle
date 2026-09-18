@@ -701,6 +701,86 @@
                                 app:strokeWidth="1dp" />
                         </LinearLayout>
 
+                        <!-- Vintage Cassette Models Row -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Cassette Shell Models"
+                            android:textColor="#A1A1AA"
+                            android:textStyle="bold"
+                            android:textSize="11sp"
+                            android:layout_marginTop="10dp"
+                            android:layout_marginBottom="6dp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <Button
+                                android:id="@+id/btnThemeTdk"
+                                android:layout_width="0dp"
+                                android:layout_height="38dp"
+                                android:layout_weight="1"
+                                android:text="TDK SA-90"
+                                android:textColor="#FDE68A"
+                                android:textSize="9sp"
+                                android:textStyle="bold"
+                                android:backgroundTint="#242220"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="8dp" />
+
+                            <Button
+                                android:id="@+id/btnThemeMaxell"
+                                android:layout_width="0dp"
+                                android:layout_height="38dp"
+                                android:layout_weight="1"
+                                android:layout_marginStart="4dp"
+                                android:text="MAXELL XL-II"
+                                android:textColor="#F59E0B"
+                                android:textSize="9sp"
+                                android:textStyle="bold"
+                                android:backgroundTint="#261E14"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="8dp" />
+
+                            <Button
+                                android:id="@+id/btnThemeBasf"
+                                android:layout_width="0dp"
+                                android:layout_height="38dp"
+                                android:layout_weight="1"
+                                android:layout_marginStart="4dp"
+                                android:text="BASF CHR"
+                                android:textColor="#FACC15"
+                                android:textSize="9sp"
+                                android:textStyle="bold"
+                                android:backgroundTint="#1F2421"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="8dp" />
+
+                            <Button
+                                android:id="@+id/btnThemeSkeleton"
+                                android:layout_width="0dp"
+                                android:layout_height="38dp"
+                                android:layout_weight="1"
+                                android:layout_marginStart="4dp"
+                                android:text="SKELETON"
+                                android:textColor="#FB7185"
+                                android:textSize="9sp"
+                                android:textStyle="bold"
+                                android:backgroundTint="#261418"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="8dp" />
+                        </LinearLayout>
+
                         <View
                             android:layout_width="match_parent"
                             android:layout_height="1dp"
@@ -743,6 +823,502 @@
                                 android:layout_height="wrap_content"
                                 android:checked="true" />
                         </LinearLayout>
+
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <!-- SECTION: AUDIOPHILE & DAP HARDWARE ENGINE -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="4dp"
+                    app:cardBackgroundColor="#131417"
+                    android:layout_marginBottom="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="DAP HARDWARE &amp; AUDIO ENGINE"
+                            android:textColor="#71717A"
+                            android:textStyle="bold"
+                            android:textSize="10.5sp"
+                            android:fontFamily="monospace"
+                            android:layout_marginBottom="12dp" />
+
+                        <!-- Volume Buttons Long Press Skip -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Volume Buttons Long-Press Skip"
+                                    android:textColor="@color/white"
+                                    android:textStyle="bold"
+                                    android:textSize="13.5sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Hold Vol+ to skip next, Vol- to skip previous."
+                                    android:textColor="#A1A1AA"
+                                    android:textSize="11sp"
+                                    android:layout_marginTop="2dp" />
+                            </LinearLayout>
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/switchVolumeSkip"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:checked="true" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="#1E2026"
+                            android:layout_marginVertical="12dp" />
+
+                        <!-- Headphone Auto-Pause on Unplug -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Auto-Pause on Unplug"
+                                    android:textColor="@color/white"
+                                    android:textStyle="bold"
+                                    android:textSize="13.5sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Pause playback when headphones or USB DAC disconnected."
+                                    android:textColor="#A1A1AA"
+                                    android:textSize="11sp"
+                                    android:layout_marginTop="2dp" />
+                            </LinearLayout>
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/switchAutoPauseUnplug"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:checked="true" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="#1E2026"
+                            android:layout_marginVertical="12dp" />
+
+                        <!-- Headphone Auto-Resume on Plug -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Auto-Resume on Plug"
+                                    android:textColor="@color/white"
+                                    android:textStyle="bold"
+                                    android:textSize="13.5sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Resume playback when headphones or USB DAC reconnected."
+                                    android:textColor="#A1A1AA"
+                                    android:textSize="11sp"
+                                    android:layout_marginTop="2dp" />
+                            </LinearLayout>
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/switchAutoResumePlug"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:checked="false" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="#1E2026"
+                            android:layout_marginVertical="12dp" />
+
+                        <!-- Direct USB DAC / Audio Offload -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Direct USB DAC / Audio Offload"
+                                    android:textColor="@color/white"
+                                    android:textStyle="bold"
+                                    android:textSize="13.5sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Bypass Android mixer for bit-perfect hardware output."
+                                    android:textColor="#A1A1AA"
+                                    android:textSize="11sp"
+                                    android:layout_marginTop="2dp" />
+                            </LinearLayout>
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/switchBitPerfectDirect"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:checked="true" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="#1E2026"
+                            android:layout_marginVertical="12dp" />
+
+                        <!-- 1-Bit Monochrome E-Ink Mode -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="1-Bit E-Ink Refresh Mode"
+                                    android:textColor="@color/white"
+                                    android:textStyle="bold"
+                                    android:textSize="13.5sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Zero-ghosting mode for Hisense, BOOX, and Yotaphone DAPs."
+                                    android:textColor="#A1A1AA"
+                                    android:textSize="11sp"
+                                    android:layout_marginTop="2dp" />
+                            </LinearLayout>
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/switchEinkMode"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:checked="false" />
+                        </LinearLayout>
+
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <!-- SECTION: SLEEP TIMER & FADE-OUT -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="4dp"
+                    app:cardBackgroundColor="#131417"
+                    android:layout_marginBottom="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="10dp">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="SLEEP TIMER &amp; FADE-OUT"
+                                android:textColor="#71717A"
+                                android:textStyle="bold"
+                                android:textSize="10.5sp"
+                                android:fontFamily="monospace" />
+
+                            <TextView
+                                android:id="@+id/tvSleepTimerStatus"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="OFF"
+                                android:textColor="#A1A1AA"
+                                android:textStyle="bold"
+                                android:fontFamily="monospace"
+                                android:textSize="11sp"
+                                android:background="#1E2026"
+                                android:paddingHorizontal="8dp"
+                                android:paddingVertical="3dp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Automatically pauses playback with smooth 10s volume fade-out."
+                            android:textColor="#A1A1AA"
+                            android:textSize="11.5sp"
+                            android:layout_marginBottom="12dp" />
+
+                        <!-- Row 1: Duration Presets -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="8dp">
+
+                            <Button
+                                android:id="@+id/btnSleep15m"
+                                android:layout_width="0dp"
+                                android:layout_height="38dp"
+                                android:layout_weight="1"
+                                android:text="15m"
+                                android:textColor="@color/white"
+                                android:textSize="11sp"
+                                android:textStyle="bold"
+                                android:backgroundTint="#242731"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="8dp" />
+
+                            <Button
+                                android:id="@+id/btnSleep30m"
+                                android:layout_width="0dp"
+                                android:layout_height="38dp"
+                                android:layout_weight="1"
+                                android:layout_marginStart="6dp"
+                                android:text="30m"
+                                android:textColor="@color/white"
+                                android:textSize="11sp"
+                                android:textStyle="bold"
+                                android:backgroundTint="#242731"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="8dp" />
+
+                            <Button
+                                android:id="@+id/btnSleep45m"
+                                android:layout_width="0dp"
+                                android:layout_height="38dp"
+                                android:layout_weight="1"
+                                android:layout_marginStart="6dp"
+                                android:text="45m"
+                                android:textColor="@color/white"
+                                android:textSize="11sp"
+                                android:textStyle="bold"
+                                android:backgroundTint="#242731"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="8dp" />
+
+                            <Button
+                                android:id="@+id/btnSleep60m"
+                                android:layout_width="0dp"
+                                android:layout_height="38dp"
+                                android:layout_weight="1"
+                                android:layout_marginStart="6dp"
+                                android:text="60m"
+                                android:textColor="@color/white"
+                                android:textSize="11sp"
+                                android:textStyle="bold"
+                                android:backgroundTint="#242731"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="8dp" />
+                        </LinearLayout>
+
+                        <!-- Row 2: End of Track & Cancel -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <Button
+                                android:id="@+id/btnSleepEndTrack"
+                                android:layout_width="0dp"
+                                android:layout_height="38dp"
+                                android:layout_weight="1.4"
+                                android:text="END OF TRACK"
+                                android:textColor="@color/white"
+                                android:textSize="11sp"
+                                android:textStyle="bold"
+                                android:backgroundTint="#242731"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="8dp" />
+
+                            <Button
+                                android:id="@+id/btnSleepCancel"
+                                android:layout_width="0dp"
+                                android:layout_height="38dp"
+                                android:layout_weight="1"
+                                android:layout_marginStart="6dp"
+                                android:text="CANCEL"
+                                android:textColor="#FB7185"
+                                android:textSize="11sp"
+                                android:textStyle="bold"
+                                android:backgroundTint="#202228"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="8dp" />
+                        </LinearLayout>
+
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <!-- SECTION: DOUBLE-TAP GESTURES & AMBIENT MODE -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="4dp"
+                    app:cardBackgroundColor="#131417"
+                    android:layout_marginBottom="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="DOUBLE-TAP GESTURES &amp; DISPLAY"
+                            android:textColor="#71717A"
+                            android:textStyle="bold"
+                            android:textSize="10.5sp"
+                            android:fontFamily="monospace"
+                            android:layout_marginBottom="10dp" />
+
+                        <!-- Double-Tap to Sleep / Dim Toggle -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Double-Tap Deck to Sleep / Dim"
+                                    android:textColor="@color/white"
+                                    android:textStyle="bold"
+                                    android:textSize="13.5sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Double-tapping empty chassis space dims screen into ambient low-power mode."
+                                    android:textColor="#A1A1AA"
+                                    android:textSize="11sp"
+                                    android:layout_marginTop="2dp" />
+                            </LinearLayout>
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/switchDoubleTapSleep"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:checked="true" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="#1E2026"
+                            android:layout_marginVertical="12dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="To wake the hardware screen when completely turned off, enable Android's native Tap to Wake feature:"
+                            android:textColor="#A1A1AA"
+                            android:textSize="11sp"
+                            android:layout_marginBottom="10dp" />
+
+                        <Button
+                            android:id="@+id/btnSystemTapToWake"
+                            android:layout_width="match_parent"
+                            android:layout_height="40dp"
+                            android:text="⚡ OPEN ANDROID TAP-TO-WAKE SETTINGS"
+                            android:textColor="@color/white"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            android:backgroundTint="#242731"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:padding="0dp"
+                            app:cornerRadius="8dp" />
 
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>

@@ -8,7 +8,9 @@ import android.content.IntentFilter
 import android.graphics.Color
 import android.os.BatteryManager
 import android.os.Bundle
+import android.view.GestureDetector
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
@@ -165,6 +167,10 @@ class PlayerFragment : Fragment() {
                         b.wm2CassetteView.artistName = ""
                     }
 
+                    // Sync live synchronized lyric ticker
+                    val activeLyric = state.currentLyrics?.lines?.getOrNull(state.activeLyricIndex)?.text ?: ""
+                    b.verticalDeckView.currentLyricText = activeLyric
+
                     b.verticalDeckView.currentTimeMs = state.currentPositionMs
 
                     val curTimeStr = formatTime(state.currentPositionMs)
@@ -172,6 +178,15 @@ class PlayerFragment : Fragment() {
                     b.tvTotalDuration.text = formatTime(state.durationMs)
 
                     b.btnPlayPause.text = if (state.isPlaying) "❚❚ PAUSE" else "▶ PLAY"
+                }
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            app.audioEngine.metricsTracker.metrics.collectLatest { metrics ->
+                _binding?.let { b ->
+                    b.verticalDeckView.outputRoute = metrics.outputRoute
+                    b.verticalDeckView.isBitPerfect = metrics.isBitPerfect
                 }
             }
         }
@@ -209,6 +224,9 @@ class PlayerFragment : Fragment() {
         binding.verticalDeckView.onEjectClicked = {
             (activity as? MainActivity)?.navigateToCatalog()
         }
+        binding.verticalDeckView.onDoubleTapChassis = {
+            (activity as? MainActivity)?.enterAmbientSleep()
+        }
 
         // WM-2 Red Controls
         binding.wm2ChassisView.onPlayClicked = { audioEngine.togglePlayPause() }
@@ -220,6 +238,19 @@ class PlayerFragment : Fragment() {
         binding.wm2ChassisView.onNextClicked = { audioEngine.playNext() }
         binding.btnEject.setOnClickListener {
             (activity as? MainActivity)?.navigateToCatalog()
+        }
+
+        // Background double tap to sleep gesture
+        val rootGestureDetector = GestureDetector(requireContext(), object : GestureDetector.SimpleOnGestureListener() {
+            override fun onDoubleTap(e: MotionEvent): Boolean {
+                (activity as? MainActivity)?.enterAmbientSleep()
+                return true
+            }
+            override fun onDown(e: MotionEvent): Boolean = true
+        })
+        binding.root.setOnTouchListener { _, event ->
+            rootGestureDetector.onTouchEvent(event)
+            false
         }
     }
 

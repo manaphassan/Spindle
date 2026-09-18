@@ -128,7 +128,10 @@ class DrawerFragment : Fragment() {
         setupDjConsole(app)
         setupDefaultLauncher()
         setupImmersiveModeToggle()
+        setupDoubleTapSettings()
+        setupSleepTimer(app)
         setupThemeSelector()
+        setupDapHardwareSettings(app)
         setupRadioStationManager(app)
         setupAudioMetrics(app)
         setupLibraryRescan(app)
@@ -554,6 +557,26 @@ class DrawerFragment : Fragment() {
             themeManager.setTheme(CassetteTheme.MONOCHROME_EINK)
             updateThemeButtonsVisual()
         }
+
+        binding.btnThemeTdk.setOnClickListener {
+            themeManager.setTheme(CassetteTheme.TDK_SA_90)
+            updateThemeButtonsVisual()
+        }
+
+        binding.btnThemeMaxell.setOnClickListener {
+            themeManager.setTheme(CassetteTheme.MAXELL_XLII)
+            updateThemeButtonsVisual()
+        }
+
+        binding.btnThemeBasf.setOnClickListener {
+            themeManager.setTheme(CassetteTheme.BASF_CHROME)
+            updateThemeButtonsVisual()
+        }
+
+        binding.btnThemeSkeleton.setOnClickListener {
+            themeManager.setTheme(CassetteTheme.SKELETON_REEL)
+            updateThemeButtonsVisual()
+        }
     }
 
     private fun updateThemeButtonsVisual() {
@@ -563,9 +586,57 @@ class DrawerFragment : Fragment() {
 
         binding.btnThemeDark.backgroundTintList = if (curId == CassetteTheme.DARK.id) activeColor else ColorStateList.valueOf(Color.parseColor("#202334"))
         binding.btnThemeLight.backgroundTintList = if (curId == CassetteTheme.LIGHT.id) activeColor else ColorStateList.valueOf(Color.parseColor("#E5E5E2"))
-        binding.btnThemeEink.backgroundTintList = if (isEink) activeColor else ColorStateList.valueOf(Color.parseColor("#E5E5E2"))
+        binding.btnThemeEink.backgroundTintList = if (isEink) activeColor else ColorStateList.valueOf(Color.parseColor("#000000"))
+
+        binding.btnThemeTdk.backgroundTintList = if (curId == CassetteTheme.TDK_SA_90.id) activeColor else ColorStateList.valueOf(Color.parseColor("#242220"))
+        binding.btnThemeMaxell.backgroundTintList = if (curId == CassetteTheme.MAXELL_XLII.id) activeColor else ColorStateList.valueOf(Color.parseColor("#261E14"))
+        binding.btnThemeBasf.backgroundTintList = if (curId == CassetteTheme.BASF_CHROME.id) activeColor else ColorStateList.valueOf(Color.parseColor("#1F2421"))
+        binding.btnThemeSkeleton.backgroundTintList = if (curId == CassetteTheme.SKELETON_REEL.id) activeColor else ColorStateList.valueOf(Color.parseColor("#261418"))
 
         binding.tvActiveThemeName.text = themeManager.currentTheme.value.name
+    }
+
+    private fun setupDapHardwareSettings(app: SpindleApp) {
+        val prefs = requireContext().getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+
+        // 1. Volume Long-Press Skip
+        binding.switchVolumeSkip.isChecked = prefs.getBoolean("pref_volume_skip", true)
+        binding.switchVolumeSkip.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean("pref_volume_skip", isChecked).apply()
+        }
+
+        // 2. Headphone Auto-Pause on Unplug
+        binding.switchAutoPauseUnplug.isChecked = prefs.getBoolean("pref_auto_pause_unplug", true)
+        binding.switchAutoPauseUnplug.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean("pref_auto_pause_unplug", isChecked).apply()
+        }
+
+        // 3. Headphone Auto-Resume on Plug
+        binding.switchAutoResumePlug.isChecked = prefs.getBoolean("pref_auto_resume_plug", false)
+        binding.switchAutoResumePlug.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean("pref_auto_resume_plug", isChecked).apply()
+        }
+
+        // 4. Direct USB DAC Bit-Perfect
+        binding.switchBitPerfectDirect.isChecked = prefs.getBoolean("pref_bitperfect_direct", true)
+        binding.switchBitPerfectDirect.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean("pref_bitperfect_direct", isChecked).apply()
+            app.audioEngine.metricsTracker.updateRouteTelemetry()
+        }
+
+        // 5. 1-Bit Monochrome E-Ink Mode
+        val isEinkTheme = themeManager.currentTheme.value.id == CassetteTheme.MONOCHROME_EINK.id
+        val isEinkPref = prefs.getBoolean("pref_eink_mode", isEinkTheme)
+        binding.switchEinkMode.isChecked = isEinkPref
+        binding.switchEinkMode.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean("pref_eink_mode", isChecked).apply()
+            if (isChecked) {
+                themeManager.setTheme(CassetteTheme.MONOCHROME_EINK)
+            } else if (themeManager.currentTheme.value.id == CassetteTheme.MONOCHROME_EINK.id) {
+                themeManager.setTheme(CassetteTheme.DARK)
+            }
+            updateThemeButtonsVisual()
+        }
     }
 
     private fun applyDrawerTheme(theme: CassetteTheme) {
@@ -609,6 +680,80 @@ class DrawerFragment : Fragment() {
         binding.switchImmersiveMode.isChecked = mainActivity.isImmersiveModeEnabled
         binding.switchImmersiveMode.setOnCheckedChangeListener { _, isChecked ->
             mainActivity.setImmersiveMode(isChecked)
+        }
+    }
+
+    private fun setupDoubleTapSettings() {
+        val prefs = requireContext().getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+        val isEnabled = prefs.getBoolean("pref_double_tap_sleep", true)
+        binding.switchDoubleTapSleep.isChecked = isEnabled
+        binding.switchDoubleTapSleep.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean("pref_double_tap_sleep", isChecked).apply()
+        }
+
+        binding.btnSystemTapToWake.setOnClickListener {
+            try {
+                val intent = Intent(Settings.ACTION_DISPLAY_SETTINGS).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                startActivity(intent)
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), "Open Settings > Display to configure native Tap to Wake", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun setupSleepTimer(app: SpindleApp) {
+        val audioEngine = app.audioEngine
+
+        binding.btnSleep15m.setOnClickListener {
+            audioEngine.startSleepTimer(15)
+            Toast.makeText(requireContext(), "Sleep timer set: 15 minutes", Toast.LENGTH_SHORT).show()
+        }
+        binding.btnSleep30m.setOnClickListener {
+            audioEngine.startSleepTimer(30)
+            Toast.makeText(requireContext(), "Sleep timer set: 30 minutes", Toast.LENGTH_SHORT).show()
+        }
+        binding.btnSleep45m.setOnClickListener {
+            audioEngine.startSleepTimer(45)
+            Toast.makeText(requireContext(), "Sleep timer set: 45 minutes", Toast.LENGTH_SHORT).show()
+        }
+        binding.btnSleep60m.setOnClickListener {
+            audioEngine.startSleepTimer(60)
+            Toast.makeText(requireContext(), "Sleep timer set: 60 minutes", Toast.LENGTH_SHORT).show()
+        }
+        binding.btnSleepEndTrack.setOnClickListener {
+            audioEngine.startSleepTimer(0, stopAfterCurrentTrack = true)
+            Toast.makeText(requireContext(), "Sleep timer set: End of current track", Toast.LENGTH_SHORT).show()
+        }
+        binding.btnSleepCancel.setOnClickListener {
+            audioEngine.cancelSleepTimer()
+            Toast.makeText(requireContext(), "Sleep timer cancelled", Toast.LENGTH_SHORT).show()
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                audioEngine.sleepTimerState.collectLatest { timerState ->
+                    _binding?.let { b ->
+                        if (timerState.isActive) {
+                            val mins = timerState.remainingSeconds / 60
+                            val secs = timerState.remainingSeconds % 60
+                            val label = if (timerState.stopAfterCurrentTrack) {
+                                String.format(Locale.US, "TRACK END (%02d:%02d)", mins, secs)
+                            } else {
+                                String.format(Locale.US, "%02d:%02d REMAINING", mins, secs)
+                            }
+                            b.tvSleepTimerStatus.text = label
+                            b.tvSleepTimerStatus.setTextColor(Color.parseColor("#00E676"))
+                            b.tvSleepTimerStatus.setBackgroundColor(Color.parseColor("#16261B"))
+                        } else {
+                            b.tvSleepTimerStatus.text = "OFF"
+                            b.tvSleepTimerStatus.setTextColor(Color.parseColor("#A1A1AA"))
+                            b.tvSleepTimerStatus.setBackgroundColor(Color.parseColor("#1E2026"))
+                        }
+                    }
+                }
+            }
         }
     }
 
