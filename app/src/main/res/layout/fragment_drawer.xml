@@ -90,7 +90,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="44dp"
                 android:layout_marginHorizontal="16dp"
-                android:layout_marginBottom="10dp"
+                android:layout_marginBottom="8dp"
                 android:background="@drawable/ic_launcher_background"
                 android:backgroundTint="@color/surface_elevated"
                 android:hint="Search installed apps..."
@@ -100,7 +100,69 @@
                 android:textSize="13.5sp"
                 android:singleLine="true" />
 
-            <!-- Frame containing List, Right Alphabet Index Rail, and Centered Preview -->
+            <!-- 3-Way View Mode Selector (Grid, List, Recent) -->
+            <LinearLayout
+                android:id="@+id/layoutAppViewModes"
+                android:layout_width="match_parent"
+                android:layout_height="32dp"
+                android:orientation="horizontal"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginBottom="8dp"
+                android:background="#151720"
+                android:padding="2dp">
+
+                <Button
+                    android:id="@+id/btnViewGrid"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:text="⊞ GRID"
+                    android:textColor="#A1A1AA"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:fontFamily="monospace"
+                    android:backgroundTint="#151720"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:padding="0dp"
+                    app:cornerRadius="5dp" />
+
+                <Button
+                    android:id="@+id/btnViewList"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:layout_marginStart="3dp"
+                    android:text="☰ LIST"
+                    android:textColor="@color/white"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:fontFamily="monospace"
+                    android:backgroundTint="#E53935"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:padding="0dp"
+                    app:cornerRadius="5dp" />
+
+                <Button
+                    android:id="@+id/btnViewRecent"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:layout_marginStart="3dp"
+                    android:text="🕒 RECENT"
+                    android:textColor="#A1A1AA"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:fontFamily="monospace"
+                    android:backgroundTint="#151720"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:padding="0dp"
+                    app:cornerRadius="5dp" />
+            </LinearLayout>
+
+            <!-- Frame containing List/Grid, Right Alphabet Index Rail, and Touch-Tracking Preview -->
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
@@ -113,6 +175,19 @@
                     android:paddingEnd="28dp"
                     android:paddingBottom="24dp" />
 
+                <!-- Empty State for Recent Apps View -->
+                <TextView
+                    android:id="@+id/tvRecentEmptyState"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_centerInParent="true"
+                    android:gravity="center"
+                    android:text="No recently opened apps\nLaunch any app from Grid or List mode"
+                    android:textColor="#71717A"
+                    android:textSize="12.5sp"
+                    android:lineSpacingExtra="4dp"
+                    android:visibility="gone" />
+
                 <!-- Alphabet Fast-Scroll Rail -->
                 <com.hana.spindle.ui.AlphabetIndexView
                     android:id="@+id/alphabetIndexView"
@@ -123,20 +198,22 @@
                     android:layout_marginEnd="4dp"
                     android:layout_marginBottom="16dp" />
 
-                <!-- Floating Centered Letter Preview Indicator -->
+                <!-- Floating Touch-Tracking Letter Preview Indicator -->
                 <TextView
                     android:id="@+id/tvAlphabetPreview"
-                    android:layout_width="72dp"
-                    android:layout_height="72dp"
-                    android:layout_centerInParent="true"
-                    android:background="#E5141518"
+                    android:layout_width="68dp"
+                    android:layout_height="68dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_marginEnd="38dp"
+                    android:background="@drawable/bg_neumorphic_button"
+                    android:backgroundTint="#F2141720"
                     android:gravity="center"
                     android:text="A"
-                    android:textColor="#FFFFFF"
-                    android:textSize="32sp"
+                    android:textColor="#F97316"
+                    android:textSize="36sp"
                     android:textStyle="bold"
-                    android:fontFamily="sans-serif-black"
-                    android:elevation="8dp"
+                    android:fontFamily="monospace"
+                    android:elevation="12dp"
                     android:visibility="gone" />
 
             </RelativeLayout>
@@ -748,19 +825,114 @@
         </ScrollView>
 
         <!-- TAB 3: MINIMALIST GROUPED LAUNCHER SETTINGS -->
-        <ScrollView
+        <LinearLayout
             android:id="@+id/containerSettings"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:paddingHorizontal="14dp"
-            android:scrollbars="none"
+            android:orientation="vertical"
             android:visibility="gone">
 
+            <!-- CATEGORY NAVIGATION SEGMENTED BAR (PINNED AT TOP) -->
             <LinearLayout
+                android:id="@+id/layoutSettingsCategories"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:paddingBottom="48dp">
+                android:layout_height="36dp"
+                android:orientation="horizontal"
+                android:layout_marginHorizontal="14dp"
+                android:layout_marginBottom="10dp"
+                android:background="#151720"
+                android:padding="2dp">
+
+                    <Button
+                        android:id="@+id/btnCatTheme"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:text="THEME"
+                        android:textColor="@color/white"
+                        android:textSize="10.5sp"
+                        android:textStyle="bold"
+                        android:fontFamily="monospace"
+                        android:backgroundTint="#E53935"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:padding="0dp"
+                        app:cornerRadius="6dp" />
+
+                    <Button
+                        android:id="@+id/btnCatAudio"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:layout_marginStart="3dp"
+                        android:text="AUDIO"
+                        android:textColor="#A1A1AA"
+                        android:textSize="10.5sp"
+                        android:textStyle="bold"
+                        android:fontFamily="monospace"
+                        android:backgroundTint="#151720"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:padding="0dp"
+                        app:cornerRadius="6dp" />
+
+                    <Button
+                        android:id="@+id/btnCatLibrary"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1.15"
+                        android:layout_marginStart="3dp"
+                        android:text="LIBRARY"
+                        android:textColor="#A1A1AA"
+                        android:textSize="10.5sp"
+                        android:textStyle="bold"
+                        android:fontFamily="monospace"
+                        android:backgroundTint="#151720"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:padding="0dp"
+                        app:cornerRadius="6dp" />
+
+                    <Button
+                        android:id="@+id/btnCatSystem"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1.1"
+                        android:layout_marginStart="3dp"
+                        android:text="SYSTEM"
+                        android:textColor="#A1A1AA"
+                        android:textSize="10.5sp"
+                        android:textStyle="bold"
+                        android:fontFamily="monospace"
+                        android:backgroundTint="#151720"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:padding="0dp"
+                        app:cornerRadius="6dp" />
+                </LinearLayout>
+
+                <!-- SCROLLABLE SETTINGS CONTENT -->
+                <ScrollView
+                    android:id="@+id/scrollSettingsContent"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:paddingHorizontal="14dp"
+                    android:scrollbars="none">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:paddingBottom="48dp">
+
+                <!-- 1. CATEGORY: THEME & DISPLAY -->
+                <LinearLayout
+                    android:id="@+id/catContainerTheme"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="visible">
 
                 <!-- SECTION 1: APPEARANCE AND DISPLAY (3 CURATED THEMES) -->
                 <androidx.cardview.widget.CardView
@@ -986,6 +1158,15 @@
 
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
+                </LinearLayout>
+
+                <!-- 2. CATEGORY: AUDIO & PLAYBACK ENGINE -->
+                <LinearLayout
+                    android:id="@+id/catContainerAudio"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
 
                 <!-- SECTION: AUDIOPHILE & DAP HARDWARE ENGINE -->
                 <androidx.cardview.widget.CardView
@@ -1477,99 +1658,6 @@
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
 
-                <!-- SECTION: DOUBLE-TAP GESTURES & AMBIENT MODE -->
-                <androidx.cardview.widget.CardView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    app:cardCornerRadius="16dp"
-                    app:cardElevation="4dp"
-                    app:cardBackgroundColor="#131417"
-                    android:layout_marginBottom="16dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="16dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="DOUBLE-TAP GESTURES &amp; DISPLAY"
-                            android:textColor="#71717A"
-                            android:textStyle="bold"
-                            android:textSize="10.5sp"
-                            android:fontFamily="monospace"
-                            android:layout_marginBottom="10dp" />
-
-                        <!-- Double-Tap to Sleep / Dim Toggle -->
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Double-Tap Deck to Sleep / Dim"
-                                    android:textColor="@color/white"
-                                    android:textStyle="bold"
-                                    android:textSize="13.5sp" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Double-tapping empty chassis space dims screen into ambient low-power mode."
-                                    android:textColor="#A1A1AA"
-                                    android:textSize="11sp"
-                                    android:layout_marginTop="2dp" />
-                            </LinearLayout>
-
-                            <androidx.appcompat.widget.SwitchCompat
-                                android:id="@+id/switchDoubleTapSleep"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:checked="true" />
-                        </LinearLayout>
-
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="1dp"
-                            android:background="#1E2026"
-                            android:layout_marginVertical="12dp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="To wake the hardware screen when completely turned off, enable Android's native Tap to Wake feature:"
-                            android:textColor="#A1A1AA"
-                            android:textSize="11sp"
-                            android:layout_marginBottom="10dp" />
-
-                        <Button
-                            android:id="@+id/btnSystemTapToWake"
-                            android:layout_width="match_parent"
-                            android:layout_height="40dp"
-                            android:text="⚡ OPEN ANDROID TAP-TO-WAKE SETTINGS"
-                            android:textColor="@color/white"
-                            android:textSize="11sp"
-                            android:textStyle="bold"
-                            android:backgroundTint="#242731"
-                            android:insetTop="0dp"
-                            android:insetBottom="0dp"
-                            android:padding="0dp"
-                            app:cornerRadius="8dp" />
-
-                    </LinearLayout>
-                </androidx.cardview.widget.CardView>
-
                 <!-- SECTION 2: AUDIO HARDWARE TELEMETRY -->
                 <androidx.cardview.widget.CardView
                     android:layout_width="match_parent"
@@ -1683,6 +1771,15 @@
 
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
+                </LinearLayout>
+
+                <!-- 3. CATEGORY: MUSIC LIBRARY & RADIO -->
+                <LinearLayout
+                    android:id="@+id/catContainerLibrary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
 
                 <!-- SECTION 3: OFFLINE MUSIC STORAGE AND FOLDER SCANNER -->
                 <androidx.cardview.widget.CardView
@@ -1880,6 +1977,108 @@
 
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
+                </LinearLayout>
+
+                <!-- 4. CATEGORY: SYSTEM & DEVICE -->
+                <LinearLayout
+                    android:id="@+id/catContainerSystem"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                <!-- SECTION: DOUBLE-TAP GESTURES & AMBIENT MODE -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="4dp"
+                    app:cardBackgroundColor="#131417"
+                    android:layout_marginBottom="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="DOUBLE-TAP GESTURES &amp; DISPLAY"
+                            android:textColor="#71717A"
+                            android:textStyle="bold"
+                            android:textSize="10.5sp"
+                            android:fontFamily="monospace"
+                            android:layout_marginBottom="10dp" />
+
+                        <!-- Double-Tap to Sleep / Dim Toggle -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Double-Tap Deck to Sleep / Dim"
+                                    android:textColor="@color/white"
+                                    android:textStyle="bold"
+                                    android:textSize="13.5sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Double-tapping empty chassis space dims screen into ambient low-power mode."
+                                    android:textColor="#A1A1AA"
+                                    android:textSize="11sp"
+                                    android:layout_marginTop="2dp" />
+                            </LinearLayout>
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/switchDoubleTapSleep"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:checked="true" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="#1E2026"
+                            android:layout_marginVertical="12dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="To wake the hardware screen when completely turned off, enable Android's native Tap to Wake feature:"
+                            android:textColor="#A1A1AA"
+                            android:textSize="11sp"
+                            android:layout_marginBottom="10dp" />
+
+                        <Button
+                            android:id="@+id/btnSystemTapToWake"
+                            android:layout_width="match_parent"
+                            android:layout_height="40dp"
+                            android:text="⚡ OPEN ANDROID TAP-TO-WAKE SETTINGS"
+                            android:textColor="@color/white"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            android:backgroundTint="#242731"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:padding="0dp"
+                            app:cornerRadius="8dp" />
+
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
 
                 <!-- SECTION 5: SYSTEM AND ABOUT SPINDLE -->
                 <androidx.cardview.widget.CardView
@@ -1980,9 +2179,11 @@
 
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
+                </LinearLayout>
 
-            </LinearLayout>
-        </ScrollView>
+                    </LinearLayout>
+                </ScrollView>
+        </LinearLayout>
 
     </FrameLayout>
 </LinearLayout>

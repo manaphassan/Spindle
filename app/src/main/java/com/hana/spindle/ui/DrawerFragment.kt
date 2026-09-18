@@ -37,6 +37,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.hana.spindle.R
 import com.hana.spindle.SpindleApp
@@ -44,6 +45,7 @@ import com.hana.spindle.databinding.FragmentDrawerBinding
 import com.hana.spindle.launcher.AppInfo
 import com.hana.spindle.launcher.AppListAdapter
 import com.hana.spindle.launcher.AppListLoader
+import com.hana.spindle.launcher.RecentAppsManager
 import com.hana.spindle.playback.RadioStation
 import com.hana.spindle.theme.CassetteTheme
 import com.hana.spindle.theme.ThemeManager
@@ -65,7 +67,14 @@ class DrawerFragment : Fragment() {
     private lateinit var audioFxController: com.hana.spindle.playback.AudioFxController
     private lateinit var appListLoader: AppListLoader
     private lateinit var appAdapter: AppListAdapter
+    private lateinit var recentAppsManager: RecentAppsManager
     private var allApps: List<AppInfo> = emptyList()
+
+    enum class AppViewMode { GRID, LIST, RECENT }
+    private var currentAppViewMode = AppViewMode.LIST
+
+    enum class SettingsCategory { THEME, AUDIO, LIBRARY, SYSTEM }
+    private var currentSettingsCategory = SettingsCategory.THEME
 
     private val dspPresets = listOf("FLAT", "BASS_BOOST", "HARMAN", "VOCAL", "CLUB")
     private var currentPresetIndex = 0
@@ -121,10 +130,13 @@ class DrawerFragment : Fragment() {
         themeManager = app.themeManager
         audioFxController = app.audioEngine.audioFxController
         appListLoader = AppListLoader(requireContext())
+        recentAppsManager = RecentAppsManager(requireContext())
         audioManager = requireContext().getSystemService(Context.AUDIO_SERVICE) as? AudioManager
 
         setupTabNavigation()
         setupAppDrawer()
+        setupAppViewModes()
+        setupSettingsCategories()
         setupDjConsole(app)
         setupDefaultLauncher()
         setupImmersiveModeToggle()
@@ -182,6 +194,10 @@ class DrawerFragment : Fragment() {
         binding.containerApps.visibility = if (index == 0) View.VISIBLE else View.GONE
         binding.containerEq.visibility = if (index == 1) View.VISIBLE else View.GONE
         binding.containerSettings.visibility = if (index == 2) View.VISIBLE else View.GONE
+        if (index == 2) {
+            binding.scrollSettingsContent.scrollTo(0, 0)
+            selectSettingsCategory(currentSettingsCategory)
+        }
 
         val isDark = themeManager.currentTheme.value.isDarkAppTheme
         val isEink = themeManager.currentTheme.value.id == CassetteTheme.MONOCHROME_EINK.id
@@ -205,6 +221,7 @@ class DrawerFragment : Fragment() {
     // =========================================================================
     private fun setupAppDrawer() {
         appAdapter = AppListAdapter { appInfo ->
+            recentAppsManager.recordAppLaunch(appInfo.packageName)
             val launchIntent = Intent(Intent.ACTION_MAIN).apply {
                 addCategory(Intent.CATEGORY_LAUNCHER)
                 component = ComponentName(appInfo.packageName, appInfo.activityName)
@@ -219,7 +236,7 @@ class DrawerFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             // Sort installed apps alphabetically
             allApps = appListLoader.loadInstalledApps().sortedBy { it.label.lowercase(Locale.ROOT) }
-            appAdapter.submitList(allApps)
+            filterApps(binding.etSearchApps.text.toString())
         }
 
         binding.etSearchApps.addTextChangedListener(object : TextWatcher {
@@ -251,6 +268,18 @@ class DrawerFragment : Fragment() {
             }
         }
 
+        binding.alphabetIndexView.onTouchPositionChanged = { letter, touchY ->
+            binding.tvAlphabetPreview.text = letter
+            binding.tvAlphabetPreview.visibility = View.VISIBLE
+
+            val previewHeight = binding.tvAlphabetPreview.height.toFloat().takeIf { it > 0f }
+                ?: (68f * resources.displayMetrics.density)
+            val targetY = touchY - previewHeight * 0.5f
+            val parentHeight = (binding.alphabetIndexView.parent as? View)?.height?.toFloat() ?: 0f
+            val maxY = if (parentHeight > 0f) parentHeight - previewHeight else targetY
+            binding.tvAlphabetPreview.translationY = targetY.coerceIn(0f, maxY.coerceAtLeast(0f))
+        }
+
         binding.alphabetIndexView.onTouchActiveChanged = { isActive ->
             if (!isActive) {
                 binding.tvAlphabetPreview.postDelayed({
@@ -260,13 +289,103 @@ class DrawerFragment : Fragment() {
         }
     }
 
-    private fun filterApps(query: String) {
-        val filtered = if (query.isBlank()) {
-            allApps
-        } else {
-            allApps.filter { it.label.contains(query, ignoreCase = true) }
+    private fun setupAppViewModes() {
+        binding.btnViewGrid.setOnClickListener { setAppViewMode(AppViewMode.GRID) }
+        binding.btnViewList.setOnClickListener { setAppViewMode(AppViewMode.LIST) }
+        binding.btnViewRecent.setOnClickListener { setAppViewMode(AppViewMode.RECENT) }
+        setAppViewMode(AppViewMode.LIST)
+    }
+
+    private fun setAppViewMode(mode: AppViewMode) {
+        currentAppViewMode = mode
+        val isEink = themeManager.currentTheme.value.id == CassetteTheme.MONOCHROME_EINK.id
+        val activeBg = ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#E53935"))
+        val inactiveBg = ColorStateList.valueOf(if (isEink) Color.WHITE else Color.parseColor("#151720"))
+        val activeText = Color.WHITE
+        val inactiveText = if (isEink) Color.BLACK else Color.parseColor("#A1A1AA")
+
+        binding.btnViewGrid.backgroundTintList = if (mode == AppViewMode.GRID) activeBg else inactiveBg
+        binding.btnViewGrid.setTextColor(if (mode == AppViewMode.GRID) activeText else inactiveText)
+
+        binding.btnViewList.backgroundTintList = if (mode == AppViewMode.LIST) activeBg else inactiveBg
+        binding.btnViewList.setTextColor(if (mode == AppViewMode.LIST) activeText else inactiveText)
+
+        binding.btnViewRecent.backgroundTintList = if (mode == AppViewMode.RECENT) activeBg else inactiveBg
+        binding.btnViewRecent.setTextColor(if (mode == AppViewMode.RECENT) activeText else inactiveText)
+
+        val density = resources.displayMetrics.density
+        when (mode) {
+            AppViewMode.GRID -> {
+                binding.rvApps.layoutManager = GridLayoutManager(requireContext(), 4)
+                appAdapter.isGridMode = true
+                binding.rvApps.setPadding(0, 0, (28 * density).toInt(), (24 * density).toInt())
+                binding.alphabetIndexView.visibility = View.VISIBLE
+            }
+            AppViewMode.LIST -> {
+                binding.rvApps.layoutManager = LinearLayoutManager(requireContext())
+                appAdapter.isGridMode = false
+                binding.rvApps.setPadding(0, 0, (28 * density).toInt(), (24 * density).toInt())
+                binding.alphabetIndexView.visibility = View.VISIBLE
+            }
+            AppViewMode.RECENT -> {
+                binding.rvApps.layoutManager = LinearLayoutManager(requireContext())
+                appAdapter.isGridMode = false
+                binding.rvApps.setPadding(0, 0, (12 * density).toInt(), (24 * density).toInt())
+                binding.alphabetIndexView.visibility = View.GONE
+            }
         }
+        filterApps(binding.etSearchApps.text.toString())
+    }
+
+    private fun filterApps(query: String) {
+        val baseList = if (currentAppViewMode == AppViewMode.RECENT) {
+            recentAppsManager.getRecentApps(allApps)
+        } else {
+            allApps
+        }
+        val filtered = if (query.isBlank()) {
+            baseList
+        } else {
+            baseList.filter { it.label.contains(query, ignoreCase = true) }
+        }
+        binding.tvRecentEmptyState.visibility = if (currentAppViewMode == AppViewMode.RECENT && filtered.isEmpty()) View.VISIBLE else View.GONE
         appAdapter.submitList(filtered)
+    }
+
+    private fun setupSettingsCategories() {
+        binding.btnCatTheme.setOnClickListener { selectSettingsCategory(SettingsCategory.THEME) }
+        binding.btnCatAudio.setOnClickListener { selectSettingsCategory(SettingsCategory.AUDIO) }
+        binding.btnCatLibrary.setOnClickListener { selectSettingsCategory(SettingsCategory.LIBRARY) }
+        binding.btnCatSystem.setOnClickListener { selectSettingsCategory(SettingsCategory.SYSTEM) }
+        selectSettingsCategory(SettingsCategory.THEME)
+    }
+
+    private fun selectSettingsCategory(category: SettingsCategory) {
+        currentSettingsCategory = category
+        val isEink = themeManager.currentTheme.value.id == CassetteTheme.MONOCHROME_EINK.id
+        val activeBg = ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#E53935"))
+        val inactiveBg = ColorStateList.valueOf(if (isEink) Color.WHITE else Color.parseColor("#151720"))
+        val activeText = Color.WHITE
+        val inactiveText = if (isEink) Color.BLACK else Color.parseColor("#A1A1AA")
+
+        binding.btnCatTheme.backgroundTintList = if (category == SettingsCategory.THEME) activeBg else inactiveBg
+        binding.btnCatTheme.setTextColor(if (category == SettingsCategory.THEME) activeText else inactiveText)
+
+        binding.btnCatAudio.backgroundTintList = if (category == SettingsCategory.AUDIO) activeBg else inactiveBg
+        binding.btnCatAudio.setTextColor(if (category == SettingsCategory.AUDIO) activeText else inactiveText)
+
+        binding.btnCatLibrary.backgroundTintList = if (category == SettingsCategory.LIBRARY) activeBg else inactiveBg
+        binding.btnCatLibrary.setTextColor(if (category == SettingsCategory.LIBRARY) activeText else inactiveText)
+
+        binding.btnCatSystem.backgroundTintList = if (category == SettingsCategory.SYSTEM) activeBg else inactiveBg
+        binding.btnCatSystem.setTextColor(if (category == SettingsCategory.SYSTEM) activeText else inactiveText)
+
+        binding.catContainerTheme.visibility = if (category == SettingsCategory.THEME) View.VISIBLE else View.GONE
+        binding.catContainerAudio.visibility = if (category == SettingsCategory.AUDIO) View.VISIBLE else View.GONE
+        binding.catContainerLibrary.visibility = if (category == SettingsCategory.LIBRARY) View.VISIBLE else View.GONE
+        binding.catContainerSystem.visibility = if (category == SettingsCategory.SYSTEM) View.VISIBLE else View.GONE
+
+        binding.scrollSettingsContent.scrollTo(0, 0)
     }
 
     // =========================================================================
@@ -738,6 +857,8 @@ class DrawerFragment : Fragment() {
         updateCardsRecursively(binding.root, cardBg, isEink)
         selectTab(currentTabIndex)
         updateThemeButtonsVisual()
+        selectSettingsCategory(currentSettingsCategory)
+        setAppViewMode(currentAppViewMode)
     }
 
     private fun updateCardsRecursively(view: View, cardBg: Int, isEink: Boolean) {

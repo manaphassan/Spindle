@@ -32,26 +32,41 @@ class AlphabetIndexView @JvmOverloads constructor(
     }
 
     var onLetterSelected: ((String) -> Unit)? = null
+    var onTouchPositionChanged: ((letter: String, touchY: Float) -> Unit)? = null
     var onTouchActiveChanged: ((Boolean) -> Unit)? = null
 
     private var selectedIndex = -1
 
+    private val density get() = resources.displayMetrics.density
+
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.parseColor("#71717A") // Muted metallic grey
-        textSize = 10f * resources.displayMetrics.density
+        textSize = 10f * density
+        typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+        textAlign = Paint.Align.CENTER
+    }
+
+    private val neighborTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#A1A1AA")
+        textSize = 13f * density
         typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
         textAlign = Paint.Align.CENTER
     }
 
     private val selectedTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#F97316") // Brand Warm Orange accent
-        textSize = 11f * resources.displayMetrics.density
+        color = Color.WHITE
+        textSize = 17f * density
         typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
         textAlign = Paint.Align.CENTER
     }
 
-    private val activeDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    private val activePillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.parseColor("#F97316")
+        style = Paint.Style.FILL
+    }
+
+    private val trackPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.argb(40, 255, 255, 255)
         style = Paint.Style.FILL
     }
 
@@ -61,8 +76,8 @@ class AlphabetIndexView @JvmOverloads constructor(
 
     fun updateTheme(textColor: Int, accentColor: Int) {
         textPaint.color = textColor
-        selectedTextPaint.color = accentColor
-        activeDotPaint.color = accentColor
+        neighborTextPaint.color = textColor
+        activePillPaint.color = accentColor
         invalidate()
     }
 
@@ -75,14 +90,33 @@ class AlphabetIndexView @JvmOverloads constructor(
         val itemHeight = h / ALPHABET.size
         val cx = w / 2f
 
+        // Draw subtle track when touched
+        if (selectedIndex >= 0) {
+            val trackR = w * 0.42f
+            canvas.drawRoundRect(cx - trackR, 4f, cx + trackR, h - 4f, trackR, trackR, trackPaint)
+        }
+
         for (i in ALPHABET.indices) {
             val letter = ALPHABET[i]
             val cy = i * itemHeight + itemHeight * 0.5f
 
-            val paint = if (i == selectedIndex) selectedTextPaint else textPaint
-            // Vertically center text
-            val baseline = cy - (paint.descent() + paint.ascent()) / 2f
-            canvas.drawText(letter, cx, baseline, paint)
+            when {
+                i == selectedIndex -> {
+                    // Draw magnified highlight pill behind active letter
+                    val pillRadius = (w * 0.55f).coerceAtMost(itemHeight * 1.3f)
+                    canvas.drawCircle(cx, cy, pillRadius, activePillPaint)
+                    val baseline = cy - (selectedTextPaint.descent() + selectedTextPaint.ascent()) / 2f
+                    canvas.drawText(letter, cx, baseline, selectedTextPaint)
+                }
+                i == selectedIndex - 1 || i == selectedIndex + 1 -> {
+                    val baseline = cy - (neighborTextPaint.descent() + neighborTextPaint.ascent()) / 2f
+                    canvas.drawText(letter, cx, baseline, neighborTextPaint)
+                }
+                else -> {
+                    val baseline = cy - (textPaint.descent() + textPaint.ascent()) / 2f
+                    canvas.drawText(letter, cx, baseline, textPaint)
+                }
+            }
         }
     }
 
@@ -116,11 +150,13 @@ class AlphabetIndexView @JvmOverloads constructor(
 
     private fun updateSelection(y: Float, itemHeight: Float) {
         val newIndex = (y / itemHeight).toInt().coerceIn(0, ALPHABET.size - 1)
+        val cy = newIndex * itemHeight + itemHeight * 0.5f
         if (newIndex != selectedIndex) {
             selectedIndex = newIndex
             performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
             onLetterSelected?.invoke(ALPHABET[newIndex])
             invalidate()
         }
+        onTouchPositionChanged?.invoke(ALPHABET[newIndex], cy)
     }
 }
