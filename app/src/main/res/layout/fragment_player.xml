@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:background="@color/surface_dark">
 
-    <!-- 1. Vertical Walkman Deck Container (Reference 1 & 2: Vertical Studio & 80s Vaporwave) -->
+    <!-- 1. Vertical Analog Cassette Deck Container -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/verticalDeckContainer"
         android:layout_width="match_parent"

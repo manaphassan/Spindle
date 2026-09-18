@@ -8,7 +8,7 @@ import android.view.View
 import com.hana.spindle.theme.CassetteTheme
 
 /**
- * Hardware-accelerated custom view rendering the Sony Walkman II (WM-2) Red chassis.
+ * Hardware-accelerated custom view rendering a Classic 1980s Retro Portable Player Red chassis.
  *
  * Implements:
  * 1. Anodized crimson red chassis with bevels and radiuses.

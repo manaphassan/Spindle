@@ -14,7 +14,7 @@
 In analog tape recording, the **spindle** is the drive shaft that grips the cogged teeth of a cassette tape hub to rotate magnetic tape across the read head at exactly $4.7625\text{ cm/s}$. It represents physical movement, mechanical synchronization, and tangible audio playback.
 
 ### 1.2 The Mission
-To breathe second life into compact smartphones (such as the Sony Xperia X Compact) and legacy Android DAPs by providing a dedicated, distraction-free, physical-feeling audiophile music launcher with **zero cloud bloat and zero background AI**.
+To breathe second life into compact smartphones and legacy Android DAPs by providing a dedicated, distraction-free, physical-feeling audiophile music launcher with **zero cloud bloat and zero background AI**.
 
 ### 1.3 Core Brand Pillars
 - **Analog Authenticity**: Every interface element behaves like real hardware with tactile inertia, detent vibrations, and physical feedback.
@@ -33,7 +33,7 @@ To breathe second life into compact smartphones (such as the Sony Xperia X Compa
 
 ### 2.1 Geometry & Symbolism
 The Spindle emblem combines the precision geometry of an internal cassette tape drive gear with the rugged industrial lines of Japanese audio engineering:
-- **Outer Cog Teeth**: 12 precision teeth finished in anodized Walkman Crimson Red.
+- **Outer Cog Teeth**: 12 precision teeth finished in anodized Spindle Crimson Red.
 - **Inner Core**: Matte obsidian brushed aluminum rotor with 6 circular weight-reduction ports.
 - **Center Spindle Arbor**: Deep-set mechanical shaft opening.
 
@@ -99,7 +99,7 @@ The palette follows strict audiophile industrial design ratios ensuring high leg
 3. **Monochrome E-Ink Theme**:
    - 100% 1-bit Pure Black (`#000000`) and Pure White (`#FFFFFF`).
    - Zero gradients, zero anti-aliased gray shadows, solid hairline borders for instantaneous e-paper refresh.
-   - Engineered for Onyx Boox, Hisense, and InkPalm devices.
+   - Engineered for dedicated e-paper and e-ink DAPs.
 
 ---
 
@@ -108,7 +108,7 @@ The palette follows strict audiophile industrial design ratios ensuring high leg
 ### 4.1 Home Screen Cassette Deck (Centered Spindle Layout)
 - **Clear Spindle Window**: Centered horizontally across the display width.
 - **Left Telemetry Column (`columnCenterX`)**:
-  - **Brand Header**: `WALKMAN` (Bold Sans-Serif, 18sp, tracking +1.5px).
+  - **Dynamic Nameplate Header**: Hardware model auto-detection (Bold Sans-Serif, 18sp, tracking +1.5px).
   - **Real-Time Clock**: `HH:MM:SS` (Bold Monospace, 24sp).
   - **Hi-Res Format Capsule Badge**: Drawn directly below the clock with rounded pill borders (e.g. `FLAC 16-BIT / 44.1 KHZ`, `MP3 320 KBPS`, 10sp Monospace).
   - **Line 0 (Song Title)**: Bold crisp white (16sp, automatic text wrap / marquee).
@@ -129,13 +129,12 @@ The palette follows strict audiophile industrial design ratios ensuring high leg
 
 ## 5. Industrial Design Disciplines
 
-### 5.1 The Braun / Dieter Rams Functionalism
-In accordance with Dieter Rams' *Ten Principles for Good Design*:
-- **Acoustic Speaker Grille**: Concentric radial hole spacing derived from the Braun T3 (1959).
+### 5.1 German Bauhaus & Functional Minimalism
+- **Acoustic Speaker Grille**: Concentric radial hole spacing derived from vintage pocket transceivers.
 - **Tactile Ribbed Thumbwheel**: Physical finger groove geometry with detent feedback.
 - **Uncluttered Readouts**: Only pertinent frequency, RDS, and volume information are displayed.
 
-### 5.2 The 1981 Sony Walkman II (WM-2) Heritage
+### 5.2 1980s Japanese Portable Audio Heritage
 - **Rectangular Minimalism**: Form defined by the exact cassette dimensions with minimal bezel.
 - **Mechanical Levers**: Buttons feature realistic spring-loaded press depth and dual-stage tactile click releases.
 - **True Differential Kinematics**: Reel spools rotate with non-linear angular velocity obeying magnetic tape thickness equations.

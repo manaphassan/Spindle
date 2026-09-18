@@ -1,26 +1,26 @@
 # Spindle Lite — Master Technical & Architectural Documentation
 **Product Name:** Spindle Lite (Legacy & Vintage DAP Edition)  
 **Package Name:** `com.hana.spindle.lite`  
-**Target Codename:** `satsuma` (Sony Ericsson Xperia active ST17i/a, Xperia mini, Xperia ray, early FiiO/Shanling DAPs)  
+**Target Codename:** `satsuma` (Ultra-Compact 3.0" HVGA Hardware & Legacy DAPs)  
 **Version:** 1.0.0-LITE-RELEASE  
 **Platform Target:** Android 4.4 KitKat (API 19) down to Android 4.1 Jelly Bean (API 16)  
-**Hardware Baseline:** Single-Core Qualcomm Snapdragon S2 (MSM8255 / 1.0 GHz), 512 MB RAM, 3.0" 320×480 HVGA Display  
+**Hardware Baseline:** Single-Core ARMv7 SoC (1.0 GHz), 512 MB RAM, 3.0" 320×480 HVGA Display  
 **License:** Apache License 2.0  
 
 ---
 
 ## 1. Executive Summary & Hardware Target
 
-**Spindle Lite** is an ultra-lightweight, zero-bloat edition of Spindle engineered to turn vintage, ultra-compact Android devices from the 2011–2014 era into dedicated, physical-feeling analog Walkman players.
+**Spindle Lite** is an ultra-lightweight, zero-bloat edition of Spindle engineered to turn vintage, ultra-compact Android devices from the 2011–2014 era into dedicated, physical-feeling analog cassette players.
 
 While the flagship Spindle (v1.2+) targets modern DAPs and compact phones (Android 8.0+ / 1GB+ RAM), **Spindle Lite** strips away modern Jetpack dependencies and refactors the custom Canvas rendering engine to run at a continuous **60 FPS on 512 MB RAM** with a total active memory footprint under **18 MB**.
 
-### Primary Target Device: Sony Ericsson Xperia active (`satsuma`)
+### Primary Target Device: Ultra-Compact Legacy Hardware (`satsuma`)
 - **Display**: 3.0-inch 320 × 480 pixels (HVGA, 192 ppi), 3:2 aspect ratio.
-- **SoC**: Qualcomm MSM8255 Snapdragon S2 (1.0 GHz Scorpion ARMv7, Adreno 205 GPU).
+- **SoC**: Qualcomm MSM8255 (1.0 GHz Scorpion ARMv7, Adreno 205 GPU).
 - **RAM / Storage**: 512 MB RAM / MicroSD slot up to 64GB FAT32.
 - **Physical Controls**: Dedicated 2-stage camera shutter button, volume rocker, power key.
-- **Form Factor**: Rugged IP67 water/dust resistant chassis with iconic corner lanyard loop.
+- **Form Factor**: Rugged IP67 water/dust resistant chassis with corner lanyard loop.
 
 ---
 
@@ -107,11 +107,11 @@ On a device with 512 MB total system RAM (where Android OS and low-memory killer
 
 ## 5. HVGA (320 × 480) Responsive Canvas Geometry
 
-To ensure the flagship Sony Walkman kinetic deck renders flawlessly on the 3.0" display of the Xperia active (`satsuma`), all coordinates are mapped dynamically to bounded view ratios:
+To ensure the flagship kinetic cassette deck renders flawlessly on the 3.0" display of the legacy target (`satsuma`), all coordinates are mapped dynamically to bounded view ratios:
 
 ```
 +---------------------------------------------------------+ (0,0)
-|  [ XPERIA ACTIVE ]         +-------------------------+  |
+|  [ PORTABLE PLAYER ]       +-------------------------+  |
 |  10:45:22                  |   CLEAR SPINDLE WINDOW  |  |
 |  [FLAC 16/44]              |  (( O ))       (( O ))  |  |
 |  Track Title               |  [Supply]      [Takeup] |  |
@@ -136,7 +136,7 @@ To ensure the flagship Sony Walkman kinetic deck renders flawlessly on the 3.0" 
 
 ## 6. Physical Hardware Control Integration (`satsuma`)
 
-The Xperia active features dedicated physical buttons that Spindle Lite binds directly:
+Dedicated physical buttons are bound directly for tactile control:
 
 1. **Hardware Camera Shutter Button (`KeyEvent.KEYCODE_CAMERA`)**:
    - **Full Press**: Toggle **Play / Pause**.
@@ -178,12 +178,7 @@ The Xperia active features dedicated physical buttons that Spindle Lite binds di
 
 Rather than hardcoding static branding, Spindle Lite inspects `android.os.Build` at runtime to format a custom industrial hardware nameplate:
 
-* `satsuma` / `ST17i` / `ST17a` ➔ **`XPERIA ACTIVE`**
-* `smultron` / `ST15i` ➔ **`XPERIA MINI`**
-* `mango` / `SK17i` ➔ **`XPERIA MINI PRO`**
-* `urushi` / `ST18i` ➔ **`XPERIA RAY`**
-* `kugo` / `SO-02J` / `F5321` ➔ **`XPERIA X COMPACT`**
-* `NW-A105` ➔ **`WALKMAN NW-A105`**
+* Generic Format: `[MANUFACTURER] [MODEL]` or cleaned uppercase model code.
 * Custom User Override: Configurable via Settings Drawer (*"Nameplate Engraving"*).
 
 ---

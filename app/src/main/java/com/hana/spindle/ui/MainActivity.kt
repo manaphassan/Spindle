@@ -31,9 +31,9 @@ import kotlinx.coroutines.launch
 /**
  * Main Android Home Launcher Activity hosting a seamless 3-screen ViewPager2:
  *
- * Page 0: Left Drawer (App Drawer, Audio Metrics Telemetry, Dark DJ Mixer EQ Console)
- * Page 1: Center Home Screen (Sony Walkman II Chassis & Kinetic Cassette Player)
- * Page 2: Right Online FM Radio (Braun Neumorphic Tuner with Live ExoPlayer Streaming)
+ * Page 0: Left Drawer (App Drawer, Audio Metrics Telemetry, Studio DJ Mixer EQ Console)
+ * Page 1: Center Home Screen (Classic 1980s Chassis & Kinetic Cassette Player)
+ * Page 2: Right Online FM Radio (Bauhaus Industrial Tuner with Live ExoPlayer Streaming)
  *
  * Overlay: Full-Screen Audiophile Music Catalog triggered via the Mechanical ⏏ EJECT Button.
  */

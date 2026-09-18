@@ -20,7 +20,7 @@ import kotlinx.coroutines.withContext
 object MixtapeDialogs {
 
     private val TAPE_ACCENTS = intArrayOf(
-        Color.parseColor("#F97316"), // Walkman Orange
+        Color.parseColor("#F97316"), // Tangerine Orange
         Color.parseColor("#FDE68A"), // Vintage Amber
         Color.parseColor("#FB7185"), // Ruby Rose
         Color.parseColor("#38BDF8"), // Neon Cyan

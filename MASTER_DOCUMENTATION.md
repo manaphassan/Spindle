@@ -1,18 +1,18 @@
 # Spindle — Master Technical & Architectural Documentation
 **Product Name:** Spindle (Audiophile DAP Launcher)  
 **Package Name:** `com.hana.spindle`  
-**Hero Hardware Inspiration:** Sony Walkman II (WM-2) & Modern Minimalist Audiophile Deck  
+**Hero Hardware Inspiration:** Classic 1980s Japanese Portable Cassette Decks & Modern Minimalist Audiophile Gear  
 **Version:** 1.2.0-RELEASE  
 **Author / Art Director & Lead Systems Architect:** Spindle Core Team  
 **Platform Target:** Android 8.0 (API 26) through Android 14/15 (API 34/35)  
-**Primary Hardware Targets:** Ultra-low-resource Android DAPs (HiBy R5/R6, Shanling M3X/M6, FiiO M6/M9/M11, Sony Walkman NW-A100/ZX500, Sony Xperia X Compact, E-Ink DAPs)  
+**Primary Hardware Targets:** Ultra-low-resource Android DAPs, Compact Smartphones with Hardware DACs, and E-Ink DAPs  
 **License:** Apache License 2.0 (with Trademark & Visual IP Reservation)
 
 ---
 
 ## 1. Executive Summary
 
-**Spindle** is an ultra-lightweight, audiophile-grade Android Home Launcher designed to transform any Android hardware—especially dedicated Digital Audio Players (DAPs) and compact vintage Android devices like the Sony Xperia X Compact—into a physical-feeling, distraction-free Walkman.
+**Spindle** is an ultra-lightweight, audiophile-grade Android Home Launcher designed to transform any Android hardware—especially dedicated Digital Audio Players (DAPs) and compact vintage Android devices—into a physical-feeling, distraction-free analog player.
 
 The hero aesthetic unites legendary Japanese industrial audio design with a pure, minimalist audiophile catalog and dedicated single-audio player. Spindle delivers a centered kinetic cassette spindle window, column-aligned hardware telemetry, an interactive circular radial progress scrubber with live audio waveforms, synced lyrics, and an A-Z fast alphabet scroller—all operating with **zero cloud bloat and zero background AI**.
 
@@ -38,7 +38,7 @@ The center home screen renders a custom hardware-accelerated Canvas deck:
 +-------------------------------------------------------------+
 |                                                             |
 |   +-------------------+  +-------------------------------+  |
-|   | WALKMAN           |  |                               |  |
+|   | SPINDLE           |  |                               |  |
 |   | 10:45:22          |  |    CENTERED CLEAR SPINDLE     |  |
 |   | [ FLAC 24/96K ]   |  |          WINDOW DECK          |  |
 |   |                   |  |                               |  |
@@ -59,7 +59,7 @@ The center home screen renders a custom hardware-accelerated Canvas deck:
    - Houses the dual mechanical spools, cogs, guide rollers, and simulated magnetic tape ribbon.
 2. **Column-Aligned Telemetry (`columnCenterX`)**:
    - Calculated precisely at the horizontal midpoint between the display's left margin and the left edge of the spindle window.
-   - **Dynamic Hardware Nameplate Header**: Automatically detects connected hardware model via `Build.MODEL`, `Build.DEVICE`, and `Build.MANUFACTURER` (e.g., `XPERIA ACTIVE`, `XPERIA X COMPACT`, `WALKMAN NW-A105`, `SHANLING M3X`), formatting it into an authentic uppercase engraved nameplate (with user custom override support).
+   - **Dynamic Hardware Nameplate Header**: Automatically detects connected hardware model via `Build.MODEL`, `Build.DEVICE`, and `Build.MANUFACTURER` (e.g., `PORTABLE PLAYER`, `STUDIO DECK`), formatting it into an authentic uppercase engraved nameplate (with user custom override support).
    - **Clock**: Real-time 24-hour clock (`HH:MM:SS`, bold monospace).
    - **Hi-Res Audio Format Capsule Badge**: Drawn directly beneath the clock with rounded pill borders (e.g. `FLAC 16-BIT / 44.1 KHZ`, `MP3 320 KBPS`).
    - **2-Line Active Song Metadata**:
@@ -94,7 +94,7 @@ Triggered by tapping the floating mini-player in the music catalog:
 3. **Format Filters**:
    - Instant filter chips for `All`, `Hi-Res (24-bit+)`, `Lossless (FLAC/WAV)`, and `MP3`.
 
-### 2.4 Braun / Dieter Rams Online FM Radio (`RadioFragment.kt`)
+### 2.4 Bauhaus Minimalist Online FM Radio (`RadioFragment.kt`)
 1. **Swipe-to-Tune**: Page 2 in the main launcher ViewPager2.
 2. **Concentric Speaker Grille (`RadioSpeakerGrilleView.kt`)**: 7-ring concentric perforation pattern with acoustic recess shadows.
 3. **3D Ribbed Tuning Dial (`RadioTuningDialView.kt`)**: Tactile cylindrical thumbwheel with moving calibrated frequency scale (`87.5 - 108.0 MHz`).
@@ -183,7 +183,7 @@ dap_launcher/
 │       ├── screenshot_walkman_home.png      # Home Cassette Deck (Centered Spindle & Telemetry)
 │       ├── screenshot_now_playing.png       # Dedicated Single Audio Now Playing
 │       ├── screenshot_catalog.png           # Music Catalog with A-Z Alphabet Scroller
-│       ├── screenshot_braun_radio.png       # Braun / Dieter Rams Online FM Radio
+│       ├── screenshot_braun_radio.png       # Minimalist Bauhaus Online FM Radio
 │       ├── screenshot_dj_eq.png             # Dark Audiophile DJ Console
 │       ├── spindle_app_icon.png             # Official Spindle gear hub icon
 │       └── spindle_hero_banner.jpg          # Showcase banner
@@ -219,7 +219,7 @@ dap_launcher/
             │   │   └── PaletteHelper.kt     # Dynamic album art color extractor
             │   └── ui/
             │       ├── MainActivity.kt      # 3-Page ViewPager2 Launcher Controller
-            │       ├── PlayerFragment.kt    # Home Screen Walkman Deck Controller
+            │       ├── PlayerFragment.kt    # Home Screen Cassette Deck Controller
             │       ├── CatalogFragment.kt   # Music Catalog & Single Audio Now Playing Overlay
             │       ├── DrawerFragment.kt    # App Drawer, Volume Slider & Settings
             │       ├── AlphabetIndexView.kt # Tactile vertical A-Z alphabet scroller
@@ -236,7 +236,7 @@ dap_launcher/
             │       │   ├── SortGroupBottomSheet.kt # Sort & filter modal dialog
             │       │   ├── SongAdapter.kt          # Song list RecyclerView adapter
             │       │   └── AlbumAdapter.kt         # 2-column album grid adapter
-            │       └── radio/               # Braun Radio Custom Views
+            │       └── radio/               # Acoustic Radio Custom Views
             │           ├── RadioFragment.kt        # Online radio controller
             │           ├── RadioSpeakerGrilleView.kt # Concentric acoustic hole grille
             │           └── RadioTuningDialView.kt  # 3D ribbed tuning cylinder
@@ -253,7 +253,7 @@ Spindle is maintained across two targeted build modules to optimize for modern a
 | :--- | :--- | :--- |
 | **Target OS / API** | Android 8.0 – 15 (API 26 – 35) | Android 4.4 KitKat – 7.1 (API 19 – 25) |
 | **Target Hardware** | 1 GB – 4 GB RAM, 720p/1080p DAPs & Phones | 512 MB – 1 GB RAM, 320×480 (HVGA) Legacy Devices |
-| **Hero Hardware Example**| Sony Xperia X Compact (`SO-02J`), HiBy R5 | Sony Ericsson Xperia active (`satsuma` ST17i) |
+| **Hero Hardware Example**| Modern Compact Flagships, Android DAPs | Ultra-Compact Legacy Hardware (3.0" HVGA) |
 | **Audio Engine** | `androidx.media3` (ExoPlayer v1.5.1) | Dual-instance native `android.media.MediaPlayer` |
 | **Gapless Playback** | Media3 `AudioSink` & MediaSession | Native `setNextMediaPlayer()` API chaining |
 | **Database & Indexing** | Room ORM 2.6.1 + Kotlin Coroutines | Native `SQLiteOpenHelper` + Background POSIX crawler |
@@ -268,7 +268,89 @@ Spindle is maintained across two targeted build modules to optimize for modern a
 
 ---
 
+## 8. Product Roadmap & Development Trajectory
+
+```
+                                  SPINDLE ROADMAP
+                                  
+   [ v1.2.0-RELEASE ] ──> [ v1.3.0-LITE ] ──> [ v1.4.0-STUDIO ] ──> [ v2.0.0-ECOSYSTEM ]
+     Flagship Deck          :app-lite           Reel-to-Reel           Direct USB ALSA
+     Now Playing Arc        Android 4.4         10-Band ISO EQ         MicroSD Sync
+     24-Band Waveform       320x480 HVGA        Tape Saturation        CUE Sheet Splitter
+     Nameplate Engine       MediaPlayer Chained Foley Engine           DLNA Renderer
+     A-Z Fast Index         Camera Key Hooks    Custom Engraving       Cross-Platform
+```
+
+### 8.1 v1.2.0-RELEASE (Current Flagship Stable)
+* **Flagship Cassette Deck**: Centered acrylic spindle window with kinetic differential spool physics ($v = 4.7625\text{ cm/s}$).
+* **Dedicated Single-Audio Now Playing**: 360° touch radial progress arc scrubber, dynamic 24-band frequency envelope visualizer, format telemetry pill, and synced `.lrc` lyrics drawer.
+* **Music Catalog**: Fast A-Z right-edge index rail with haptic feedback, 6-attribute sorting, and format filter chips.
+* **Bauhaus Minimalist Radio**: Concentric acoustic speaker grille and 3D cylindrical tuning dial.
+* **Dynamic Hardware Nameplate Engine**: Auto-detection and engraving of host device model.
+
+### 8.2 v1.3.0-LITE (In Progress — Vintage & Legacy Target)
+* **Dedicated `:app-lite` Build Module**: Parallel architecture targeting Android 4.4 KitKat (API 19) down to Android 4.1 (API 16).
+* **Responsive HVGA Geometry**: Proportional coordinate scaling for 3.0" 320×480 displays.
+* **Dual Native `MediaPlayer` Engine**: Zero-overhead gapless audio playback via `setNextMediaPlayer()`.
+* **Hardware Key Interception**: Direct binding for physical two-stage camera shutter keys (`KEYCODE_CAMERA`) and screen-off long-press volume track skipping.
+* **Sport / Rain Lock Mode**: Low-power high-contrast B&W touch-disabled display mode.
+
+### 8.3 v1.4.0-STUDIO (Planned — Master Studio Collector Edition)
+* **Open Reel-to-Reel Studio Deck**: Animated open reel hubs with tension rollers and ballistic analog VU needles.
+* **10-Band ISO Parametric Studio EQ**: Hardware-accelerated parametric equalizer with high-precision Q-factor controls.
+* **Analog Sound DSP**: Warm tape saturation simulation, vintage tube warmth harmonics, and analog vinyl crackle toggles.
+* **Mechanical Cassette Foley Engine**: Runtime procedural 16-bit PCM sound generation for solenoid clicks, head engagement, and motor flutter.
+* **Custom Laser Nameplate Engraving**: Custom typography editor for personalizing hardware faceplates.
+
+### 8.4 v2.0.0-ECOSYSTEM (Future Vision)
+* **Direct USB-OTG ALSA Driver**: Custom native user-space USB Audio Class 2.0 driver bypassing Android audio framework for bit-perfect DSD512 / 32-bit 768kHz output.
+* **Audiophile CUE Sheet Splitter**: Real-time virtual track indexing for monolithic FLAC/APE album rips.
+* **Cross-DAP MicroSD Catalog Sync**: Fast metadata transfer and playlist sharing between devices.
+
+---
+
+## 9. Design System & UI Consistency Standards
+
+Spindle enforces strict visual consistency, tactile physical skeuomorphism, and WCAG 2.2 accessibility across all components, adhering to [.agents/rules/ui-consistency.md](file:///.agents/rules/ui-consistency.md).
+
+### 9.1 Semantic Color Tokens & Theme Matrix
+
+| Design Token | Audiophile Dark (Studio) | Clean Light (Aluminum) | Monochrome E-Ink |
+| :--- | :--- | :--- | :--- |
+| **`background`** | `#0D0E11` / `#16181F` | `#E8E8E5` / `#FAFAF9` | `#FFFFFF` |
+| **`surface`** | `#1C1E2A` | `#DCDCD8` / `#FFFFFF` | `#F0F0F0` |
+| **`surface_elevated`** | `#262938` | `#FFFFFF` | `#E0E0E0` |
+| **`primary / accent`** | `#F97316` / `#00E676` | `#EA580C` / `#00A854` | `#000000` |
+| **`text_primary`** | `#FAFAF9` (White) | `#1E2132` (Navy/Charcoal) | `#000000` (Pitch Black) |
+| **`text_secondary`** | `#94A3B8` / `#A8A29E` | `#64748B` / `#5A5E78` | `#555555` |
+| **`border`** | `#2A2E3D` / `#3A3F53` | `#C8C8C4` | `#000000` / `#AAAAAA` |
+
+### 9.2 Categorized Settings Architecture
+To guarantee effortless navigation on compact 3.5"–5.0" screens, the settings screen is organized into 5 clear visual groups with a segmented category switcher:
+1. **Audio Engine**: Sample rate, bit-perfect ALSA mode, crossfade, and EQ.
+2. **Interface & Themes**: Theme selector (Dark, Light, Mono), tape aesthetics, and haptic feedback.
+3. **Hardware Integration**: Custom engraved nameplate, volume button skipping, and headset auto-play.
+4. **Battery & Power**: Low-battery diode telemetry, screen timeout, and background throttling.
+5. **System & About**: Build info, source code links, and direct PayPal development support.
+
+### 9.3 App Drawer View Modes & Touch Alphabet Scroller
+- **View Modes**: Segmented switcher for **Grid** (3-column responsive icons), **List** (compact vertical layout), and **Recent** (most recently launched applications).
+- **Touch-Magnified Alphabet Rail**: The right-edge vertical indexer dynamically enlarges the selected letter upon touch, accompanied by a floating high-contrast center preview bubble and haptic ticks.
+
+---
+
+## 10. 💖 Support Development
+
+Spindle is independently engineered with zero ads, zero trackers, and zero subscriptions. If Spindle enhances your listening experience or revives your classic DAP, consider supporting our hardware lab and ongoing development:
+
+* **PayPal**: [https://paypal.me/manaphassan](https://paypal.me/manaphassan)
+* **Author / Maintainer**: Manap Hassan (`manaphassan`)
+
+---
+
 <div align="center">
   <sub>Spindle · Engineered with precision for audiophiles, analog purists, and hardware preservation.</sub>
 </div>
+
+
 

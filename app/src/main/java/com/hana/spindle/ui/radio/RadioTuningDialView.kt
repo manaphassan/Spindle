@@ -9,7 +9,7 @@ import android.view.View
 import kotlin.math.roundToInt
 
 /**
- * 3D Cylindrical Analog Radio Tuning Thumbwheel inspired by Braun / Dieter Rams audio equipment.
+ * 3D Cylindrical Analog Radio Tuning Thumbwheel inspired by classic industrial audio equipment.
  * Features realistic vertical cylindrical shading, ribbed roller ridges, calibrated frequency markings,
  * and tactile mechanical detent haptic vibrations during scrolling.
  */
@@ -32,6 +32,24 @@ class RadioTuningDialView @JvmOverloads constructor(
 
     var onFrequencyChanged: ((Float) -> Unit)? = null
     var onDialClicked: (() -> Unit)? = null
+
+    var isDarkMode: Boolean = true
+        set(value) {
+            if (field != value) {
+                field = value
+                updateThemePaints()
+                invalidate()
+            }
+        }
+
+    var isEink: Boolean = false
+        set(value) {
+            if (field != value) {
+                field = value
+                updateThemePaints()
+                invalidate()
+            }
+        }
 
     // Touch tracking
     private var lastTouchX = 0f
@@ -60,42 +78,81 @@ class RadioTuningDialView @JvmOverloads constructor(
     }
 
     private fun initPaints() {
-        rollerBgPaint.apply {
-            color = Color.parseColor("#171926") // Deep indigo cylinder roller body
-            style = Paint.Style.FILL
-        }
-
-        ridgePaint.apply {
-            color = Color.parseColor("#1F2233") // Ribbed ridge shadow
-            style = Paint.Style.STROKE
-            strokeWidth = 2.0f
-        }
-
-        ridgeHighlightPaint.apply {
-            color = Color.parseColor("#353A54") // Metallic ridge highlight
-            style = Paint.Style.STROKE
-            strokeWidth = 1.2f
-        }
-
         textPaint.apply {
-            color = Color.parseColor("#FAFAF9") // Crisp pale stone calibrated scale numbers
             textSize = 28f
             typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
             textAlign = Paint.Align.CENTER
         }
 
         cursorPaint.apply {
-            color = Color.parseColor("#F97316") // Iconic warm orange tuning cursor hairline
             style = Paint.Style.STROKE
             strokeWidth = 3.0f
             strokeCap = Paint.Cap.ROUND
         }
 
         bevelPaint.apply {
-            color = Color.parseColor("#2A2E45") // Dark indigo framing bevel
             style = Paint.Style.STROKE
             strokeWidth = 2f
         }
+
+        ridgePaint.apply {
+            style = Paint.Style.STROKE
+            strokeWidth = 2.0f
+        }
+
+        ridgeHighlightPaint.apply {
+            style = Paint.Style.STROKE
+            strokeWidth = 1.2f
+        }
+
+        updateThemePaints()
+    }
+
+    private fun updateThemePaints() {
+        if (isEink) {
+            rollerBgPaint.color = Color.WHITE
+            ridgePaint.color = Color.parseColor("#CCCCCC")
+            ridgeHighlightPaint.color = Color.parseColor("#EEEEEE")
+            textPaint.color = Color.BLACK
+            cursorPaint.color = Color.BLACK
+            bevelPaint.color = Color.BLACK
+        } else if (!isDarkMode) {
+            rollerBgPaint.color = Color.parseColor("#E5E5E2")
+            ridgePaint.color = Color.parseColor("#D1D5DB")
+            ridgeHighlightPaint.color = Color.parseColor("#FFFFFF")
+            textPaint.color = Color.parseColor("#2A2E45")
+            cursorPaint.color = Color.parseColor("#F97316")
+            bevelPaint.color = Color.parseColor("#CBD5E1")
+        } else {
+            rollerBgPaint.color = Color.parseColor("#171926")
+            ridgePaint.color = Color.parseColor("#1F2233")
+            ridgeHighlightPaint.color = Color.parseColor("#353A54")
+            textPaint.color = Color.parseColor("#FAFAF9")
+            cursorPaint.color = Color.parseColor("#F97316")
+            bevelPaint.color = Color.parseColor("#2A2E45")
+        }
+
+        val w = width.toFloat()
+        if (w > 0f) {
+            updateShader(w)
+        }
+    }
+
+    private fun updateShader(w: Float) {
+        val edgeAlpha = if (isEink) 0 else if (!isDarkMode) 80 else 220
+        val edgeColor = if (!isDarkMode) Color.argb(edgeAlpha, 180, 180, 180) else Color.argb(edgeAlpha, 10, 12, 16)
+        cylinderShader = LinearGradient(
+            0f, 0f, w, 0f,
+            intArrayOf(
+                edgeColor,
+                Color.TRANSPARENT,
+                Color.TRANSPARENT,
+                edgeColor
+            ),
+            floatArrayOf(0.0f, 0.25f, 0.75f, 1.0f),
+            Shader.TileMode.CLAMP
+        )
+        gradientOverlayPaint.shader = cylinderShader
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -104,20 +161,7 @@ class RadioTuningDialView @JvmOverloads constructor(
 
         boundsRect.set(0f, 0f, w.toFloat(), h.toFloat())
         textPaint.textSize = h * 0.22f
-
-        // 3D cylindrical side shadow vignette (dark machined cylinder)
-        cylinderShader = LinearGradient(
-            0f, 0f, w.toFloat(), 0f,
-            intArrayOf(
-                Color.argb(220, 10, 12, 16),
-                Color.TRANSPARENT,
-                Color.TRANSPARENT,
-                Color.argb(220, 10, 12, 16)
-            ),
-            floatArrayOf(0.0f, 0.25f, 0.75f, 1.0f),
-            Shader.TileMode.CLAMP
-        )
-        gradientOverlayPaint.shader = cylinderShader
+        updateShader(w.toFloat())
     }
 
     override fun onDraw(canvas: Canvas) {

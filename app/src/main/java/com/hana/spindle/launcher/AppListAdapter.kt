@@ -39,21 +39,32 @@ class AppListAdapter(
             }
         }
 
+    private var textColor: Int = android.graphics.Color.parseColor("#FAFAF9")
+
+    fun updateThemeColors(primaryColor: Int) {
+        if (textColor != primaryColor) {
+            textColor = primaryColor
+            notifyDataSetChanged()
+        }
+    }
+
     sealed class BaseAppViewHolder(root: View) : RecyclerView.ViewHolder(root) {
-        abstract fun bind(app: AppInfo, onAppClicked: (AppInfo) -> Unit)
+        abstract fun bind(app: AppInfo, onAppClicked: (AppInfo) -> Unit, textColor: Int)
     }
 
     class ListViewHolder(private val binding: ItemAppBinding) : BaseAppViewHolder(binding.root) {
-        override fun bind(app: AppInfo, onAppClicked: (AppInfo) -> Unit) {
+        override fun bind(app: AppInfo, onAppClicked: (AppInfo) -> Unit, textColor: Int) {
             binding.tvAppLabel.text = app.label
+            binding.tvAppLabel.setTextColor(textColor)
             binding.ivAppIcon.setImageDrawable(app.icon)
             itemView.setOnClickListener { onAppClicked(app) }
         }
     }
 
     class GridViewHolder(private val binding: ItemAppGridBinding) : BaseAppViewHolder(binding.root) {
-        override fun bind(app: AppInfo, onAppClicked: (AppInfo) -> Unit) {
+        override fun bind(app: AppInfo, onAppClicked: (AppInfo) -> Unit, textColor: Int) {
             binding.tvAppLabel.text = app.label
+            binding.tvAppLabel.setTextColor(textColor)
             binding.ivAppIcon.setImageDrawable(app.icon)
             itemView.setOnClickListener { onAppClicked(app) }
         }
@@ -73,6 +84,6 @@ class AppListAdapter(
     }
 
     override fun onBindViewHolder(holder: BaseAppViewHolder, position: Int) {
-        holder.bind(getItem(position), onAppClicked)
+        holder.bind(getItem(position), onAppClicked, textColor)
     }
 }

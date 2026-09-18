@@ -109,7 +109,7 @@
                 android:layout_marginHorizontal="16dp"
                 android:layout_marginBottom="8dp"
                 android:background="#151720"
-                android:padding="2dp">
+                android:padding="3dp">
 
                 <Button
                     android:id="@+id/btnViewGrid"
@@ -125,14 +125,14 @@
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
                     android:padding="0dp"
-                    app:cornerRadius="5dp" />
+                    app:cornerRadius="6dp" />
 
                 <Button
                     android:id="@+id/btnViewList"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:layout_marginStart="3dp"
+                    android:layout_marginStart="4dp"
                     android:text="☰ LIST"
                     android:textColor="@color/white"
                     android:textSize="10sp"
@@ -142,14 +142,14 @@
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
                     android:padding="0dp"
-                    app:cornerRadius="5dp" />
+                    app:cornerRadius="6dp" />
 
                 <Button
                     android:id="@+id/btnViewRecent"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:layout_marginStart="3dp"
+                    android:layout_marginStart="4dp"
                     android:text="🕒 RECENT"
                     android:textColor="#A1A1AA"
                     android:textSize="10sp"
@@ -159,7 +159,7 @@
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
                     android:padding="0dp"
-                    app:cornerRadius="5dp" />
+                    app:cornerRadius="6dp" />
             </LinearLayout>
 
             <!-- Frame containing List/Grid, Right Alphabet Index Rail, and Touch-Tracking Preview -->
@@ -838,10 +838,10 @@
                 android:layout_width="match_parent"
                 android:layout_height="36dp"
                 android:orientation="horizontal"
-                android:layout_marginHorizontal="14dp"
+                android:layout_marginHorizontal="16dp"
                 android:layout_marginBottom="10dp"
                 android:background="#151720"
-                android:padding="2dp">
+                android:padding="3dp">
 
                     <Button
                         android:id="@+id/btnCatTheme"
@@ -864,7 +864,7 @@
                         android:layout_width="0dp"
                         android:layout_height="match_parent"
                         android:layout_weight="1"
-                        android:layout_marginStart="3dp"
+                        android:layout_marginStart="4dp"
                         android:text="AUDIO"
                         android:textColor="#A1A1AA"
                         android:textSize="10.5sp"
@@ -881,7 +881,7 @@
                         android:layout_width="0dp"
                         android:layout_height="match_parent"
                         android:layout_weight="1.15"
-                        android:layout_marginStart="3dp"
+                        android:layout_marginStart="4dp"
                         android:text="LIBRARY"
                         android:textColor="#A1A1AA"
                         android:textSize="10.5sp"
@@ -898,7 +898,7 @@
                         android:layout_width="0dp"
                         android:layout_height="match_parent"
                         android:layout_weight="1.1"
-                        android:layout_marginStart="3dp"
+                        android:layout_marginStart="4dp"
                         android:text="SYSTEM"
                         android:textColor="#A1A1AA"
                         android:textSize="10.5sp"
@@ -2165,8 +2165,8 @@
                         <Button
                             android:id="@+id/btnGithubLink"
                             android:layout_width="match_parent"
-                            android:layout_height="42dp"
-                            android:text="🐙 GITHUB REPOSITORY (github.com/manaphassan/Spindle)"
+                            android:layout_height="40dp"
+                            android:text="🐙 GITHUB REPOSITORY"
                             android:textColor="@color/white"
                             android:textSize="11sp"
                             android:textStyle="bold"
@@ -2176,6 +2176,22 @@
                             android:padding="0dp"
                             app:cornerRadius="8dp"
                             android:layout_marginTop="12dp" />
+
+                        <!-- PayPal Donation Button -->
+                        <Button
+                            android:id="@+id/btnDonatePaypal"
+                            android:layout_width="match_parent"
+                            android:layout_height="40dp"
+                            android:text="💖 SUPPORT DEVELOPMENT (PAYPAL)"
+                            android:textColor="@color/white"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            android:backgroundTint="#0079C1"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:padding="0dp"
+                            app:cornerRadius="8dp"
+                            android:layout_marginTop="8dp" />
 
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>

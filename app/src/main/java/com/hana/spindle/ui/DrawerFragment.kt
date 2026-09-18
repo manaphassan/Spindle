@@ -298,11 +298,13 @@ class DrawerFragment : Fragment() {
 
     private fun setAppViewMode(mode: AppViewMode) {
         currentAppViewMode = mode
-        val isEink = themeManager.currentTheme.value.id == CassetteTheme.MONOCHROME_EINK.id
-        val activeBg = ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#E53935"))
-        val inactiveBg = ColorStateList.valueOf(if (isEink) Color.WHITE else Color.parseColor("#151720"))
+        val theme = themeManager.currentTheme.value
+        val isDark = theme.isDarkAppTheme
+        val isEink = theme.id == CassetteTheme.MONOCHROME_EINK.id
+        val activeBg = ColorStateList.valueOf(if (isEink) Color.BLACK else theme.accentColor)
+        val inactiveBg = ColorStateList.valueOf(if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#151720"))
         val activeText = Color.WHITE
-        val inactiveText = if (isEink) Color.BLACK else Color.parseColor("#A1A1AA")
+        val inactiveText = if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#2A2E45") else Color.parseColor("#A1A1AA")
 
         binding.btnViewGrid.backgroundTintList = if (mode == AppViewMode.GRID) activeBg else inactiveBg
         binding.btnViewGrid.setTextColor(if (mode == AppViewMode.GRID) activeText else inactiveText)
@@ -362,11 +364,13 @@ class DrawerFragment : Fragment() {
 
     private fun selectSettingsCategory(category: SettingsCategory) {
         currentSettingsCategory = category
-        val isEink = themeManager.currentTheme.value.id == CassetteTheme.MONOCHROME_EINK.id
-        val activeBg = ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#E53935"))
-        val inactiveBg = ColorStateList.valueOf(if (isEink) Color.WHITE else Color.parseColor("#151720"))
+        val theme = themeManager.currentTheme.value
+        val isDark = theme.isDarkAppTheme
+        val isEink = theme.id == CassetteTheme.MONOCHROME_EINK.id
+        val activeBg = ColorStateList.valueOf(if (isEink) Color.BLACK else theme.accentColor)
+        val inactiveBg = ColorStateList.valueOf(if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#151720"))
         val activeText = Color.WHITE
-        val inactiveText = if (isEink) Color.BLACK else Color.parseColor("#A1A1AA")
+        val inactiveText = if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#2A2E45") else Color.parseColor("#A1A1AA")
 
         binding.btnCatTheme.backgroundTintList = if (category == SettingsCategory.THEME) activeBg else inactiveBg
         binding.btnCatTheme.setTextColor(if (category == SettingsCategory.THEME) activeText else inactiveText)
@@ -848,29 +852,86 @@ class DrawerFragment : Fragment() {
         val cardBg = if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#FAFAF9") else Color.parseColor("#171926")
 
         binding.root.setBackgroundColor(theme.chassisColor)
-        binding.tabBar.backgroundTintList = ColorStateList.valueOf(
+        val barBg = ColorStateList.valueOf(
             if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#171926")
         )
+        binding.tabBar.backgroundTintList = barBg
+        binding.layoutAppViewModes.backgroundTintList = barBg
+        binding.layoutSettingsCategories.backgroundTintList = barBg
+
+        // Search Bar adaptation
+        binding.etSearchApps.setTextColor(primary)
+        binding.etSearchApps.setHintTextColor(secondary)
+        binding.etSearchApps.backgroundTintList = ColorStateList.valueOf(
+            if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#202334")
+        )
+
+        // Alphabet Index Rail & Preview
+        binding.alphabetIndexView.updateTheme(secondary, theme.accentColor)
+        binding.tvAlphabetPreview.setTextColor(if (isEink) Color.BLACK else theme.accentColor)
+        binding.tvAlphabetPreview.backgroundTintList = ColorStateList.valueOf(
+            if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#F2FAFAF9") else Color.parseColor("#F2141720")
+        )
+
+        // Empty state
+        binding.tvRecentEmptyState.setTextColor(secondary)
+
+        // Propagate text color to AppListAdapter
+        appAdapter.updateThemeColors(primary)
+
         binding.tvBypassTitle.setTextColor(if (audioFxController.isBypassEnabled) (if (isEink) Color.BLACK else if (isDark) Color.parseColor("#00E676") else Color.parseColor("#059669")) else primary)
         binding.tvBypassSub.setTextColor(secondary)
 
-        updateCardsRecursively(binding.root, cardBg, isEink)
+        updateCardsRecursively(binding.root, cardBg, primary, secondary, isDark, isEink)
         selectTab(currentTabIndex)
         updateThemeButtonsVisual()
         selectSettingsCategory(currentSettingsCategory)
         setAppViewMode(currentAppViewMode)
     }
 
-    private fun updateCardsRecursively(view: View, cardBg: Int, isEink: Boolean) {
+    private fun updateCardsRecursively(
+        view: View,
+        cardBg: Int,
+        primary: Int,
+        secondary: Int,
+        isDark: Boolean,
+        isEink: Boolean
+    ) {
         if (view is androidx.cardview.widget.CardView) {
             view.setCardBackgroundColor(cardBg)
         }
-        if (isEink && view is TextView && view.id != R.id.btnTabApps && view.id != R.id.btnTabEq && view.id != R.id.btnTabSettings) {
-            view.setTextColor(Color.BLACK)
+        if (view is TextView && !view.javaClass.simpleName.contains("Button")
+            && view.id != R.id.btnTabApps && view.id != R.id.btnTabEq && view.id != R.id.btnTabSettings
+        ) {
+            if (isEink) {
+                view.setTextColor(Color.BLACK)
+            } else {
+                val current = view.currentTextColor
+                val r = Color.red(current)
+                val g = Color.green(current)
+                val b = Color.blue(current)
+                val isNeutral = Math.abs(r - g) < 25 && Math.abs(g - b) < 25
+                if (isNeutral) {
+                    val brightness = (r * 299 + g * 587 + b * 114) / 1000
+                    if (!isDark) {
+                        if (brightness > 190) {
+                            view.setTextColor(primary)
+                        } else if (brightness in 110..190) {
+                            view.setTextColor(secondary)
+                        }
+                    } else {
+                        if (brightness < 70) {
+                            view.setTextColor(primary)
+                        } else if (current == Color.parseColor("#5A5E78") || current == Color.parseColor("#64748B")) {
+                            view.setTextColor(secondary)
+                        }
+                    }
+                }
+            }
         }
         if (view is ViewGroup) {
             for (i in 0 until view.childCount) {
-                updateCardsRecursively(view.getChildAt(i), cardBg, isEink)
+                updateCardsRecursively(view.getChildAt(i), cardBg, primary, secondary, isDark, isEink)
             }
         }
     }
@@ -1321,6 +1382,17 @@ class DrawerFragment : Fragment() {
                 startActivity(intent)
             } catch (e: Exception) {
                 Toast.makeText(requireContext(), "Could not open browser: https://github.com/manaphassan/Spindle", Toast.LENGTH_LONG).show()
+            }
+        }
+
+        binding.btnDonatePaypal.setOnClickListener {
+            try {
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://paypal.me/manaphassan")).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                startActivity(intent)
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), "Donate via PayPal: https://paypal.me/manaphassan", Toast.LENGTH_LONG).show()
             }
         }
     }

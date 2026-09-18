@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Spindle · Audiophile Android Home Launcher</title>
-  <meta name="description" content="An ultra-lightweight Android Home Launcher transforming legacy compact smartphones and DAPs into dedicated, physical-feeling audiophile music players. Zero AI. 100% Deterministic.">
+  <title>Spindle · Audiophile Android Home Launcher & DAP OS</title>
+  <meta name="description" content="An ultra-lightweight Android Home Launcher transforming legacy compact smartphones and DAPs into dedicated, physical-feeling audiophile music players. Zero AI. 100% Deterministic. Always Free Core.">
   
   <!-- OpenGraph / Social Media -->
   <meta property="og:title" content="Spindle · Audiophile Android Launcher">
-  <meta property="og:description" content="Analog Soul. Hi-Res Heart. Zero Bloat. Lightweight launcher for old devices & low-RAM DAPs.">
+  <meta property="og:description" content="Analog Soul. Hi-Res Heart. Zero Bloat. Always Free Core. Lightweight launcher for old devices & low-RAM DAPs.">
   <meta property="og:image" content="assets/spindle_hero_banner.jpg">
   <meta property="og:type" content="website">
 
@@ -21,6 +21,7 @@
       --card-bg: #14151a;
       --surface-elevated: #1e2027;
       --accent-red: #d71920;
+      --accent-orange: #f97316;
       --accent-emerald: #00e676;
       --accent-amber: #ffb300;
       --text-main: #f1f1f4;
@@ -47,7 +48,7 @@
       position: sticky;
       top: 0;
       z-index: 100;
-      background: rgba(13, 14, 17, 0.85);
+      background: rgba(13, 14, 17, 0.88);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border-color);
       padding: 14px 24px;
@@ -112,6 +113,27 @@
       background: var(--accent-red);
       color: #fff;
       border-color: var(--accent-red);
+    }
+
+    .btn-donate {
+      background: linear-gradient(135deg, #ffc439, #ff9900);
+      color: #111;
+      padding: 8px 16px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 800;
+      font-size: 0.9rem;
+      text-decoration: none;
+      box-shadow: 0 4px 12px rgba(255, 153, 0, 0.25);
+      transition: all 0.2s;
+    }
+
+    .btn-donate:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(255, 153, 0, 0.4);
+      color: #000;
     }
 
     /* Hero Section */
@@ -200,6 +222,42 @@
       background: #252833;
     }
 
+    /* Core 5 Pillars Grid */
+    .pillars-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+      max-width: 1100px;
+      margin: 0 auto 50px auto;
+      padding: 0 20px;
+    }
+
+    .pillar-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 18px 14px;
+      text-align: center;
+    }
+
+    .pillar-icon {
+      font-size: 1.5rem;
+      margin-bottom: 6px;
+    }
+
+    .pillar-title {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 4px;
+    }
+
+    .pillar-desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
     /* Highlights / Pill Stats */
     .stats-bar {
       display: grid;
@@ -233,7 +291,7 @@
       letter-spacing: 0.5px;
     }
 
-    /* Feature Grid Section */
+    /* Section Container */
     .section-container {
       max-width: 1100px;
       margin: 60px auto;
@@ -255,6 +313,79 @@
       font-size: 1.05rem;
     }
 
+    /* Edition Triad Grid */
+    .editions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      margin-bottom: 60px;
+    }
+
+    .edition-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 18px;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .edition-card.featured {
+      border-color: var(--accent-orange);
+      box-shadow: 0 8px 30px rgba(249, 115, 22, 0.15);
+    }
+
+    .edition-badge {
+      display: inline-block;
+      align-self: flex-start;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+
+    .badge-free {
+      background: rgba(0, 230, 118, 0.15);
+      color: var(--accent-emerald);
+    }
+
+    .badge-pro {
+      background: rgba(249, 115, 22, 0.15);
+      color: var(--accent-orange);
+    }
+
+    .edition-name {
+      font-size: 1.4rem;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .edition-target {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .edition-features {
+      list-style: none;
+      margin-bottom: 24px;
+      flex: 1;
+    }
+
+    .edition-features li {
+      padding: 6px 0;
+      font-size: 0.9rem;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Showcase Grid */
     .showcase-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -350,6 +481,54 @@
       font-family: monospace;
     }
 
+    /* Roadmap Timeline */
+    .roadmap-timeline {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+      margin: 30px 0 60px 0;
+    }
+
+    .roadmap-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 22px;
+      position: relative;
+    }
+
+    .roadmap-version {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--accent-emerald);
+      margin-bottom: 4px;
+    }
+
+    .roadmap-status {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .roadmap-items {
+      list-style: none;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .roadmap-items li {
+      padding: 4px 0;
+      line-height: 1.4;
+    }
+
+    .roadmap-items li::before {
+      content: "• ";
+      color: var(--accent-orange);
+    }
+
     /* Terminal / ADB Block */
     .terminal-box {
       background: #000;
@@ -392,14 +571,22 @@
       <span>SPINDLE</span>
     </a>
     <nav>
-      <a href="#features">Features</a>
+      <a href="#pillars">Manifesto</a>
+      <a href="#editions">Editions</a>
+      <a href="#features">Showcase</a>
+      <a href="#roadmap">Roadmap</a>
       <a href="#benchmarks">Low RAM</a>
-      <a href="BRANDING.md">Branding</a>
       <a href="https://github.com/manaphassan/Spindle" class="btn-github">
         <svg height="16" width="16" viewBox="0 0 16 16" fill="currentColor">
           <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
         </svg>
         GitHub
+      </a>
+      <a href="https://paypal.me/manaphassan" target="_blank" rel="noopener noreferrer" class="btn-donate">
+        <svg height="15" width="15" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+        </svg>
+        Donate (PayPal)
       </a>
     </nav>
   </header>
@@ -408,15 +595,44 @@
   <section class="hero-container">
     <img src="assets/spindle_hero_banner.jpg" alt="Spindle Hero Banner" class="hero-banner">
 
-    <div class="hero-badge">100% AI-FREE · 100% DETERMINISTIC · BIT-PERFECT</div>
+    <div class="hero-badge">100% AI-FREE · OFFLINE FIRST · ALWAYS FREE CORE</div>
     <h1>Analog Soul. Hi-Res Heart. Zero Bloat.</h1>
     <p class="subtitle">
       The ultra-lightweight Android Home Launcher specifically crafted to repurpose compact smartphones and low-RAM DAPs into dedicated, physical-feeling audiophile music players.
     </p>
 
     <div class="hero-actions">
-      <a href="https://github.com/manaphassan/Spindle/releases" class="btn-primary">Download APK (v1.2.0)</a>
+      <a href="https://github.com/manaphassan/Spindle/releases" class="btn-primary">Download Free APK (v1.2.0)</a>
       <a href="https://github.com/manaphassan/Spindle" class="btn-secondary">View on GitHub</a>
+    </div>
+  </section>
+
+  <!-- 5 Core Brand Pillars -->
+  <section id="pillars" class="pillars-grid">
+    <div class="pillar-card">
+      <div class="pillar-icon">🔓</div>
+      <div class="pillar-title">Always Free Core</div>
+      <div class="pillar-desc">100% complete playback utility. Zero paywalls, zero banner ads, zero trials.</div>
+    </div>
+    <div class="pillar-card">
+      <div class="pillar-icon">📴</div>
+      <div class="pillar-title">Offline First</div>
+      <div class="pillar-desc">100% local MicroSD indexing. Zero cloud telemetry, zero remote tracking.</div>
+    </div>
+    <div class="pillar-card">
+      <div class="pillar-icon">⚡</div>
+      <div class="pillar-title">Ultra-Lightweight</div>
+      <div class="pillar-desc">&lt; 25MB RAM idle. Pure native Canvas rendering with 60 FPS fluidity.</div>
+    </div>
+    <div class="pillar-card">
+      <div class="pillar-icon">🛡️</div>
+      <div class="pillar-title">Zero AI</div>
+      <div class="pillar-desc">No machine learning models, no algorithmic feeds, zero battery drain.</div>
+    </div>
+    <div class="pillar-card">
+      <div class="pillar-icon">📼</div>
+      <div class="pillar-title">Analog Inspired</div>
+      <div class="pillar-desc">Kinetic tape reels ($v=4.76\text{ cm/s}$), tactile buttons, and dynamic nameplates.</div>
     </div>
   </section>
 
@@ -440,6 +656,61 @@
     </div>
   </section>
 
+  <!-- Ecosystem Editions Section -->
+  <section id="editions" class="section-container">
+    <h2 class="section-title">The Spindle Triad Ecosystem</h2>
+    <p class="section-subtitle">
+      Engineered across targeted tiers to preserve vintage hardware while delivering flagship audiophile luxury.
+    </p>
+
+    <div class="editions-grid">
+      <!-- Edition 1: Spindle Lite -->
+      <div class="edition-card">
+        <span class="edition-badge badge-free">100% Free Forever</span>
+        <div class="edition-name">Spindle Lite</div>
+        <div class="edition-target">For Legacy Hardware & Android 4.4 KitKat</div>
+        <ul class="edition-features">
+          <li>✓ Target: Android 4.4 (API 19) / 512MB RAM</li>
+          <li>✓ Optimized for 3.0" 320×480 HVGA Displays</li>
+          <li>✓ Dual Native MediaPlayer Gapless Chaining</li>
+          <li>✓ Direct FAT32 MicroSD SQLite Crawler</li>
+          <li>✓ Physical Camera Shutter Key Hooks</li>
+          <li>✓ Active RAM Footprint &lt; 18 MB</li>
+        </ul>
+      </div>
+
+      <!-- Edition 2: Spindle Basic -->
+      <div class="edition-card featured">
+        <span class="edition-badge badge-free">100% Free Forever</span>
+        <div class="edition-name">Spindle Basic</div>
+        <div class="edition-target">Flagship Daily Driver · Android 8.0 to 15</div>
+        <ul class="edition-features">
+          <li>✓ Target: Android 8.0+ / 1GB–4GB RAM DAPs</li>
+          <li>✓ Media3 Bit-Perfect Direct ALSA Output</li>
+          <li>✓ Kinetic Spindle Cassette Deck Physics</li>
+          <li>✓ Dedicated Single-Audio Now Playing Overlay</li>
+          <li>✓ 24-Band Dynamic Audio Waveform</li>
+          <li>✓ Full A-Z Fast Alphabet Scroller & Synced Lyrics</li>
+        </ul>
+      </div>
+
+      <!-- Edition 3: Spindle Pro -->
+      <div class="edition-card">
+        <span class="edition-badge badge-pro">Lifetime Pay-Once Upgrade</span>
+        <div class="edition-name">Spindle Pro</div>
+        <div class="edition-target">Artisan Collector & Studio DSP Expansion</div>
+        <ul class="edition-features">
+          <li>✓ All Spindle Basic Features Included</li>
+          <li>✓ Studio Reel-to-Reel Open Deck Kinematics</li>
+          <li>✓ 10-Band ISO Parametric Studio EQ</li>
+          <li>✓ Analog Tape Saturation & Tube Warmth DSP</li>
+          <li>✓ Real Mechanical Cassette Foley Sound Engine</li>
+          <li>✓ Custom Laser Nameplate Engraving</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
   <!-- Interface Showcase Grid -->
   <section id="features" class="section-container">
     <h2 class="section-title">Industrial Hardware Aesthetics</h2>
@@ -453,7 +724,7 @@
         <img src="assets/screenshot_walkman_home.png?v=1.2.0" alt="Flagship Cassette Deck" class="showcase-img">
         <div class="showcase-content">
           <div class="showcase-tag">Home Launcher · Centered Spindle Deck</div>
-          <h3 class="showcase-title">Sony Walkman II (WM-2) Heritage</h3>
+          <h3 class="showcase-title">1980s Japanese Audio Heritage</h3>
           <p class="showcase-desc">
             Centered clear acrylic spindle window with differential kinetic tape reels (4.76 cm/s), column-aligned real-time clock, Hi-Res format capsule badge, bold Line 0 title / Line 1 artist metadata, and physical mechanical transport levers.
           </p>
@@ -484,12 +755,12 @@
         </div>
       </div>
 
-      <!-- Card 4: Braun Radio -->
+      <!-- Card 4: Minimalist Radio -->
       <div class="showcase-card">
-        <img src="assets/screenshot_braun_radio.png?v=1.2.0" alt="Braun Online FM Radio" class="showcase-img">
+        <img src="assets/screenshot_braun_radio.png?v=1.2.0" alt="Minimalist Online FM Radio" class="showcase-img">
         <div class="showcase-content">
-          <div class="showcase-tag">Online Streaming · Braun Tuner</div>
-          <h3 class="showcase-title">Braun / Dieter Rams FM Radio</h3>
+          <div class="showcase-tag">Online Streaming · Minimalist Tuner</div>
+          <h3 class="showcase-title">Bauhaus Minimalist FM Radio</h3>
           <p class="showcase-desc">
             7-ring concentric acoustic perforated speaker grille, 3D cylindrical ribbed tuning thumbwheel with detent vibration ticks, and vintage green backlit LCD matrix readout playing live low-latency streams.
           </p>
@@ -510,11 +781,68 @@
     </div>
   </section>
 
+  <!-- Project Roadmap Section -->
+  <section id="roadmap" class="section-container">
+    <h2 class="section-title">Development Roadmap</h2>
+    <p class="section-subtitle">
+      Continuous, uncompromising evolution for audiophiles and vintage hardware preservationists.
+    </p>
+
+    <div class="roadmap-timeline">
+      <div class="roadmap-card">
+        <div class="roadmap-version">v1.2.0-RELEASE</div>
+        <div class="roadmap-status">✅ Released</div>
+        <ul class="roadmap-items">
+          <li>Flagship Cassette Deck & Kinematics</li>
+          <li>Dedicated Single-Audio Now Playing</li>
+          <li>24-Band Dynamic Audio Waveform</li>
+          <li>Dynamic Hardware Nameplate Engine</li>
+          <li>A-Z Fast Scroller & Synced Lyrics</li>
+        </ul>
+      </div>
+
+      <div class="roadmap-card">
+        <div class="roadmap-version">v1.3.0-LITE</div>
+        <div class="roadmap-status">🔨 In Progress</div>
+        <ul class="roadmap-items">
+          <li>Dedicated <code>:app-lite</code> Module</li>
+          <li>Android 4.4 KitKat (API 19) Support</li>
+          <li>320×480 (HVGA 3:2) Geometry Scaling</li>
+          <li>Dual MediaPlayer Gapless Engine</li>
+          <li>Hardware Camera Key & Sport Mode</li>
+        </ul>
+      </div>
+
+      <div class="roadmap-card">
+        <div class="roadmap-version">v1.4.0-STUDIO</div>
+        <div class="roadmap-status">📅 Planned</div>
+        <ul class="roadmap-items">
+          <li>Reel-to-Reel Open Studio Deck</li>
+          <li>10-Band ISO Parametric Studio EQ</li>
+          <li>Analog Tape Saturation & Tube DSP</li>
+          <li>Mechanical Cassette Foley Sound Engine</li>
+          <li>Custom Laser Nameplate Engraving</li>
+        </ul>
+      </div>
+
+      <div class="roadmap-card">
+        <div class="roadmap-version">v2.0.0-ECOSYSTEM</div>
+        <div class="roadmap-status">🔮 Future Vision</div>
+        <ul class="roadmap-items">
+          <li>Direct ALSA USB-OTG DAC Bit-Perfect Stream</li>
+          <li>Multi-Device MicroSD Offline Sync</li>
+          <li>Audiophile CUE Sheet Native Splitter</li>
+          <li>Hardware Volumio / DLNA Renderer</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
   <!-- Low RAM Architecture Table -->
   <section id="benchmarks" class="section-container">
     <h2 class="section-title">Engineered for Low-RAM DAPs</h2>
     <p class="section-subtitle">
-      Tailor-made for repurposing older compact flagships (Sony Xperia X Compact, LG V20/V30) and low-RAM music players (HiBy, FiiO, Shanling).
+      Tailor-made for repurposing older compact smartphones with dedicated DACs and low-RAM Digital Audio Players (DAPs).
     </p>
 
     <div class="table-container">
@@ -593,10 +921,27 @@ adb shell am start -n com.hana.spindle.debug/com.hana.spindle.ui.MainActivity
     </div>
   </section>
 
+  <!-- Support Development Section -->
+  <section class="section-container" id="support">
+    <div style="background: linear-gradient(135deg, rgba(255, 180, 0, 0.08), rgba(249, 115, 22, 0.05)); border: 1px solid rgba(255, 180, 0, 0.25); border-radius: 20px; padding: 40px 30px; text-align: center; max-width: 800px; margin: 0 auto;">
+      <h2 style="font-size: 2rem; font-weight: 900; margin-bottom: 12px; color: #ffb300;">💖 Support Spindle Development</h2>
+      <p style="color: var(--text-muted); font-size: 1.05rem; max-width: 620px; margin: 0 auto 24px auto; line-height: 1.6;">
+        Spindle is 100% free, open-source, offline-first, and zero-tracking. We believe in keeping vintage audio hardware alive without subscriptions or ads. If you enjoy using Spindle on your DAP or compact smartphone, please consider supporting development with a PayPal donation!
+      </p>
+      <a href="https://paypal.me/manaphassan" target="_blank" rel="noopener noreferrer" class="btn-donate" style="padding: 12px 28px; font-size: 1.05rem; border-radius: 12px;">
+        <svg height="18" width="18" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+        </svg>
+        <span>Donate via PayPal (paypal.me/manaphassan)</span>
+      </a>
+    </div>
+  </section>
+
   <!-- Footer -->
   <footer>
     <p><b>Spindle</b> is an open-source project licensed under the <a href="https://github.com/manaphassan/Spindle/blob/main/LICENSE">Apache License 2.0</a>.</p>
     <p style="margin-top: 8px;">Designed by HaNa Innovation · Dedicated to audio purists, analog collectors, and hardware preservation.</p>
+    <p style="margin-top: 12px;"><a href="https://paypal.me/manaphassan" target="_blank" rel="noopener noreferrer" style="color: #ffb300; font-weight: 700;">💖 Support Spindle on PayPal (paypal.me/manaphassan)</a></p>
   </footer>
 
 </body>

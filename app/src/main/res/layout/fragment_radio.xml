@@ -21,6 +21,7 @@
 
     <!-- 2. Preset Station Recessed Strip (4 Starter Stations) -->
     <androidx.cardview.widget.CardView
+        android:id="@+id/cardPresets"
         android:layout_width="match_parent"
         android:layout_height="44dp"
         app:cardCornerRadius="10dp"

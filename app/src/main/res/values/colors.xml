@@ -8,7 +8,7 @@
     <color name="brand_yellow">#FDE68A</color> <!-- Cassette tape label, star ratings, warm VFD glow -->
     <color name="brand_pale">#FAFAF9</color>   <!-- 60% Light chassis base, crisp text in dark mode -->
 
-    <!-- Sony Walkman / Industrial Legacy Tokens mapped to brand palette -->
+    <!-- Analog Hardware Chassis Tokens mapped to brand palette -->
     <color name="wm2_red">#F97316</color>
     <color name="wm2_red_dark">#EA580C</color>
     <color name="wm2_bezel_black">#2A2E45</color>

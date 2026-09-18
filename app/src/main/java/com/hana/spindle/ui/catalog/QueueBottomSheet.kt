@@ -1,5 +1,6 @@
 package com.hana.spindle.ui.catalog
 
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -50,9 +51,13 @@ class QueueBottomSheet : BottomSheetDialogFragment() {
 
         val theme = app.themeManager.currentTheme.value
         val isEink = (theme.id == CassetteTheme.MONOCHROME_EINK.id)
+        val isDark = theme.isDarkAppTheme
         if (isEink) {
             binding.root.setBackgroundColor(Color.WHITE)
             binding.tvQueueSummary.setTextColor(Color.BLACK)
+        } else if (!isDark) {
+            binding.root.setBackgroundColor(Color.parseColor("#FAFAF9"))
+            binding.tvQueueSummary.setTextColor(Color.parseColor("#5A5E78"))
         }
 
         queueAdapter = QueueAdapter(
@@ -65,7 +70,8 @@ class QueueBottomSheet : BottomSheetDialogFragment() {
             onStartDrag = { holder ->
                 itemTouchHelper?.startDrag(holder)
             },
-            isEink = isEink
+            isEink = isEink,
+            isDark = isDark
         )
 
         binding.rvQueueItems.layoutManager = LinearLayoutManager(requireContext())
@@ -165,7 +171,8 @@ class QueueBottomSheet : BottomSheetDialogFragment() {
         private val onItemClicked: (Int) -> Unit,
         private val onRemoveClicked: (Int) -> Unit,
         private val onStartDrag: (RecyclerView.ViewHolder) -> Unit,
-        private val isEink: Boolean
+        private val isEink: Boolean,
+        private val isDark: Boolean
     ) : RecyclerView.Adapter<QueueAdapter.QueueViewHolder>() {
 
         private var items: List<SongEntity> = emptyList()
@@ -201,14 +208,44 @@ class QueueBottomSheet : BottomSheetDialogFragment() {
             b.tvQueueArtistDuration.text = "${song.artist} • $dur"
             b.tvQueueFormat.text = song.fileFormat
 
-            val activeColor = if (isEink) Color.BLACK else Color.parseColor("#F97316")
-            val defaultColor = if (isEink) Color.BLACK else Color.parseColor("#FAFAF9")
+            val activeColor = when {
+                isEink -> Color.BLACK
+                isDark -> Color.parseColor("#F97316")
+                else -> Color.parseColor("#EA580C")
+            }
+            val defaultColor = when {
+                isEink -> Color.BLACK
+                isDark -> Color.parseColor("#FAFAF9")
+                else -> Color.parseColor("#1E2132")
+            }
+            val subtitleColor = when {
+                isEink -> Color.parseColor("#555555")
+                isDark -> Color.parseColor("#94A3B8")
+                else -> Color.parseColor("#64748B")
+            }
+            val formatBgColor = when {
+                isEink -> Color.parseColor("#E0E0E0")
+                isDark -> Color.parseColor("#1E2132")
+                else -> Color.parseColor("#E2E8F0")
+            }
+
+            b.tvQueueIndex.setTextColor(subtitleColor)
+            b.tvQueueArtistDuration.setTextColor(subtitleColor)
+            b.tvQueueFormat.setTextColor(activeColor)
+            b.tvQueueFormat.setBackgroundColor(formatBgColor)
+            b.ivDragHandle.imageTintList = ColorStateList.valueOf(subtitleColor)
+            b.btnQueueRemove.imageTintList = ColorStateList.valueOf(subtitleColor)
 
             if (isCurrent) {
                 b.tvQueuePlaying.visibility = View.VISIBLE
                 b.tvQueuePlaying.setTextColor(activeColor)
                 b.tvQueueTitle.setTextColor(activeColor)
-                b.root.setBackgroundColor(if (isEink) Color.parseColor("#F0F0F0") else Color.parseColor("#1C1E2A"))
+                val activeRowBg = when {
+                    isEink -> Color.parseColor("#F0F0F0")
+                    isDark -> Color.parseColor("#1C1E2A")
+                    else -> Color.parseColor("#E2E8F0")
+                }
+                b.root.setBackgroundColor(activeRowBg)
             } else {
                 b.tvQueuePlaying.visibility = View.GONE
                 b.tvQueueTitle.setTextColor(defaultColor)

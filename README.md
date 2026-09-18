@@ -17,6 +17,7 @@
     <img src="https://img.shields.io/badge/APK%20Size-%3C%204.5MB-blue.svg?style=flat-square" alt="APK Size">
     <img src="https://img.shields.io/badge/AI%20Status-100%25%20AI--FREE-orange.svg?style=flat-square" alt="No AI">
     <img src="https://img.shields.io/badge/Audio-Bit--Perfect%20Direct%20ALSA-green.svg?style=flat-square" alt="Hi-Res Audio">
+    <a href="https://paypal.me/manaphassan"><img src="https://img.shields.io/badge/Donate-PayPal-00457C.svg?style=flat-square&logo=paypal" alt="Donate via PayPal"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-lightgrey.svg?style=flat-square" alt="License"></a>
   </p>
 
@@ -28,20 +29,34 @@
     <a href="MASTER_DOCUMENTATION.md">📖 Technical Specs</a>
     <span> · </span>
     <a href="#-quick-start">🚀 Installation</a>
+    <span> · </span>
+    <a href="#-support-development">💖 Donate</a>
   </h4>
 
 </div>
 
 ---
 
-## 💡 The Philosophy: Repurpose, Revive, Rediscover
+## 💡 The Philosophy & 5 Core Pillars
 
-Modern smartphones are overloaded with algorithmic distractions, background trackers, and bloated operating systems. Meanwhile, millions of compact devices with extraordinary audio hardware—such as the **Sony Xperia X Compact (`SO-02J`)**, **Xperia Z5 Compact**, **LG V20/V30 with Quad-DACs**, and dedicated audio players (**HiBy, FiiO, Shanling, Astell&Kern**)—sit idle in drawers due to low RAM.
+Modern smartphones are overloaded with algorithmic distractions, background trackers, and bloated operating systems. Meanwhile, millions of compact devices with extraordinary audio hardware—such as compact vintage smartphones with dedicated DACs and dedicated Digital Audio Players (DAPs)—sit idle in drawers due to low RAM.
+
+```
+   ┌────────────────────────────────────────────────────────┐
+   │                  THE 5 PILLARS OF SPINDLE              │
+   ├────────────────────────────────────────────────────────┤
+   │  1. 🔓 ALWAYS FREE         │  Zero paywalls on music   │
+   │  2. 📴 OFFLINE FIRST       │  100% local, zero tracking│
+   │  3. ⚡ ULTRA-LIGHTWEIGHT   │  < 25MB RAM, pure Canvas  │
+   │  4. 🛡️ ZERO AI             │  No algorithms, no bloat  │
+   │  5. 📼 ANALOG INSPIRED     │  Kinetic reels & mechanics│
+   └────────────────────────────────────────────────────────┘
+```
 
 **Spindle transforms these devices into dedicated, standalone physical audiophile players:**
 - **Zero AI & Zero Cloud Tracking**: No background machine learning models, no intrusive recommendations, no telemetry beacons, no cloud subscriptions. 100% deterministic, local, and private.
 - **Pure Physical Feel**: Every dial, switch, knob, and lever is modeled after iconic industrial audio gear, providing rich haptic feedback and mechanical detents.
-- **Extreme Low-RAM Architecture**: Runs fluidly at 60 FPS on as little as **1GB RAM** with an idle footprint under **25MB**.
+- **Extreme Low-RAM Architecture**: Runs fluidly at 60 FPS on as little as **1GB RAM** with an idle footprint under **25MB** ($<18\text{MB}$ on Spindle Lite).
 - **Modern Audiophile Catalog & Lyrics**: Elegant single-audio Now Playing screen with circular radial scrub arc, live audio waveform, synced lyrics drawer, and A-Z alphabet index scroller.
 
 ---
@@ -52,9 +67,9 @@ Modern smartphones are overloaded with algorithmic distractions, background trac
   <table>
     <tr>
       <td width="50%" align="center">
-        <b>Flagship Sony Walkman Cassette Deck</b><br/>
+        <b>Flagship Analog Cassette Deck</b><br/>
         <sub>Centered clear spindle window, column-aligned time, format capsule & kinetic spools</sub><br/><br/>
-        <img src="docs/assets/screenshot_walkman_home.png?v=1.2.0" width="320" alt="Sony Walkman Cassette Deck"/>
+        <img src="docs/assets/screenshot_walkman_home.png?v=1.2.0" width="320" alt="Flagship Cassette Deck"/>
       </td>
       <td width="50%" align="center">
         <b>Dedicated Single Audio Now Playing</b><br/>
@@ -69,9 +84,9 @@ Modern smartphones are overloaded with algorithmic distractions, background trac
         <img src="docs/assets/screenshot_catalog.png?v=1.2.0" width="320" alt="Audiophile Music Catalog"/>
       </td>
       <td width="50%" align="center">
-        <b>Braun / Dieter Rams Online FM Radio</b><br/>
+        <b>Bauhaus Minimalist Online FM Radio</b><br/>
         <sub>7-ring acoustic grille, 3D cylindrical tuning roller & backlit vintage LCD</sub><br/><br/>
-        <img src="docs/assets/screenshot_braun_radio.png?v=1.2.0" width="320" alt="Braun Online FM Radio"/>
+        <img src="docs/assets/screenshot_braun_radio.png?v=1.2.0" width="320" alt="Minimalist Online FM Radio"/>
       </td>
     </tr>
   </table>
@@ -84,7 +99,7 @@ Modern smartphones are overloaded with algorithmic distractions, background trac
 ### 1. 📼 Flagship Cassette Deck (Home Launcher)
 - **Centered Spindle Deck Window**: Horizontally centered clear acrylic window showcasing mechanical tape spools with true differential kinematics ($v = 4.7625\text{ cm/s}$).
 - **Column-Aligned Telemetry Layout**:
-  - **Dynamic Hardware Nameplate Header**: Automatically detects connected hardware model via `Build.MODEL` and `Build.DEVICE` (e.g., `XPERIA ACTIVE`, `XPERIA X COMPACT`, `WALKMAN NW-A105`, `SHANLING M3X`), formatting it into an authentic uppercase engraved nameplate (with user custom override support).
+  - **Dynamic Hardware Nameplate Header**: Automatically detects connected hardware model via `Build.MODEL` and `Build.DEVICE` (e.g., `PORTABLE PLAYER`, `STUDIO DECK`), formatting it into an authentic uppercase engraved nameplate (with user custom override support).
   - **Hi-Res Audio Format Capsule Badge**: Positioned directly below the clock displaying bit depth and sample rate (e.g., `FLAC 16-BIT / 44.1 KHZ`, `FLAC 24-BIT / 96.0 KHZ`, `MP3 320 KBPS`).
   - **2-Line Active Track Metadata**:
     - **Line 0**: Bold crisp song title with automatic text wrap.
@@ -106,10 +121,10 @@ Modern smartphones are overloaded with algorithmic distractions, background trac
 - **Minimalist Sorting & Grouping**: One-tap dialog sorting library by **Title**, **Artist**, **Album**, **Year**, **Duration**, or **Bitrate**.
 - **Hi-Res Format Filtering**: Instant filter chips for `All`, `Hi-Res (24-bit+)`, `Lossless (FLAC/WAV)`, and `MP3`.
 - **Persistent Floating Mini-Player**: Bottom docked player with track thumbnail, metadata, transport controls, and tap-to-expand into the single audio Now Playing screen.
-- **Direct Return to Home**: Tapping back smoothly resumes the physical Sony Walkman cassette home deck.
+- **Direct Return to Home**: Tapping back smoothly resumes the physical analog cassette home deck.
 
-### 4. 📻 Braun / Dieter Rams Online FM Radio
-- **Swipe-to-Tune**: Swiping right from the home deck slides seamlessly into the Dieter Rams-inspired matte ivory radio tuner.
+### 4. 📻 Bauhaus Minimalist Online FM Radio
+- **Swipe-to-Tune**: Swiping right from the home deck slides seamlessly into the functionalist matte ivory radio tuner.
 - **Concentric Acoustic Speaker Grille**: Hardware-accelerated custom view rendering concentric perforation rings with realistic acoustic recess shadows.
 - **3D Cylindrical Tuning Roller**: Tactile ribbed thumbwheel with moving calibrated frequency scale (`87.5 - 108.0 MHz`), red stationary cursor, and detent vibrations when passing stations.
 - **Backlit Vintage LCD Panel**: Mint-green LCD display showing frequency, station RDS marquee, and live stream connection status.
@@ -146,7 +161,7 @@ Modern smartphones are overloaded with algorithmic distractions, background trac
 | Feature | Spindle Standard (`:app`) | Spindle Lite (`:app-lite` / `satsuma`) |
 | :--- | :--- | :--- |
 | **Target OS** | Android 8.0 – 15 (API 26 – 35) | **Android 4.4 KitKat (API 19)** *(down to API 16)* |
-| **Target Hardware** | 1GB – 4GB RAM DAPs & Compacts | **512MB RAM Legacy Devices** *(Xperia active, mini, ray)* |
+| **Target Hardware** | 1GB – 4GB RAM DAPs & Compacts | **512MB RAM Legacy Devices** *(3.0" HVGA & Compact DAPs)* |
 | **Audio Engine** | `androidx.media3` (ExoPlayer 1.5.1) | **Native `android.media.MediaPlayer`** (Zero bloat) |
 | **Screen Target** | 720p – 1080p (16:9 – 21:9) | **320 × 480 (HVGA 3:2)** Responsive Canvas |
 | **Hardware Key Hooks** | Android MediaSession | **Dedicated Camera Key (`KEYCODE_CAMERA`) + Volume Skip** |
@@ -168,14 +183,14 @@ dap_launcher/
 │   │   ├── theme/                # Cassette Themes & Color Palettes (Dark, E-Ink, Light)
 │   │   └── ui/
 │   │       ├── cassette/         # Kinetic Reels, VerticalDeckView, CassetteKinematics
-│   │       ├── radio/            # Braun Speaker Grille, 3D Ribbed Tuning Dial View, RadioFragment
+│   │       ├── radio/            # Acoustic Speaker Grille, 3D Ribbed Tuning Dial View, RadioFragment
 │   │       ├── catalog/          # CircularCoverArcView, AudioWaveformView, CatalogSortGroup, SortGroupBottomSheet
 │   │       ├── AlphabetIndexView # Tactile A-Z alphabet scroller
 │   │       ├── LyricsAdapter     # Real-time synced lyrics line adapter
 │   │       ├── DialogFileSpecs   # Audiophile technical file specifications inspector
 │   │       ├── CatalogFragment   # Music Catalog & Single Audio Now Playing Overlay
 │   │       ├── DrawerFragment    # App Drawer, Volume Slider, Themes & Radio Manager
-│   │       ├── PlayerFragment    # Center Home Screen Walkman Deck
+│   │       ├── PlayerFragment    # Center Home Screen Cassette Deck
 │   │       └── MainActivity      # 3-Page ViewPager2 Launcher Controller
 │   └── res/                      # Hardware vector graphics, layouts, and styles
 ├── docs/                         # Live GitHub Pages assets and branding guides
@@ -183,6 +198,17 @@ dap_launcher/
 │   ├── BRANDING.md               # Design systems, color specs, and industrial design philosophy
 │   └── index.html                # Live interactive showcase page
 ```
+
+---
+
+## 🗺️ Development Roadmap
+
+| Version | Phase / Tier | Key Deliverables | Status |
+| :--- | :--- | :--- | :---: |
+| **`v1.2.0`** | **Spindle Basic (Flagship)** | Kinetic Spindle Deck, Radial Arc Scrubber, 24-Band Waveform, Dynamic Nameplate, A-Z Index | **✅ Released** |
+| **`v1.3.0`** | **Spindle Lite (`satsuma`)** | Dedicated `:app-lite` module, Android 4.4 KitKat (API 19), HVGA 320×480, Dual MediaPlayer, Camera Key | **🔨 In Progress** |
+| **`v1.4.0`** | **Spindle Pro (Studio)** | Reel-to-Reel Open Deck, 10-Band ISO Parametric EQ, Tape Saturation DSP, Foley Sound Engine | **📅 Planned** |
+| **`v2.0.0`** | **Ecosystem & Bit-Perfect** | Direct USB-OTG ALSA Class 2.0 driver, Cross-DAP MicroSD Catalog Sync, CUE Sheet Splitter | **🔮 Future** |
 
 ---
 
@@ -211,14 +237,33 @@ adb shell am start -n com.hana.spindle.debug/com.hana.spindle.ui.MainActivity
 ### Set as Default Home Launcher
 1. Navigate to Android **Settings** → **Apps & Notifications** → **Default Apps**.
 2. Select **Home app** → Choose **Spindle**.
-3. Press hardware Home button anytime to return directly to the Sony Walkman Cassette Player.
+3. Press hardware Home button anytime to return directly to the Spindle Cassette Player.
+
+---
+
+## 💖 Support Development
+
+Spindle is **100% free**, **open-source**, and developed with immense passion for analog aesthetics, audio purism, and extending the lifespan of compact smartphones and digital audio players (DAPs).
+
+We have **zero ads, zero cloud telemetry, and zero algorithmic subscriptions**.
+
+If Spindle has breathed new life into your vintage hardware or you appreciate the craftsmanship behind our custom physical UI and bit-perfect audio engine, please consider supporting ongoing development:
+
+<div align="center">
+  <a href="https://paypal.me/manaphassan">
+    <img src="https://img.shields.io/badge/Donate%20via%20PayPal-paypal.me%2Fmanaphassan-00457C?style=for-the-badge&logo=paypal&logoColor=white" alt="Donate via PayPal" />
+  </a>
+  <br/><br/>
+  <p><b>Direct Link:</b> <a href="https://paypal.me/manaphassan">https://paypal.me/manaphassan</a></p>
+  <sub>Every contribution directly funds testing hardware, low-RAM optimization, and direct ALSA audio driver engineering. Thank you!</sub>
+</div>
 
 ---
 
 ## 🎨 Design Heritage & Accreditations
-- **Sony Walkman WM-2 (1981)**: Industrial design inspiration by Sony Corporation (Norio Ohga & Sony Design Center).
-- **Braun T3 / TP1 (1959)**: Acoustic perforation and functional minimalism principles by **Dieter Rams**.
-- **Pioneer & Technics Rotary Mixers**: DJ console potentiometer ergonomics and dB ladder ballistics.
+- **1980s Japanese Industrial Design**: Mechanical tape spool kinematics and tactile physical button ergonomics.
+- **Bauhaus & German Functionalism**: Acoustic perforation patterns, geometric speaker grilles, and calibrated tuning dials.
+- **Classic Studio Audio Consoles**: Potentiometer ergonomics and high-precision dB ballistics.
 
 ---
 

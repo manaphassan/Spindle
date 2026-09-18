@@ -1,6 +1,7 @@
 package com.hana.spindle.ui.radio
 
 import android.content.Context
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.net.ConnectivityManager
 import android.net.Network
@@ -189,17 +190,37 @@ class RadioFragment : Fragment() {
 
     private fun applyTheme(theme: CassetteTheme) {
         val isEink = (theme.id == CassetteTheme.MONOCHROME_EINK.id)
+        val isDark = theme.isDarkAppTheme
         binding.root.setBackgroundColor(theme.chassisColor)
 
-        binding.speakerGrilleView.isDarkMode = theme.isDarkAppTheme
+        binding.speakerGrilleView.isDarkMode = isDark
         binding.speakerGrilleView.isEink = isEink
+
+        binding.tuningDialView.isDarkMode = isDark
+        binding.tuningDialView.isEink = isEink
+
+        val skipBgColor = when {
+            isEink -> Color.parseColor("#E0E0E0")
+            isDark -> Color.parseColor("#1F222C")
+            else -> Color.parseColor("#DCDCD8")
+        }
+        val skipBg = ColorStateList.valueOf(skipBgColor)
+        binding.btnTunePrev.backgroundTintList = skipBg
+        binding.btnTuneNext.backgroundTintList = skipBg
+
+        val skipTint = ColorStateList.valueOf(theme.textPrimaryColor)
+        binding.btnTunePrev.imageTintList = skipTint
+        binding.btnTuneNext.imageTintList = skipTint
+
+        val presetCardBg = if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#181A22")
+        binding.cardPresets.setCardBackgroundColor(presetCardBg)
 
         if (isEink) {
             binding.cardLcd.setCardBackgroundColor(Color.WHITE)
             binding.tvRadioFrequency.setTextColor(Color.BLACK)
             binding.tvRadioNowPlaying.setTextColor(Color.BLACK)
             binding.tvRadioRdsName.setTextColor(Color.BLACK)
-        } else if (!theme.isDarkAppTheme) {
+        } else if (!isDark) {
             binding.cardLcd.setCardBackgroundColor(Color.parseColor("#2A2E45"))
             binding.tvRadioFrequency.setTextColor(Color.parseColor("#FDE68A"))
             binding.tvRadioNowPlaying.setTextColor(Color.parseColor("#FAFAF9"))
@@ -210,6 +231,8 @@ class RadioFragment : Fragment() {
             binding.tvRadioNowPlaying.setTextColor(Color.parseColor("#FAFAF9"))
             binding.tvRadioRdsName.setTextColor(Color.parseColor("#FDE68A"))
         }
+
+        renderPresetButtons(radioEngine.radioState.value)
     }
 
     private fun observeState() {
@@ -270,16 +293,7 @@ class RadioFragment : Fragment() {
         binding.tvRadioNowPlaying.isSelected = true // Enables horizontal marquee auto-scroll
 
         // Highlight active preset button
-        for (i in presetButtons.indices) {
-            val station = RadioStreamEngine.PRESET_STATIONS.getOrNull(i)
-            val isCurrent = (station != null && station.callsign == state.currentStation?.callsign)
-            presetButtons[i].setTextColor(
-                if (isCurrent) Color.parseColor("#F97316") else Color.parseColor("#FAFAF9")
-            )
-            presetButtons[i].backgroundTintList = android.content.res.ColorStateList.valueOf(
-                if (isCurrent && state.isPlaying) Color.parseColor("#2A2E45") else Color.parseColor("#202334")
-            )
-        }
+        renderPresetButtons(state)
 
         // Sync tuning dial indicator if not dragging
         if (binding.tuningDialView.currentFreq != state.currentFrequency) {
@@ -305,6 +319,29 @@ class RadioFragment : Fragment() {
         audioPulseJob?.cancel()
         audioPulseJob = null
         _binding?.speakerGrilleView?.liveAudioLevel = 0f
+    }
+
+    private fun renderPresetButtons(state: com.hana.spindle.playback.RadioPlaybackState) {
+        val app = activity?.application as? SpindleApp ?: return
+        val theme = app.themeManager.currentTheme.value
+        val isEink = (theme.id == CassetteTheme.MONOCHROME_EINK.id)
+        val isDark = theme.isDarkAppTheme
+
+        for (i in presetButtons.indices) {
+            val station = RadioStreamEngine.PRESET_STATIONS.getOrNull(i)
+            val isCurrent = (station != null && station.callsign == state.currentStation?.callsign)
+            val activeColor = if (isEink) Color.BLACK else theme.accentColor
+            val inactiveText = if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#2A2E45") else Color.parseColor("#FAFAF9")
+            val activeBg = if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#CBD5E1") else Color.parseColor("#2A2E45")
+            val inactiveBg = if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#F1F5F9") else Color.parseColor("#202334")
+
+            presetButtons[i].setTextColor(
+                if (isCurrent) (if (isEink) Color.WHITE else activeColor) else inactiveText
+            )
+            presetButtons[i].backgroundTintList = ColorStateList.valueOf(
+                if (isCurrent && state.isPlaying) activeBg else inactiveBg
+            )
+        }
     }
 
     override fun onDestroyView() {

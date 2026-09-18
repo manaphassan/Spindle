@@ -18,8 +18,8 @@ import kotlin.math.sin
 /**
  * Ultra-low-latency Vintage Cassette Mechanical Foley SoundPool Engine.
  *
- * Simulates the physical acoustic behavior of vintage high-end tape decks
- * (Sony Walkman WM-DD9, Nakamichi Dragon, TDK, Revox reel mechanisms):
+ * Simulates the physical acoustic behavior of classic high-end analog tape decks
+ * (precision direct-drive tape heads, dual-capstan solenoids, and studio reel mechanisms):
  * 1. Play: Heavy mechanical solenoid engagement clack & head sled slide.
  * 2. Stop/Pause: Spring-loaded head release click.
  * 3. Spool/Seek: High-speed brass gear and motor flutter.

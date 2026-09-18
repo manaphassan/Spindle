@@ -53,7 +53,7 @@ class CircularCoverArcView @JvmOverloads constructor(
             invalidate()
         }
 
-    var accentColor: Int = Color.parseColor("#D71920") // Walkman Crimson default
+    var accentColor: Int = Color.parseColor("#D71920") // Spindle Crimson default
         set(value) {
             field = value
             updatePaints()
