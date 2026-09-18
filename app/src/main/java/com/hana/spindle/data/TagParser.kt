@@ -138,4 +138,26 @@ object TagParser {
             else -> 16
         }
     }
+
+    /**
+     * Fast binary header inspection for ReplayGain track gain tags (FLAC, OGG, ID3v2 TXXX).
+     * Returns gain in dB (e.g. -4.5f), or 0.0f if untagged.
+     */
+    fun extractReplayGainDb(file: File): Float {
+        if (!file.exists() || !file.canRead()) return 0f
+        return try {
+            val readSize = minOf(file.length().toInt(), 16384)
+            if (readSize <= 0) return 0f
+            val buffer = ByteArray(readSize)
+            java.io.FileInputStream(file).use { fis ->
+                fis.read(buffer)
+            }
+            val text = String(buffer, Charsets.ISO_8859_1)
+            val pattern = Regex("(?i)REPLAYGAIN_TRACK_GAIN[=:]\\s*([+-]?[0-9]+(?:\\.[0-9]+)?)\\s*(?:dB)?")
+            val match = pattern.find(text)
+            match?.groupValues?.getOrNull(1)?.toFloatOrNull() ?: 0f
+        } catch (e: Exception) {
+            0f
+        }
+    }
 }

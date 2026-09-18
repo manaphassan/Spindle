@@ -256,6 +256,166 @@
                                 android:layout_weight="1" />
                         </LinearLayout>
 
+                        <!-- SECTION A2: 10-BAND ISO GRAPHIC EQUALIZER & AUTOEQ -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:layout_marginTop="8dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical"
+                                android:layout_marginBottom="6dp">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="10-BAND ISO GRAPHIC EQUALIZER"
+                                    android:textColor="#71717A"
+                                    android:textStyle="bold"
+                                    android:textSize="9.5sp"
+                                    android:fontFamily="monospace" />
+
+                                <TextView
+                                    android:id="@+id/tvEqHeadroom"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="0.0 dB HEADROOM"
+                                    android:textColor="#00E676"
+                                    android:textSize="9sp"
+                                    android:fontFamily="monospace" />
+                            </LinearLayout>
+
+                            <com.hana.spindle.ui.eq.Iso10BandEqView
+                                android:id="@+id/iso10BandEqView"
+                                android:layout_width="match_parent"
+                                android:layout_height="140dp"
+                                android:background="#0A0B0E" />
+
+                            <HorizontalScrollView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:scrollbars="none"
+                                android:layout_marginTop="8dp">
+
+                                <LinearLayout
+                                    android:id="@+id/layoutAutoEqPills"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal">
+
+                                    <Button
+                                        android:id="@+id/btnEqHarman"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="28dp"
+                                        android:text="HARMAN 2019"
+                                        android:textColor="#A1A1AA"
+                                        android:textSize="9.5sp"
+                                        android:fontFamily="monospace"
+                                        android:backgroundTint="#181A20"
+                                        android:insetTop="0dp"
+                                        android:insetBottom="0dp"
+                                        android:paddingHorizontal="8dp"
+                                        android:layout_marginEnd="6dp"
+                                        app:cornerRadius="6dp" />
+
+                                    <Button
+                                        android:id="@+id/btnEqCrinacle"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="28dp"
+                                        android:text="CRINACLE IEF"
+                                        android:textColor="#A1A1AA"
+                                        android:textSize="9.5sp"
+                                        android:fontFamily="monospace"
+                                        android:backgroundTint="#181A20"
+                                        android:insetTop="0dp"
+                                        android:insetBottom="0dp"
+                                        android:paddingHorizontal="8dp"
+                                        android:layout_marginEnd="6dp"
+                                        app:cornerRadius="6dp" />
+
+                                    <Button
+                                        android:id="@+id/btnEqMoondrop"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="28dp"
+                                        android:text="MOONDROP VDSF"
+                                        android:textColor="#A1A1AA"
+                                        android:textSize="9.5sp"
+                                        android:fontFamily="monospace"
+                                        android:backgroundTint="#181A20"
+                                        android:insetTop="0dp"
+                                        android:insetBottom="0dp"
+                                        android:paddingHorizontal="8dp"
+                                        android:layout_marginEnd="6dp"
+                                        app:cornerRadius="6dp" />
+
+                                    <Button
+                                        android:id="@+id/btnEqHd600"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="28dp"
+                                        android:text="HD600 REF"
+                                        android:textColor="#A1A1AA"
+                                        android:textSize="9.5sp"
+                                        android:fontFamily="monospace"
+                                        android:backgroundTint="#181A20"
+                                        android:insetTop="0dp"
+                                        android:insetBottom="0dp"
+                                        android:paddingHorizontal="8dp"
+                                        android:layout_marginEnd="6dp"
+                                        app:cornerRadius="6dp" />
+
+                                    <Button
+                                        android:id="@+id/btnEqWarmTape"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="28dp"
+                                        android:text="WARM TAPE"
+                                        android:textColor="#A1A1AA"
+                                        android:textSize="9.5sp"
+                                        android:fontFamily="monospace"
+                                        android:backgroundTint="#181A20"
+                                        android:insetTop="0dp"
+                                        android:insetBottom="0dp"
+                                        android:paddingHorizontal="8dp"
+                                        android:layout_marginEnd="6dp"
+                                        app:cornerRadius="6dp" />
+
+                                    <Button
+                                        android:id="@+id/btnEqVShape"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="28dp"
+                                        android:text="V-SHAPE PUNCH"
+                                        android:textColor="#A1A1AA"
+                                        android:textSize="9.5sp"
+                                        android:fontFamily="monospace"
+                                        android:backgroundTint="#181A20"
+                                        android:insetTop="0dp"
+                                        android:insetBottom="0dp"
+                                        android:paddingHorizontal="8dp"
+                                        android:layout_marginEnd="6dp"
+                                        app:cornerRadius="6dp" />
+
+                                    <Button
+                                        android:id="@+id/btnEqFlat"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="28dp"
+                                        android:text="FLAT"
+                                        android:textColor="#00E676"
+                                        android:textSize="9.5sp"
+                                        android:textStyle="bold"
+                                        android:fontFamily="monospace"
+                                        android:backgroundTint="#16261B"
+                                        android:insetTop="0dp"
+                                        android:insetBottom="0dp"
+                                        android:paddingHorizontal="8dp"
+                                        app:cornerRadius="6dp" />
+                                </LinearLayout>
+                            </HorizontalScrollView>
+                        </LinearLayout>
+
                         <View
                             android:layout_width="match_parent"
                             android:layout_height="1dp"
@@ -1059,6 +1219,92 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:checked="false" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="#1E2026"
+                            android:layout_marginVertical="12dp" />
+
+                        <!-- Cassette Mechanical Foley SFX -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Cassette Mechanical Foley SFX"
+                                    android:textColor="@color/white"
+                                    android:textStyle="bold"
+                                    android:textSize="13.5sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Low-latency vintage solenoid clicks, motor spool whirrs &amp; eject thuds."
+                                    android:textColor="#A1A1AA"
+                                    android:textSize="11sp"
+                                    android:layout_marginTop="2dp" />
+                            </LinearLayout>
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/switchCassetteFoley"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:checked="true" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="#1E2026"
+                            android:layout_marginVertical="12dp" />
+
+                        <!-- ReplayGain Loudness Calibration -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="ReplayGain Volume Normalization"
+                                    android:textColor="@color/white"
+                                    android:textStyle="bold"
+                                    android:textSize="13.5sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Automatic 89.0 dB loudness calibration for untrimmed master tracks."
+                                    android:textColor="#A1A1AA"
+                                    android:textSize="11sp"
+                                    android:layout_marginTop="2dp" />
+                            </LinearLayout>
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/switchReplayGain"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:checked="true" />
                         </LinearLayout>
 
                     </LinearLayout>

@@ -283,6 +283,8 @@ class DrawerFragment : Fragment() {
         binding.knobLow.currentValue = fxController.lowGainDb
         binding.knobLow.onValueChanged = { gainDb ->
             fxController.setLowGain(gainDb)
+            binding.iso10BandEqView.setBands(fxController.isoBandsGainDb)
+            updateEqHeadroomLabel(fxController)
         }
 
         binding.knobMid.label = "MID"
@@ -291,6 +293,8 @@ class DrawerFragment : Fragment() {
         binding.knobMid.currentValue = fxController.midGainDb
         binding.knobMid.onValueChanged = { gainDb ->
             fxController.setMidGain(gainDb)
+            binding.iso10BandEqView.setBands(fxController.isoBandsGainDb)
+            updateEqHeadroomLabel(fxController)
         }
 
         binding.knobHi.label = "HI"
@@ -299,6 +303,8 @@ class DrawerFragment : Fragment() {
         binding.knobHi.currentValue = fxController.highGainDb
         binding.knobHi.onValueChanged = { gainDb ->
             fxController.setHighGain(gainDb)
+            binding.iso10BandEqView.setBands(fxController.isoBandsGainDb)
+            updateEqHeadroomLabel(fxController)
         }
 
         binding.knobFilter.label = "FILTER"
@@ -309,20 +315,73 @@ class DrawerFragment : Fragment() {
             fxController.setFilterStrength(strength.toInt())
         }
 
-        // 2. DSP Preset Cycler Button
+        // 2. 10-Band ISO Graphic Equalizer View setup
+        binding.iso10BandEqView.setBands(fxController.isoBandsGainDb)
+        binding.iso10BandEqView.onBandsChanged = { gains ->
+            fxController.setAllIsoBands(gains)
+            binding.knobLow.currentValue = fxController.lowGainDb
+            binding.knobMid.currentValue = fxController.midGainDb
+            binding.knobHi.currentValue = fxController.highGainDb
+            updateEqHeadroomLabel(fxController)
+        }
+        binding.iso10BandEqView.onBandDragFinished = {
+            binding.iso10BandEqView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+        }
+        updateEqHeadroomLabel(fxController)
+
+        // 3. AutoEq Target Profile Buttons
+        val autoEqButtons = listOf(
+            binding.btnEqHarman to "HARMAN",
+            binding.btnEqCrinacle to "CRINACLE",
+            binding.btnEqMoondrop to "MOONDROP",
+            binding.btnEqHd600 to "HD600",
+            binding.btnEqWarmTape to "WARM_TUBE",
+            binding.btnEqVShape to "V_SHAPE",
+            binding.btnEqFlat to "FLAT"
+        )
+
+        fun highlightAutoEq(selectedName: String) {
+            autoEqButtons.forEach { (btn, name) ->
+                val isSelected = name.equals(selectedName, ignoreCase = true)
+                btn.setTextColor(if (isSelected) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+                btn.backgroundTintList = ColorStateList.valueOf(
+                    if (isSelected) Color.parseColor("#16261B") else Color.parseColor("#181A20")
+                )
+            }
+        }
+
+        autoEqButtons.forEach { (btn, name) ->
+            btn.setOnClickListener {
+                fxController.applyPreset(name)
+                binding.btnFx.text = "FX: ${name.replace("_", " ")}"
+                binding.iso10BandEqView.setBands(fxController.isoBandsGainDb)
+                binding.knobLow.currentValue = fxController.lowGainDb
+                binding.knobMid.currentValue = fxController.midGainDb
+                binding.knobHi.currentValue = fxController.highGainDb
+                binding.knobFilter.currentValue = fxController.bassBoostStrength.toFloat()
+                updateEqHeadroomLabel(fxController)
+                highlightAutoEq(name)
+                btn.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            }
+        }
+
+        // 4. DSP Preset Cycler Button
         binding.btnFx.setOnClickListener {
             currentPresetIndex = (currentPresetIndex + 1) % dspPresets.size
             val preset = dspPresets[currentPresetIndex]
             fxController.applyPreset(preset)
             binding.btnFx.text = "FX: ${preset.replace("_", " ")}"
 
+            binding.iso10BandEqView.setBands(fxController.isoBandsGainDb)
             binding.knobLow.currentValue = fxController.lowGainDb
             binding.knobMid.currentValue = fxController.midGainDb
             binding.knobHi.currentValue = fxController.highGainDb
             binding.knobFilter.currentValue = fxController.bassBoostStrength.toFloat()
+            updateEqHeadroomLabel(fxController)
+            highlightAutoEq(preset)
         }
 
-        // 3. Deck Master RESET Button: Flat EQ, 0 gain, 80% volume
+        // 5. Deck Master RESET Button: Flat EQ, 0 gain, 80% volume
         binding.btnReset.setOnClickListener {
             fxController.setLowGain(0f)
             fxController.setMidGain(0f)
@@ -331,11 +390,14 @@ class DrawerFragment : Fragment() {
             fxController.applyPreset("FLAT")
             currentPresetIndex = 0
 
+            binding.iso10BandEqView.resetAll()
             binding.knobLow.currentValue = 0f
             binding.knobMid.currentValue = 0f
             binding.knobHi.currentValue = 0f
             binding.knobFilter.currentValue = 0f
             binding.btnFx.text = "FX: FLAT"
+            updateEqHeadroomLabel(fxController)
+            highlightAutoEq("FLAT")
 
             // Reset master output volume to reference 80%
             setMasterOutputVolume(80)
@@ -509,6 +571,8 @@ class DrawerFragment : Fragment() {
                 b.knobFilter.alpha = 0.35f
                 b.seekCrossfeed.alpha = 0.35f
                 b.btnFx.alpha = 0.35f
+                b.iso10BandEqView.alpha = 0.35f
+                b.layoutAutoEqPills.alpha = 0.35f
             } else {
                 b.tvBypassTitle.setTextColor(Color.WHITE)
                 b.tvBypassTitle.text = "BIT-PERFECT DIRECT BYPASS"
@@ -519,6 +583,25 @@ class DrawerFragment : Fragment() {
                 b.knobFilter.alpha = 1.0f
                 b.seekCrossfeed.alpha = 1.0f
                 b.btnFx.alpha = 1.0f
+                b.iso10BandEqView.alpha = 1.0f
+                b.layoutAutoEqPills.alpha = 1.0f
+            }
+        }
+    }
+
+    private fun updateEqHeadroomLabel(fxController: com.hana.spindle.playback.AudioFxController) {
+        var maxBoost = 0f
+        for (gain in fxController.isoBandsGainDb) {
+            if (gain > maxBoost) maxBoost = gain
+        }
+        val headroom = maxBoost * 0.35f
+        _binding?.let { b ->
+            if (headroom > 0.05f) {
+                b.tvEqHeadroom.text = String.format(Locale.US, "-%.1f dB HEADROOM", headroom)
+                b.tvEqHeadroom.setTextColor(Color.parseColor("#FFB74D")) // Amber warning/protection
+            } else {
+                b.tvEqHeadroom.text = "0.0 dB HEADROOM"
+                b.tvEqHeadroom.setTextColor(Color.parseColor("#00E676")) // Safe green
             }
         }
     }
@@ -543,40 +626,19 @@ class DrawerFragment : Fragment() {
             }
         }
 
-        binding.btnThemeDark.setOnClickListener {
-            themeManager.setTheme(CassetteTheme.DARK)
+        fun switchTheme(theme: CassetteTheme) {
+            themeManager.setTheme(theme)
             updateThemeButtonsVisual()
+            (requireActivity().application as? SpindleApp)?.audioEngine?.foleyEngine?.playCarriageEject()
         }
 
-        binding.btnThemeLight.setOnClickListener {
-            themeManager.setTheme(CassetteTheme.LIGHT)
-            updateThemeButtonsVisual()
-        }
-
-        binding.btnThemeEink.setOnClickListener {
-            themeManager.setTheme(CassetteTheme.MONOCHROME_EINK)
-            updateThemeButtonsVisual()
-        }
-
-        binding.btnThemeTdk.setOnClickListener {
-            themeManager.setTheme(CassetteTheme.TDK_SA_90)
-            updateThemeButtonsVisual()
-        }
-
-        binding.btnThemeMaxell.setOnClickListener {
-            themeManager.setTheme(CassetteTheme.MAXELL_XLII)
-            updateThemeButtonsVisual()
-        }
-
-        binding.btnThemeBasf.setOnClickListener {
-            themeManager.setTheme(CassetteTheme.BASF_CHROME)
-            updateThemeButtonsVisual()
-        }
-
-        binding.btnThemeSkeleton.setOnClickListener {
-            themeManager.setTheme(CassetteTheme.SKELETON_REEL)
-            updateThemeButtonsVisual()
-        }
+        binding.btnThemeDark.setOnClickListener { switchTheme(CassetteTheme.DARK) }
+        binding.btnThemeLight.setOnClickListener { switchTheme(CassetteTheme.LIGHT) }
+        binding.btnThemeEink.setOnClickListener { switchTheme(CassetteTheme.MONOCHROME_EINK) }
+        binding.btnThemeTdk.setOnClickListener { switchTheme(CassetteTheme.TDK_SA_90) }
+        binding.btnThemeMaxell.setOnClickListener { switchTheme(CassetteTheme.MAXELL_XLII) }
+        binding.btnThemeBasf.setOnClickListener { switchTheme(CassetteTheme.BASF_CHROME) }
+        binding.btnThemeSkeleton.setOnClickListener { switchTheme(CassetteTheme.SKELETON_REEL) }
     }
 
     private fun updateThemeButtonsVisual() {
@@ -636,6 +698,26 @@ class DrawerFragment : Fragment() {
                 themeManager.setTheme(CassetteTheme.DARK)
             }
             updateThemeButtonsVisual()
+        }
+
+        // 6. Cassette Mechanical Foley SFX
+        binding.switchCassetteFoley.isChecked = app.audioEngine.foleyEngine.isEnabled
+        binding.switchCassetteFoley.setOnCheckedChangeListener { _, isChecked ->
+            app.audioEngine.foleyEngine.setFoleyEnabled(isChecked)
+            if (isChecked) {
+                app.audioEngine.foleyEngine.playSwitchSnap()
+            }
+        }
+
+        // 7. ReplayGain Loudness Calibration
+        binding.switchReplayGain.isChecked = app.audioEngine.isReplayGainEnabled
+        binding.switchReplayGain.setOnCheckedChangeListener { _, isChecked ->
+            app.audioEngine.setReplayGainEnabled(isChecked)
+            Toast.makeText(
+                requireContext(),
+                if (isChecked) "ReplayGain 89dB Calibration Active" else "ReplayGain Normalization Disabled",
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 

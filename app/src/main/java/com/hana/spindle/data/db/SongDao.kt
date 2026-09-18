@@ -59,6 +59,9 @@ interface SongDao {
     @Query("UPDATE songs SET rating = :rating WHERE id = :songId")
     suspend fun updateRating(songId: Long, rating: Int)
 
+    @Query("UPDATE songs SET title = :title, artist = :artist, album = :album, year = :year, trackNumber = :trackNumber, genre = :genre WHERE id = :id")
+    suspend fun updateSongMetadata(id: Long, title: String, artist: String, album: String, year: Int, trackNumber: Int, genre: String?)
+
     @Query("DELETE FROM songs WHERE path = :path")
     suspend fun deleteByPath(path: String)
 

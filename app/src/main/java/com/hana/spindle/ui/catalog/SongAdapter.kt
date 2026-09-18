@@ -31,6 +31,7 @@ class SongAdapter(
     var onPlayNext: ((SongEntity) -> Unit)? = null
     var onAddToQueue: ((SongEntity) -> Unit)? = null
     var onAddToMixtape: ((SongEntity) -> Unit)? = null
+    var onInspectTags: ((SongEntity) -> Unit)? = null
 
     private var textColorPrimary: Int = Color.parseColor("#FAFAF9")
     private var textColorSecondary: Int = Color.parseColor("#B0B4CE")
@@ -132,7 +133,7 @@ class SongAdapter(
 
         holder.itemView.setOnLongClickListener {
             val context = holder.itemView.context
-            val options = arrayOf("▶ Play Now", "⏭ Play Next", "➕ Add to Queue", "📼 Add to Mixtape")
+            val options = arrayOf("▶ Play Now", "⏭ Play Next", "➕ Add to Queue", "📼 Add to Mixtape", "🏷️ Inspect & Edit Tags")
             android.app.AlertDialog.Builder(context)
                 .setTitle(song.title)
                 .setItems(options) { _, which ->
@@ -141,6 +142,7 @@ class SongAdapter(
                         1 -> onPlayNext?.invoke(song)
                         2 -> onAddToQueue?.invoke(song)
                         3 -> onAddToMixtape?.invoke(song)
+                        4 -> onInspectTags?.invoke(song)
                     }
                 }
                 .show()

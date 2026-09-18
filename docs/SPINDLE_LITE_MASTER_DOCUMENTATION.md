@@ -27,23 +27,25 @@ While the flagship Spindle (v1.2+) targets modern DAPs and compact phones (Andro
 ## 2. Architecture Comparison: Spindle vs. Spindle Lite
 
 ```
-+-------------------------------------------------------------------------------+
-|                            SUBSYSTEM COMPARISON                               |
-+--------------------------+----------------------------+-----------------------+
-| Component                | Standard Spindle (v1.2)    | Spindle Lite (v1.0)   |
-+--------------------------+----------------------------+-----------------------+
-| Target Platform          | Android 8.0+ (API 26-35)   | Android 4.4 (API 19)  |
-| Audio Engine             | AndroidX Media3 (ExoPlayer)| Native MediaPlayer    |
-| Gapless Chaining         | Media3 AudioSink           | setNextMediaPlayer()  |
-| Database / Storage       | Room ORM + Coroutines      | Native SQLiteOpenHelper|
-| UI Framework             | ViewPager2 + Material 3    | Pure Canvas + Views   |
-| Target Display           | 720p / 1080p (16:9 - 21:9) | 320x480 (HVGA 3:2)    |
-| Image Format             | RGB_565 (512x512)          | RGB_565 (256x256)     |
-| Idle RAM Usage           | < 25 MB                    | < 12 MB               |
-| Active Playback RAM      | < 38 MB                    | < 18 MB               |
-| APK Binary Size          | < 4.5 MB                   | < 1.8 MB              |
-| Hardware Key Integration | Android MediaSession       | KeyEvents + Broadcast |
-+--------------------------+----------------------------+-----------------------+
++---------------------------------------------------------------------------------------+
+|                                SUBSYSTEM COMPARISON                                   |
++--------------------------+--------------------------------+---------------------------+
+| Architectural Dimension  | Standard Spindle (v1.2 / :app) | Spindle Lite (v1.0 / :app-lite)|
++--------------------------+--------------------------------+---------------------------+
+| Target Platform          | Android 8.0+ (API 26 – 35)     | Android 4.4 KitKat (API 19)|
+| Target Hardware          | 1GB – 4GB RAM DAPs & Phones    | 512MB RAM Legacy Devices  |
+| Audio Engine             | AndroidX Media3 (ExoPlayer)    | Native MediaPlayer        |
+| Gapless Chaining         | Media3 AudioSink               | setNextMediaPlayer()      |
+| Database / Storage       | Room ORM + Coroutines          | Native SQLiteOpenHelper   |
+| UI Framework             | ViewPager2 + Material 3        | Pure Canvas + Legacy Views|
+| Target Display           | 720p / 1080p (16:9 – 21:9)     | 320×480 (HVGA 3:2)        |
+| Hardware Nameplate       | Auto DeviceNameFormatter       | Auto DeviceNameFormatter  |
+| Image Format             | RGB_565 (512×512, Max 12MB)    | RGB_565 (256×256, Max 4MB)|
+| Idle RAM Usage           | < 25 MB                        | < 12 MB                   |
+| Active Playback RAM      | < 38 MB                        | < 18 MB                   |
+| APK Binary Size          | < 4.5 MB                       | < 1.8 MB                  |
+| Hardware Key Integration | Android MediaSession           | KEYCODE_CAMERA + Volume   |
++--------------------------+--------------------------------+---------------------------+
 ```
 
 ---
@@ -109,7 +111,7 @@ To ensure the flagship Sony Walkman kinetic deck renders flawlessly on the 3.0" 
 
 ```
 +---------------------------------------------------------+ (0,0)
-|  [ WALKMAN ]               +-------------------------+  |
+|  [ XPERIA ACTIVE ]         +-------------------------+  |
 |  10:45:22                  |   CLEAR SPINDLE WINDOW  |  |
 |  [FLAC 16/44]              |  (( O ))       (( O ))  |  |
 |  Track Title               |  [Supply]      [Takeup] |  |
@@ -125,7 +127,7 @@ To ensure the flagship Sony Walkman kinetic deck renders flawlessly on the 3.0" 
    - Max Tape Pack: $R_{\text{max}} = \text{WindowHeight} \times 0.44$
    - Linear velocity constant: $v = 4.7625\text{ cm/s}$
 2. **Typography Scaling**:
-   - `WALKMAN` Header: `12sp` bold.
+   - **Hardware Nameplate Header**: `12sp` bold (auto-detected via `DeviceNameFormatter`).
    - Clock / Time: `11sp` monospace.
    - Format Pill Badge: `9sp` uppercase.
    - Song Title: `12sp` bold (marquee scroll on overflow).
@@ -169,6 +171,20 @@ The Xperia active features dedicated physical buttons that Spindle Lite binds di
    );
    CREATE INDEX idx_artist_album ON tracks(artist, album);
    ```
+
+---
+
+## 8. Dynamic Hardware Nameplate Engine (`DeviceNameFormatter`)
+
+Rather than hardcoding static branding, Spindle Lite inspects `android.os.Build` at runtime to format a custom industrial hardware nameplate:
+
+* `satsuma` / `ST17i` / `ST17a` ➔ **`XPERIA ACTIVE`**
+* `smultron` / `ST15i` ➔ **`XPERIA MINI`**
+* `mango` / `SK17i` ➔ **`XPERIA MINI PRO`**
+* `urushi` / `ST18i` ➔ **`XPERIA RAY`**
+* `kugo` / `SO-02J` / `F5321` ➔ **`XPERIA X COMPACT`**
+* `NW-A105` ➔ **`WALKMAN NW-A105`**
+* Custom User Override: Configurable via Settings Drawer (*"Nameplate Engraving"*).
 
 ---
 

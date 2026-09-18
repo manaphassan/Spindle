@@ -84,7 +84,7 @@ Modern smartphones are overloaded with algorithmic distractions, background trac
 ### 1. 📼 Flagship Cassette Deck (Home Launcher)
 - **Centered Spindle Deck Window**: Horizontally centered clear acrylic window showcasing mechanical tape spools with true differential kinematics ($v = 4.7625\text{ cm/s}$).
 - **Column-Aligned Telemetry Layout**:
-  - `WALKMAN` brand header and real-time clock (`TIME`).
+  - **Dynamic Hardware Nameplate Header**: Automatically detects connected hardware model via `Build.MODEL` and `Build.DEVICE` (e.g., `XPERIA ACTIVE`, `XPERIA X COMPACT`, `WALKMAN NW-A105`, `SHANLING M3X`), formatting it into an authentic uppercase engraved nameplate (with user custom override support).
   - **Hi-Res Audio Format Capsule Badge**: Positioned directly below the clock displaying bit depth and sample rate (e.g., `FLAC 16-BIT / 44.1 KHZ`, `FLAC 24-BIT / 96.0 KHZ`, `MP3 320 KBPS`).
   - **2-Line Active Track Metadata**:
     - **Line 0**: Bold crisp song title with automatic text wrap.
@@ -138,6 +138,21 @@ Modern smartphones are overloaded with algorithmic distractions, background trac
 | **Bitmap Format** | ARGB_8888 (32-bit) | **RGB_565 (16-bit)** | 50% image cache savings |
 | **Background AI / ML** | 150MB+ models | **NONE (0MB)** | Zero battery drain |
 | **Min SDK** | Android 10+ | **Android 8.0 (API 26)** | Legacy device revive |
+
+---
+
+### 📦 Spindle Edition Matrix
+
+| Feature | Spindle Standard (`:app`) | Spindle Lite (`:app-lite` / `satsuma`) |
+| :--- | :--- | :--- |
+| **Target OS** | Android 8.0 – 15 (API 26 – 35) | **Android 4.4 KitKat (API 19)** *(down to API 16)* |
+| **Target Hardware** | 1GB – 4GB RAM DAPs & Compacts | **512MB RAM Legacy Devices** *(Xperia active, mini, ray)* |
+| **Audio Engine** | `androidx.media3` (ExoPlayer 1.5.1) | **Native `android.media.MediaPlayer`** (Zero bloat) |
+| **Screen Target** | 720p – 1080p (16:9 – 21:9) | **320 × 480 (HVGA 3:2)** Responsive Canvas |
+| **Hardware Key Hooks** | Android MediaSession | **Dedicated Camera Key (`KEYCODE_CAMERA`) + Volume Skip** |
+| **Active Playback RAM** | $< 38\text{ MB}$ | **$< 18\text{ MB}$** |
+| **APK Binary Size** | $< 4.5\text{ MB}$ | **$< 1.8\text{ MB}$** |
+| **Documentation** | [MASTER_DOCUMENTATION.md](MASTER_DOCUMENTATION.md) | [SPINDLE_LITE_MASTER_DOCUMENTATION.md](docs/SPINDLE_LITE_MASTER_DOCUMENTATION.md) |
 
 ---
 

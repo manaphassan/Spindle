@@ -16,6 +16,7 @@ import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import com.hana.spindle.data.LyricsData
 import com.hana.spindle.data.LyricsParser
+import com.hana.spindle.data.TagParser
 import com.hana.spindle.data.db.SongEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -102,6 +103,15 @@ class AudioEngine(
     private var currentIndex = -1
 
     val audioFxController = AudioFxController()
+    val foleyEngine = CassetteFoleyEngine(context)
+
+    // ReplayGain Audiophile Loudness Normalization
+    var isReplayGainEnabled: Boolean = true
+        private set
+    var replayGainPreampDb: Float = 0.0f
+        private set
+    var currentReplayGainDb: Float = 0.0f
+        private set
 
     private fun syncQueueState() {
         _currentQueueFlow.value = playlist.toList()
@@ -144,6 +154,10 @@ class AudioEngine(
     }
 
     init {
+        val prefs = context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+        isReplayGainEnabled = prefs.getBoolean("pref_replaygain_enabled", true)
+        replayGainPreampDb = prefs.getFloat("pref_replaygain_preamp_db", 0.0f)
+
         try {
             context.registerReceiver(
                 becomingNoisyReceiver,
@@ -196,6 +210,35 @@ class AudioEngine(
                         android.util.Log.d("AudioEngine", "onPlaybackStateChanged: state=$state")
                         if (state == Player.STATE_ENDED) {
                             handleTrackEnded()
+                        }
+                    }
+
+                    override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                        if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
+                            val newIndex = exoPlayer.currentMediaItemIndex
+                            if (newIndex in playlist.indices && newIndex != currentIndex) {
+                                currentIndex = newIndex
+                                val newSong = playlist[newIndex]
+                                val file = File(newSong.path)
+                                applyReplayGain(file)
+                                _playbackState.value = _playbackState.value.copy(
+                                    currentSong = newSong,
+                                    durationMs = newSong.durationMs,
+                                    currentPositionMs = 0L,
+                                    progress = 0f
+                                )
+                                scope.launch(Dispatchers.IO) {
+                                    val lyrics = LyricsParser.loadLyrics(newSong.path)
+                                    _playbackState.value = _playbackState.value.copy(currentLyrics = lyrics)
+                                }
+                                metricsTracker.updateSourceSpecs(
+                                    format = newSong.fileFormat,
+                                    bitDepth = newSong.bitDepth,
+                                    sampleRate = newSong.sampleRate,
+                                    bitrateKbps = if (newSong.bitrateKbps > 0) newSong.bitrateKbps else 1411
+                                )
+                                syncQueueState()
+                            }
                         }
                     }
 
@@ -393,6 +436,36 @@ class AudioEngine(
         _sleepTimerState.value = SleepTimerState(isActive = false, remainingSeconds = 0L)
     }
 
+    fun setReplayGainEnabled(enabled: Boolean) {
+        isReplayGainEnabled = enabled
+        val prefs = context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+        prefs.edit().putBoolean("pref_replaygain_enabled", enabled).apply()
+        playlist.getOrNull(currentIndex)?.let { applyReplayGain(File(it.path)) }
+    }
+
+    fun setReplayGainPreamp(preampDb: Float) {
+        replayGainPreampDb = preampDb.coerceIn(-12.0f, 12.0f)
+        val prefs = context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+        prefs.edit().putFloat("pref_replaygain_preamp_db", replayGainPreampDb).apply()
+        playlist.getOrNull(currentIndex)?.let { applyReplayGain(File(it.path)) }
+    }
+
+    private fun applyReplayGain(trackFile: File) {
+        if (!isReplayGainEnabled) {
+            currentReplayGainDb = 0f
+            if (!isFadingOut) exoPlayer.volume = 1.0f
+            return
+        }
+        currentReplayGainDb = TagParser.extractReplayGainDb(trackFile)
+        val effectiveDb = currentReplayGainDb + replayGainPreampDb
+        val targetVolume = if (effectiveDb == 0f) 1.0f else {
+            Math.pow(10.0, (effectiveDb / 20.0)).toFloat().coerceIn(0.1f, 1.0f)
+        }
+        if (!isFadingOut) {
+            exoPlayer.volume = targetVolume
+        }
+    }
+
     private fun playCurrentTrack() {
         if (currentIndex !in playlist.indices) return
         try {
@@ -404,9 +477,12 @@ class AudioEngine(
         val file = File(song.path)
         android.util.Log.d("AudioEngine", "playCurrentTrack: title='${song.title}', path='${song.path}', exists=${file.exists()}, length=${file.length()}")
 
-        val mediaItem = MediaItem.fromUri(Uri.fromFile(file))
-        exoPlayer.setMediaItem(mediaItem)
+        // Provide full playlist items for true sample-accurate gapless playback
+        val mediaItems = playlist.map { MediaItem.fromUri(Uri.fromFile(File(it.path))) }
+        exoPlayer.setMediaItems(mediaItems, currentIndex, 0L)
         exoPlayer.prepare()
+        applyReplayGain(file)
+        foleyEngine.playSolenoidClack()
         exoPlayer.play()
 
         val bitrate = if (song.bitrateKbps > 0) song.bitrateKbps else if (song.durationMs > 0) ((file.length() * 8L) / song.durationMs).toInt() else 1411
@@ -487,12 +563,10 @@ class AudioEngine(
     private fun prepareTrackWithoutPlaying(song: SongEntity, initialPositionMs: Long = 0L) {
         val file = File(song.path)
         if (!file.exists()) return
-        val mediaItem = MediaItem.fromUri(Uri.fromFile(file))
-        exoPlayer.setMediaItem(mediaItem)
+        val mediaItems = playlist.map { MediaItem.fromUri(Uri.fromFile(File(it.path))) }
+        exoPlayer.setMediaItems(mediaItems, currentIndex, initialPositionMs)
         exoPlayer.prepare()
-        if (initialPositionMs > 0L) {
-            exoPlayer.seekTo(initialPositionMs)
-        }
+        applyReplayGain(file)
         val bitrate = if (song.bitrateKbps > 0) song.bitrateKbps else if (song.durationMs > 0) ((file.length() * 8L) / song.durationMs).toInt() else 1411
 
         _playbackState.value = _playbackState.value.copy(
@@ -527,11 +601,13 @@ class AudioEngine(
     }
 
     fun pause() {
+        foleyEngine.playReleaseClick()
         exoPlayer.pause()
         saveLastPlayed(playlist.getOrNull(currentIndex)?.path, exoPlayer.currentPosition)
     }
 
     fun play() {
+        foleyEngine.playSolenoidClack()
         try {
             (context.applicationContext as? com.hana.spindle.SpindleApp)?.radioStreamEngine?.pause()
         } catch (e: Exception) {
@@ -600,6 +676,7 @@ class AudioEngine(
     }
 
     fun playNext() {
+        foleyEngine.playMotorSpool()
         if (playlist.isEmpty()) return
         if (playlist.size <= 1) {
             scope.launch {
@@ -626,6 +703,7 @@ class AudioEngine(
     }
 
     fun playPrevious(forcePreviousSong: Boolean = false) {
+        foleyEngine.playMotorSpool()
         if (playlist.isEmpty()) return
         if (!forcePreviousSong && exoPlayer.currentPosition > 3000L) {
             // Restart current track if played more than 3 seconds
@@ -737,6 +815,7 @@ class AudioEngine(
     }
 
     fun seekTo(positionMs: Long) {
+        foleyEngine.playMotorSpool()
         exoPlayer.seekTo(positionMs)
         updateProgress()
     }

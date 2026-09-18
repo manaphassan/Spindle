@@ -128,6 +128,11 @@ class CatalogFragment : Fragment() {
                     }
                 }
             }
+            onInspectTags = { song ->
+                TagInspectorDialog.show(requireContext(), song) {
+                    loadSongs(app)
+                }
+            }
         }
 
         albumTracksAdapter = SongAdapter(
@@ -157,6 +162,11 @@ class CatalogFragment : Fragment() {
                     if (currentTab == 7) {
                         loadMixtapes(app)
                     }
+                }
+            }
+            onInspectTags = { song ->
+                TagInspectorDialog.show(requireContext(), song) {
+                    loadSongs(app)
                 }
             }
         }

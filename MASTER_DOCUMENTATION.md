@@ -59,7 +59,7 @@ The center home screen renders a custom hardware-accelerated Canvas deck:
    - Houses the dual mechanical spools, cogs, guide rollers, and simulated magnetic tape ribbon.
 2. **Column-Aligned Telemetry (`columnCenterX`)**:
    - Calculated precisely at the horizontal midpoint between the display's left margin and the left edge of the spindle window.
-   - **Header**: `WALKMAN` brand typography (18sp, bold sans-serif).
+   - **Dynamic Hardware Nameplate Header**: Automatically detects connected hardware model via `Build.MODEL`, `Build.DEVICE`, and `Build.MANUFACTURER` (e.g., `XPERIA ACTIVE`, `XPERIA X COMPACT`, `WALKMAN NW-A105`, `SHANLING M3X`), formatting it into an authentic uppercase engraved nameplate (with user custom override support).
    - **Clock**: Real-time 24-hour clock (`HH:MM:SS`, bold monospace).
    - **Hi-Res Audio Format Capsule Badge**: Drawn directly beneath the clock with rounded pill borders (e.g. `FLAC 16-BIT / 44.1 KHZ`, `MP3 320 KBPS`).
    - **2-Line Active Song Metadata**:
@@ -245,6 +245,30 @@ dap_launcher/
 
 ---
 
+## 7. Edition Matrix: Spindle (Standard) vs. Spindle Lite
+
+Spindle is maintained across two targeted build modules to optimize for modern audiophile DAPs while preserving 2011–2014 vintage compact Android hardware:
+
+| Architectural Dimension | Spindle Standard (`:app`) | Spindle Lite (`:app-lite` / `satsuma`) |
+| :--- | :--- | :--- |
+| **Target OS / API** | Android 8.0 – 15 (API 26 – 35) | Android 4.4 KitKat – 7.1 (API 19 – 25) |
+| **Target Hardware** | 1 GB – 4 GB RAM, 720p/1080p DAPs & Phones | 512 MB – 1 GB RAM, 320×480 (HVGA) Legacy Devices |
+| **Hero Hardware Example**| Sony Xperia X Compact (`SO-02J`), HiBy R5 | Sony Ericsson Xperia active (`satsuma` ST17i) |
+| **Audio Engine** | `androidx.media3` (ExoPlayer v1.5.1) | Dual-instance native `android.media.MediaPlayer` |
+| **Gapless Playback** | Media3 `AudioSink` & MediaSession | Native `setNextMediaPlayer()` API chaining |
+| **Database & Indexing** | Room ORM 2.6.1 + Kotlin Coroutines | Native `SQLiteOpenHelper` + Background POSIX crawler |
+| **UI Framework** | ViewPager2 + Material 3 + Pure Canvas | ViewPager (Legacy) + Pure Canvas (Zero Compose/M3) |
+| **Display Geometry** | Responsive 720p/1080p (16:9, 18:9, 21:9) | Scaled HVGA 320×480 (3:2 Aspect Ratio) |
+| **Hardware Nameplate** | Auto `DeviceNameFormatter` (Customizable) | Auto `DeviceNameFormatter` (Customizable) |
+| **Hardware Key Binding**| Standard MediaSession KeyEvents | Dedicated Camera Shutter Key (`KEYCODE_CAMERA`) + Volume Skip |
+| **Bitmap Cache** | `RGB_565` (512×512, Max 12 MB) | `RGB_565` (256×256, Max 4 MB) |
+| **Idle Memory Footprint**| $< 25\text{ MB}$ | $< 12\text{ MB}$ |
+| **Active Playback RAM** | $< 38\text{ MB}$ | $< 18\text{ MB}$ |
+| **APK Binary Size** | $< 4.5\text{ MB}$ | $< 1.8\text{ MB}$ |
+
+---
+
 <div align="center">
   <sub>Spindle · Engineered with precision for audiophiles, analog purists, and hardware preservation.</sub>
 </div>
+
