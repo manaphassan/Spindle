@@ -29,7 +29,8 @@ class LiteAudioEngine(private val context: Context) :
 
     private var playlist: List<Track> = emptyList()
     private var currentIndex: Int = -1
-    private var isPlaying: Boolean = false
+    var isPlaying: Boolean = false
+        private set
 
     var listener: PlaybackListener? = null
 

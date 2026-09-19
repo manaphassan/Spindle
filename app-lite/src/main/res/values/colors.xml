@@ -9,6 +9,7 @@
 
     <!-- Chassis & Surface Tokens -->
     <color name="lite_bg_chassis">#1E2132</color>
+    <color name="lite_bg_surface">#2A2E45</color>
     <color name="lite_deck_surface">#2A2E45</color>
     <color name="lite_deck_inner">#181A27</color>
     <color name="lite_surface_elevated">#353A54</color>
