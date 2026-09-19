@@ -225,6 +225,17 @@ class LiteDeckView @JvmOverloads constructor(
                 tapePackPaint.color = type2TapePackColor
             }
         }
+
+        val maxLabelTextWidth = labelRect.width() - 16f
+        if (maxLabelTextWidth > 0f && labelRect.height() > 0f) {
+            var targetTextSize = labelRect.height() * 0.38f
+            labelTextPaint.textSize = targetTextSize
+            val measured = labelTextPaint.measureText(label)
+            if (measured > maxLabelTextWidth && measured > 0f) {
+                targetTextSize *= (maxLabelTextWidth / measured)
+                labelTextPaint.textSize = targetTextSize
+            }
+        }
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -255,8 +266,17 @@ class LiteDeckView @JvmOverloads constructor(
         // Top Label Strip
         val labelHeight = chassisRect.height() * 0.16f
         val labelTop = chassisRect.top + (chassisRect.height() * 0.06f)
-        labelRect.set(chassisRect.left + (chassisRect.width() * 0.08f), labelTop, chassisRect.right - (chassisRect.width() * 0.08f), labelTop + labelHeight)
-        labelTextPaint.textSize = labelHeight * 0.42f
+        val labelInset = chassisRect.width() * 0.05f
+        labelRect.set(chassisRect.left + labelInset, labelTop, chassisRect.right - labelInset, labelTop + labelHeight)
+
+        var targetTextSize = labelHeight * 0.38f
+        labelTextPaint.textSize = targetTextSize
+        val maxLabelTextWidth = labelRect.width() - 16f
+        val measured = labelTextPaint.measureText(cassetteLabel)
+        if (measured > maxLabelTextWidth && measured > 0f) {
+            targetTextSize *= (maxLabelTextWidth / measured)
+            labelTextPaint.textSize = targetTextSize
+        }
 
         // Hub Centers & Tape Geometry
         hubCenterY = windowRect.centerY()
