@@ -28,30 +28,30 @@ class LiteRadioEngine(private val context: Context) :
             LiteRadioStation(
                 frequencyMhz = 88.5f,
                 callsign = "LO-FI",
-                rdsName = "LO-FI RADIO • CHILL BEATS TO RELAX / STUDY",
-                genre = "Chillhop / Beats",
-                streamUrl = "https://stream.zeno.fm/f3wvbbqmdg8uv"
+                rdsName = "LO-FI RADIO • CHILL BEATS & AMBIENT GROOVE",
+                genre = "Chillhop / Ambient",
+                streamUrl = "http://ice1.somafm.com/groovesalad-128-mp3"
             ),
             LiteRadioStation(
                 frequencyMhz = 93.2f,
                 callsign = "ANIMEFM",
                 rdsName = "ANIMEFM RADIO • 24/7 ANIME OST & J-POP",
                 genre = "Anime & J-Pop",
-                streamUrl = "https://listen.moe/fallback"
+                streamUrl = "http://stream.laut.fm/animefm"
             ),
             LiteRadioStation(
                 frequencyMhz = 98.6f,
                 callsign = "INITIAL D",
                 rdsName = "INITIAL D WORLD RADIO • EUROBEAT SPEEDWAY",
                 genre = "Eurobeat / High Octane",
-                streamUrl = "https://stream.laut.fm/eurobeat"
+                streamUrl = "http://stream.laut.fm/eurobeat"
             ),
             LiteRadioStation(
                 frequencyMhz = 104.2f,
                 callsign = "CITYPOP",
-                rdsName = "CITYPOP RADIO • 80S TOKYO GROOVE & VAPOR",
+                rdsName = "CITYPOP RADIO • 80S TOKYO GROOVE & SYNTH-POP",
                 genre = "City Pop / 80s Groove",
-                streamUrl = "https://play.streamafrica.net/japancitypop"
+                streamUrl = "http://5.178.110.76:8000/cityhunter.mp3"
             )
         )
     }
@@ -124,6 +124,9 @@ class LiteRadioEngine(private val context: Context) :
     private fun stopInternal(releaseFocus: Boolean) {
         try {
             mediaPlayer?.let { player ->
+                player.setOnPreparedListener(null)
+                player.setOnErrorListener(null)
+                player.setOnBufferingUpdateListener(null)
                 if (player.isPlaying) {
                     player.stop()
                 }
@@ -176,10 +179,12 @@ class LiteRadioEngine(private val context: Context) :
 
     override fun onError(mp: MediaPlayer?, what: Int, extra: Int): Boolean {
         Log.e(TAG, "Radio MediaPlayer error: what=$what, extra=$extra")
+        stopInternal(releaseFocus = false)
         isBuffering = false
         isPlaying = false
         notifyState()
-        listener?.onRadioError("Playback error ($what, $extra)")
+        val msg = if (extra == -1004) "Stream network error (-1004)" else "Playback error ($what, $extra)"
+        listener?.onRadioError(msg)
         return true
     }
 

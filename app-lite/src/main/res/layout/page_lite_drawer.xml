@@ -1,119 +1,800 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/drawerPageRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/lite_bg_chassis"
     android:orientation="vertical"
-    android:padding="8dp">
+    android:paddingLeft="8dp"
+    android:paddingTop="6dp"
+    android:paddingRight="8dp"
+    android:paddingBottom="4dp">
 
-    <!-- Top Console Header -->
+    <!-- Top 3-Segment Tactile Hi-Fi Navigation Bar -->
     <LinearLayout
+        android:id="@+id/topTabBar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingBottom="6dp">
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:fontFamily="sans-serif-medium"
-            android:letterSpacing="0.08"
-            android:text="APPLICATION DRAWER"
-            android:textColor="@color/lite_text_primary"
-            android:textSize="12sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/tvDrawerBadge"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/bg_format_pill"
-            android:fontFamily="monospace"
-            android:paddingLeft="6dp"
-            android:paddingTop="2dp"
-            android:paddingRight="6dp"
-            android:paddingBottom="2dp"
-            android:text="CONSOLE"
-            android:textColor="@color/brand_orange"
-            android:textSize="9sp"
-            android:textStyle="bold" />
-    </LinearLayout>
-
-    <!-- Master Volume Tactile Slider Strip -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="32dp"
+        android:layout_height="28dp"
         android:background="@drawable/bg_search_bar"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingLeft="8dp"
-        android:paddingRight="8dp"
+        android:padding="2dp"
         android:layout_marginBottom="6dp">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+        <Button
+            android:id="@+id/btnTabEq"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/bg_preset_button"
             android:fontFamily="monospace"
-            android:text="VOL"
-            android:textColor="@color/lite_amber_glow"
-            android:textSize="10sp"
+            android:text="EQ / DSP"
+            android:textColor="@color/lite_text_primary"
+            android:textSize="9.5sp"
             android:textStyle="bold" />
 
-        <SeekBar
-            android:id="@+id/sbMasterVolume"
+        <Button
+            android:id="@+id/btnTabApps"
+            style="?android:attr/borderlessButtonStyle"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_weight="1"
-            android:max="100"
-            android:progress="70" />
-
-        <TextView
-            android:id="@+id/tvVolumePercent"
-            android:layout_width="32dp"
-            android:layout_height="wrap_content"
-            android:gravity="end"
+            android:layout_marginLeft="2dp"
+            android:layout_marginRight="2dp"
+            android:background="@drawable/bg_preset_button"
             android:fontFamily="monospace"
-            android:text="70%"
-            android:textColor="@color/lite_text_secondary"
-            android:textSize="10sp" />
+            android:text="APPS"
+            android:textColor="@color/brand_orange"
+            android:textSize="9.5sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btnTabSettings"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/bg_preset_button"
+            android:fontFamily="monospace"
+            android:text="SETTINGS"
+            android:textColor="@color/lite_text_primary"
+            android:textSize="9.5sp"
+            android:textStyle="bold" />
     </LinearLayout>
 
-    <!-- Search Bar Strip -->
-    <EditText
-        android:id="@+id/etSearchApps"
-        android:layout_width="match_parent"
-        android:layout_height="36dp"
-        android:background="@drawable/bg_search_bar"
-        android:hint="Filter applications..."
-        android:textColorHint="@color/lite_text_muted"
-        android:textColor="@color/lite_text_primary"
-        android:textSize="12sp"
-        android:paddingLeft="10dp"
-        android:paddingRight="10dp"
-        android:singleLine="true"
-        android:layout_marginBottom="6dp" />
-
-    <!-- App Count & Status Subtext -->
-    <TextView
-        android:id="@+id/tvAppCount"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingBottom="4dp"
-        android:paddingLeft="2dp"
-        android:text="Scanning applications..."
-        android:textColor="@color/lite_text_muted"
-        android:textSize="10sp" />
-
-    <!-- Recycler View for Installed Apps -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvApps"
+    <!-- CONTENT FRAME FOR 3 TABS -->
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:clipToPadding="false"
-        android:scrollbars="vertical" />
+        android:layout_weight="1">
+
+        <!-- ===================================================================== -->
+        <!-- TAB 0: EQUALIZER & DSP CONSOLE                                        -->
+        <!-- ===================================================================== -->
+        <ScrollView
+            android:id="@+id/containerEq"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scrollbars="none"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingBottom="8dp">
+
+                <!-- DSP Preset Selector Strip -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="26dp"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="6dp">
+
+                    <Button
+                        android:id="@+id/btnPresetFlat"
+                        style="?android:attr/borderlessButtonStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_preset_button"
+                        android:fontFamily="monospace"
+                        android:text="FLAT"
+                        android:textColor="@color/brand_orange"
+                        android:textSize="8.5sp"
+                        android:textStyle="bold" />
+
+                    <Button
+                        android:id="@+id/btnPresetBass"
+                        style="?android:attr/borderlessButtonStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:layout_marginLeft="2dp"
+                        android:background="@drawable/bg_preset_button"
+                        android:fontFamily="monospace"
+                        android:text="BASS+"
+                        android:textColor="@color/lite_text_secondary"
+                        android:textSize="8.5sp"
+                        android:textStyle="bold" />
+
+                    <Button
+                        android:id="@+id/btnPresetVocal"
+                        style="?android:attr/borderlessButtonStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:layout_marginLeft="2dp"
+                        android:background="@drawable/bg_preset_button"
+                        android:fontFamily="monospace"
+                        android:text="VOCAL"
+                        android:textColor="@color/lite_text_secondary"
+                        android:textSize="8.5sp"
+                        android:textStyle="bold" />
+
+                    <Button
+                        android:id="@+id/btnPresetRock"
+                        style="?android:attr/borderlessButtonStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:layout_marginLeft="2dp"
+                        android:background="@drawable/bg_preset_button"
+                        android:fontFamily="monospace"
+                        android:text="ROCK"
+                        android:textColor="@color/lite_text_secondary"
+                        android:textSize="8.5sp"
+                        android:textStyle="bold" />
+
+                    <Button
+                        android:id="@+id/btnPresetTape"
+                        style="?android:attr/borderlessButtonStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:layout_marginLeft="2dp"
+                        android:background="@drawable/bg_preset_button"
+                        android:fontFamily="monospace"
+                        android:text="TAPE"
+                        android:textColor="@color/lite_text_secondary"
+                        android:textSize="8.5sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- EQ Sub-header with Bypass / DSP Power Toggle -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="22dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="4dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:fontFamily="monospace"
+                        android:letterSpacing="0.06"
+                        android:text="5-BAND ISO EQUALIZER"
+                        android:textColor="@color/lite_text_secondary"
+                        android:textSize="9.5sp"
+                        android:textStyle="bold" />
+
+                    <Button
+                        android:id="@+id/btnEqToggle"
+                        style="?android:attr/borderlessButtonStyle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="22dp"
+                        android:background="@drawable/bg_format_pill"
+                        android:fontFamily="monospace"
+                        android:paddingLeft="6dp"
+                        android:paddingTop="1dp"
+                        android:paddingRight="6dp"
+                        android:paddingBottom="1dp"
+                        android:text="DSP: ON"
+                        android:textColor="@color/lite_led_green"
+                        android:textSize="8.5sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- 5-Band ISO Graphic Sliders -->
+                <!-- Band 0: ~60 Hz Sub-Bass -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="24dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="2dp">
+                    <TextView
+                        android:id="@+id/tvBand0Freq"
+                        android:layout_width="44dp"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="monospace"
+                        android:text="60 Hz"
+                        android:textColor="@color/lite_amber_glow"
+                        android:textSize="8.5sp"
+                        android:textStyle="bold" />
+                    <SeekBar
+                        android:id="@+id/sbBand0"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:max="24"
+                        android:progress="12" />
+                    <TextView
+                        android:id="@+id/tvBand0Gain"
+                        android:layout_width="38dp"
+                        android:layout_height="wrap_content"
+                        android:gravity="end"
+                        android:fontFamily="monospace"
+                        android:text="0 dB"
+                        android:textColor="@color/lite_text_primary"
+                        android:textSize="9sp" />
+                </LinearLayout>
+
+                <!-- Band 1: ~230 Hz Mid-Bass -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="24dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="2dp">
+                    <TextView
+                        android:id="@+id/tvBand1Freq"
+                        android:layout_width="44dp"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="monospace"
+                        android:text="230 Hz"
+                        android:textColor="@color/lite_amber_glow"
+                        android:textSize="8.5sp"
+                        android:textStyle="bold" />
+                    <SeekBar
+                        android:id="@+id/sbBand1"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:max="24"
+                        android:progress="12" />
+                    <TextView
+                        android:id="@+id/tvBand1Gain"
+                        android:layout_width="38dp"
+                        android:layout_height="wrap_content"
+                        android:gravity="end"
+                        android:fontFamily="monospace"
+                        android:text="0 dB"
+                        android:textColor="@color/lite_text_primary"
+                        android:textSize="9sp" />
+                </LinearLayout>
+
+                <!-- Band 2: ~910 Hz Vocal Mid -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="24dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="2dp">
+                    <TextView
+                        android:id="@+id/tvBand2Freq"
+                        android:layout_width="44dp"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="monospace"
+                        android:text="910 Hz"
+                        android:textColor="@color/lite_amber_glow"
+                        android:textSize="8.5sp"
+                        android:textStyle="bold" />
+                    <SeekBar
+                        android:id="@+id/sbBand2"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:max="24"
+                        android:progress="12" />
+                    <TextView
+                        android:id="@+id/tvBand2Gain"
+                        android:layout_width="38dp"
+                        android:layout_height="wrap_content"
+                        android:gravity="end"
+                        android:fontFamily="monospace"
+                        android:text="0 dB"
+                        android:textColor="@color/lite_text_primary"
+                        android:textSize="9sp" />
+                </LinearLayout>
+
+                <!-- Band 3: ~3.6 kHz Presence -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="24dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="2dp">
+                    <TextView
+                        android:id="@+id/tvBand3Freq"
+                        android:layout_width="44dp"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="monospace"
+                        android:text="3.6k"
+                        android:textColor="@color/lite_amber_glow"
+                        android:textSize="8.5sp"
+                        android:textStyle="bold" />
+                    <SeekBar
+                        android:id="@+id/sbBand3"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:max="24"
+                        android:progress="12" />
+                    <TextView
+                        android:id="@+id/tvBand3Gain"
+                        android:layout_width="38dp"
+                        android:layout_height="wrap_content"
+                        android:gravity="end"
+                        android:fontFamily="monospace"
+                        android:text="0 dB"
+                        android:textColor="@color/lite_text_primary"
+                        android:textSize="9sp" />
+                </LinearLayout>
+
+                <!-- Band 4: ~14 kHz Air / Brilliance -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="24dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="4dp">
+                    <TextView
+                        android:id="@+id/tvBand4Freq"
+                        android:layout_width="44dp"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="monospace"
+                        android:text="14k"
+                        android:textColor="@color/lite_amber_glow"
+                        android:textSize="8.5sp"
+                        android:textStyle="bold" />
+                    <SeekBar
+                        android:id="@+id/sbBand4"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:max="24"
+                        android:progress="12" />
+                    <TextView
+                        android:id="@+id/tvBand4Gain"
+                        android:layout_width="38dp"
+                        android:layout_height="wrap_content"
+                        android:gravity="end"
+                        android:fontFamily="monospace"
+                        android:text="0 dB"
+                        android:textColor="@color/lite_text_primary"
+                        android:textSize="9sp" />
+                </LinearLayout>
+
+                <!-- Hardware Bass Boost Slider -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="24dp"
+                    android:background="@drawable/bg_search_bar"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingLeft="8dp"
+                    android:paddingRight="8dp"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginBottom="4dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="monospace"
+                        android:text="BASS BOOST"
+                        android:textColor="@color/brand_orange"
+                        android:textSize="8.5sp"
+                        android:textStyle="bold" />
+
+                    <SeekBar
+                        android:id="@+id/sbBassBoost"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:max="1000"
+                        android:progress="0" />
+
+                    <TextView
+                        android:id="@+id/tvBassBoostPercent"
+                        android:layout_width="32dp"
+                        android:layout_height="wrap_content"
+                        android:gravity="end"
+                        android:fontFamily="monospace"
+                        android:text="0%"
+                        android:textColor="@color/lite_text_secondary"
+                        android:textSize="9sp" />
+                </LinearLayout>
+
+                <!-- Master Output Gain Fader (EQ Page) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="24dp"
+                    android:background="@drawable/bg_search_bar"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingLeft="8dp"
+                    android:paddingRight="8dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="monospace"
+                        android:text="OUTPUT GAIN"
+                        android:textColor="@color/lite_amber_glow"
+                        android:textSize="8.5sp"
+                        android:textStyle="bold" />
+
+                    <SeekBar
+                        android:id="@+id/sbMasterVolumeEq"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:max="100"
+                        android:progress="70" />
+
+                    <TextView
+                        android:id="@+id/tvVolumePercentEq"
+                        android:layout_width="32dp"
+                        android:layout_height="wrap_content"
+                        android:gravity="end"
+                        android:fontFamily="monospace"
+                        android:text="70%"
+                        android:textColor="@color/lite_text_secondary"
+                        android:textSize="9sp" />
+                </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+
+        <!-- ===================================================================== -->
+        <!-- TAB 1: APPLICATIONS DRAWER                                            -->
+        <!-- ===================================================================== -->
+        <LinearLayout
+            android:id="@+id/containerApps"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:visibility="visible">
+
+            <!-- Top Console Strip: Monospace System Title + App Counter Badge -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="22dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:layout_marginBottom="4dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="monospace"
+                    android:letterSpacing="0.06"
+                    android:text="SYS // CONSOLE"
+                    android:textColor="@color/lite_text_primary"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvDrawerBadge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_format_pill"
+                    android:fontFamily="monospace"
+                    android:paddingLeft="6dp"
+                    android:paddingTop="1dp"
+                    android:paddingRight="6dp"
+                    android:paddingBottom="1dp"
+                    android:text="APPS: --"
+                    android:textColor="@color/brand_orange"
+                    android:textSize="8.5sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Master Gain Precision Fader Strip -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="24dp"
+                android:background="@drawable/bg_search_bar"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="8dp"
+                android:paddingRight="8dp"
+                android:layout_marginBottom="4dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:text="GAIN"
+                    android:textColor="@color/lite_amber_glow"
+                    android:textSize="8.5sp"
+                    android:textStyle="bold" />
+
+                <SeekBar
+                    android:id="@+id/sbMasterVolume"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:max="100"
+                    android:progress="70" />
+
+                <TextView
+                    android:id="@+id/tvVolumePercent"
+                    android:layout_width="32dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="end"
+                    android:fontFamily="monospace"
+                    android:text="70%"
+                    android:textColor="@color/lite_text_secondary"
+                    android:textSize="9sp" />
+            </LinearLayout>
+
+            <!-- Compact Search Bar Strip -->
+            <EditText
+                android:id="@+id/etSearchApps"
+                android:layout_width="match_parent"
+                android:layout_height="28dp"
+                android:background="@drawable/bg_search_bar"
+                android:hint="Filter applications..."
+                android:textColorHint="@color/lite_text_muted"
+                android:textColor="@color/lite_text_primary"
+                android:textSize="11sp"
+                android:paddingLeft="8dp"
+                android:paddingRight="8dp"
+                android:singleLine="true"
+                android:layout_marginBottom="4dp" />
+
+            <!-- Retained for backward-compatible binding -->
+            <TextView
+                android:id="@+id/tvAppCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone" />
+
+            <!-- Recycler View for Installed Apps (Expansive Space) -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvApps"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:clipToPadding="false"
+                android:scrollbars="vertical" />
+        </LinearLayout>
+
+        <!-- ===================================================================== -->
+        <!-- TAB 2: SYSTEM & HARDWARE SETTINGS                                     -->
+        <!-- ===================================================================== -->
+        <ScrollView
+            android:id="@+id/containerSettings"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scrollbars="none"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingBottom="12dp">
+
+                <!-- Section 1: Cassette Tape Formulation & Aesthetics -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:letterSpacing="0.06"
+                    android:text="CASSETTE FORMULATION THEME"
+                    android:textColor="@color/lite_text_secondary"
+                    android:textSize="9.5sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="4dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="28dp"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp">
+
+                    <Button
+                        android:id="@+id/btnThemeType1"
+                        style="?android:attr/borderlessButtonStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_preset_button"
+                        android:fontFamily="monospace"
+                        android:text="TYPE I NORMAL"
+                        android:textColor="@color/lite_text_primary"
+                        android:textSize="8.5sp"
+                        android:textStyle="bold" />
+
+                    <Button
+                        android:id="@+id/btnThemeType2"
+                        style="?android:attr/borderlessButtonStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:layout_marginLeft="2dp"
+                        android:layout_marginRight="2dp"
+                        android:background="@drawable/bg_preset_button"
+                        android:fontFamily="monospace"
+                        android:text="TYPE II CHROME"
+                        android:textColor="@color/brand_orange"
+                        android:textSize="8.5sp"
+                        android:textStyle="bold" />
+
+                    <Button
+                        android:id="@+id/btnThemeType4"
+                        style="?android:attr/borderlessButtonStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_preset_button"
+                        android:fontFamily="monospace"
+                        android:text="TYPE IV METAL"
+                        android:textColor="@color/lite_text_primary"
+                        android:textSize="8.5sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- Section 2: Hardware Nameplate Engraving -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:letterSpacing="0.06"
+                    android:text="HARDWARE NAMEPLATE ENGRAVING"
+                    android:textColor="@color/lite_text_secondary"
+                    android:textSize="9.5sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="4dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="28dp"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp">
+
+                    <EditText
+                        android:id="@+id/etDeviceNameplate"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_search_bar"
+                        android:hint="Custom device engraving..."
+                        android:textColorHint="@color/lite_text_muted"
+                        android:textColor="@color/lite_amber_glow"
+                        android:textSize="10.5sp"
+                        android:fontFamily="monospace"
+                        android:paddingLeft="8dp"
+                        android:paddingRight="8dp"
+                        android:singleLine="true" />
+
+                    <Button
+                        android:id="@+id/btnSaveNameplate"
+                        style="?android:attr/borderlessButtonStyle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:layout_marginLeft="4dp"
+                        android:background="@drawable/bg_preset_button"
+                        android:fontFamily="monospace"
+                        android:paddingLeft="10dp"
+                        android:paddingRight="10dp"
+                        android:text="ENGRAVE"
+                        android:textColor="@color/brand_orange"
+                        android:textSize="8.5sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- Section 3: Tape Vault Music Library -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:letterSpacing="0.06"
+                    android:text="TAPE VAULT STORAGE"
+                    android:textColor="@color/lite_text_secondary"
+                    android:textSize="9.5sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="4dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_search_bar"
+                    android:orientation="vertical"
+                    android:padding="8dp"
+                    android:layout_marginBottom="8dp">
+
+                    <TextView
+                        android:id="@+id/tvCurrentMusicPath"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="monospace"
+                        android:text="PATH: /storage/sdcard1/Music"
+                        android:textColor="@color/lite_text_primary"
+                        android:textSize="9sp"
+                        android:layout_marginBottom="6dp" />
+
+                    <Button
+                        android:id="@+id/btnRescanVault"
+                        style="?android:attr/borderlessButtonStyle"
+                        android:layout_width="match_parent"
+                        android:layout_height="26dp"
+                        android:background="@drawable/bg_preset_button"
+                        android:fontFamily="monospace"
+                        android:text="RESCAN TAPE VAULT"
+                        android:textColor="@color/brand_orange"
+                        android:textSize="9sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- Section 4: Hardware & Audio Engine Diagnostics -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:letterSpacing="0.06"
+                    android:text="SYSTEM &amp; DAC TELEMETRY"
+                    android:textColor="@color/lite_text_secondary"
+                    android:textSize="9.5sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="4dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_search_bar"
+                    android:orientation="vertical"
+                    android:padding="8dp">
+
+                    <TextView
+                        android:id="@+id/tvDiagDevice"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="monospace"
+                        android:text="DEVICE: SONY ERICSSON ST17I (SATSUMA)"
+                        android:textColor="@color/lite_text_secondary"
+                        android:textSize="8.5sp" />
+
+                    <TextView
+                        android:id="@+id/tvDiagOs"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="monospace"
+                        android:text="SYSTEM: ANDROID 4.4.4 KITKAT (API 19)"
+                        android:textColor="@color/lite_text_secondary"
+                        android:textSize="8.5sp"
+                        android:layout_marginTop="2dp" />
+
+                    <TextView
+                        android:id="@+id/tvDiagDac"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="monospace"
+                        android:text="DAC ENGINE: QUALCOMM STAGEFRIGHT FLAC/PCM"
+                        android:textColor="@color/lite_text_secondary"
+                        android:textSize="8.5sp"
+                        android:layout_marginTop="2dp" />
+
+                    <TextView
+                        android:id="@+id/tvDiagRam"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="monospace"
+                        android:text="RAM BUDGET: &lt; 18 MB PRIVATE DIRTY (ACTIVE)"
+                        android:textColor="@color/lite_led_green"
+                        android:textSize="8.5sp"
+                        android:layout_marginTop="2dp" />
+                </LinearLayout>
+
+            </LinearLayout>
+        </ScrollView>
+    </FrameLayout>
 
 </LinearLayout>

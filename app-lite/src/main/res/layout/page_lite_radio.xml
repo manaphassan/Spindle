@@ -5,15 +5,18 @@
     android:layout_height="match_parent"
     android:background="@color/lite_bg_chassis"
     android:orientation="vertical"
-    android:padding="8dp">
+    android:paddingLeft="8dp"
+    android:paddingTop="6dp"
+    android:paddingRight="8dp"
+    android:paddingBottom="4dp">
 
-    <!-- Top Header Status Bar -->
+    <!-- Top Header Status Bar (22dp) -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="22dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingBottom="6dp">
+        android:layout_marginBottom="4dp">
 
         <TextView
             android:id="@+id/tvRadioBadge"
@@ -21,9 +24,67 @@
             android:layout_height="wrap_content"
             android:background="@drawable/bg_format_pill"
             android:fontFamily="monospace"
+            android:paddingLeft="5dp"
+            android:paddingTop="1dp"
+            android:paddingRight="5dp"
+            android:paddingBottom="1dp"
             android:text="FM STEREO"
             android:textColor="@color/brand_orange"
-            android:textSize="10sp"
+            android:textSize="8.5sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/btnRadioMono"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="3dp"
+            android:background="@drawable/bg_format_pill"
+            android:clickable="true"
+            android:focusable="true"
+            android:fontFamily="monospace"
+            android:paddingLeft="5dp"
+            android:paddingTop="1dp"
+            android:paddingRight="5dp"
+            android:paddingBottom="1dp"
+            android:text="MONO"
+            android:textColor="@color/lite_text_secondary"
+            android:textSize="8.5sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/btnRadioScan"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="3dp"
+            android:background="@drawable/bg_format_pill"
+            android:clickable="true"
+            android:focusable="true"
+            android:fontFamily="monospace"
+            android:paddingLeft="5dp"
+            android:paddingTop="1dp"
+            android:paddingRight="5dp"
+            android:paddingBottom="1dp"
+            android:text="SCAN"
+            android:textColor="@color/lite_amber_glow"
+            android:textSize="8.5sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/btnRadioRegion"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="3dp"
+            android:background="@drawable/bg_format_pill"
+            android:clickable="true"
+            android:focusable="true"
+            android:fontFamily="monospace"
+            android:paddingLeft="5dp"
+            android:paddingTop="1dp"
+            android:paddingRight="5dp"
+            android:paddingBottom="1dp"
+            android:text="BAND: EU"
+            android:textColor="@color/lite_text_primary"
+            android:textSize="8.5sp"
             android:textStyle="bold" />
 
         <View
@@ -32,205 +93,259 @@
             android:layout_weight="1" />
 
         <TextView
+            android:id="@+id/tvAntennaBadge"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:fontFamily="sans-serif-medium"
-            android:letterSpacing="0.08"
-            android:text="BAUHAUS TUNER"
-            android:textColor="@color/lite_text_secondary"
-            android:textSize="11sp" />
+            android:background="?android:attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:fontFamily="monospace"
+            android:paddingLeft="4dp"
+            android:paddingRight="2dp"
+            android:text="ANT: DETACHED"
+            android:textColor="@color/lite_text_muted"
+            android:textSize="8sp" />
     </LinearLayout>
 
-    <!-- Concentric Acoustic Speaker Grille -->
+    <!-- Concentric Acoustic Speaker Grille (Expanded Visual Presence) -->
     <com.hana.spindle.lite.ui.LiteSpeakerGrilleView
         android:id="@+id/speakerGrilleView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:layout_marginBottom="6dp" />
+        android:layout_marginBottom="4dp" />
 
-    <!-- Preset Stations Strip -->
+    <!-- Unified Master Hi-Fi Receiver Console -->
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="32dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:layout_marginBottom="6dp">
-
-        <Button
-            android:id="@+id/btnPresetLofi"
-            style="?android:attr/borderlessButtonStyle"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:layout_marginRight="3dp"
-            android:background="@drawable/bg_preset_button"
-            android:fontFamily="monospace"
-            android:text="LO-FI"
-            android:textColor="@color/brand_orange"
-            android:textSize="10sp"
-            android:textStyle="bold" />
-
-        <Button
-            android:id="@+id/btnPresetAnime"
-            style="?android:attr/borderlessButtonStyle"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:layout_marginRight="3dp"
-            android:background="@drawable/bg_preset_button"
-            android:fontFamily="monospace"
-            android:text="ANIME"
-            android:textColor="@color/lite_text_secondary"
-            android:textSize="10sp"
-            android:textStyle="bold" />
-
-        <Button
-            android:id="@+id/btnPresetInitialD"
-            style="?android:attr/borderlessButtonStyle"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1.1"
-            android:layout_marginRight="3dp"
-            android:background="@drawable/bg_preset_button"
-            android:fontFamily="monospace"
-            android:text="INITIAL D"
-            android:textColor="@color/lite_text_secondary"
-            android:textSize="9.5sp"
-            android:textStyle="bold" />
-
-        <Button
-            android:id="@+id/btnPresetCitypop"
-            style="?android:attr/borderlessButtonStyle"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1.1"
-            android:background="@drawable/bg_preset_button"
-            android:fontFamily="monospace"
-            android:text="CITYPOP"
-            android:textColor="@color/lite_text_secondary"
-            android:textSize="9.5sp"
-            android:textStyle="bold" />
-    </LinearLayout>
-
-    <!-- Backlit Recessed LCD Panel (Tap to Play/Pause) -->
-    <LinearLayout
-        android:id="@+id/radioLcdContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@drawable/bg_radio_lcd"
         android:orientation="vertical"
-        android:padding="8dp"
-        android:clickable="true"
-        android:focusable="true"
-        android:layout_marginBottom="6dp">
+        android:padding="6dp">
 
-        <!-- LCD Status Row -->
+        <!-- Upper Instruments: Analog S-Meter Galvanometer + Digital VFD Display + Rocker Switch -->
         <LinearLayout
+            android:id="@+id/radioLcdContainer"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="monospace"
-                android:text="TUNER [LIVE]"
-                android:textColor="@color/lite_text_muted"
-                android:textSize="9sp" />
-
-            <View
-                android:layout_width="0dp"
-                android:layout_height="1dp"
-                android:layout_weight="1" />
-
-            <TextView
-                android:id="@+id/tvRadioStreamStatus"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="monospace"
-                android:text="STANDBY"
-                android:textColor="#10B981"
-                android:textSize="9sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-        <!-- Frequency Readout -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="bottom"
-            android:orientation="horizontal">
-
-            <TextView
-                android:id="@+id/tvRadioFrequency"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="monospace"
-                android:includeFontPadding="false"
-                android:text="88.5"
-                android:textColor="@color/brand_orange"
-                android:textSize="32sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="monospace"
-                android:paddingLeft="4dp"
-                android:paddingBottom="4dp"
-                android:text="MHz"
-                android:textColor="@color/lite_amber_glow"
-                android:textSize="12sp"
-                android:textStyle="bold" />
-
-            <View
-                android:layout_width="0dp"
-                android:layout_height="1dp"
-                android:layout_weight="1" />
-
-            <ImageButton
-                android:id="@+id/btnRadioPlayToggle"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
-                android:background="@drawable/bg_button_tactile"
-                android:contentDescription="Play or Stop Radio"
-                android:padding="8dp"
-                android:src="@drawable/ic_play" />
-        </LinearLayout>
-
-        <!-- Station Name -->
-        <TextView
-            android:id="@+id/tvRadioStationName"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:fontFamily="monospace"
-            android:singleLine="true"
-            android:text="Lofi Girl 24/7 Chill Beats"
-            android:textColor="@color/lite_text_primary"
-            android:textSize="11sp"
-            android:textStyle="bold" />
-
-        <!-- RDS Meta / Track Title -->
-        <TextView
-            android:id="@+id/tvRadioRds"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:ellipsize="marquee"
+            android:layout_height="52dp"
+            android:clickable="true"
             android:focusable="true"
-            android:focusableInTouchMode="true"
-            android:marqueeRepeatLimit="marquee_forever"
-            android:singleLine="true"
-            android:text="Online FM Stream • Shoutcast AAC/MP3"
-            android:textColor="@color/lite_amber_glow"
-            android:textSize="9.5sp" />
-    </LinearLayout>
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-    <!-- Tactile Analog Tuning Dial -->
-    <com.hana.spindle.lite.ui.LiteRadioDialView
-        android:id="@+id/radioDialView"
-        android:layout_width="match_parent"
-        android:layout_height="48dp" />
+            <!-- Vintage Analog S-Meter Galvanometer -->
+            <com.hana.spindle.lite.ui.LiteSignalMeterView
+                android:id="@+id/signalMeterView"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1.1" />
+
+            <!-- Thin Instrument Bezel Divider -->
+            <View
+                android:layout_width="1dp"
+                android:layout_height="match_parent"
+                android:background="@color/lite_border"
+                android:layout_marginLeft="3dp"
+                android:layout_marginRight="4dp" />
+
+            <!-- Digital Frequency Readout & Play Key Block -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1.0"
+                android:gravity="center_vertical"
+                android:orientation="vertical">
+
+                <!-- Mode & Stream Status -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:fontFamily="monospace"
+                        android:text="TUNER"
+                        android:textColor="@color/lite_text_muted"
+                        android:textSize="8sp" />
+
+                    <TextView
+                        android:id="@+id/tvRadioStreamStatus"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="monospace"
+                        android:text="STANDBY"
+                        android:textColor="#10B981"
+                        android:textSize="8sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- Large Frequency Readout & Transport Play Button -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/tvRadioFrequency"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="monospace"
+                        android:includeFontPadding="false"
+                        android:text="88.5"
+                        android:textColor="@color/brand_orange"
+                        android:textSize="21sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:fontFamily="monospace"
+                        android:paddingLeft="2dp"
+                        android:text="M"
+                        android:textColor="@color/lite_amber_glow"
+                        android:textSize="10sp"
+                        android:textStyle="bold" />
+
+                    <ImageButton
+                        android:id="@+id/btnRadioPlayToggle"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:background="@drawable/bg_button_tactile"
+                        android:contentDescription="Play or Stop Radio"
+                        android:padding="6dp"
+                        android:src="@drawable/ic_play" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Thin Instrument Bezel Divider -->
+            <View
+                android:layout_width="1dp"
+                android:layout_height="match_parent"
+                android:background="@color/lite_border"
+                android:layout_marginLeft="4dp"
+                android:layout_marginRight="3dp" />
+
+            <!-- Tactile 3D Audiophile Rocker Switch: FM Top, DIGI Below -->
+            <com.hana.spindle.lite.ui.LiteRockerSwitchView
+                android:id="@+id/rockerSwitchView"
+                android:layout_width="34dp"
+                android:layout_height="match_parent" />
+        </LinearLayout>
+
+        <!-- Station & RDS Stream Info Single-Line Ticker (18dp) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="18dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingTop="2dp"
+            android:paddingBottom="1dp">
+
+            <TextView
+                android:id="@+id/tvRadioStationName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="marquee"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:marqueeRepeatLimit="marquee_forever"
+                android:singleLine="true"
+                android:fontFamily="monospace"
+                android:text="LO-FI RADIO • CHILL BEATS"
+                android:textColor="@color/lite_text_primary"
+                android:textSize="9.5sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvRadioRds"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:fontFamily="monospace"
+                android:singleLine="true"
+                android:paddingLeft="4dp"
+                android:text="ONLINE FM"
+                android:textColor="@color/lite_amber_glow"
+                android:textSize="8.5sp" />
+        </LinearLayout>
+
+        <!-- Flush 4-Key Station Preset Strip (24dp) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="24dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:layout_marginTop="3dp"
+            android:layout_marginBottom="3dp">
+
+            <Button
+                android:id="@+id/btnPresetLofi"
+                style="?android:attr/borderlessButtonStyle"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginRight="2dp"
+                android:background="@drawable/bg_preset_button"
+                android:fontFamily="monospace"
+                android:text="LO-FI"
+                android:textColor="@color/brand_orange"
+                android:textSize="8.5sp"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/btnPresetAnime"
+                style="?android:attr/borderlessButtonStyle"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginRight="2dp"
+                android:background="@drawable/bg_preset_button"
+                android:fontFamily="monospace"
+                android:text="ANIME"
+                android:textColor="@color/lite_text_secondary"
+                android:textSize="8.5sp"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/btnPresetInitialD"
+                style="?android:attr/borderlessButtonStyle"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1.1"
+                android:layout_marginRight="2dp"
+                android:background="@drawable/bg_preset_button"
+                android:fontFamily="monospace"
+                android:text="INITIAL D"
+                android:textColor="@color/lite_text_secondary"
+                android:textSize="8sp"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/btnPresetCitypop"
+                style="?android:attr/borderlessButtonStyle"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1.1"
+                android:background="@drawable/bg_preset_button"
+                android:fontFamily="monospace"
+                android:text="CITYPOP"
+                android:textColor="@color/lite_text_secondary"
+                android:textSize="8sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Tactile Analog Tuning Dial Wheel (40dp) -->
+        <com.hana.spindle.lite.ui.LiteRadioDialView
+            android:id="@+id/radioDialView"
+            android:layout_width="match_parent"
+            android:layout_height="40dp" />
+
+    </LinearLayout>
 
 </LinearLayout>

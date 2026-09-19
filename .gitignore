@@ -16,3 +16,4 @@ Captures
 *.apk
 *.aab
 .vscode/
+.kotlin/

@@ -23,15 +23,27 @@ class LiteRadioDialView @JvmOverloads constructor(
     var onFrequencyChanged: ((Float) -> Unit)? = null
     var onFrequencySelected: ((Float) -> Unit)? = null
 
+    var minFrequency: Float = 87.5f
+    var maxFrequency: Float = 108.0f
+    var stepSize: Float = 0.1f
+
     var currentFrequency: Float = 88.5f
         set(value) {
-            val clamped = value.coerceIn(88.0f, 108.0f)
+            val clamped = value.coerceIn(minFrequency, maxFrequency)
             if (field != clamped) {
                 field = clamped
                 onFrequencyChanged?.invoke(field)
                 invalidate()
             }
         }
+
+    fun setBandLimits(minFreq: Float, maxFreq: Float, step: Float) {
+        minFrequency = minFreq
+        maxFrequency = maxFreq
+        stepSize = step
+        currentFrequency = currentFrequency.coerceIn(minFrequency, maxFrequency)
+        invalidate()
+    }
 
     private val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -102,7 +114,7 @@ class LiteRadioDialView @JvmOverloads constructor(
 
         for (f10 in startFreq10..endFreq10) {
             val freq = f10 / 10.0f
-            if (freq < 88.0f || freq > 108.0f) continue
+            if (freq < minFrequency || freq > maxFrequency) continue
 
             val x = cx + ((freq - currentFrequency) * pixelsPerMhz)
             if (x < boundsRect.left + 4 || x > boundsRect.right - 4) continue
@@ -140,7 +152,7 @@ class LiteRadioDialView @JvmOverloads constructor(
                 lastTouchX = event.x
                 val pixelsPerMhz = width / 6.0f
                 val deltaMhz = -dx / pixelsPerMhz
-                currentFrequency = (currentFrequency + deltaMhz).coerceIn(88.0f, 108.0f)
+                currentFrequency = (currentFrequency + deltaMhz).coerceIn(minFrequency, maxFrequency)
                 return true
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {

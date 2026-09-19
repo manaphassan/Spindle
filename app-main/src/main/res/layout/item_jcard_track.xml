@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingVertical="9dp"
+    android:paddingHorizontal="12dp"
+    android:background="?attr/selectableItemBackground">
+
+    <!-- Track Number (A01, A02, B01, etc.) -->
+    <TextView
+        android:id="@+id/tvTrackIndex"
+        android:layout_width="38dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="monospace"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:textColor="#E59825"
+        tools:text="A01" />
+
+    <!-- Active Indicator Dot / Icon -->
+    <TextView
+        android:id="@+id/tvActiveDot"
+        android:layout_width="16dp"
+        android:layout_height="wrap_content"
+        android:text="▶"
+        android:textColor="#EF4444"
+        android:textSize="11sp"
+        android:visibility="gone"
+        tools:visibility="visible" />
+
+    <!-- Track Title and Artist -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:paddingEnd="8dp">
+
+        <TextView
+            android:id="@+id/tvTrackTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="#FAFAF9"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            tools:text="Fluid - Spaces" />
+
+        <TextView
+            android:id="@+id/tvTrackArtist"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="#94A3B8"
+            android:textSize="11.5sp"
+            tools:text="Yosi Horikawa" />
+    </LinearLayout>
+
+    <!-- Track Duration -->
+    <TextView
+        android:id="@+id/tvTrackDuration"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="monospace"
+        android:textColor="#CBD5E1"
+        android:textSize="12sp"
+        tools:text="05:55" />
+
+</LinearLayout>

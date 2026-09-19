@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/cardJCardRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_margin="10dp"
+    app:cardCornerRadius="14dp"
+    app:cardElevation="8dp"
+    app:cardBackgroundColor="#16171D">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="#16171D">
+
+        <!-- 1. Cassette Case J-Card Spine Fold (Top Header) -->
+        <LinearLayout
+            android:id="@+id/spineContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="#1E202A"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="10dp">
+
+            <Button
+                android:id="@+id/btnFlipToDeck"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:text="◀ FLIP"
+                android:textColor="#E59825"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:backgroundTint="#2D2F3E"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="0dp"
+                app:cornerRadius="6dp" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginStart="10dp">
+
+                <TextView
+                    android:id="@+id/tvSpineTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:textColor="#FAFAF9"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    tools:text="YOSI HORIKAWA — SPACES" />
+
+                <TextView
+                    android:id="@+id/tvSpineTapeModel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:textColor="#94A3B8"
+                    android:textSize="10.5sp"
+                    tools:text="SONY METAL-XR 90 • TYPE IV 70µs" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvSpineDuration"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="monospace"
+                android:textColor="#E59825"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                tools:text="C-90" />
+        </LinearLayout>
+
+        <!-- Spine Fold Score Line -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:background="#2E3344" />
+
+        <!-- 2. Album Booklet Section (Cover Art + Specs + Notes) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="14dp"
+            android:background="#181921">
+
+            <!-- Square Album Art Frame with vintage border -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="84dp"
+                android:layout_height="84dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="#242634">
+
+                <ImageView
+                    android:id="@+id/ivJCardCover"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    android:contentDescription="Album Artwork"
+                    tools:src="@drawable/ic_mixtape_tape" />
+            </androidx.cardview.widget.CardView>
+
+            <!-- Album Metadata & Audiophile Spec Pills -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginStart="14dp"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/tvJCardAlbum"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="#FAFAF9"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    tools:text="Spaces" />
+
+                <TextView
+                    android:id="@+id/tvJCardArtist"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="#EF4444"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    tools:text="Yosi Horikawa" />
+
+                <TextView
+                    android:id="@+id/tvJCardAudioSpecs"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="#94A3B8"
+                    android:textSize="11sp"
+                    android:fontFamily="monospace"
+                    android:layout_marginTop="3dp"
+                    tools:text="FLAC 24-bit / 96kHz • Direct PCM" />
+
+                <TextView
+                    android:id="@+id/tvJCardTapeNotes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="#CBD5E1"
+                    android:textSize="10.5sp"
+                    android:fontFamily="monospace"
+                    android:layout_marginTop="2dp"
+                    tools:text="Mastered for Spindle DAP • 12 Tracks" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Fold Crease Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#2E3344" />
+
+        <!-- 3. Side A / Side B Ribbon Tab Selector -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="36dp"
+            android:orientation="horizontal"
+            android:background="#1C1D26">
+
+            <Button
+                android:id="@+id/btnSideA"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:text="SIDE A"
+                android:textColor="#EF4444"
+                android:textSize="11.5sp"
+                android:textStyle="bold"
+                android:backgroundTint="#242635"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:padding="0dp"
+                app:cornerRadius="0dp" />
+
+            <View
+                android:layout_width="1dp"
+                android:layout_height="match_parent"
+                android:background="#2E3344" />
+
+            <Button
+                android:id="@+id/btnSideB"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:text="SIDE B"
+                android:textColor="#94A3B8"
+                android:textSize="11.5sp"
+                android:textStyle="bold"
+                android:backgroundTint="#1C1D26"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:padding="0dp"
+                app:cornerRadius="0dp" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#2E3344" />
+
+        <!-- 4. Scrollable Tracklist for Selected Side -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvJCardTracks"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:paddingVertical="4dp"
+            android:clipToPadding="false" />
+
+        <!-- 5. Bottom Flip-Back Footer Button -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#181921"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="8dp">
+
+            <Button
+                android:id="@+id/btnFlipBackBottom"
+                android:layout_width="match_parent"
+                android:layout_height="38dp"
+                android:text="◀ FLIP BACK TO CASSETTE DECK"
+                android:textColor="#FAFAF9"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:backgroundTint="#2B2D3C"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                app:cornerRadius="8dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

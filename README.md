@@ -11,7 +11,7 @@
   <p><i>The ultra-lightweight, hardware-tactile Android Home Launcher specifically crafted to repurpose compact smartphones and low-RAM DAPs into dedicated, physical-feeling audiophile music players.</i></p>
 
   <p>
-    <a href="https://github.com/manaphassan/Spindle/releases/tag/v1.3.0-alpha"><img src="https://img.shields.io/badge/Release-v1.3.0--alpha-crimson.svg?style=flat-square" alt="Version"></a>
+    <a href="https://github.com/manaphassan/Spindle/releases/tag/v1.4.0-alpha"><img src="https://img.shields.io/badge/Release-v1.4.0--alpha-crimson.svg?style=flat-square" alt="Version"></a>
     <img src="https://img.shields.io/badge/Platform-Android%208.0%2B%20(Oreo%20to%2015)-black.svg?style=flat-square&logo=android" alt="Android Support">
     <img src="https://img.shields.io/badge/RAM%20Footprint-%3C%2025MB-emerald.svg?style=flat-square" alt="RAM">
     <img src="https://img.shields.io/badge/APK%20Size-%3C%204.5MB-blue.svg?style=flat-square" alt="APK Size">
@@ -111,18 +111,26 @@ Modern smartphones are overloaded with algorithmic distractions, background trac
 ## 🎛️ Key Features
 
 ### 1. 📼 Flagship Cassette Deck (Home Launcher)
+- **Default Sony Metal-XR Type IV Shell**: Iconic 1990s Sony Metal-XR cassette chassis with centered gold/red metallic foil hot-stamping (`SONY METAL-XR • TYPE IV METAL`) and halved spindle hub gap for tighter vintage proportions.
 - **Centered Spindle Deck Window**: Horizontally centered clear acrylic window showcasing mechanical tape spools with true differential kinematics ($v = 4.7625\text{ cm/s}$).
+- **Transparent Polyester Leader Tape & Amber Splice**: Authentic clear polyfilm ribbon rendering at reel boundaries (`progress <= 0.025` and `>= 0.975`), bonded to the ferric/metal magnetic tape with an angled 45° amber splice line right at the guide rollers.
+- **Continuous High-Speed Kinematics & Acoustic Foley**:
+  - Reel angular speed continuously accelerates up to 8x during sustained FWD/REW button holds.
+  - Real-time looping motor spool foley with dynamic gear pitch modulation (0.9x to 1.65x).
+  - Mechanical release click upon key release, and heavy solenoid auto-stop clack when hitting reel limits.
 - **Kinetic Magnetic Ribbon & Spool Motion**:
   - **Traveling Magnetic Tape Oxide**: Traveling micro-striations actively gliding vertically between the supply and take-up spools at physical tape playback speed.
   - **Rotating Anisotropic Specular Sheen**: Two opposing radial glare cones sweeping across the wound tape pack as the reels spin.
   - **Classic 3-Spoke Flange Cutouts**: Three vintage strobe circular window cutouts orbiting the hub core at 60 FPS with zero GC allocation.
-- **2-Row Real-Time Output Routing Badges**:
-  - **Row 1**: High-resolution format specifications (`FLAC • 24-bit / 96kHz`) with generous vertical headroom.
-  - **Hairline Divider**: Crisp separator line between audio specifications and physical routing.
-  - **Row 2**: Output destination telemetry (`3.5mm DIRECT` in bit-perfect cyan, or external USB DAC routing) with comfortable line-height.
-- **Column-Aligned Telemetry Layout**:
-  - **Dynamic Hardware Nameplate Header**: Automatically detects connected hardware model via `Build.MODEL` and `Build.DEVICE` (e.g., `SONY SO-02J • OREO`), formatting it into an authentic uppercase engraved nameplate.
-  - **2-Line Active Track Metadata**: Bold crisp song title (Line 0) and artist name with active duration (Line 1).
+- **Standardized Status Row & Interactive Badges**:
+  - Left-aligned tactile badges: `[TYPE I / II / IV]`, `[DOLBY B / C / OFF]`, and `[J-CARD]`.
+  - Right-aligned hardware status: dynamic `Battery` bar and green `Run` transport LED.
+- **Dynamic 3D J-Card Liner Notes (Tape Body / [J-CARD] Tab)**:
+  - Smooth 3D spatial perspective flip animation (`rotationY`, `cameraDistance = 8000dp`) between the cassette deck and the folded jewel-case J-Card.
+  - Classic spine fold with tape formulation badge (`SONY METAL-XR 90 • TYPE IV`), album title, artist, and Side A / Side B runtimes (`A: mm:ss | B: mm:ss`).
+  - Album booklet fold with album artwork frame, audiophile format specs (`FLAC 24-bit / 96kHz • Direct PCM`), and mastering notes.
+  - Dual-column Side A / Side B track listing (`A01..`, `B01..`) with theme-accented active playing indicator (`▶`).
+  - Direct touch-to-play track selection seamlessly flipping back to the running deck.
 - **24-bit 96kHz FLAC Bit-Perfect Engine**: Direct Qualcomm Snapdragon and USB-OTG ALSA playback with high-resolution codec negotiation.
 - **Physical Mechanical Controls**: Authentic `REW`, `FWD`, `PLAY/PAUSE`, and spring-loaded `⏏ EJECT` buttons with haptic clicks.
 
@@ -142,9 +150,12 @@ Modern smartphones are overloaded with algorithmic distractions, background trac
 - **Persistent Floating Mini-Player**: Bottom docked player with track thumbnail, metadata, transport controls, and tap-to-expand into the single audio Now Playing screen.
 - **Direct Return to Home**: Tapping back smoothly resumes the physical analog cassette home deck.
 
-### 4. 📻 Bauhaus Minimalist Online FM Radio with RF Meter
-- **Ballistic Galvanometer RF Signal Meter**: Vintage needle movement calculating real-time RF signal strength across 0–5 S-units with green center-channel band.
-- **Ruby Red STEREO Pilot LED**: Dynamic diode glow illuminating upon receiving stereo FM stream lock.
+### 4. 📻 Bauhaus Minimalist Radio with Hardware Antenna Detection
+- **Dedicated FM vs DIGI Modes**: 
+  - **FM Mode**: Local over-the-air analog FM receiver requiring 3.5mm wired headphones connected as an antenna, with safety guidance if unplugged.
+  - **DIGI Mode**: Dedicated DAB+ / online stream mode for internet radio stations with zero static.
+- **Streamlined Ballistic RF Signal Meter**: High-density compact galvanometer meter displaying signal strength (0–5 S-units) and center-channel tuning needle.
+- **Ruby Red STEREO Pilot LED**: Dynamic diode glow illuminating upon receiving stereo FM lock.
 - **4-Color Incandescent Lamp Cycling**: Tap the signal window to toggle backlights: **Amber Incandescent**, **Vintage Cyan/Teal**, **Mint Green**, and **Warm Parchment**.
 - **Concentric Acoustic Speaker Grille**: Hardware-accelerated custom view rendering concentric perforation rings with realistic acoustic recess shadows.
 - **3D Flywheel Inertia Tuning Dial**: Tactile thumbwheel with physical momentum coasting, velocity decay, and detent vibration ticks when passing stations.
@@ -156,10 +167,11 @@ Modern smartphones are overloaded with algorithmic distractions, background trac
 - **Swipe-Up Dismissal**: Effortless upward swipe gesture to dismiss back to the device launcher.
 - **Toggleable in Settings**: User-configurable switch under DAP Hardware & Audio Engine settings.
 
-### 6. 🎚️ Studio Sound Deck: Dual Analog VU Meters & 10-Band ISO EQ
+### 6. 🎚️ Studio Sound Deck: Dual Analog VU Meters, 10-Band ISO EQ & DSP Lock
+- **Lockable Studio Parametric EQ & DSP**: Tactile `[LOCK]` button securing the 10-band ISO graphic equalizer and parametric DSP knobs against accidental touches during playback.
 - **Dual Analog Ballistic VU Meters**: Dedicated left and right channel galvanometer needles with warm vintage dial face, +3dB redline scale, and glowing peak indicator LEDs.
 - **10-Band ISO Parametric Studio Equalizer**: Full hardware-accelerated equalizer with preloaded AutoEq frequency curves for legendary audiophile headphones.
-- **Mechanical Cassette Foley Engine**: Procedural 16-bit sound generation for solenoid clicks, head engagement, and tape motor transport sounds.
+- **Mechanical Cassette Foley Engine**: Procedural 16-bit sound generation for continuous motor gear spool whir with dynamic pitch ramping, solenoid clicks, and heavy auto-stop arrest clack.
 
 ### 7. 🎨 Settings, App Drawer & 3 Hardware Themes
 - **3 Curated Hardware Themes**:
@@ -188,7 +200,7 @@ Modern smartphones are overloaded with algorithmic distractions, background trac
 
 ### 📦 Spindle Edition Matrix
 
-| Feature | Spindle Standard (`:app`) | Spindle Lite (`:app-lite` / `satsuma`) |
+| Feature | Spindle Standard (`:app-main`) | Spindle Lite (`:app-lite` / `satsuma`) |
 | :--- | :--- | :--- |
 | **Target OS** | Android 8.0 – 15 (API 26 – 35) | **Android 4.4 KitKat (API 19)** *(down to API 16)* |
 | **Target Hardware** | 1GB – 4GB RAM DAPs & Compacts | **512MB RAM Legacy Devices** *(3.0" HVGA & Compact DAPs)* |
@@ -205,7 +217,7 @@ Modern smartphones are overloaded with algorithmic distractions, background trac
 
 ```
 dap_launcher/
-├── app/src/main/                 # Spindle Standard (Android 8.0+, Media3, Room, AutoEq)
+├── app-main/src/main/            # Spindle Standard (Android 8.0+, Media3, Room, AutoEq)
 │   ├── java/com/hana/spindle/
 │   │   ├── data/                 # Room DB, POSIX Storage Scanner, ImageLoader (RGB_565), TagParser, LyricsParser
 │   │   ├── playback/             # ExoPlayer Engine, RadioStreamEngine, AudioMetricsTracker
@@ -243,13 +255,13 @@ dap_launcher/
 
 ## 🚀 Quick Start
 
-### 1. Spindle Standard (`:app`) — Android 8.0+ DAPs & Modern Compacts
+### 1. Spindle Standard (`:app-main`) — Android 8.0+ DAPs & Modern Compacts
 ```bash
 # Build optimized release APK (< 4.5 MB with R8 & ProGuard)
-./gradlew :app:assembleRelease
+./gradlew :app-main:assembleRelease
 
 # Install directly to connected device or DAP
-adb install -r app/build/outputs/apk/release/app-release.apk
+adb install -r app-main/build/outputs/apk/release/app-main-release.apk
 
 # Launch Spindle Home
 adb shell am start -n com.hana.spindle/com.hana.spindle.ui.MainActivity

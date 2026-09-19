@@ -52,4 +52,26 @@
     <!-- Mechanical Chamber Elements -->
     <color name="lite_tape_head">#33374B</color>
     <color name="lite_capstan_pin">#D4AF37</color>
+
+    <!-- Hi-Fi LED Meter & Status Indicators -->
+    <color name="lite_led_green">#00E676</color>
+    <color name="lite_led_green_glow">#6600E676</color>
+    <color name="lite_led_amber">#F59E0B</color>
+    <color name="lite_led_amber_glow">#66F59E0B</color>
+    <color name="lite_led_red">#EF4444</color>
+    <color name="lite_led_red_glow">#66EF4444</color>
+    <color name="lite_led_slot_bg">#12141F</color>
+    <color name="lite_led_slot_border">#25283B</color>
+    <color name="lite_led_batt_inactive">#331515</color>
+    <color name="lite_led_run_inactive">#102919</color>
+
+    <!-- Vintage Analog Galvanometer S-Meter -->
+    <color name="lite_meter_bg_amber">#231709</color>
+    <color name="lite_meter_scale_amber">#F59E0B</color>
+    <color name="lite_meter_bg_cyan">#071F2C</color>
+    <color name="lite_meter_scale_cyan">#38BDF8</color>
+    <color name="lite_meter_needle">#F43F5E</color>
+    <color name="lite_meter_needle_shadow">#33000000</color>
+    <color name="lite_stereo_led_on">#EF4444</color>
+    <color name="lite_stereo_led_off">#3B1313</color>
 </resources>

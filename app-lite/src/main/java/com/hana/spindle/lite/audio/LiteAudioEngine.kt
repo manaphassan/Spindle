@@ -27,6 +27,8 @@ class LiteAudioEngine(private val context: Context) :
     private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     private val mainHandler = Handler(Looper.getMainLooper())
 
+    val audioFxController = LiteAudioFxController(context)
+
     private var playlist: List<Track> = emptyList()
     private var currentIndex: Int = -1
     var isPlaying: Boolean = false
@@ -55,11 +57,15 @@ class LiteAudioEngine(private val context: Context) :
         }
     }
 
-    fun setPlaylist(tracks: List<Track>, startIndex: Int = 0) {
+    fun setPlaylist(tracks: List<Track>, startIndex: Int = 0, autoPlay: Boolean = true) {
         this.playlist = tracks
         if (tracks.isNotEmpty() && startIndex in tracks.indices) {
             this.currentIndex = startIndex
-            playTrackAt(startIndex)
+            if (autoPlay) {
+                playTrackAt(startIndex)
+            } else {
+                notifyStateChanged(0L, tracks[startIndex].durationMs)
+            }
         }
     }
 
@@ -70,6 +76,12 @@ class LiteAudioEngine(private val context: Context) :
 
         releasePlayers()
 
+        val file = File(track.filePath)
+        if (!file.exists()) {
+            listener?.onPlaybackError("File not found: ${file.name}")
+            return
+        }
+
         try {
             val player = MediaPlayer().apply {
                 setWakeMode(context, PowerManager.PARTIAL_WAKE_LOCK)
@@ -78,10 +90,8 @@ class LiteAudioEngine(private val context: Context) :
                 setOnErrorListener(this@LiteAudioEngine)
                 setOnPreparedListener(this@LiteAudioEngine)
 
-                val file = File(track.filePath)
-                val fis = FileInputStream(file)
-                setDataSource(fis.fd)
-                fis.close()
+                // Direct file path data source ensures the native descriptor remains open during decode
+                setDataSource(track.filePath)
                 prepareAsync()
             }
             primaryPlayer = player
@@ -96,16 +106,19 @@ class LiteAudioEngine(private val context: Context) :
             isNextPlayerChained = true
             val nextTrack = playlist[nextIndex]
             Thread {
+                val file = File(nextTrack.filePath)
+                if (!file.exists()) {
+                    isNextPlayerChained = false
+                    return@Thread
+                }
+
                 try {
                     val next = MediaPlayer().apply {
                         setWakeMode(context, PowerManager.PARTIAL_WAKE_LOCK)
                         setAudioStreamType(AudioManager.STREAM_MUSIC)
                         setOnErrorListener(this@LiteAudioEngine)
 
-                        val file = File(nextTrack.filePath)
-                        val fis = FileInputStream(file)
-                        setDataSource(fis.fd)
-                        fis.close()
+                        setDataSource(nextTrack.filePath)
                         prepare()
                     }
 
@@ -138,11 +151,25 @@ class LiteAudioEngine(private val context: Context) :
         if (isPlaying) {
             pause()
         } else {
-            play()
+            if (primaryPlayer == null) {
+                val idx = if (currentIndex in playlist.indices) currentIndex else 0
+                if (playlist.isNotEmpty() && idx in playlist.indices) {
+                    playTrackAt(idx)
+                }
+            } else {
+                play()
+            }
         }
     }
 
     fun play() {
+        if (primaryPlayer == null) {
+            val idx = if (currentIndex in playlist.indices) currentIndex else 0
+            if (playlist.isNotEmpty() && idx in playlist.indices) {
+                playTrackAt(idx)
+            }
+            return
+        }
         if (requestAudioFocus()) {
             primaryPlayer?.start()
             isPlaying = true
@@ -159,21 +186,23 @@ class LiteAudioEngine(private val context: Context) :
     }
 
     fun next() {
+        if (playlist.isEmpty()) return
         if (currentIndex + 1 in playlist.indices) {
             playTrackAt(currentIndex + 1)
-        } else if (playlist.isNotEmpty()) {
+        } else {
             playTrackAt(0) // Loop to first
         }
     }
 
     fun previous() {
+        if (playlist.isEmpty()) return
         val currentPos = primaryPlayer?.currentPosition ?: 0
         if (currentPos > 3000) {
             // Seek to start if past 3s
             seekTo(0)
         } else if (currentIndex - 1 in playlist.indices) {
             playTrackAt(currentIndex - 1)
-        } else if (playlist.isNotEmpty()) {
+        } else {
             playTrackAt(playlist.size - 1)
         }
     }
@@ -184,6 +213,14 @@ class LiteAudioEngine(private val context: Context) :
             notifyStateChanged(positionMs, primaryPlayer?.duration?.toLong() ?: 0L)
         } catch (e: Exception) {
             // Safe catch
+        }
+    }
+
+    fun seekToFraction(fraction: Float) {
+        val duration = primaryPlayer?.duration?.toLong() ?: 0L
+        if (duration > 0L) {
+            val targetMs = (fraction * duration).toLong().coerceIn(0L, duration)
+            seekTo(targetMs)
         }
     }
 
@@ -201,6 +238,7 @@ class LiteAudioEngine(private val context: Context) :
     override fun onPrepared(mp: MediaPlayer?) {
         if (requestAudioFocus()) {
             mp?.start()
+            mp?.audioSessionId?.let { audioFxController.attachSession(it) }
             isPlaying = true
             isNextPlayerChained = false
             mainHandler.post(progressRunnable)
@@ -218,6 +256,7 @@ class LiteAudioEngine(private val context: Context) :
             isNextPlayerChained = false
             currentIndex++
             primaryPlayer?.setOnCompletionListener(this)
+            primaryPlayer?.audioSessionId?.let { audioFxController.attachSession(it) }
             notifyStateChanged()
             listener?.onTrackCompleted(completedTrack)
         } else {
@@ -275,6 +314,7 @@ class LiteAudioEngine(private val context: Context) :
 
     fun release() {
         releasePlayers()
+        audioFxController.release()
         audioManager.abandonAudioFocus(this)
     }
 

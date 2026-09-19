@@ -2,7 +2,7 @@
 **Product Name:** Spindle (Audiophile DAP Launcher)  
 **Package Name:** `com.hana.spindle`  
 **Hero Hardware Inspiration:** Classic 1980s Japanese Portable Cassette Decks & Modern Minimalist Audiophile Gear  
-**Version:** 1.2.0-RELEASE  
+**Version:** 1.4.0-alpha  
 **Author / Art Director & Lead Systems Architect:** Spindle Core Team  
 **Platform Target:** Android 8.0 (API 26) through Android 14/15 (API 34/35)  
 **Primary Hardware Targets:** Ultra-low-resource Android DAPs, Compact Smartphones with Hardware DACs, and E-Ink DAPs  
@@ -54,22 +54,37 @@ The center home screen renders a custom hardware-accelerated Canvas deck:
 +-------------------------------------------------------------+
 ```
 
-1. **Geometry & Centering (`centerWindowRect`)**:
+1. **Default Sony Metal-XR Type IV Chassis**:
+   - Centered gold/red metallic foil hot-stamping (`SONY METAL-XR • TYPE IV METAL`) across the top edge.
+   - Halved spindle hub gap for authentic vintage cassette shell geometry.
+2. **Geometry & Centering (`centerWindowRect`)**:
    - The clear acrylic spindle window is centered horizontally across the display width.
-   - Houses the dual mechanical spools, cogs, guide rollers, and simulated magnetic tape ribbon.
-2. **Column-Aligned Telemetry (`columnCenterX`)**:
-   - Calculated precisely at the horizontal midpoint between the display's left margin and the left edge of the spindle window.
-   - **Dynamic Hardware Nameplate Header**: Automatically detects connected hardware model via `Build.MODEL`, `Build.DEVICE`, and `Build.MANUFACTURER` (e.g., `PORTABLE PLAYER`, `STUDIO DECK`), formatting it into an authentic uppercase engraved nameplate (with user custom override support).
-   - **Clock**: Real-time 24-hour clock (`HH:MM:SS`, bold monospace).
-   - **Hi-Res Audio Format Capsule Badge**: Drawn directly beneath the clock with rounded pill borders (e.g. `FLAC 16-BIT / 44.1 KHZ`, `MP3 320 KBPS`).
-   - **2-Line Active Song Metadata**:
-     - **Line 0**: Track Title (bold crisp white, marquee/wrap logic).
-     - **Line 1**: Artist Name • mm:ss / mm:ss (slate subtext with bullet separator).
-3. **Transport Deck & Kinematics**:
+   - Houses dual mechanical spools, cogs, guide rollers, and traveling magnetic tape oxide.
+3. **Transparent Leader Tape & Amber Splice**:
+   - When near reel limits (`progress <= 0.025f` or `>= 0.975f`), the magnetic brown oxide transitions to a transparent clear polyfilm leader ribbon.
+   - 45° diagonal amber splice line (`#D97706`) realistically connects the clear leader to the magnetic oxide ribbon at the guide rollers.
+4. **Continuous High-Speed Kinematics & Acoustic Foley**:
+   - Reel rotation accelerates continuously from 1.0x up to 8.0x during sustained FWD/REW button holds.
+   - Procedural foley engine loops motor spool whir with dynamic pitch ramping (0.9x to 1.65x).
+   - Solenoid release click on key release, and heavy solenoid auto-stop clack when hitting reel limits.
+5. **Standardized Status Row & Interactive Badges**:
+   - Left-aligned tactile badges: `[TYPE I / II / IV]`, `[DOLBY B / C / OFF]`, and `[J-CARD]`.
+   - Right-aligned hardware status: dynamic `Battery` bar and green `Run` transport LED.
+6. **Transport Deck & Kinematics**:
    - `REW`, `FWD`, `PLAY / PAUSE`, and `⏏ EJECT` buttons with physical detent haptics.
    - Differential kinetic reel rotation speeds calculated from physical tape pack radius equations.
 
-### 2.2 Dedicated Single Audio Now Playing (`CatalogFragment.kt`)
+### 2.2 Dynamic 3D J-Card Liner Notes (`JCardLinerView.kt`)
+Triggered by tapping the cassette body or the `[J-CARD]` badge on the deck:
+1. **3D Spatial Card Flip**:
+   - Perspective Y-axis rotation (`rotationY`, `cameraDistance = 8000dp`) smoothly transitions between the physical cassette deck and the unfolded jewel-case J-Card.
+2. **Vintage Jewel-Case Cardstock Architecture**:
+   - **Spine Fold**: Bold uppercase retro typography displaying album, artist, tape model formulation (`SONY METAL-XR 90 • TYPE IV`), and total Side A / Side B runtimes (`A: mm:ss | B: mm:ss`).
+   - **Booklet Section**: High-resolution album artwork thumbnail frame, audiophile format specs (`FLAC 24-bit / 96kHz • Direct PCM`), and mastering notes.
+   - **Dual-Column Tracklist**: Automatically splits album tracks into Side A and Side B with vintage numbering (`A01..`, `B01..`), individual track durations, and a glowing theme-accented active playing indicator (`▶`).
+   - **Direct Touch-to-Play**: Tapping any track row instantly seeks and plays the selected song while seamlessly flipping back to the running tape deck.
+
+### 2.3 Dedicated Single Audio Now Playing (`CatalogFragment.kt`)
 Triggered by tapping the floating mini-player in the music catalog:
 1. **Circular Cover & Radial Arc (`CircularCoverArcView.kt`)**:
    - Custom view rendering a centered circular album artwork thumbnail.
@@ -84,7 +99,7 @@ Triggered by tapping the floating mini-player in the music catalog:
 5. **Technical File Specs Dialog (`DialogFileSpecs.kt`)**:
    - Complete technical sheet showing format, codec, sample rate, bit depth, channel configuration, dynamic bitrate, file size, and filesystem URI.
 
-### 2.3 Audiophile Music Catalog & Browsing
+### 2.4 Audiophile Music Catalog & Browsing
 1. **A-Z Fast Alphabet Scroller (`AlphabetIndexView.kt`)**:
    - Vertical alphabet rail (A–Z, #) on the right edge of the screen.
    - Dragging across letters triggers haptic tick vibrations and instantly scrolls the list to matching tracks.
@@ -94,11 +109,20 @@ Triggered by tapping the floating mini-player in the music catalog:
 3. **Format Filters**:
    - Instant filter chips for `All`, `Hi-Res (24-bit+)`, `Lossless (FLAC/WAV)`, and `MP3`.
 
-### 2.4 Bauhaus Minimalist Online FM Radio (`RadioFragment.kt`)
-1. **Swipe-to-Tune**: Page 2 in the main launcher ViewPager2.
-2. **Concentric Speaker Grille (`RadioSpeakerGrilleView.kt`)**: 7-ring concentric perforation pattern with acoustic recess shadows.
-3. **3D Ribbed Tuning Dial (`RadioTuningDialView.kt`)**: Tactile cylindrical thumbwheel with moving calibrated frequency scale (`87.5 - 108.0 MHz`).
-4. **Vintage LCD Display**: Mint-green backlit panel showing frequency, RDS station info, and connection status.
+### 2.5 Bauhaus Minimalist Radio with Hardware Antenna Detection (`RadioFragment.kt`)
+1. **Swipe-to-Tune**: Page 2 in the main launcher ViewPager.
+2. **Dedicated FM vs DIGI Modes**:
+   - **FM Mode**: Local over-the-air analog FM receiver requiring 3.5mm wired headphones connected as an antenna, with safety guidance if unplugged.
+   - **DIGI Mode**: Dedicated DAB+ / online stream mode for internet radio stations with zero static.
+3. **Streamlined Ballistic RF Signal Meter**: High-density compact galvanometer meter displaying signal strength (0–5 S-units) and center-channel tuning needle.
+4. **Concentric Speaker Grille (`RadioSpeakerGrilleView.kt`)**: 7-ring concentric perforation pattern with acoustic recess shadows.
+5. **3D Ribbed Tuning Dial (`RadioTuningDialView.kt`)**: Tactile cylindrical thumbwheel with moving calibrated frequency scale (`87.5 - 108.0 MHz`).
+6. **Vintage LCD Display**: Mint-green backlit panel showing frequency, RDS station info, and connection status.
+
+### 2.6 Studio Sound Deck & DSP Touch Lock (`DrawerFragment.kt`)
+1. **Lockable Studio Parametric EQ & DSP**: Dedicated tactile `[LOCK]` button securing the 10-band ISO graphic equalizer and parametric DSP knobs against accidental palm and pocket touches during playback.
+2. **Dual Analog Ballistic VU Meters**: Dedicated left and right channel galvanometer needles with warm vintage dial face, +3dB redline scale, and glowing peak indicator LEDs.
+3. **10-Band ISO Parametric Studio Equalizer**: Full hardware-accelerated equalizer with preloaded AutoEq frequency curves for legendary audiophile headphones.
 
 ---
 
@@ -249,7 +273,7 @@ dap_launcher/
 
 Spindle is maintained across two targeted build modules to optimize for modern audiophile DAPs while preserving 2011–2014 vintage compact Android hardware:
 
-| Architectural Dimension | Spindle Standard (`:app`) | Spindle Lite (`:app-lite` / `satsuma`) |
+| Architectural Dimension | Spindle Standard (`:app-main`) | Spindle Lite (`:app-lite` / `satsuma`) |
 | :--- | :--- | :--- |
 | **Target OS / API** | Android 8.0 – 15 (API 26 – 35) | Android 4.4 KitKat – 7.1 (API 19 – 25) |
 | **Target Hardware** | 1 GB – 4 GB RAM, 720p/1080p DAPs & Phones | 512 MB – 1 GB RAM, 320×480 (HVGA) Legacy Devices |

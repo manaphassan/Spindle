@@ -70,4 +70,25 @@ data class Track(
             else ->
                 "SPINDLE • TYPE I NORMAL BIAS (Fe2O3)"
         }
+
+    val audioSpecsLine: String
+        get() {
+            val upper = format.uppercase().ifEmpty { "MP3" }
+            val rateStr = when {
+                sampleRate >= 192000 -> "192.0 kHz"
+                sampleRate >= 96000 -> "96.0 kHz"
+                sampleRate >= 88200 -> "88.2 kHz"
+                sampleRate >= 48000 -> "48.0 kHz"
+                sampleRate >= 44100 -> "44.1 kHz"
+                sampleRate > 0 -> String.format(java.util.Locale.US, "%.1f kHz", sampleRate / 1000f)
+                else -> "44.1 kHz"
+            }
+            val qualityStr = when {
+                bitDepth > 0 -> "${bitDepth}-BIT"
+                bitrate > 0 -> "${bitrate} kbps"
+                upper.contains("FLAC") || upper.contains("WAV") -> "16-BIT"
+                else -> "320 kbps"
+            }
+            return "$upper • $qualityStr • $rateStr"
+        }
 }
