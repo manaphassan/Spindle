@@ -11,7 +11,7 @@
     <!-- Track Index / Number -->
     <TextView
         android:id="@+id/tvTrackIndex"
-        android:layout_width="28dp"
+        android:layout_width="32dp"
         android:layout_height="wrap_content"
         android:fontFamily="monospace"
         android:gravity="center"

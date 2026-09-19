@@ -60,8 +60,21 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
     }
 
     private fun setupUI() {
-        // Dynamic Hardware Nameplate
-        binding.tvDeviceNameplate.text = DeviceNameFormatter.getDeviceNameplate()
+        // Dynamic Hardware Nameplate with Tap-to-Engrave
+        val prefs = getSharedPreferences("spindle_lite_prefs", MODE_PRIVATE)
+        var nameplateIdx = prefs.getInt("pref_nameplate_idx", 0)
+
+        fun refreshNameplate() {
+            binding.tvDeviceNameplate.text = DeviceNameFormatter.getFormattedNameplate(nameplateIdx)
+        }
+        refreshNameplate()
+
+        binding.tvDeviceNameplate.setOnClickListener {
+            nameplateIdx = (nameplateIdx + 1) % DeviceNameFormatter.NAMEPLATE_PRESETS.size
+            prefs.edit().putInt("pref_nameplate_idx", nameplateIdx).apply()
+            refreshNameplate()
+            Toast.makeText(this, "Engraving: ${binding.tvDeviceNameplate.text}", Toast.LENGTH_SHORT).show()
+        }
 
         // Track List RecyclerView
         trackAdapter = LiteTrackAdapter(emptyList()) { position, track ->
@@ -178,6 +191,7 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
             binding.tvTrackArtist.text = firstTrack.artist
             binding.tvFormatBadge.text = firstTrack.formatBadge
             binding.tvTimeReadout.text = "00:00 / ${firstTrack.formattedDuration}"
+            binding.deckView.setCassetteLabel(firstTrack.tapeBiasType)
         }
     }
 
@@ -190,6 +204,7 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
             binding.tvTrackArtist.text = track.artist
             binding.tvFormatBadge.text = track.formatBadge
             binding.tvTimeReadout.text = "${state.formattedPosition} / ${state.formattedDuration}"
+            binding.deckView.setCassetteLabel(track.tapeBiasType)
         }
 
         binding.btnPlay.setImageResource(

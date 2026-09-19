@@ -14,7 +14,7 @@ class LiteDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, 
 
     companion object {
         const val DATABASE_NAME = "spindle_lite.db"
-        const val DATABASE_VERSION = 1
+        const val DATABASE_VERSION = 2
 
         const val TABLE_TRACKS = "tracks"
         const val COL_ID = "id"
@@ -26,6 +26,7 @@ class LiteDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, 
         const val COL_FORMAT = "format"
         const val COL_BITRATE = "bitrate"
         const val COL_SAMPLE_RATE = "sample_rate"
+        const val COL_BIT_DEPTH = "bit_depth"
 
         @Volatile
         private var INSTANCE: LiteDbHelper? = null
@@ -48,7 +49,8 @@ class LiteDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, 
                 $COL_FILE_PATH TEXT UNIQUE,
                 $COL_FORMAT TEXT,
                 $COL_BITRATE INTEGER,
-                $COL_SAMPLE_RATE INTEGER
+                $COL_SAMPLE_RATE INTEGER,
+                $COL_BIT_DEPTH INTEGER DEFAULT 0
             );
         """.trimIndent()
 
@@ -82,6 +84,7 @@ class LiteDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, 
                 values.put(COL_FORMAT, track.format)
                 values.put(COL_BITRATE, track.bitrate)
                 values.put(COL_SAMPLE_RATE, track.sampleRate)
+                values.put(COL_BIT_DEPTH, track.bitDepth)
 
                 val result = db.insertWithOnConflict(
                     TABLE_TRACKS,
@@ -124,6 +127,7 @@ class LiteDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, 
             val formatIdx = it.getColumnIndexOrThrow(COL_FORMAT)
             val bitrateIdx = it.getColumnIndexOrThrow(COL_BITRATE)
             val sampleRateIdx = it.getColumnIndexOrThrow(COL_SAMPLE_RATE)
+            val bitDepthIdx = it.getColumnIndex(COL_BIT_DEPTH)
 
             while (it.moveToNext()) {
                 trackList.add(
@@ -136,7 +140,8 @@ class LiteDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, 
                         filePath = it.getString(pathIdx),
                         format = it.getString(formatIdx) ?: "AUDIO",
                         bitrate = it.getInt(bitrateIdx),
-                        sampleRate = it.getInt(sampleRateIdx)
+                        sampleRate = it.getInt(sampleRateIdx),
+                        bitDepth = if (bitDepthIdx != -1) it.getInt(bitDepthIdx) else 0
                     )
                 )
             }

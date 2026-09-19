@@ -668,14 +668,14 @@
       <div class="edition-card">
         <span class="edition-badge badge-free">100% Free Forever</span>
         <div class="edition-name">Spindle Lite</div>
-        <div class="edition-target">For Legacy Hardware & Android 4.4 KitKat</div>
+        <div class="edition-target">For Legacy Hardware & Android 4.4 KitKat (1.53 MB APK)</div>
         <ul class="edition-features">
           <li>✓ Target: Android 4.4 (API 19) / 512MB RAM</li>
-          <li>✓ Optimized for 3.0" 320×480 HVGA Displays</li>
-          <li>✓ Dual Native MediaPlayer Gapless Chaining</li>
-          <li>✓ Direct FAT32 MicroSD SQLite Crawler</li>
-          <li>✓ Physical Camera Shutter Key Hooks</li>
-          <li>✓ Active RAM Footprint &lt; 18 MB</li>
+          <li>✓ Type IV Metal, Type II Chrome & Type I Normal Decks</li>
+          <li>✓ 3-Digit Mechanical Tape Drum Counter (Zero Alloc)</li>
+          <li>✓ Native FLAC & WAV Bit-Depth Binary Stream Parser</li>
+          <li>✓ Dual Native MediaPlayer Gapless Audio Chaining</li>
+          <li>✓ Active RAM Footprint &lt; 18 MB · 1.53 MB Release APK</li>
         </ul>
       </div>
 
@@ -822,7 +822,19 @@
           <li>2-Row Real-Time Output Routing Badges</li>
           <li>Dedicated Vintage Lock Screen Player</li>
           <li>Analog FM Radio with Ballistic RF Meter</li>
-          <li>Dedicated <code>:app-lite</code> Module (1.6 MB)</li>
+        </ul>
+      </div>
+
+      <div class="roadmap-card" style="border-color: var(--accent-amber);">
+        <div class="roadmap-version">v1.0.0-LITE</div>
+        <div class="roadmap-status" style="color: var(--accent-amber);">✅ Verified Release</div>
+        <ul class="roadmap-items">
+          <li>Ultra-Compact 1.53 MB Release APK</li>
+          <li>&lt; 18 MB RAM Total Active Footprint</li>
+          <li>Type IV Metal, Type II Chrome & Type I Normal Decks</li>
+          <li>Zero-Allocation 3-Digit Mechanical Tape Drum Counter</li>
+          <li>Direct Binary Stream Header Parser (FLAC/WAV Bit-Depth)</li>
+          <li>Tailored for 3.0" HVGA (320×480) & Android 4.4+ DAPs</li>
         </ul>
       </div>
 
@@ -919,18 +931,19 @@
   <!-- Installation Section -->
   <section class="section-container">
     <h2 class="section-title">Get Started</h2>
-    <p class="section-subtitle">Install Spindle via ADB onto any Android 8.0+ device or dedicated DAP.</p>
+    <p class="section-subtitle">Install Spindle Standard or Spindle Lite via ADB onto your device or DAP.</p>
 
     <div class="terminal-box">
-# 1. Clone the repository<br/>
+<span style="color: var(--accent-emerald);"># --- Option A: Spindle Standard (:app) for Android 8.0+ DAPs ---</span><br/>
 git clone https://github.com/manaphassan/Spindle.git<br/>
-cd Spindle<br/><br/>
-# 2. Compile optimized release APK (4.8 MB with R8 & ProGuard)<br/>
-./gradlew assembleRelease<br/><br/>
-# 3. Install to connected device or DAP<br/>
-adb install -r app/build/outputs/apk/release/app-release.apk<br/><br/>
-# 4. Launch Spindle Home<br/>
-adb shell am start -n com.hana.spindle/com.hana.spindle.ui.MainActivity
+cd Spindle<br/>
+./gradlew :app:assembleRelease<br/>
+adb install -r app/build/outputs/apk/release/app-release.apk<br/>
+adb shell am start -n com.hana.spindle/com.hana.spindle.ui.MainActivity<br/><br/>
+<span style="color: var(--accent-amber);"># --- Option B: Spindle Lite (:app-lite) for 512MB RAM & Android 4.4+ DAPs ---</span><br/>
+./gradlew :app-lite:assembleRelease<br/>
+adb install -r app-lite/build/outputs/apk/release/app-lite-release.apk<br/>
+adb shell am start -n com.hana.spindle.lite/com.hana.spindle.lite.ui.LiteMainActivity
     </div>
   </section>
 

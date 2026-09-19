@@ -91,31 +91,45 @@ class LiteAudioEngine(private val context: Context) :
 
     private fun chainNextTrack() {
         val nextIndex = currentIndex + 1
-        if (nextIndex in playlist.indices) {
+        if (nextIndex in playlist.indices && !isNextPlayerChained) {
+            isNextPlayerChained = true
             val nextTrack = playlist[nextIndex]
-            try {
-                val next = MediaPlayer().apply {
-                    setWakeMode(context, PowerManager.PARTIAL_WAKE_LOCK)
-                    setAudioStreamType(AudioManager.STREAM_MUSIC)
-                    setOnErrorListener(this@LiteAudioEngine)
+            Thread {
+                try {
+                    val next = MediaPlayer().apply {
+                        setWakeMode(context, PowerManager.PARTIAL_WAKE_LOCK)
+                        setAudioStreamType(AudioManager.STREAM_MUSIC)
+                        setOnErrorListener(this@LiteAudioEngine)
 
-                    val file = File(nextTrack.filePath)
-                    val fis = FileInputStream(file)
-                    setDataSource(fis.fd)
-                    fis.close()
-                    prepare()
+                        val file = File(nextTrack.filePath)
+                        val fis = FileInputStream(file)
+                        setDataSource(fis.fd)
+                        fis.close()
+                        prepare()
+                    }
+
+                    mainHandler.post {
+                        if (isPlaying && primaryPlayer != null) {
+                            try {
+                                primaryPlayer?.setNextMediaPlayer(next)
+                                nextPlayer = next
+                            } catch (e: Exception) {
+                                next.release()
+                                isNextPlayerChained = false
+                            }
+                        } else {
+                            next.release()
+                            isNextPlayerChained = false
+                        }
+                    }
+                } catch (e: Exception) {
+                    mainHandler.post {
+                        isNextPlayerChained = false
+                        nextPlayer?.release()
+                        nextPlayer = null
+                    }
                 }
-
-                // Native Android 4.1+ gapless chaining
-                primaryPlayer?.setNextMediaPlayer(next)
-                nextPlayer = next
-                isNextPlayerChained = true
-            } catch (e: Exception) {
-                // Fallback to standard onCompletion handling
-                isNextPlayerChained = false
-                nextPlayer?.release()
-                nextPlayer = null
-            }
+            }.start()
         }
     }
 

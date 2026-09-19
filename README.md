@@ -28,6 +28,8 @@
     <span> · </span>
     <a href="MASTER_DOCUMENTATION.md">📖 Technical Specs</a>
     <span> · </span>
+    <a href="docs/SPINDLE_LITE_MASTER_DOCUMENTATION.md">⚡ Spindle Lite Docs</a>
+    <span> · </span>
     <a href="#-quick-start">🚀 Installation</a>
     <span> · </span>
     <a href="#-support-development">💖 Donate</a>
@@ -203,27 +205,25 @@ Modern smartphones are overloaded with algorithmic distractions, background trac
 
 ```
 dap_launcher/
-├── app/src/main/
+├── app/src/main/                 # Spindle Standard (Android 8.0+, Media3, Room, AutoEq)
 │   ├── java/com/hana/spindle/
 │   │   ├── data/                 # Room DB, POSIX Storage Scanner, ImageLoader (RGB_565), TagParser, LyricsParser
 │   │   ├── playback/             # ExoPlayer Engine, RadioStreamEngine, AudioMetricsTracker
 │   │   ├── launcher/             # Lightweight App Drawer Loader (<2MB overhead)
 │   │   ├── theme/                # Cassette Themes & Color Palettes (Dark, E-Ink, Light)
-│   │   └── ui/
-│   │       ├── cassette/         # Kinetic Reels, VerticalDeckView, CassetteKinematics
-│   │       ├── radio/            # Acoustic Speaker Grille, 3D Ribbed Tuning Dial View, RadioFragment
-│   │       ├── catalog/          # CircularCoverArcView, AudioWaveformView, CatalogSortGroup, SortGroupBottomSheet
-│   │       ├── AlphabetIndexView # Tactile A-Z alphabet scroller
-│   │       ├── LyricsAdapter     # Real-time synced lyrics line adapter
-│   │       ├── DialogFileSpecs   # Audiophile technical file specifications inspector
-│   │       ├── CatalogFragment   # Music Catalog & Single Audio Now Playing Overlay
-│   │       ├── DrawerFragment    # App Drawer, Volume Slider, Themes & Radio Manager
-│   │       ├── PlayerFragment    # Center Home Screen Cassette Deck
-│   │       └── MainActivity      # 3-Page ViewPager2 Launcher Controller
+│   │   └── ui/                   # Flagship Cassette Deck, Now Playing Arc, FM Radio, VU Meters
 │   └── res/                      # Hardware vector graphics, layouts, and styles
+├── app-lite/src/main/            # Spindle Lite (Android 4.4+, <18MB RAM, 1.53MB APK, satsuma HVGA)
+│   ├── java/com/hana/spindle/lite/
+│   │   ├── audio/                # Chained MediaPlayer gapless engine (<0.1ms handoff)
+│   │   ├── db/                   # Native SQLiteOpenHelper (v2 with bit-depth column) & MediaScanner
+│   │   ├── ui/                   # Kinetic LiteDeckView (Type IV/II/I formulations, drum counter, sheen)
+│   │   └── util/                 # Binary AudioHeaderParser (FLAC/WAV bit-depth), DeviceNameFormatter
+│   └── res/                      # Micro-footprint HVGA layouts, colors, vectors
 ├── docs/                         # Live GitHub Pages assets and branding guides
 │   ├── assets/                   # High-res logos, banners, and verified screenshots
 │   ├── BRANDING.md               # Design systems, color specs, and industrial design philosophy
+│   ├── SPINDLE_LITE_MASTER_DOCUMENTATION.md # Spindle Lite architecture & specs
 │   └── index.html                # Live interactive showcase page
 ```
 
@@ -234,7 +234,8 @@ dap_launcher/
 | Version | Phase / Tier | Key Deliverables | Status |
 | :--- | :--- | :--- | :---: |
 | **`v1.2.0`** | **Spindle Basic (Flagship)** | Kinetic Spindle Deck, Radial Arc Scrubber, 24-Band Waveform, Dynamic Nameplate, A-Z Index | **✅ Released** |
-| **`v1.3.0-alpha`** | **Spindle Flagship & Lite** | Kinetic Ribbon Reels, 2-Row Routing Badges, Lock Screen Player, Analog RF Meter, 24-bit FLAC, `:app-lite` | **✅ Alpha Released** |
+| **`v1.3.0-alpha`** | **Spindle Flagship** | Kinetic Ribbon Reels, 2-Row Routing Badges, Lock Screen Player, Analog RF Meter, 24-bit FLAC | **✅ Alpha Released** |
+| **`v1.0.0-LITE`** | **Spindle Lite (Release)** | 1.53 MB APK, &lt;18 MB RAM, Type IV/II/I Cassette Formulations, Mechanical Drum Counter, Bit-Depth Parser | **✅ Verified Release** |
 | **`v1.4.0`** | **Spindle Pro (Studio)** | Reel-to-Reel Open Deck, 10-Band ISO Parametric EQ, Tape Saturation DSP, Foley Sound Engine | **📅 Planned** |
 | **`v2.0.0`** | **Ecosystem & Bit-Perfect** | Direct USB-OTG ALSA Class 2.0 driver, Cross-DAP MicroSD Catalog Sync, CUE Sheet Splitter | **🔮 Future** |
 
@@ -242,24 +243,28 @@ dap_launcher/
 
 ## 🚀 Quick Start
 
-### Prerequisites
-- Android device or DAP running **Android 8.0 Oreo (API 26)** or newer.
-- For USB DAC or 3.5mm Direct ALSA output: Any Qualcomm WCD93xx, Cirrus Logic, ESS Sabre, or AKM equipped device.
-
-### Installation via ADB
+### 1. Spindle Standard (`:app`) — Android 8.0+ DAPs & Modern Compacts
 ```bash
-# Clone repository
-git clone https://github.com/manaphassan/Spindle.git
-cd Spindle
-
-# Build optimized release APK (4.8 MB with R8 & ProGuard)
-./gradlew assembleRelease
+# Build optimized release APK (< 4.5 MB with R8 & ProGuard)
+./gradlew :app:assembleRelease
 
 # Install directly to connected device or DAP
 adb install -r app/build/outputs/apk/release/app-release.apk
 
-# Launch Spindle
+# Launch Spindle Home
 adb shell am start -n com.hana.spindle/com.hana.spindle.ui.MainActivity
+```
+
+### 2. Spindle Lite (`:app-lite`) — Vintage 512MB RAM & 3.0" HVGA Hardware
+```bash
+# Build ultra-compact release APK (1.53 MB verified binary)
+./gradlew :app-lite:assembleRelease
+
+# Install directly to connected legacy device or DAP
+adb install -r app-lite/build/outputs/apk/release/app-lite-release.apk
+
+# Launch Spindle Lite Home
+adb shell am start -n com.hana.spindle.lite/com.hana.spindle.lite.ui.LiteMainActivity
 ```
 
 ### Set as Default Home Launcher

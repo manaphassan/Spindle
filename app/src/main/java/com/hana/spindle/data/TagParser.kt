@@ -18,6 +18,7 @@ object TagParser {
 
         val format = file.extension.uppercase(Locale.ROOT)
         val flacInfo = if (format == "FLAC") parseFlacStreamInfo(file) else null
+        val wavInfo = if (format == "WAV" || format == "AIFF" || format == "AIF") parseWavStreamInfo(file) else null
 
         var title: String? = null
         var artist: String? = null
@@ -106,6 +107,7 @@ object TagParser {
         // Extract exact Sample Rate
         val sampleRate = when {
             flacInfo != null && flacInfo.sampleRate > 0 -> flacInfo.sampleRate
+            wavInfo != null && wavInfo.sampleRate > 0 -> wavInfo.sampleRate
             else -> {
                 when {
                     format == "FLAC" && bitrateKbps > 2000 -> 96000
@@ -120,10 +122,11 @@ object TagParser {
         // Extract exact Bit Depth
         val bitDepth = when {
             flacInfo != null && flacInfo.bitDepth > 0 -> flacInfo.bitDepth
+            wavInfo != null && wavInfo.bitDepth > 0 -> wavInfo.bitDepth
             else -> estimateBitDepth(format, bitrateKbps, sampleRate)
         }
 
-        val channels = flacInfo?.channels ?: 2
+        val channels = flacInfo?.channels ?: wavInfo?.channels ?: 2
 
         // Check if lyrics exist (.lrc sidecar or .txt)
         val lrcFile = File(file.parentFile, "${file.nameWithoutExtension}.lrc")
@@ -294,6 +297,61 @@ object TagParser {
                 }
 
                 FlacInfo(sampleRate, channels, bitDepth, durationMs)
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    data class WavInfo(
+        val sampleRate: Int,
+        val channels: Int,
+        val bitDepth: Int
+    )
+
+    fun parseWavStreamInfo(file: File): WavInfo? {
+        if (!file.exists() || file.length() < 44) return null
+        return try {
+            java.io.FileInputStream(file).use { fis ->
+                val header = ByteArray(64)
+                val read = fis.read(header)
+                if (read < 44) return null
+
+                if (header[0] != 'R'.code.toByte() || header[1] != 'I'.code.toByte() ||
+                    header[2] != 'F'.code.toByte() || header[3] != 'F'.code.toByte() ||
+                    header[8] != 'W'.code.toByte() || header[9] != 'A'.code.toByte() ||
+                    header[10] != 'V'.code.toByte() || header[11] != 'E'.code.toByte()
+                ) {
+                    return null
+                }
+
+                var offset = 12
+                while (offset + 16 <= read) {
+                    if (header[offset] == 'f'.code.toByte() &&
+                        header[offset + 1] == 'm'.code.toByte() &&
+                        header[offset + 2] == 't'.code.toByte() &&
+                        header[offset + 3] == ' '.code.toByte()
+                    ) {
+                        val channels = (header[offset + 10].toInt() and 0xFF) or
+                                ((header[offset + 11].toInt() and 0xFF) shl 8)
+
+                        val sampleRate = (header[offset + 12].toInt() and 0xFF) or
+                                ((header[offset + 13].toInt() and 0xFF) shl 8) or
+                                ((header[offset + 14].toInt() and 0xFF) shl 16) or
+                                ((header[offset + 15].toInt() and 0xFF) shl 24)
+
+                        val bitDepth = if (offset + 22 <= read) {
+                            (header[offset + 22].toInt() and 0xFF) or
+                                    ((header[offset + 23].toInt() and 0xFF) shl 8)
+                        } else 16
+
+                        if (sampleRate in 8000..384000 && bitDepth in 8..32) {
+                            return WavInfo(sampleRate, channels, bitDepth)
+                        }
+                    }
+                    offset++
+                }
+                null
             }
         } catch (e: Exception) {
             null

@@ -13,7 +13,8 @@ data class Track(
     val filePath: String,
     val format: String,
     val bitrate: Int = 0,
-    val sampleRate: Int = 0
+    val sampleRate: Int = 0,
+    val bitDepth: Int = 0
 ) {
     val formattedDuration: String
         get() {
@@ -24,12 +25,49 @@ data class Track(
         }
 
     val formatBadge: String
+        get() {
+            val upper = format.uppercase()
+            val rateStr = when {
+                sampleRate >= 192000 -> "192k"
+                sampleRate >= 96000 -> "96k"
+                sampleRate >= 88200 -> "88.2k"
+                sampleRate >= 48000 -> "48k"
+                sampleRate >= 44100 -> "44.1k"
+                sampleRate > 0 -> "${sampleRate / 1000}k"
+                else -> ""
+            }
+            val bitStr = if (bitrate > 0) "${bitrate}K" else ""
+
+            return when {
+                upper.contains("FLAC") -> {
+                    val depthStr = if (bitDepth > 0) "${bitDepth}b/" else ""
+                    if (rateStr.isNotEmpty()) "FLAC $depthStr$rateStr" else "FLAC 16/44.1"
+                }
+                upper.contains("WAV") -> {
+                    val depthStr = if (bitDepth > 0) "${bitDepth}b/" else ""
+                    if (rateStr.isNotEmpty()) "WAV $depthStr$rateStr" else "WAV PCM"
+                }
+                upper.contains("MP3") -> {
+                    if (bitStr.isNotEmpty()) "MP3 $bitStr" else "MP3 320K"
+                }
+                upper.contains("AAC") || upper.contains("M4A") -> {
+                    if (bitStr.isNotEmpty()) "AAC $bitStr" else "AAC LC"
+                }
+                upper.contains("OGG") -> {
+                    if (bitStr.isNotEmpty()) "OGG $bitStr" else "OGG VORBIS"
+                }
+                else -> upper.ifEmpty { "AUDIO" }
+            }
+        }
+
+    val tapeBiasType: String
         get() = when {
-            format.contains("FLAC", ignoreCase = true) -> "FLAC 16/44.1"
-            format.contains("MP3", ignoreCase = true) -> "MP3 320K"
-            format.contains("WAV", ignoreCase = true) -> "WAV PCM"
-            format.contains("AAC", ignoreCase = true) -> "AAC LC"
-            format.contains("OGG", ignoreCase = true) -> "OGG VORBIS"
-            else -> format.uppercase()
+            format.contains("FLAC", ignoreCase = true) || format.contains("WAV", ignoreCase = true) ->
+                "SPINDLE • TYPE IV METAL BIAS"
+            (format.contains("MP3", ignoreCase = true) && (bitrate >= 256 || bitrate == 0)) ||
+            format.contains("AAC", ignoreCase = true) || format.contains("M4A", ignoreCase = true) ->
+                "SPINDLE • TYPE II HIGH BIAS (CrO2)"
+            else ->
+                "SPINDLE • TYPE I NORMAL BIAS (Fe2O3)"
         }
 }

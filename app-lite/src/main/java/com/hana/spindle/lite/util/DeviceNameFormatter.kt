@@ -4,9 +4,26 @@ import android.os.Build
 
 /**
  * Dynamic industrial nameplate formatter for Spindle Lite.
- * Formats hardware name based on Build manufacturer/model or codename.
+ * Formats hardware name based on Build manufacturer/model or codename,
+ * with support for custom audiophile engraving presets.
  */
 object DeviceNameFormatter {
+
+    val NAMEPLATE_PRESETS = listOf(
+        "AUTO",
+        "SPINDLE • REFERENCE DAP",
+        "HIGH BIAS • MASTER RECORDER",
+        "DIRECT ALSA • 192K LOSSLESS",
+        "SATSUMA AUDIO EDITION"
+    )
+
+    fun getFormattedNameplate(presetIndex: Int): String {
+        return if (presetIndex <= 0 || presetIndex >= NAMEPLATE_PRESETS.size) {
+            getDeviceNameplate()
+        } else {
+            NAMEPLATE_PRESETS[presetIndex]
+        }
+    }
 
     fun getDeviceNameplate(): String {
         val manufacturer = Build.MANUFACTURER.orEmpty().trim()
@@ -17,7 +34,7 @@ object DeviceNameFormatter {
             device.equals("satsuma", ignoreCase = true) || model.contains("WT19", ignoreCase = true) -> {
                 "SPINDLE • SATSUMA HVGA"
             }
-            model.startsWith(manufacturer, ignoreCase = true) -> {
+            model.isNotEmpty() && model.startsWith(manufacturer, ignoreCase = true) -> {
                 model.uppercase()
             }
             manufacturer.isNotEmpty() && model.isNotEmpty() -> {

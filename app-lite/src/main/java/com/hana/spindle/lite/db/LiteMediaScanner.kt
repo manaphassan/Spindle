@@ -4,6 +4,7 @@ import android.content.Context
 import android.media.MediaMetadataRetriever
 import android.os.Process
 import android.provider.MediaStore
+import com.hana.spindle.lite.util.AudioHeaderParser
 import java.io.File
 import java.util.concurrent.Executors
 
@@ -143,6 +144,13 @@ class LiteMediaScanner(private val context: Context) {
                 ?: "MicroSD Vault"
             val durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
             val duration = durationStr?.toLongOrNull() ?: 0L
+            val bitrateStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE)
+            val bitrate = (bitrateStr?.toIntOrNull() ?: 0) / 1000
+
+            // Native audio stream header inspection for FLAC and WAV
+            val specs = AudioHeaderParser.parse(file)
+            val sampleRate = specs?.sampleRate ?: 0
+            val bitDepth = specs?.bitDepth ?: 0
 
             Track(
                 title = title,
@@ -150,7 +158,10 @@ class LiteMediaScanner(private val context: Context) {
                 album = album,
                 durationMs = duration,
                 filePath = file.absolutePath,
-                format = file.extension.uppercase()
+                format = file.extension.uppercase(),
+                bitrate = bitrate,
+                sampleRate = sampleRate,
+                bitDepth = bitDepth
             )
         } catch (e: Exception) {
             Track(

@@ -167,7 +167,8 @@ Dedicated physical buttons are bound directly for tactile control:
        file_path TEXT UNIQUE,
        format TEXT,
        bitrate INTEGER,
-       sample_rate INTEGER
+       sample_rate INTEGER,
+       bit_depth INTEGER
    );
    CREATE INDEX idx_artist_album ON tracks(artist, album);
    ```
@@ -178,8 +179,46 @@ Dedicated physical buttons are bound directly for tactile control:
 
 Rather than hardcoding static branding, Spindle Lite inspects `android.os.Build` at runtime to format a custom industrial hardware nameplate:
 
-* Generic Format: `[MANUFACTURER] [MODEL]` or cleaned uppercase model code.
-* Custom User Override: Configurable via Settings Drawer (*"Nameplate Engraving"*).
+* **Generic Auto-Format**: `[MANUFACTURER] [MODEL]` or cleaned uppercase model code (e.g. `SPINDLE • SATSUMA HVGA`).
+* **Audiophile Engraving Presets**: Tap-to-engrave directly on the nameplate header to toggle curated presets:
+  - `SPINDLE • REFERENCE DAP`
+  - `HIGH BIAS • MASTER RECORDER`
+  - `DIRECT ALSA • 192K LOSSLESS`
+  - `SATSUMA AUDIO EDITION`
+* **Persistent State**: Stored in `spindle_lite_prefs` with instant zero-overhead restoration across reboots.
+
+---
+
+## 9. Collector Cassette Formulations & Kinetic Canvas
+
+Spindle Lite dynamically transforms its custom hardware-accelerated Canvas deck based on track audio fidelity:
+
+1. **Type IV Metal Master (Lossless Hi-Res / Studio Masters)**:
+   - **Chassis**: Brushed gunmetal faceplate (`#1F232D`) with precision metallic chamfer.
+   - **Label**: Metallic gold foil strip (`#FACC15`) with deep graphite screenprinted lettering (`#0F172A`).
+   - **Reel Accents**: Ruby crimson hero spoke (`#EF4444`) with dark metal oxide tape pack (`#231F20`).
+2. **Type II Chrome Hi-Bias (High-Bitrate MP3 $\ge$ 256k / AAC)**:
+   - **Chassis**: Deep anthracite slate (`#2A2E45`) with structured 8dp seam borders.
+   - **Label**: Warm butter amber tape label (`#FDE68A`) with dark indigo typography (`#1E2132`).
+   - **Reel Accents**: Industrial safety orange hero spoke (`#F97316`) with dark cobalt chrome pack (`#3A2218`).
+3. **Type I Normal Studio (Standard Audio)**:
+   - **Chassis**: Studio matte grey (`#282C37`) with subtle border framing.
+   - **Label**: Crisp studio off-white (`#E2E8F0`) with graphite ink (`#1E293B`).
+   - **Reel Accents**: Cobalt blue hero spoke (`#3B82F6`) with classic ferric oxide red-brown pack (`#451A11`).
+4. **Mechanical Tactility (Zero-Allocation Loop)**:
+   - **3-Digit Mechanical Tape Drum Counter**: Real-time mechanical odometer (`000` to `999`) rendered in a recessed window on the central bridge plate.
+   - **Optical Window Glare**: Subtle diagonal acrylic sheen across the upper-right tape window.
+   - **Playback Head & Capstans**: Machined playback head housing and dual brass guide pins anchored at the cassette chamber base.
+
+---
+
+## 10. Native Audio Stream Header Parser (`AudioHeaderParser`)
+
+To bypass the limitations of legacy Android MediaStore scrapers on Android 4.4 KitKat, Spindle Lite implements a zero-dependency binary stream parser:
+
+* **FLAC STREAMINFO Extraction**: Inspects the native 34-byte metadata header in $<0.1\text{ms}$, extracting exact sample rate (e.g. `96000 Hz`, `44100 Hz`), true bit depth (`24-bit` vs `16-bit`), and channel layout.
+* **WAV RIFF fmt Extraction**: Scans RIFF chunks directly for uncompressed PCM bit depth and sample frequency.
+* **Dynamic Audiophile Badging**: Surfaces genuine mastering resolution on the deck (`FLAC 24b/96k`, `WAV 24b/96k`, `FLAC 16b/44.1k`, `MP3 320K`).
 
 ---
 

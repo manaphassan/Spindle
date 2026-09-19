@@ -18,13 +18,37 @@
     <!-- Typography & Readout -->
     <color name="lite_text_primary">#FAFAF9</color>
     <color name="lite_text_secondary">#B0B4CE</color>
-    <color name="lite_text_muted">#717696</color>
+    <color name="lite_text_muted">#9499BD</color>
     <color name="lite_amber_glow">#FDE68A</color>
 
-    <!-- Tape Elements -->
+    <!-- Tape & Mechanical Elements -->
     <color name="lite_tape_body">#23263B</color>
     <color name="lite_tape_label">#FDE68A</color>
     <color name="lite_tape_label_text">#1E2132</color>
     <color name="lite_reel_hub">#FFFFFF</color>
     <color name="lite_tape_pack">#3A2218</color>
+    <color name="lite_tape_ribbon">#2B1810</color>
+    <color name="lite_roller">#B0B4CE</color>
+    <color name="lite_rivet">#4A5073</color>
+    <color name="lite_counter_bg">#12141F</color>
+
+    <!-- Type IV Metal Master Formulation Tokens -->
+    <color name="lite_metal_chassis">#1F232D</color>
+    <color name="lite_metal_border">#3D4456</color>
+    <color name="lite_metal_label">#FACC15</color>
+    <color name="lite_metal_label_text">#0F172A</color>
+    <color name="lite_metal_hero_spoke">#EF4444</color>
+    <color name="lite_metal_tape_pack">#231F20</color>
+
+    <!-- Type I Normal Studio Formulation Tokens -->
+    <color name="lite_type1_chassis">#282C37</color>
+    <color name="lite_type1_border">#373E4E</color>
+    <color name="lite_type1_label">#E2E8F0</color>
+    <color name="lite_type1_label_text">#1E293B</color>
+    <color name="lite_type1_hero_spoke">#3B82F6</color>
+    <color name="lite_type1_tape_pack">#451A11</color>
+
+    <!-- Mechanical Chamber Elements -->
+    <color name="lite_tape_head">#33374B</color>
+    <color name="lite_capstan_pin">#D4AF37</color>
 </resources>
