@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.media.audiofx.BassBoost
 import android.media.audiofx.Equalizer
+import android.media.audiofx.LoudnessEnhancer
+import android.os.Build
 
 /**
  * Lightweight Hardware Audio DSP Controller for Spindle Lite.
@@ -17,6 +19,7 @@ class LiteAudioFxController(private val context: Context) {
 
     private var equalizer: Equalizer? = null
     private var bassBoost: BassBoost? = null
+    private var loudnessEnhancer: LoudnessEnhancer? = null
 
     private var minLevelMilliBels: Short = -1200 // -12 dB
     private var maxLevelMilliBels: Short = 1200  // +12 dB
@@ -29,6 +32,9 @@ class LiteAudioFxController(private val context: Context) {
     var bassBoostStrength: Int = 0 // 0 to 1000
         private set
 
+    var preampGainDb: Float = 0f
+        private set
+
     var currentPreset: String = "FLAT"
         private set
 
@@ -39,6 +45,7 @@ class LiteAudioFxController(private val context: Context) {
         // Load saved state from SharedPreferences
         currentPreset = prefs.getString("eq_preset", "FLAT") ?: "FLAT"
         bassBoostStrength = prefs.getInt("bass_boost_strength", 0)
+        preampGainDb = prefs.getFloat("preamp_gain_db", 0f)
         isEnabled = prefs.getBoolean("eq_enabled", true)
         for (i in 0 until 5) {
             bandGainsDb[i] = prefs.getFloat("band_gain_$i", 0f)
@@ -76,13 +83,44 @@ class LiteAudioFxController(private val context: Context) {
                 }
             }
 
+            try {
+                if (Build.VERSION.SDK_INT >= 19) {
+                    val le = LoudnessEnhancer(audioSessionId)
+                    val isBoost = preampGainDb > 0.1f && isEnabled
+                    le.enabled = isBoost
+                    if (isBoost) {
+                        le.setTargetGain((preampGainDb * 100).toInt())
+                    }
+                    loudnessEnhancer = le
+                }
+            } catch (ignored: Throwable) {}
+
             // Apply loaded gain values
             syncHardwareBands()
         } catch (e: Exception) {
             // Hardware DSP may be unavailable or restricted on certain devices
             equalizer = null
             bassBoost = null
+            loudnessEnhancer = null
         }
+    }
+
+    /**
+     * Sets analog preamp gain in dB (e.g. 0 dB for IEMs, +6 dB for high-impedance headphones).
+     */
+    fun setPreampGainDb(gainDb: Float) {
+        this.preampGainDb = gainDb.coerceIn(0f, 12f)
+        prefs.edit().putFloat("preamp_gain_db", preampGainDb).apply()
+        try {
+            loudnessEnhancer?.let { le ->
+                val isBoost = preampGainDb > 0.1f && isEnabled
+                le.enabled = isBoost
+                if (isBoost) {
+                    le.setTargetGain((preampGainDb * 100).toInt())
+                }
+            }
+        } catch (ignored: Throwable) {}
+        syncHardwareBands()
     }
 
     /**
@@ -176,9 +214,14 @@ class LiteAudioFxController(private val context: Context) {
 
     private fun syncHardwareBands() {
         val eq = equalizer ?: return
+        val preampOffsetMilliBels = if (loudnessEnhancer == null && preampGainDb > 0.1f && isEnabled) {
+            (preampGainDb * 100f).toInt().toShort()
+        } else {
+            0.toShort()
+        }
         for (b in 0 until numberOfBands) {
-            val mB = (bandGainsDb[b] * 100f).toInt().toShort()
-                .coerceIn(minLevelMilliBels, maxLevelMilliBels)
+            val totalMb = ((bandGainsDb[b] * 100f).toInt() + preampOffsetMilliBels)
+            val mB = totalMb.toShort().coerceIn(minLevelMilliBels, maxLevelMilliBels)
             try {
                 eq.setBandLevel(b.toShort(), mB)
             } catch (e: Exception) {
@@ -202,7 +245,13 @@ class LiteAudioFxController(private val context: Context) {
         } catch (e: Exception) {
             // ignore
         }
+        try {
+            loudnessEnhancer?.release()
+        } catch (e: Exception) {
+            // ignore
+        }
         equalizer = null
         bassBoost = null
+        loudnessEnhancer = null
     }
 }

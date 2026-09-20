@@ -1,0 +1,2 @@
+eaa7d70a40598d84154a8a8351d69ddccda1af611ad0a35b0768cd2a91d17c34  Spindle-Lite-v1.0.0-LITE.apk
+9e0f3d0d47554c6dd32c146ce3dadf09ce02ef2f1f54d2bae236cc90c053dd68  Spindle-Standard-v1.4.0-alpha.apk

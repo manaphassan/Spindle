@@ -796,8 +796,8 @@ class LiteDeckView @JvmOverloads constructor(
         canvas.drawRect(labelStripeRect, labelStripePaint)
         val stripeTag = when {
             cassetteLabel.contains("METAL", ignoreCase = true) -> "METAL"
-            cassetteLabel.contains("TYPE I", ignoreCase = true) -> "NORMAL"
-            else -> "TYPE II"
+            cassetteLabel.contains("TYPE I", ignoreCase = true) || cassetteLabel.contains("NORMAL", ignoreCase = true) -> "NORMAL"
+            else -> "CrO2"
         }
         canvas.drawText(
             stripeTag,

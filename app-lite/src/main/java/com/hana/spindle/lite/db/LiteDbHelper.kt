@@ -118,32 +118,54 @@ class LiteDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, 
         )
 
         cursor.use {
-            val idIdx = it.getColumnIndexOrThrow(COL_ID)
-            val titleIdx = it.getColumnIndexOrThrow(COL_TITLE)
-            val artistIdx = it.getColumnIndexOrThrow(COL_ARTIST)
-            val albumIdx = it.getColumnIndexOrThrow(COL_ALBUM)
-            val durationIdx = it.getColumnIndexOrThrow(COL_DURATION_MS)
-            val pathIdx = it.getColumnIndexOrThrow(COL_FILE_PATH)
-            val formatIdx = it.getColumnIndexOrThrow(COL_FORMAT)
-            val bitrateIdx = it.getColumnIndexOrThrow(COL_BITRATE)
-            val sampleRateIdx = it.getColumnIndexOrThrow(COL_SAMPLE_RATE)
-            val bitDepthIdx = it.getColumnIndex(COL_BIT_DEPTH)
-
             while (it.moveToNext()) {
-                trackList.add(
-                    Track(
-                        id = it.getLong(idIdx),
-                        title = it.getString(titleIdx) ?: "Unknown Title",
-                        artist = it.getString(artistIdx) ?: "Unknown Artist",
-                        album = it.getString(albumIdx) ?: "Spindle Vault",
-                        durationMs = it.getLong(durationIdx),
-                        filePath = it.getString(pathIdx),
-                        format = it.getString(formatIdx) ?: "AUDIO",
-                        bitrate = it.getInt(bitrateIdx),
-                        sampleRate = it.getInt(sampleRateIdx),
-                        bitDepth = if (bitDepthIdx != -1) it.getInt(bitDepthIdx) else 0
-                    )
-                )
+                trackList.add(readTrackFromCursor(it))
+            }
+        }
+        return trackList
+    }
+
+    /**
+     * Looks up an indexed track by absolute file path.
+     */
+    fun getTrackByPath(filePath: String): Track? {
+        val db = readableDatabase
+        val cursor = db.query(
+            TABLE_TRACKS,
+            null,
+            "$COL_FILE_PATH = ?",
+            arrayOf(filePath),
+            null,
+            null,
+            null
+        )
+        cursor.use {
+            if (it.moveToFirst()) {
+                return readTrackFromCursor(it)
+            }
+        }
+        return null
+    }
+
+    /**
+     * Returns all indexed tracks located in a specific directory (prefix match on file path).
+     */
+    fun getTracksInFolder(folderPath: String): List<Track> {
+        val trackList = ArrayList<Track>()
+        val db = readableDatabase
+        val folderPrefix = if (folderPath.endsWith("/")) folderPath else "$folderPath/"
+        val cursor = db.query(
+            TABLE_TRACKS,
+            null,
+            "$COL_FILE_PATH LIKE ? AND $COL_FILE_PATH NOT LIKE ?",
+            arrayOf("$folderPrefix%", "$folderPrefix%/%"),
+            null,
+            null,
+            "$COL_TITLE ASC"
+        )
+        cursor.use {
+            while (it.moveToNext()) {
+                trackList.add(readTrackFromCursor(it))
             }
         }
         return trackList
@@ -158,5 +180,31 @@ class LiteDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, 
             }
         }
         return 0
+    }
+
+    private fun readTrackFromCursor(cursor: Cursor): Track {
+        val idIdx = cursor.getColumnIndexOrThrow(COL_ID)
+        val titleIdx = cursor.getColumnIndexOrThrow(COL_TITLE)
+        val artistIdx = cursor.getColumnIndexOrThrow(COL_ARTIST)
+        val albumIdx = cursor.getColumnIndexOrThrow(COL_ALBUM)
+        val durationIdx = cursor.getColumnIndexOrThrow(COL_DURATION_MS)
+        val pathIdx = cursor.getColumnIndexOrThrow(COL_FILE_PATH)
+        val formatIdx = cursor.getColumnIndexOrThrow(COL_FORMAT)
+        val bitrateIdx = cursor.getColumnIndexOrThrow(COL_BITRATE)
+        val sampleRateIdx = cursor.getColumnIndexOrThrow(COL_SAMPLE_RATE)
+        val bitDepthIdx = cursor.getColumnIndex(COL_BIT_DEPTH)
+
+        return Track(
+            id = cursor.getLong(idIdx),
+            title = cursor.getString(titleIdx) ?: "Unknown Title",
+            artist = cursor.getString(artistIdx) ?: "Unknown Artist",
+            album = cursor.getString(albumIdx) ?: "Spindle Vault",
+            durationMs = cursor.getLong(durationIdx),
+            filePath = cursor.getString(pathIdx),
+            format = cursor.getString(formatIdx) ?: "AUDIO",
+            bitrate = cursor.getInt(bitrateIdx),
+            sampleRate = cursor.getInt(sampleRateIdx),
+            bitDepth = if (bitDepthIdx != -1) cursor.getInt(bitDepthIdx) else 0
+        )
     }
 }

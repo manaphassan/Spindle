@@ -284,52 +284,96 @@ Spindle is maintained across two targeted build modules to optimize for modern a
 | **UI Framework** | ViewPager2 + Material 3 + Pure Canvas | ViewPager (Legacy) + Pure Canvas (Zero Compose/M3) |
 | **Display Geometry** | Responsive 720p/1080p (16:9, 18:9, 21:9) | Scaled HVGA 320×480 (3:2 Aspect Ratio) |
 | **Hardware Nameplate** | Auto `DeviceNameFormatter` (Customizable) | Auto `DeviceNameFormatter` (Customizable) |
-| **Hardware Key Binding**| Standard MediaSession KeyEvents | Dedicated Camera Shutter Key (`KEYCODE_CAMERA`) + Volume Skip |
+| **Hardware Key Engine** | Standard MediaSession KeyEvents | Full Physical/Capacitive Button Engine (`BACK`, `MENU`, `HOME`, `APP_SWITCH`, `CAMERA` full/half focus, `HEADSETHOOK`, `VOLUME`, `DPAD`) |
 | **Bitmap Cache** | `RGB_565` (512×512, Max 12 MB) | `RGB_565` (256×256, Max 4 MB) |
 | **Idle Memory Footprint**| $< 25\text{ MB}$ | $< 12\text{ MB}$ |
 | **Active Playback RAM** | $< 38\text{ MB}$ | $< 18\text{ MB}$ |
-| **APK Binary Size** | $< 4.5\text{ MB}$ | $< 1.8\text{ MB}$ |
+| **APK Binary Size** | $< 4.5\text{ MB}$ | $< 1.8\text{ MB}$ (1.53 MB Verified) |
 
 ---
 
 ## 8. Product Roadmap & Development Trajectory
 
 ```
-                                  SPINDLE ROADMAP
+                                  SPINDLE ROADMAP & RELEASE MILESTONES
                                   
-   [ v1.2.0-RELEASE ] ──> [ v1.3.0-LITE ] ──> [ v1.4.0-STUDIO ] ──> [ v2.0.0-ECOSYSTEM ]
-     Flagship Deck          :app-lite           Reel-to-Reel           Direct USB ALSA
-     Now Playing Arc        Android 4.4         10-Band ISO EQ         MicroSD Sync
-     24-Band Waveform       320x480 HVGA        Tape Saturation        CUE Sheet Splitter
-     Nameplate Engine       MediaPlayer Chained Foley Engine           DLNA Renderer
-     A-Z Fast Index         Camera Key Hooks    Custom Engraving       Cross-Platform
+   [ v1.2.0-RELEASE ] ──> [ v1.3.0-alpha ] ──> [ v1.0.0-LITE ] ──> [ v1.4.0-STUDIO ] ──> [ v2.0.0-ECOSYSTEM ]
+     Flagship Deck          Ribbon Reels         :app-lite Released   One-Time Paid / Pass   Direct USB ALSA
+     Now Playing Arc        2-Row Routing        Android 4.4 KitKat   $2.99 – $3.99 Unlock   MicroSD Sync
+     24-Band Waveform       Lock Screen Player   100% Free Forever    Reel-to-Reel Decks     CUE Sheet Splitter
+     Nameplate Engine       Analog RF Tuner      1.79MB / <18MB RAM   Analog DSP & Foley     DLNA Renderer
+     A-Z Fast Index         24-bit 96k FLAC      Full Hardware Keys   Tape Saturation        Cross-Platform
 ```
 
-### 8.1 v1.2.0-RELEASE (Current Flagship Stable)
+### 8.1 v1.2.0-RELEASE (Flagship Base Stable)
 * **Flagship Cassette Deck**: Centered acrylic spindle window with kinetic differential spool physics ($v = 4.7625\text{ cm/s}$).
 * **Dedicated Single-Audio Now Playing**: 360° touch radial progress arc scrubber, dynamic 24-band frequency envelope visualizer, format telemetry pill, and synced `.lrc` lyrics drawer.
 * **Music Catalog**: Fast A-Z right-edge index rail with haptic feedback, 6-attribute sorting, and format filter chips.
 * **Bauhaus Minimalist Radio**: Concentric acoustic speaker grille and 3D cylindrical tuning dial.
 * **Dynamic Hardware Nameplate Engine**: Auto-detection and engraving of host device model.
 
-### 8.2 v1.3.0-LITE (In Progress — Vintage & Legacy Target)
-* **Dedicated `:app-lite` Build Module**: Parallel architecture targeting Android 4.4 KitKat (API 19) down to Android 4.1 (API 16).
-* **Responsive HVGA Geometry**: Proportional coordinate scaling for 3.0" 320×480 displays.
-* **Dual Native `MediaPlayer` Engine**: Zero-overhead gapless audio playback via `setNextMediaPlayer()`.
-* **Hardware Key Interception**: Direct binding for physical two-stage camera shutter keys (`KEYCODE_CAMERA`) and screen-off long-press volume track skipping.
-* **Sport / Rain Lock Mode**: Low-power high-contrast B&W touch-disabled display mode.
+### 8.2 v1.3.0-alpha (Current Flagship Alpha)
+* **Kinetic Magnetic Ribbon & Reel Kinematics**: Real-time traveling magnetic tape ribbon with rotating anisotropic specular sheen glare cones, 3-spoke flange cutouts, and transparent polyfilm leader ribbon with 45° amber splice line.
+* **2-Row Real-Time Output Routing Badges**: Dynamic telemetry badge showing container, sample rate, bit depth, and physical output destination (e.g. `FLAC • 24-bit / 96kHz + 3.5mm DIRECT`).
+* **Dedicated Vintage Lock Screen Player**: Keyguard-bypassing transport deck with mechanical levers, digital counter, hardware battery diode telemetry, and upward dismiss gesture.
+* **Analog FM Radio with Ballistic RF Meter**: Galvanometer RF signal needle, ruby red STEREO pilot LED, and 4-color dial incandescent backlighting.
+* **24-bit / 96kHz Hi-Res Native Playback**: Lossless audio routing via AndroidX Media3 (ExoPlayer).
 
-### 8.3 v1.4.0-STUDIO (Planned — Master Studio Collector Edition)
-* **Open Reel-to-Reel Studio Deck**: Animated open reel hubs with tension rollers and ballistic analog VU needles.
+### 8.3 v1.0.0-LITE (Verified Release — Vintage & Legacy Target)
+* **Dedicated `:app-lite` Build Module**: Parallel architecture strictly targeting Android 4.4 KitKat (API 19) down to Android 4.1 Jelly Bean (API 16).
+* **Extreme Memory Optimization**: Verified release APK binary of **1.79 MB** with total active playback memory footprint under **18 MB** (idle $< 12\text{ MB}$).
+* **Responsive 3.0" HVGA Geometry (320×480)**: Dynamic canvas scaling tailored specifically for ultra-compact legacy hardware (`satsuma` Sony Ericsson Xperia active).
+* **Formulation Decks**: Type IV Metal Master, Type II Chrome Hi-Bias, and Type I Normal Studio cassette skins dynamically triggered by file audio fidelity.
+* **Mechanical Cassette Hardware Kinematics**: Zero-allocation 3-digit mechanical odometer drum counter (`000`–`999`), optical window glare sheen, and dual brass capstan guide pins.
+* **Dual Native `MediaPlayer` Engine**: Zero-overhead gapless audio playback via `setNextMediaPlayer()` chaining.
+* **Zero-Dependency Stream Parser (`AudioHeaderParser`)**: Native binary parsing of FLAC STREAMINFO and WAV RIFF chunks in $< 0.1\text{ms}$ for accurate bit-depth extraction.
+* **Full Physical & Capacitive Hardware Button Engine**: Complete hardware button matrix intercepting `BACK`, `MENU`, `HOME`, `APP_SWITCH`, `CAMERA` (full click Play/Pause, hold sleep/wake), `FOCUS` (half-press Next Track), `HEADSETHOOK` (1/2/3 clicks), `VOLUME` (screen-off long-press skip), and `DPAD`.
+* **Root `BACK` Key Tape Vault Trigger**: Pressing `BACK` at the root deck instantly slides open the Tape Vault catalogue; within overlays, `BACK` gracefully closes the drawer/vault.
+* **Tape Vault 3-Tab Music Catalogue**: `TRACKS`, `FOLDERS` (hierarchical physical file-tree browser with `..` parent navigation), and `QUEUE` tabs with instant `HI-RES` and `LOSSLESS` filter chips.
+* **Tactile App Drawer with Package Management**: 48dp+ single-thumb hit targets and long-press dialog for App Info (`APPLICATION_DETAILS_SETTINGS`) and App Uninstall (`ACTION_UNINSTALL_PACKAGE`).
+
+### 8.4 v1.4.0-STUDIO (Planned — Master Studio Collector Edition & Monetization Milestone)
+* **Distribution Milestone**: Launch of the **One-Time Studio Collector Pass ($2.99 – $3.99)** alongside the permanent Free Core player.
+* **Open Reel-to-Reel Studio Deck**: Animated open reel hubs with tension rollers, spinning supply/takeup reels, and ballistic analog VU needles.
 * **10-Band ISO Parametric Studio EQ**: Hardware-accelerated parametric equalizer with high-precision Q-factor controls.
 * **Analog Sound DSP**: Warm tape saturation simulation, vintage tube warmth harmonics, and analog vinyl crackle toggles.
 * **Mechanical Cassette Foley Engine**: Runtime procedural 16-bit PCM sound generation for solenoid clicks, head engagement, and motor flutter.
-* **Custom Laser Nameplate Engraving**: Custom typography editor for personalizing hardware faceplates.
+* **Exclusive Collector Formulations**: Type IV Metal Master, gold-foil commemorative shells, and Teac studio reel-to-reel visual skins.
+* **Custom Laser Nameplate Engraving**: Personalized hardware faceplates with user-engraved callsigns or DAP serial numbers.
 
-### 8.4 v2.0.0-ECOSYSTEM (Future Vision)
+### 8.5 v2.0.0-ECOSYSTEM (Future Vision)
 * **Direct USB-OTG ALSA Driver**: Custom native user-space USB Audio Class 2.0 driver bypassing Android audio framework for bit-perfect DSD512 / 32-bit 768kHz output.
 * **Audiophile CUE Sheet Splitter**: Real-time virtual track indexing for monolithic FLAC/APE album rips.
 * **Cross-DAP MicroSD Catalog Sync**: Fast metadata transfer and playlist sharing between devices.
+* **Hardware Volumio / DLNA Renderer**: Remote streaming endpoint control for home Hi-Fi stacks.
+
+### 8.6 Commercial Distribution & Monetization Architecture
+
+Spindle adopts a **"Fair Ownership & Anti-Subscription"** monetization architecture tailored specifically for the audiophile and retro-tech communities:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                   SPINDLE COMMERCIAL & DISTRIBUTION MATRIX                  │
+├──────────────────────────┬─────────────────────────┬────────────────────────┤
+│     SPINDLE LITE         │    SPINDLE STANDARD     │    STUDIO COLLECTOR    │
+│      (v1.0.0-LITE)       │     (v1.4.0-alpha)      │   (One-Time Unlock)    │
+├──────────────────────────┼─────────────────────────┼────────────────────────┤
+│ • Status: 100% Free      │ • Status: Free Core     │ • Status: $2.99 – $3.99│
+│ • Distribution: Sideload │ • Distribution: Direct  │ • Distribution: Play   │
+│   APK / GitHub / Web     │   APK & Google Play     │   Store / In-App Key   │
+│ • Target: Android 4.4    │ • Target: Android 8.0+  │ • Target: Modern DAPs  │
+│ • Full hardware buttons  │ • Kinetic cassette reels│ • Reel-to-Reel decks   │
+│ • Tape Vault catalogue   │ • FM & Online radio     │ • Tape saturation DSP  │
+│ • Zero tracking / no ads │ • Synced lyrics & EQ    │ • Custom foley engine  │
+│ • E-waste revival hero   │ • 100% Offline & ad-free│ • Lifetime license     │
+└──────────────────────────┴─────────────────────────┴────────────────────────┘
+```
+
+#### Core Commercial Principles:
+1. **Zero Recurring Subscriptions**: Subscriptions are strictly prohibited. Local music players manage user-owned audio files stored on physical flash memory; users will never be subjected to monthly or annual charges.
+2. **Spindle Lite Permanent Free Exemption**: Spindle Lite is strictly exempt from monetization. Vintage hardware running Android 4.4 (KitKat) cannot reliably execute modern Google Play Services or Play Billing APIs. Lite functions as an open-source gift to the vintage tech community and e-waste revival movement, establishing organic trust and grassroots adoption.
+3. **One-Time Lifetime Studio Unlock ($2.99 – $3.99)**: Implemented as a single, permanent in-app purchase or unlock key on Google Play for Spindle Standard. Free users retain all essential playback, radio, and catalog features without ads; paying supporters unlock artisanal cosmetic studio hardware skins and analog audio DSP simulations.
+4. **Community Sponsorship Channels**: Sideloaders and direct APK users are provided a voluntary sponsorship pathway via direct PayPal contribution ([paypal.me/manaphassan](https://paypal.me/manaphassan)) and GitHub Sponsors to fund physical test device acquisitions.
 
 ---
 

@@ -46,7 +46,7 @@ class TrackTest {
             sampleRate = 44100
         )
         assertEquals("FLAC 44.1k", flacStandard.formatBadge)
-        assertEquals("SPINDLE • TYPE IV METAL BIAS", flacStandard.tapeBiasType)
+        assertEquals("SPINDLE • TYPE II HIGH BIAS (CrO2)", flacStandard.tapeBiasType)
     }
 
     @Test

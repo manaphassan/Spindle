@@ -15,7 +15,7 @@
     <LinearLayout
         android:id="@+id/topTabBar"
         android:layout_width="match_parent"
-        android:layout_height="28dp"
+        android:layout_height="38dp"
         android:background="@drawable/bg_search_bar"
         android:gravity="center_vertical"
         android:orientation="horizontal"
@@ -32,7 +32,7 @@
             android:fontFamily="monospace"
             android:text="EQ / DSP"
             android:textColor="@color/lite_text_primary"
-            android:textSize="9.5sp"
+            android:textSize="10.5sp"
             android:textStyle="bold" />
 
         <Button
@@ -47,7 +47,7 @@
             android:fontFamily="monospace"
             android:text="APPS"
             android:textColor="@color/brand_orange"
-            android:textSize="9.5sp"
+            android:textSize="10.5sp"
             android:textStyle="bold" />
 
         <Button
@@ -60,7 +60,7 @@
             android:fontFamily="monospace"
             android:text="SETTINGS"
             android:textColor="@color/lite_text_primary"
-            android:textSize="9.5sp"
+            android:textSize="10.5sp"
             android:textStyle="bold" />
     </LinearLayout>
 
@@ -89,7 +89,7 @@
                 <!-- DSP Preset Selector Strip -->
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="26dp"
+                    android:layout_height="36dp"
                     android:orientation="horizontal"
                     android:layout_marginBottom="6dp">
 
@@ -103,7 +103,7 @@
                         android:fontFamily="monospace"
                         android:text="FLAT"
                         android:textColor="@color/brand_orange"
-                        android:textSize="8.5sp"
+                        android:textSize="9.5sp"
                         android:textStyle="bold" />
 
                     <Button
@@ -117,7 +117,7 @@
                         android:fontFamily="monospace"
                         android:text="BASS+"
                         android:textColor="@color/lite_text_secondary"
-                        android:textSize="8.5sp"
+                        android:textSize="9.5sp"
                         android:textStyle="bold" />
 
                     <Button
@@ -131,7 +131,7 @@
                         android:fontFamily="monospace"
                         android:text="VOCAL"
                         android:textColor="@color/lite_text_secondary"
-                        android:textSize="8.5sp"
+                        android:textSize="9.5sp"
                         android:textStyle="bold" />
 
                     <Button
@@ -145,7 +145,7 @@
                         android:fontFamily="monospace"
                         android:text="ROCK"
                         android:textColor="@color/lite_text_secondary"
-                        android:textSize="8.5sp"
+                        android:textSize="9.5sp"
                         android:textStyle="bold" />
 
                     <Button
@@ -159,14 +159,14 @@
                         android:fontFamily="monospace"
                         android:text="TAPE"
                         android:textColor="@color/lite_text_secondary"
-                        android:textSize="8.5sp"
+                        android:textSize="9.5sp"
                         android:textStyle="bold" />
                 </LinearLayout>
 
                 <!-- EQ Sub-header with Bypass / DSP Power Toggle -->
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="22dp"
+                    android:layout_height="32dp"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
                     android:layout_marginBottom="4dp">
@@ -186,16 +186,16 @@
                         android:id="@+id/btnEqToggle"
                         style="?android:attr/borderlessButtonStyle"
                         android:layout_width="wrap_content"
-                        android:layout_height="22dp"
+                        android:layout_height="32dp"
                         android:background="@drawable/bg_format_pill"
                         android:fontFamily="monospace"
-                        android:paddingLeft="6dp"
-                        android:paddingTop="1dp"
-                        android:paddingRight="6dp"
-                        android:paddingBottom="1dp"
+                        android:paddingLeft="8dp"
+                        android:paddingTop="2dp"
+                        android:paddingRight="8dp"
+                        android:paddingBottom="2dp"
                         android:text="DSP: ON"
                         android:textColor="@color/lite_led_green"
-                        android:textSize="8.5sp"
+                        android:textSize="9.5sp"
                         android:textStyle="bold" />
                 </LinearLayout>
 
@@ -203,7 +203,7 @@
                 <!-- Band 0: ~60 Hz Sub-Bass -->
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="24dp"
+                    android:layout_height="32dp"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
                     android:layout_marginBottom="2dp">
@@ -237,7 +237,7 @@
                 <!-- Band 1: ~230 Hz Mid-Bass -->
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="24dp"
+                    android:layout_height="32dp"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
                     android:layout_marginBottom="2dp">
@@ -271,7 +271,7 @@
                 <!-- Band 2: ~910 Hz Vocal Mid -->
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="24dp"
+                    android:layout_height="32dp"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
                     android:layout_marginBottom="2dp">
@@ -305,7 +305,7 @@
                 <!-- Band 3: ~3.6 kHz Presence -->
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="24dp"
+                    android:layout_height="32dp"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
                     android:layout_marginBottom="2dp">
@@ -339,7 +339,7 @@
                 <!-- Band 4: ~14 kHz Air / Brilliance -->
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="24dp"
+                    android:layout_height="32dp"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
                     android:layout_marginBottom="4dp">
@@ -373,7 +373,7 @@
                 <!-- Hardware Bass Boost Slider -->
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="24dp"
+                    android:layout_height="34dp"
                     android:background="@drawable/bg_search_bar"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
@@ -413,7 +413,7 @@
                 <!-- Master Output Gain Fader (EQ Page) -->
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="24dp"
+                    android:layout_height="34dp"
                     android:background="@drawable/bg_search_bar"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
@@ -446,6 +446,196 @@
                         android:text="70%"
                         android:textColor="@color/lite_text_secondary"
                         android:textSize="9sp" />
+                </LinearLayout>
+
+                <!-- Headphone Output Stage Selector -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="24dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="2dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:fontFamily="monospace"
+                        android:letterSpacing="0.06"
+                        android:text="HEADPHONE OUTPUT STAGE"
+                        android:textColor="@color/lite_text_secondary"
+                        android:textSize="9sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="36dp"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="6dp">
+
+                    <Button
+                        android:id="@+id/btnGainIem"
+                        style="?android:attr/borderlessButtonStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_preset_button"
+                        android:fontFamily="monospace"
+                        android:text="IEM (0dB)"
+                        android:textColor="@color/brand_orange"
+                        android:textSize="9.5sp"
+                        android:textStyle="bold" />
+
+                    <Button
+                        android:id="@+id/btnGainCans"
+                        style="?android:attr/borderlessButtonStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:layout_marginLeft="2dp"
+                        android:background="@drawable/bg_preset_button"
+                        android:fontFamily="monospace"
+                        android:text="CANS (+6dB)"
+                        android:textColor="@color/lite_text_secondary"
+                        android:textSize="9.5sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- ReplayGain Loudness Normalization -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="24dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="2dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:fontFamily="monospace"
+                        android:letterSpacing="0.06"
+                        android:text="REPLAYGAIN NORMALIZATION"
+                        android:textColor="@color/lite_text_secondary"
+                        android:textSize="9sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="36dp"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="6dp">
+
+                    <Button
+                        android:id="@+id/btnRgOff"
+                        style="?android:attr/borderlessButtonStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_preset_button"
+                        android:fontFamily="monospace"
+                        android:text="OFF"
+                        android:textColor="@color/brand_orange"
+                        android:textSize="9.5sp"
+                        android:textStyle="bold" />
+
+                    <Button
+                        android:id="@+id/btnRgTrack"
+                        style="?android:attr/borderlessButtonStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:layout_marginLeft="2dp"
+                        android:background="@drawable/bg_preset_button"
+                        android:fontFamily="monospace"
+                        android:text="TRACK"
+                        android:textColor="@color/lite_text_secondary"
+                        android:textSize="9.5sp"
+                        android:textStyle="bold" />
+
+                    <Button
+                        android:id="@+id/btnRgAlbum"
+                        style="?android:attr/borderlessButtonStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:layout_marginLeft="2dp"
+                        android:background="@drawable/bg_preset_button"
+                        android:fontFamily="monospace"
+                        android:text="ALBUM"
+                        android:textColor="@color/lite_text_secondary"
+                        android:textSize="9.5sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- Audio Crossfade / Transition Mode -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="24dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="2dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:fontFamily="monospace"
+                        android:letterSpacing="0.06"
+                        android:text="TRACK TRANSITION"
+                        android:textColor="@color/lite_text_secondary"
+                        android:textSize="9sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="36dp"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/btnTransGapless"
+                        style="?android:attr/borderlessButtonStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_preset_button"
+                        android:fontFamily="monospace"
+                        android:text="GAPLESS"
+                        android:textColor="@color/brand_orange"
+                        android:textSize="9.5sp"
+                        android:textStyle="bold" />
+
+                    <Button
+                        android:id="@+id/btnTransFade2s"
+                        style="?android:attr/borderlessButtonStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:layout_marginLeft="2dp"
+                        android:background="@drawable/bg_preset_button"
+                        android:fontFamily="monospace"
+                        android:text="FADE 2s"
+                        android:textColor="@color/lite_text_secondary"
+                        android:textSize="9.5sp"
+                        android:textStyle="bold" />
+
+                    <Button
+                        android:id="@+id/btnTransFade4s"
+                        style="?android:attr/borderlessButtonStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:layout_marginLeft="2dp"
+                        android:background="@drawable/bg_preset_button"
+                        android:fontFamily="monospace"
+                        android:text="FADE 4s"
+                        android:textColor="@color/lite_text_secondary"
+                        android:textSize="9.5sp"
+                        android:textStyle="bold" />
                 </LinearLayout>
             </LinearLayout>
         </ScrollView>
@@ -498,7 +688,7 @@
             <!-- Master Gain Precision Fader Strip -->
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="24dp"
+                android:layout_height="34dp"
                 android:background="@drawable/bg_search_bar"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
@@ -538,7 +728,7 @@
             <EditText
                 android:id="@+id/etSearchApps"
                 android:layout_width="match_parent"
-                android:layout_height="28dp"
+                android:layout_height="36dp"
                 android:background="@drawable/bg_search_bar"
                 android:hint="Filter applications..."
                 android:textColorHint="@color/lite_text_muted"
@@ -596,7 +786,7 @@
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="28dp"
+                    android:layout_height="36dp"
                     android:orientation="horizontal"
                     android:layout_marginBottom="8dp">
 
@@ -610,7 +800,7 @@
                         android:fontFamily="monospace"
                         android:text="TYPE I NORMAL"
                         android:textColor="@color/lite_text_primary"
-                        android:textSize="8.5sp"
+                        android:textSize="9.5sp"
                         android:textStyle="bold" />
 
                     <Button
@@ -625,7 +815,7 @@
                         android:fontFamily="monospace"
                         android:text="TYPE II CHROME"
                         android:textColor="@color/brand_orange"
-                        android:textSize="8.5sp"
+                        android:textSize="9.5sp"
                         android:textStyle="bold" />
 
                     <Button
@@ -638,7 +828,7 @@
                         android:fontFamily="monospace"
                         android:text="TYPE IV METAL"
                         android:textColor="@color/lite_text_primary"
-                        android:textSize="8.5sp"
+                        android:textSize="9.5sp"
                         android:textStyle="bold" />
                 </LinearLayout>
 
@@ -656,7 +846,7 @@
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="28dp"
+                    android:layout_height="36dp"
                     android:orientation="horizontal"
                     android:layout_marginBottom="8dp">
 
@@ -669,7 +859,7 @@
                         android:hint="Custom device engraving..."
                         android:textColorHint="@color/lite_text_muted"
                         android:textColor="@color/lite_amber_glow"
-                        android:textSize="10.5sp"
+                        android:textSize="11sp"
                         android:fontFamily="monospace"
                         android:paddingLeft="8dp"
                         android:paddingRight="8dp"
@@ -683,11 +873,11 @@
                         android:layout_marginLeft="4dp"
                         android:background="@drawable/bg_preset_button"
                         android:fontFamily="monospace"
-                        android:paddingLeft="10dp"
-                        android:paddingRight="10dp"
+                        android:paddingLeft="12dp"
+                        android:paddingRight="12dp"
                         android:text="ENGRAVE"
                         android:textColor="@color/brand_orange"
-                        android:textSize="8.5sp"
+                        android:textSize="9.5sp"
                         android:textStyle="bold" />
                 </LinearLayout>
 
@@ -725,12 +915,12 @@
                         android:id="@+id/btnRescanVault"
                         style="?android:attr/borderlessButtonStyle"
                         android:layout_width="match_parent"
-                        android:layout_height="26dp"
+                        android:layout_height="38dp"
                         android:background="@drawable/bg_preset_button"
                         android:fontFamily="monospace"
                         android:text="RESCAN TAPE VAULT"
                         android:textColor="@color/brand_orange"
-                        android:textSize="9sp"
+                        android:textSize="10sp"
                         android:textStyle="bold" />
                 </LinearLayout>
 

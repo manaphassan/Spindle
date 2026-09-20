@@ -15,5 +15,7 @@ Captures
 .cxx
 *.apk
 *.aab
+!release_package/**/*.apk
+!docs/releases/*.apk
 .vscode/
 .kotlin/

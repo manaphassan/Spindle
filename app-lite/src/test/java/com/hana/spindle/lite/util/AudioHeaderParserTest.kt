@@ -95,4 +95,49 @@ class AudioHeaderParserTest {
             tempFile.delete()
         }
     }
+
+    @Test
+    fun testCueSheetParsing() {
+        val cueContent = """
+            PERFORMER "Pink Floyd"
+            TITLE "The Dark Side of the Moon"
+            FILE "album.flac" WAVE
+              TRACK 01 AUDIO
+                TITLE "Speak to Me"
+                PERFORMER "Pink Floyd"
+                INDEX 01 00:00:00
+              TRACK 02 AUDIO
+                TITLE "Breathe (In the Air)"
+                PERFORMER "Pink Floyd"
+                INDEX 01 01:13:00
+              TRACK 03 AUDIO
+                TITLE "On the Run"
+                PERFORMER "Pink Floyd"
+                INDEX 01 03:56:50
+        """.trimIndent()
+
+        val tempCue = File.createTempFile("album", ".cue")
+        try {
+            tempCue.writeText(cueContent)
+            val cueTracks = AudioHeaderParser.parseCueSheet(tempCue)
+            assertEquals(3, cueTracks.size)
+
+            assertEquals(1, cueTracks[0].trackIndex)
+            assertEquals("Speak to Me", cueTracks[0].title)
+            assertEquals("Pink Floyd", cueTracks[0].artist)
+            assertEquals(0L, cueTracks[0].startOffsetMs)
+            assertEquals("album.flac", cueTracks[0].referencedAudioFileName)
+
+            assertEquals(2, cueTracks[1].trackIndex)
+            assertEquals("Breathe (In the Air)", cueTracks[1].title)
+            assertEquals(73000L, cueTracks[1].startOffsetMs) // 1 min 13 sec = 73,000 ms
+
+            assertEquals(3, cueTracks[2].trackIndex)
+            assertEquals("On the Run", cueTracks[2].title)
+            // 3 min 56 sec = 236,000 ms + (50 * 1000 / 75) = 236000 + 666 = 236666 ms
+            assertEquals(236666L, cueTracks[2].startOffsetMs)
+        } finally {
+            tempCue.delete()
+        }
+    }
 }

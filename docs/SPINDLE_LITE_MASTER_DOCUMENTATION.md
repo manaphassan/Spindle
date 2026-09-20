@@ -30,7 +30,7 @@ While the flagship Spindle (v1.2+) targets modern DAPs and compact phones (Andro
 +---------------------------------------------------------------------------------------+
 |                                SUBSYSTEM COMPARISON                                   |
 +--------------------------+--------------------------------+---------------------------+
-| Architectural Dimension  | Standard Spindle (v1.2 / :app) | Spindle Lite (v1.0 / :app-lite)|
+| Architectural Dimension  | Standard Spindle (v1.2 / :app-main) | Spindle Lite (v1.0 / :app-lite)|
 +--------------------------+--------------------------------+---------------------------+
 | Target Platform          | Android 8.0+ (API 26 – 35)     | Android 4.4 KitKat (API 19)|
 | Target Hardware          | 1GB – 4GB RAM DAPs & Phones    | 512MB RAM Legacy Devices  |
@@ -44,7 +44,7 @@ While the flagship Spindle (v1.2+) targets modern DAPs and compact phones (Andro
 | Idle RAM Usage           | < 25 MB                        | < 12 MB                   |
 | Active Playback RAM      | < 38 MB                        | < 18 MB                   |
 | APK Binary Size          | < 4.5 MB                       | < 1.8 MB                  |
-| Hardware Key Integration | Android MediaSession           | KEYCODE_CAMERA + Volume   |
+| Hardware Key Integration | Android MediaSession           | Full Hardware Suite (BACK, MENU, HOME, RECENT, CAMERA, DPAD, VOL, HEADSET) |
 +--------------------------+--------------------------------+---------------------------+
 ```
 
@@ -134,20 +134,51 @@ To ensure the flagship kinetic cassette deck renders flawlessly on the 3.0" disp
 
 ---
 
-## 6. Physical Hardware Control Integration (`satsuma`)
+## 6. Physical & Capacitive Hardware Button Engine
 
-Dedicated physical buttons are bound directly for tactile control:
+On dedicated vintage DAPs and rugged compact hardware (e.g. `satsuma` Sony Ericsson Xperia active), physical and capacitive buttons provide deterministic tactile control without requiring touch screen interaction:
 
-1. **Hardware Camera Shutter Button (`KeyEvent.KEYCODE_CAMERA`)**:
-   - **Full Press**: Toggle **Play / Pause**.
-   - **Long Press**: Toggle screen sleep / wake.
-2. **Volume Keys**:
-   - **Standard Click**: Incremental volume adjustment.
-   - **Screen-Off Long Press**: Trigger Next Track (`KEYCODE_MEDIA_NEXT`) or Previous Track (`KEYCODE_MEDIA_PREVIOUS`).
-3. **Headset Remote (3.5mm TRRS)**:
-   - Single click: Play/Pause.
-   - Double click: Skip track.
-   - Triple click: Previous track.
+```
++-----------------------------------------------------------------------------------------+
+|                                HARDWARE KEY DISPATCH MATRIX                             |
++----------------------+---------------------------+--------------------------------------+
+| Hardware Key         | KeyEvent Constant         | Functional Action                    |
++----------------------+---------------------------+--------------------------------------+
+| BACK                 | KEYCODE_BACK              | Vault open -> Close Vault            |
+|                      |                           | Drawer open -> Close Drawer          |
+|                      |                           | Root deck -> Open Tape Vault Catalog |
+| MENU                 | KEYCODE_MENU              | Toggle Tactile App Drawer            |
+| HOME                 | KEYCODE_HOME              | Dismiss overlays -> Return to Deck   |
+| APP_SWITCH / RECENT  | KEYCODE_APP_SWITCH        | Open system Recent Apps task manager |
+|                      | (or KEYCODE_BUTTON_SELECT)|                                      |
+| CAMERA (Full Click)  | KEYCODE_CAMERA            | Toggle Play / Pause                  |
+| CAMERA (Long Press)  | KEYCODE_CAMERA (Hold)     | Toggle display sleep / low-power lock|
+| FOCUS (Half Shutter) | KEYCODE_FOCUS             | Skip to Next Track                   |
+| HEADSET HOOK         | KEYCODE_HEADSETHOOK       | 1 click: Play / Pause                |
+|                      |                           | 2 clicks: Next Track                 |
+|                      |                           | 3 clicks: Previous Track             |
+| VOLUME UP / DOWN     | KEYCODE_VOLUME_UP/DOWN    | Screen on: Hardware audio volume     |
+|                      |                           | Screen off: Long-press Next/Prev Skip|
+| DPAD CENTER          | KEYCODE_DPAD_CENTER       | Toggle Play / Pause                  |
+| DPAD RIGHT / LEFT    | KEYCODE_DPAD_RIGHT / LEFT | Skip Next Track / Previous Track     |
+| DPAD DOWN / UP       | KEYCODE_DPAD_DOWN / UP    | DOWN: Open Vault / UP: Close Vault   |
++----------------------+---------------------------+--------------------------------------+
+```
+
+1. **Root `BACK` Button Tape Vault Trigger**:
+   - Intercepted in `LiteMainActivity.onKeyDown()`. If `VaultDialogFragment` or `AppDrawerDialogFragment` is visible, `BACK` gracefully closes the active overlay.
+   - When already at the root kinetic tape deck, pressing `BACK` immediately slides open the **Tape Vault** music catalog—providing instantaneous thumb navigation without reaching for on-screen touch tabs.
+2. **Dedicated Camera Shutter Two-Stage Engine (`KEYCODE_CAMERA` & `KEYCODE_FOCUS`)**:
+   - Utilizing the two-stage tactile microswitch found on dedicated camera/audio hardware:
+     - **Half-Press (`KEYCODE_FOCUS`)**: Instantly advances to the next track (`skipNext()`).
+     - **Full-Press (`KEYCODE_CAMERA`)**: Toggles audio playback between Play and Pause.
+     - **Long-Press**: Triggers screen sleep/wake for one-handed pocket operation.
+3. **Screen-Off Volume Rocker Long-Press**:
+   - Handled via `HardwareButtonReceiver` to allow eyes-free pocket track changes without waking the CPU or powering the display.
+4. **Capacitive Navigation Keys (`MENU`, `HOME`, `APP_SWITCH`)**:
+   - `MENU`: Toggles the tactile app drawer.
+   - `HOME`: Instantly returns focus to the running cassette deck from any sub-state.
+   - `APP_SWITCH` (`KEYCODE_APP_SWITCH`, `KEYCODE_BUTTON_SELECT`): Directly invokes the Android Recent Apps task manager via internal intent.
 
 ---
 
@@ -219,6 +250,41 @@ To bypass the limitations of legacy Android MediaStore scrapers on Android 4.4 K
 * **FLAC STREAMINFO Extraction**: Inspects the native 34-byte metadata header in $<0.1\text{ms}$, extracting exact sample rate (e.g. `96000 Hz`, `44100 Hz`), true bit depth (`24-bit` vs `16-bit`), and channel layout.
 * **WAV RIFF fmt Extraction**: Scans RIFF chunks directly for uncompressed PCM bit depth and sample frequency.
 * **Dynamic Audiophile Badging**: Surfaces genuine mastering resolution on the deck (`FLAC 24b/96k`, `WAV 24b/96k`, `FLAC 16b/44.1k`, `MP3 320K`).
+
+---
+
+## 11. Tactile App Drawer & Package Management (`AppDrawerDialogFragment`)
+
+On compact 3.0" screens, standard Android launcher grids cause high mistap rates. Spindle Lite redesigns the application drawer for single-thumb ergonomics:
+
+1. **48dp Minimum Touch Targets**:
+   - Every application list item conforms to standard ergonomic touch guidelines with an enlarged 48dp+ hit boundary, prominent high-contrast app icon, and distinct package title.
+2. **Interactive App Management Modal**:
+   - **Standard Tap**: Instantly launches the target application and dismisses the drawer.
+   - **Long-Press**: Opens a dedicated native action dialog:
+     - **App Info / Properties**: Dispatches `android.settings.APPLICATION_DETAILS_SETTINGS` to inspect permissions, storage cache, force stop, or manage notifications.
+     - **Uninstall App**: Dispatches `Intent.ACTION_UNINSTALL_PACKAGE` (with fallback to `Intent.ACTION_DELETE` for API 14+) with clean package URI targeting.
+3. **Tactile Invocation**:
+   - Can be opened via the on-screen tactile bottom-sheet handle or instantly toggled via the physical/capacitive hardware **`MENU`** key.
+
+---
+
+## 12. Tape Vault Catalogue Architecture (`VaultDialogFragment`)
+
+The **Tape Vault** is Spindle Lite's lightweight music library browser, built specifically to navigate massive MicroSD music collections on low-memory hardware:
+
+1. **3-Tab Segmented Organization**:
+   - **`TRACKS`**: Unified alphabetical listing of all indexed audio files with format badges, track artist, and duration.
+   - **`FOLDERS`**: Direct physical file-tree browser (`/storage/sdcard1/Music/`) supporting hierarchical navigation, folder drill-down, and quick parent directory (`..`) navigation.
+   - **`QUEUE`**: Active playback sequence with real-time indicator of the currently playing track.
+2. **Audiophile Format Quick-Filters**:
+   - **`HI-RES`**: Instantly isolates 24-bit / 96kHz+ master files.
+   - **`LOSSLESS`**: Filters the catalog down to FLAC and WAV bit-perfect audio.
+3. **Instant Search Filter**:
+   - Real-time text filtering across title, artist, and album with zero background allocation overhead.
+4. **Seamless Navigation & Dismissal**:
+   - Opened via on-screen bottom bar or physical hardware **`BACK`** button on the root deck.
+   - Pressing **`BACK`** within the vault instantly returns focus to the running cassette deck.
 
 ---
 

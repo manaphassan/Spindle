@@ -5,13 +5,22 @@
     android:background="?android:attr/selectableItemBackground"
     android:gravity="center_vertical"
     android:orientation="horizontal"
-    android:paddingLeft="8dp"
+    android:paddingLeft="4dp"
     android:paddingRight="8dp">
+
+    <!-- J-Card Cassette Formulation Spine (Type IV Gold, Type II Blue, Type I Grey) -->
+    <View
+        android:id="@+id/vTapeSpine"
+        android:layout_width="3.5dp"
+        android:layout_height="match_parent"
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="5dp"
+        android:background="@color/brand_orange" />
 
     <!-- Track Index / Number -->
     <TextView
         android:id="@+id/tvTrackIndex"
-        android:layout_width="32dp"
+        android:layout_width="28dp"
         android:layout_height="wrap_content"
         android:fontFamily="monospace"
         android:gravity="center"

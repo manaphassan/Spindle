@@ -1,5 +1,6 @@
 package com.hana.spindle.lite.launcher
 
+import android.view.HapticFeedbackConstants
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,7 +12,8 @@ import com.hana.spindle.lite.R
 
 class LiteAppAdapter(
     private var allApps: List<LiteAppInfo>,
-    private val onAppClick: (LiteAppInfo) -> Unit
+    private val onAppClick: (LiteAppInfo) -> Unit,
+    private val onAppLongClick: ((LiteAppInfo) -> Unit)? = null
 ) : RecyclerView.Adapter<LiteAppAdapter.AppViewHolder>(), SectionIndexer {
 
     private var displayedApps: List<LiteAppInfo> = allApps
@@ -34,11 +36,15 @@ class LiteAppAdapter(
             allApps
         } else {
             val q = query.trim().lowercase()
-            allApps.filter { it.label.lowercase().contains(q) }
+            allApps.filter {
+                it.label.lowercase().contains(q) || it.packageName.lowercase().contains(q)
+            }
         }
         rebuildSections()
         notifyDataSetChanged()
     }
+
+    fun getDisplayedApps(): List<LiteAppInfo> = displayedApps
 
     private fun rebuildSections() {
         val sectionList = mutableListOf<String>()
@@ -66,7 +72,7 @@ class LiteAppAdapter(
 
     override fun onBindViewHolder(holder: AppViewHolder, position: Int) {
         val app = displayedApps[position]
-        holder.bind(app, onAppClick)
+        holder.bind(app, onAppClick, onAppLongClick)
     }
 
     override fun getItemCount(): Int = displayedApps.size
@@ -89,15 +95,30 @@ class LiteAppAdapter(
     class AppViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val ivIcon: ImageView = itemView.findViewById(R.id.ivAppIcon)
         private val tvName: TextView = itemView.findViewById(R.id.tvAppName)
+        private val tvPackage: TextView? = itemView.findViewById(R.id.tvAppPackage)
 
-        fun bind(app: LiteAppInfo, onClick: (LiteAppInfo) -> Unit) {
+        fun bind(
+            app: LiteAppInfo,
+            onClick: (LiteAppInfo) -> Unit,
+            onLongClick: ((LiteAppInfo) -> Unit)?
+        ) {
             tvName.text = app.label
+            tvPackage?.text = app.packageName
             if (app.icon != null) {
                 ivIcon.setImageDrawable(app.icon)
             } else {
                 ivIcon.setImageResource(android.R.drawable.sym_def_app_icon)
             }
             itemView.setOnClickListener { onClick(app) }
+            if (onLongClick != null) {
+                itemView.setOnLongClickListener {
+                    it.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                    onLongClick(app)
+                    true
+                }
+            } else {
+                itemView.setOnLongClickListener(null)
+            }
         }
     }
 }

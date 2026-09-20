@@ -27,14 +27,67 @@ class LiteAudioEngine(private val context: Context) :
     private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     private val mainHandler = Handler(Looper.getMainLooper())
 
+    enum class PlayMode {
+        ALL,
+        REPEAT_ONE,
+        SHUFFLE
+    }
+
+    enum class GainStage(val gainDb: Float) {
+        LOW_IEM(0f),
+        HIGH_CANS(6f)
+    }
+
+    enum class ReplayGainMode {
+        OFF,
+        TRACK,
+        ALBUM
+    }
+
+    enum class CrossfadeMode(val durationMs: Long) {
+        GAPLESS(0L),
+        CROSSFADE_2S(2000L),
+        CROSSFADE_4S(4000L)
+    }
+
+    var playMode: PlayMode = PlayMode.ALL
+
+    var gainStage: GainStage = GainStage.LOW_IEM
+        set(value) {
+            field = value
+            audioFxController.setPreampGainDb(value.gainDb)
+        }
+
+    var replayGainMode: ReplayGainMode = ReplayGainMode.TRACK
+        set(value) {
+            field = value
+            applyPlayerVolume()
+        }
+
+    var crossfadeMode: CrossfadeMode = CrossfadeMode.GAPLESS
+
+    var isScreenOn: Boolean = true
+        set(value) {
+            field = value
+            if (value && isPlaying) {
+                mainHandler.removeCallbacks(progressRunnable)
+                mainHandler.post(progressRunnable)
+            }
+        }
+
     val audioFxController = LiteAudioFxController(context)
 
-    private var playlist: List<Track> = emptyList()
+    var playlist: List<Track> = emptyList()
+        private set
     private var currentIndex: Int = -1
     var isPlaying: Boolean = false
         private set
 
     var listener: PlaybackListener? = null
+    var serviceListener: PlaybackListener? = null
+
+    private var isCrossfading = false
+    private var crossfadeStartTime = 0L
 
     private val progressRunnable = object : Runnable {
         override fun run() {
@@ -43,16 +96,26 @@ class LiteAudioEngine(private val context: Context) :
                     val currentPos = primaryPlayer?.currentPosition?.toLong() ?: 0L
                     val duration = primaryPlayer?.duration?.toLong() ?: 0L
 
-                    // If we're at 85% progress and next player not chained, prepare gapless next player
+                    // If we're at 85% progress and next player not chained, prepare next player
                     if (!isNextPlayerChained && duration > 0 && currentPos > (duration * 0.85)) {
                         chainNextTrack()
                     }
 
-                    notifyStateChanged(currentPos, duration)
+                    // Check if crossfade transition should trigger
+                    if (crossfadeMode != CrossfadeMode.GAPLESS && !isCrossfading && nextPlayer != null &&
+                        duration > 0 && currentPos >= (duration - crossfadeMode.durationMs)
+                    ) {
+                        startCrossfade()
+                    }
+
+                    if (isScreenOn) {
+                        notifyStateChanged(currentPos, duration)
+                    }
                 } catch (e: Exception) {
                     // Safe catch if player was released
                 }
-                mainHandler.postDelayed(this, 30L) // ~33 FPS progress updates
+                val delay = if (isScreenOn) 30L else 2000L
+                mainHandler.postDelayed(this, delay)
             }
         }
     }
@@ -125,7 +188,9 @@ class LiteAudioEngine(private val context: Context) :
                     mainHandler.post {
                         if (isPlaying && primaryPlayer != null) {
                             try {
-                                primaryPlayer?.setNextMediaPlayer(next)
+                                if (crossfadeMode == CrossfadeMode.GAPLESS) {
+                                    primaryPlayer?.setNextMediaPlayer(next)
+                                }
                                 nextPlayer = next
                             } catch (e: Exception) {
                                 next.release()
@@ -145,6 +210,83 @@ class LiteAudioEngine(private val context: Context) :
                 }
             }.start()
         }
+    }
+
+    fun calculateEffectiveVolume(index: Int = currentIndex): Float {
+        if (replayGainMode == ReplayGainMode.OFF) return 1.0f
+        val track = if (index in playlist.indices) playlist[index] else null ?: return 1.0f
+        val gainDb = track.replayGainDb ?: 0f
+        if (gainDb == 0f) return 1.0f
+        val linear = Math.pow(10.0, (gainDb / 20.0)).toFloat()
+        return linear.coerceIn(0.1f, 1.25f)
+    }
+
+    fun applyPlayerVolume() {
+        val vol = calculateEffectiveVolume()
+        try {
+            primaryPlayer?.setVolume(vol, vol)
+        } catch (ignored: Exception) {}
+    }
+
+    private fun startCrossfade() {
+        val next = nextPlayer ?: return
+        if (isCrossfading) return
+        isCrossfading = true
+        crossfadeStartTime = System.currentTimeMillis()
+        val durationMs = crossfadeMode.durationMs.coerceAtLeast(500L)
+
+        try {
+            next.setVolume(0f, 0f)
+            next.start()
+        } catch (e: Exception) {
+            isCrossfading = false
+            return
+        }
+
+        val crossfadeRunnable = object : Runnable {
+            override fun run() {
+                if (!isCrossfading || primaryPlayer == null || nextPlayer == null) {
+                    isCrossfading = false
+                    return
+                }
+                val elapsed = System.currentTimeMillis() - crossfadeStartTime
+                val progress = (elapsed.toFloat() / durationMs).coerceIn(0f, 1f)
+
+                val baseVolPrimary = calculateEffectiveVolume(currentIndex)
+                val baseVolNext = calculateEffectiveVolume(currentIndex + 1)
+
+                val angle = progress * (Math.PI / 2.0)
+                val volPrimary = (Math.cos(angle) * baseVolPrimary).toFloat().coerceIn(0f, 1.25f)
+                val volNext = (Math.sin(angle) * baseVolNext).toFloat().coerceIn(0f, 1.25f)
+
+                try {
+                    primaryPlayer?.setVolume(volPrimary, volPrimary)
+                    nextPlayer?.setVolume(volNext, volNext)
+                } catch (ignored: Exception) {}
+
+                if (progress < 1.0f) {
+                    mainHandler.postDelayed(this, 40L)
+                } else {
+                    isCrossfading = false
+                    val completedTrack = currentTrack
+                    val oldPrimary = primaryPlayer
+                    primaryPlayer = nextPlayer
+                    nextPlayer = null
+                    isNextPlayerChained = false
+                    currentIndex++
+                    primaryPlayer?.setOnCompletionListener(this@LiteAudioEngine)
+                    primaryPlayer?.audioSessionId?.let { audioFxController.attachSession(it) }
+                    try {
+                        oldPrimary?.stop()
+                        oldPrimary?.release()
+                    } catch (ignored: Exception) {}
+                    notifyStateChanged()
+                    listener?.onTrackCompleted(completedTrack)
+                    serviceListener?.onTrackCompleted(completedTrack)
+                }
+            }
+        }
+        mainHandler.post(crossfadeRunnable)
     }
 
     fun togglePlayPause() {
@@ -187,10 +329,30 @@ class LiteAudioEngine(private val context: Context) :
 
     fun next() {
         if (playlist.isEmpty()) return
-        if (currentIndex + 1 in playlist.indices) {
-            playTrackAt(currentIndex + 1)
-        } else {
-            playTrackAt(0) // Loop to first
+        when (playMode) {
+            PlayMode.REPEAT_ONE -> {
+                seekTo(0)
+                play()
+            }
+            PlayMode.SHUFFLE -> {
+                if (playlist.size == 1) {
+                    seekTo(0)
+                    play()
+                } else {
+                    var nextIdx = kotlin.random.Random.nextInt(playlist.size)
+                    if (nextIdx == currentIndex) {
+                        nextIdx = (nextIdx + 1) % playlist.size
+                    }
+                    playTrackAt(nextIdx)
+                }
+            }
+            PlayMode.ALL -> {
+                if (currentIndex + 1 in playlist.indices) {
+                    playTrackAt(currentIndex + 1)
+                } else {
+                    playTrackAt(0) // Loop to first
+                }
+            }
         }
     }
 
@@ -237,31 +399,46 @@ class LiteAudioEngine(private val context: Context) :
 
     override fun onPrepared(mp: MediaPlayer?) {
         if (requestAudioFocus()) {
+            applyPlayerVolume()
             mp?.start()
             mp?.audioSessionId?.let { audioFxController.attachSession(it) }
             isPlaying = true
             isNextPlayerChained = false
+            isCrossfading = false
             mainHandler.post(progressRunnable)
             notifyStateChanged()
         }
     }
 
     override fun onCompletion(mp: MediaPlayer?) {
+        if (isCrossfading) {
+            return
+        }
         val completedTrack = currentTrack
-        if (isNextPlayerChained && nextPlayer != null) {
+        if (playMode == PlayMode.REPEAT_ONE) {
+            seekTo(0)
+            play()
+            listener?.onTrackCompleted(completedTrack)
+            serviceListener?.onTrackCompleted(completedTrack)
+            return
+        }
+        if (playMode == PlayMode.ALL && isNextPlayerChained && nextPlayer != null) {
             // Seamless swap
             primaryPlayer?.release()
             primaryPlayer = nextPlayer
             nextPlayer = null
             isNextPlayerChained = false
             currentIndex++
+            applyPlayerVolume()
             primaryPlayer?.setOnCompletionListener(this)
             primaryPlayer?.audioSessionId?.let { audioFxController.attachSession(it) }
             notifyStateChanged()
             listener?.onTrackCompleted(completedTrack)
+            serviceListener?.onTrackCompleted(completedTrack)
         } else {
             next()
             listener?.onTrackCompleted(completedTrack)
+            serviceListener?.onTrackCompleted(completedTrack)
         }
     }
 
@@ -269,6 +446,7 @@ class LiteAudioEngine(private val context: Context) :
         isPlaying = false
         mainHandler.removeCallbacks(progressRunnable)
         listener?.onPlaybackError("Audio playback error ($what, $extra)")
+        serviceListener?.onPlaybackError("Audio playback error ($what, $extra)")
         releasePlayers()
         return true
     }
@@ -278,10 +456,11 @@ class LiteAudioEngine(private val context: Context) :
             AudioManager.AUDIOFOCUS_LOSS -> pause()
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> pause()
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
-                primaryPlayer?.setVolume(0.2f, 0.2f)
+                val duckVol = calculateEffectiveVolume() * 0.2f
+                primaryPlayer?.setVolume(duckVol, duckVol)
             }
             AudioManager.AUDIOFOCUS_GAIN -> {
-                primaryPlayer?.setVolume(1.0f, 1.0f)
+                applyPlayerVolume()
                 play()
             }
         }
@@ -299,6 +478,7 @@ class LiteAudioEngine(private val context: Context) :
     private fun releasePlayers() {
         mainHandler.removeCallbacks(progressRunnable)
         isNextPlayerChained = false
+        isCrossfading = false
         try {
             primaryPlayer?.stop()
             primaryPlayer?.release()
@@ -334,5 +514,6 @@ class LiteAudioEngine(private val context: Context) :
             totalTracks = playlist.size
         )
         listener?.onPlaybackStateChanged(state)
+        serviceListener?.onPlaybackStateChanged(state)
     }
 }

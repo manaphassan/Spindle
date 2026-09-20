@@ -14,7 +14,8 @@ data class Track(
     val format: String,
     val bitrate: Int = 0,
     val sampleRate: Int = 0,
-    val bitDepth: Int = 0
+    val bitDepth: Int = 0,
+    val replayGainDb: Float? = null
 ) {
     val formattedDuration: String
         get() {
@@ -61,14 +62,17 @@ data class Track(
         }
 
     val tapeBiasType: String
-        get() = when {
-            format.contains("FLAC", ignoreCase = true) || format.contains("WAV", ignoreCase = true) ->
-                "SPINDLE • TYPE IV METAL BIAS"
-            (format.contains("MP3", ignoreCase = true) && (bitrate >= 256 || bitrate == 0)) ||
-            format.contains("AAC", ignoreCase = true) || format.contains("M4A", ignoreCase = true) ->
-                "SPINDLE • TYPE II HIGH BIAS (CrO2)"
-            else ->
-                "SPINDLE • TYPE I NORMAL BIAS (Fe2O3)"
+        get() {
+            val upper = format.uppercase()
+            return when {
+                bitDepth >= 24 || sampleRate >= 88200 || upper.contains("DSD") || upper.contains("DSF") || upper.contains("DFF") ->
+                    "SPINDLE • TYPE IV METAL BIAS"
+                upper.contains("FLAC") || upper.contains("WAV") || upper.contains("ALAC") ||
+                ((upper.contains("MP3") || upper.contains("AAC") || upper.contains("M4A")) && (bitrate >= 256 || bitrate == 0)) ->
+                    "SPINDLE • TYPE II HIGH BIAS (CrO2)"
+                else ->
+                    "SPINDLE • TYPE I NORMAL BIAS (Fe2O3)"
+            }
         }
 
     val audioSpecsLine: String

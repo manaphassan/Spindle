@@ -10,10 +10,10 @@
     android:paddingRight="8dp"
     android:paddingBottom="4dp">
 
-    <!-- Top Header Status Bar (22dp) -->
+    <!-- Top Header Status Bar (28dp) -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="22dp"
+        android:layout_height="28dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:layout_marginBottom="4dp">
@@ -22,69 +22,80 @@
             android:id="@+id/tvRadioBadge"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:minHeight="28dp"
+            android:gravity="center"
             android:background="@drawable/bg_format_pill"
             android:fontFamily="monospace"
-            android:paddingLeft="5dp"
-            android:paddingTop="1dp"
-            android:paddingRight="5dp"
-            android:paddingBottom="1dp"
+            android:paddingLeft="6dp"
+            android:paddingTop="2dp"
+            android:paddingRight="6dp"
+            android:paddingBottom="2dp"
             android:text="FM STEREO"
             android:textColor="@color/brand_orange"
-            android:textSize="8.5sp"
+            android:textSize="9sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/btnRadioMono"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:minHeight="28dp"
+            android:minWidth="44dp"
+            android:gravity="center"
             android:layout_marginStart="3dp"
             android:background="@drawable/bg_format_pill"
             android:clickable="true"
             android:focusable="true"
             android:fontFamily="monospace"
-            android:paddingLeft="5dp"
-            android:paddingTop="1dp"
-            android:paddingRight="5dp"
-            android:paddingBottom="1dp"
+            android:paddingLeft="6dp"
+            android:paddingTop="2dp"
+            android:paddingRight="6dp"
+            android:paddingBottom="2dp"
             android:text="MONO"
             android:textColor="@color/lite_text_secondary"
-            android:textSize="8.5sp"
+            android:textSize="9sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/btnRadioScan"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:minHeight="28dp"
+            android:minWidth="44dp"
+            android:gravity="center"
             android:layout_marginStart="3dp"
             android:background="@drawable/bg_format_pill"
             android:clickable="true"
             android:focusable="true"
             android:fontFamily="monospace"
-            android:paddingLeft="5dp"
-            android:paddingTop="1dp"
-            android:paddingRight="5dp"
-            android:paddingBottom="1dp"
+            android:paddingLeft="6dp"
+            android:paddingTop="2dp"
+            android:paddingRight="6dp"
+            android:paddingBottom="2dp"
             android:text="SCAN"
             android:textColor="@color/lite_amber_glow"
-            android:textSize="8.5sp"
+            android:textSize="9sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/btnRadioRegion"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:minHeight="28dp"
+            android:minWidth="58dp"
+            android:gravity="center"
             android:layout_marginStart="3dp"
             android:background="@drawable/bg_format_pill"
             android:clickable="true"
             android:focusable="true"
             android:fontFamily="monospace"
-            android:paddingLeft="5dp"
-            android:paddingTop="1dp"
-            android:paddingRight="5dp"
-            android:paddingBottom="1dp"
+            android:paddingLeft="6dp"
+            android:paddingTop="2dp"
+            android:paddingRight="6dp"
+            android:paddingBottom="2dp"
             android:text="BAND: EU"
             android:textColor="@color/lite_text_primary"
-            android:textSize="8.5sp"
+            android:textSize="9sp"
             android:textStyle="bold" />
 
         <View
@@ -96,6 +107,8 @@
             android:id="@+id/tvAntennaBadge"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:minHeight="28dp"
+            android:gravity="center_vertical|end"
             android:background="?android:attr/selectableItemBackground"
             android:clickable="true"
             android:focusable="true"
@@ -213,11 +226,11 @@
 
                     <ImageButton
                         android:id="@+id/btnRadioPlayToggle"
-                        android:layout_width="28dp"
-                        android:layout_height="28dp"
+                        android:layout_width="38dp"
+                        android:layout_height="38dp"
                         android:background="@drawable/bg_button_tactile"
                         android:contentDescription="Play or Stop Radio"
-                        android:padding="6dp"
+                        android:padding="7dp"
                         android:src="@drawable/ic_play" />
                 </LinearLayout>
             </LinearLayout>
@@ -275,10 +288,10 @@
                 android:textSize="8.5sp" />
         </LinearLayout>
 
-        <!-- Flush 4-Key Station Preset Strip (24dp) -->
+        <!-- Flush 4-Key Station Preset Strip (36dp) -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="24dp"
+            android:layout_height="36dp"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:layout_marginTop="3dp"
@@ -295,7 +308,7 @@
                 android:fontFamily="monospace"
                 android:text="LO-FI"
                 android:textColor="@color/brand_orange"
-                android:textSize="8.5sp"
+                android:textSize="9sp"
                 android:textStyle="bold" />
 
             <Button
@@ -309,7 +322,7 @@
                 android:fontFamily="monospace"
                 android:text="ANIME"
                 android:textColor="@color/lite_text_secondary"
-                android:textSize="8.5sp"
+                android:textSize="9sp"
                 android:textStyle="bold" />
 
             <Button
@@ -323,7 +336,7 @@
                 android:fontFamily="monospace"
                 android:text="INITIAL D"
                 android:textColor="@color/lite_text_secondary"
-                android:textSize="8sp"
+                android:textSize="9sp"
                 android:textStyle="bold" />
 
             <Button
@@ -336,15 +349,15 @@
                 android:fontFamily="monospace"
                 android:text="CITYPOP"
                 android:textColor="@color/lite_text_secondary"
-                android:textSize="8sp"
+                android:textSize="9sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- Tactile Analog Tuning Dial Wheel (40dp) -->
+        <!-- Tactile Analog Tuning Dial Wheel (48dp) -->
         <com.hana.spindle.lite.ui.LiteRadioDialView
             android:id="@+id/radioDialView"
             android:layout_width="match_parent"
-            android:layout_height="40dp" />
+            android:layout_height="48dp" />
 
     </LinearLayout>
 

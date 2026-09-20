@@ -22,12 +22,14 @@
             android:id="@+id/tvIndexBadge"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:minHeight="32dp"
+            android:gravity="center_vertical"
             android:background="@drawable/bg_format_pill"
             android:fontFamily="monospace"
-            android:paddingLeft="6dp"
-            android:paddingTop="1dp"
-            android:paddingRight="6dp"
-            android:paddingBottom="1dp"
+            android:paddingLeft="8dp"
+            android:paddingTop="2dp"
+            android:paddingRight="8dp"
+            android:paddingBottom="2dp"
             android:text="INDEX: 000"
             android:textColor="@color/brand_orange"
             android:textSize="9.5sp"
@@ -42,6 +44,7 @@
             android:id="@+id/llDeviceIdentity"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:minHeight="32dp"
             android:background="?android:attr/selectableItemBackground"
             android:clickable="true"
             android:focusable="true"
@@ -69,7 +72,54 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Center Stage: Cassette Deck View & Vertical Hi-Fi 12-Bar LED Meter Side-by-Side -->
+    <!-- Audiophile DAC Stream Telemetry Banner (20dp) -->
+    <LinearLayout
+        android:id="@+id/llDacTelemetry"
+        android:layout_width="match_parent"
+        android:layout_height="20dp"
+        android:background="@drawable/bg_search_bar"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingLeft="6dp"
+        android:paddingRight="6dp"
+        android:layout_marginBottom="4dp">
+
+        <TextView
+            android:id="@+id/tvDacFormat"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="monospace"
+            android:text="PCM DIRECT"
+            android:textColor="@color/brand_orange"
+            android:textSize="8.5sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvDacSpecs"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:ellipsize="marquee"
+            android:fontFamily="monospace"
+            android:paddingLeft="4dp"
+            android:paddingRight="4dp"
+            android:text="16-BIT / 44.1 kHz • DIRECT"
+            android:textColor="@color/lite_amber_glow"
+            android:textSize="8.5sp" />
+
+        <TextView
+            android:id="@+id/tvDacGain"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="monospace"
+            android:text="RG: 0.0dB"
+            android:textColor="@color/lite_text_secondary"
+            android:textSize="8.5sp" />
+    </LinearLayout>
+
+    <!-- Center Stage: Cassette Deck View & Vertical Hi-Fi Dual Stereo LED Meter Side-by-Side -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -85,18 +135,18 @@
             android:layout_weight="1"
             android:background="@color/lite_deck_surface" />
 
-        <!-- Vertical Hi-Fi Status (BAT, RUN) & 12-Segment Progress LED Ladder -->
+        <!-- Vertical Hi-Fi Status (BAT, RUN) & Dual-Channel Stereo Dynamic VU LED Ladder -->
         <com.hana.spindle.lite.ui.LiteLedMeterView
             android:id="@+id/ledMeterView"
-            android:layout_width="26dp"
+            android:layout_width="28dp"
             android:layout_height="match_parent"
             android:layout_marginLeft="6dp" />
     </LinearLayout>
 
-    <!-- Standard Tactile Transport Controls (44dp) -->
+    <!-- Standard Tactile Transport Controls (46dp) -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="44dp"
+        android:layout_height="46dp"
         android:gravity="center"
         android:orientation="horizontal"
         android:layout_marginTop="4dp">

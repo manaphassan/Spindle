@@ -6,5 +6,6 @@ data class LiteAppInfo(
     val label: String,
     val packageName: String,
     val className: String,
-    val icon: Drawable? = null
+    val icon: Drawable? = null,
+    val isSystemApp: Boolean = false
 )

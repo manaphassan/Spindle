@@ -1,0 +1,48 @@
+{
+  "releaseName": "Spindle Dual Edition Latest Release",
+  "buildDate": "2026-09-20",
+  "packages": [
+    {
+      "edition": "Spindle Standard",
+      "target": "Modern Android Devices (Android 8.0+ / API 26+)",
+      "applicationId": "com.hana.spindle",
+      "versionCode": 5,
+      "versionName": "1.4.0-alpha",
+      "filename": "Spindle-Standard-v1.4.0-alpha.apk",
+      "fileSizeBytes": 4883897,
+      "fileSizeFormatted": "4.88 MB",
+      "sha256": "9e0f3d0d47554c6dd32c146ce3dadf09ce02ef2f1f54d2bae236cc90c053dd68",
+      "minSdk": 26,
+      "targetSdk": 34,
+      "keyFeatures": [
+        "Kinetic cassette tape reels with momentum and speed-up foley",
+        "Circular album artwork with live waveform visualizer",
+        "A-Z fast alphabet index and direct folder catalog",
+        "FM Radio analog flywheel dial and digital stream engine",
+        "10-band ISO equalizer and dual analog VU meters",
+        "Bit-perfect high-resolution audio support (FLAC, WAV, MP3)"
+      ]
+    },
+    {
+      "edition": "Spindle Lite",
+      "target": "Vintage & Low-RAM Android Devices (Android 4.4+ / API 19+)",
+      "applicationId": "com.hana.spindle.lite",
+      "versionCode": 3,
+      "versionName": "1.0.0-LITE",
+      "filename": "Spindle-Lite-v1.0.0-LITE.apk",
+      "fileSizeBytes": 1792175,
+      "fileSizeFormatted": "1.79 MB",
+      "sha256": "eaa7d70a40598d84154a8a8351d69ddccda1af611ad0a35b0768cd2a91d17c34",
+      "minSdk": 19,
+      "targetSdk": 34,
+      "keyFeatures": [
+        "Ultra-lightweight (<18 MB active RAM footprint)",
+        "Verified on 320x480 HVGA vintage hardware (Sony Ericsson ST17i)",
+        "Full physical hardware button mapping (Camera, Back, Menu, D-pad, Volume, Headset)",
+        "Tape Vault 3-tab music catalogue with folder navigation",
+        "48dp touch target tactile app drawer with long-press management",
+        "Mechanical 3-digit tape drum counter and Type IV/II/I cassette skins"
+      ]
+    }
+  ]
+}

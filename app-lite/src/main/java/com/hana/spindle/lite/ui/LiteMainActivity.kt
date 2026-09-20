@@ -17,6 +17,13 @@ import android.view.KeyEvent
 import android.view.View
 import android.widget.SeekBar
 import android.widget.Toast
+import android.widget.Button
+import android.widget.ImageView
+import android.widget.TextView
+import android.app.AlertDialog
+import android.net.Uri
+import android.provider.Settings
+import android.content.pm.ApplicationInfo
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -40,7 +47,15 @@ import com.hana.spindle.lite.launcher.LiteAppAdapter
 import com.hana.spindle.lite.launcher.LiteAppInfo
 import com.hana.spindle.lite.receiver.HardwareButtonReceiver
 import com.hana.spindle.lite.receiver.NoisyAudioReceiver
+import com.hana.spindle.lite.util.AudioHeaderParser
 import com.hana.spindle.lite.util.DeviceNameFormatter
+import com.hana.spindle.lite.util.LiteHapticEngine
+import android.content.ComponentName
+import android.content.ServiceConnection
+import android.os.IBinder
+import com.hana.spindle.lite.audio.LitePlaybackService
+import android.os.Environment
+import java.io.File
 import java.util.Locale
 import kotlin.math.abs
 
@@ -62,12 +77,32 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
     private lateinit var analogFmEngine: LiteAnalogFmEngine
     private lateinit var dbHelper: LiteDbHelper
     private lateinit var mediaScanner: LiteMediaScanner
+    private lateinit var hapticEngine: LiteHapticEngine
 
     private lateinit var trackAdapter: LiteTrackAdapter
+    private lateinit var queueAdapter: LiteTrackAdapter
+    private lateinit var folderAdapter: LiteFolderAdapter
     private lateinit var appAdapter: LiteAppAdapter
+
+    private var currentVaultTab = 0 // 0 = TRACKS, 1 = FOLDERS, 2 = QUEUE
+    private var currentVaultDirectory: File? = null
+    private var currentDrawerTab = 1 // 0 = EQ, 1 = APPS, 2 = SETTINGS
+    private var activeAppDialog: AlertDialog? = null
+
+    private var headsetClickCount = 0
+    private val headsetHandler = Handler(Looper.getMainLooper())
+    private val headsetRunnable = Runnable {
+        when (headsetClickCount) {
+            1 -> handlePlayPauseToggle()
+            2 -> handleNextTrackOrStation()
+            3 -> handlePrevTrackOrStation()
+        }
+        headsetClickCount = 0
+    }
 
     private var currentPlaylist: List<Track> = emptyList()
     private var installedApps: List<LiteAppInfo> = emptyList()
+    private var packageReceiver: BroadcastReceiver? = null
     private var noisyReceiver: NoisyAudioReceiver? = null
     private var batteryReceiver: BroadcastReceiver? = null
     private var headsetReceiver: BroadcastReceiver? = null
@@ -79,6 +114,22 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
     private val scanHandler = Handler(Looper.getMainLooper())
     private var scanRunnable: Runnable? = null
     private var fmPresets = mutableListOf(88.5f, 91.3f, 98.1f, 105.7f)
+
+    private var playbackService: LitePlaybackService? = null
+    private var isServiceBound = false
+
+    private val serviceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
+            playbackService = (binder as? LitePlaybackService.LocalBinder)?.service
+            isServiceBound = true
+            syncUiFromActiveEngines()
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            playbackService = null
+            isServiceBound = false
+        }
+    }
 
     companion object {
         private const val PERMISSION_REQUEST_STORAGE = 101
@@ -94,15 +145,16 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
         playerBinding = PageLitePlayerBinding.inflate(layoutInflater)
         radioBinding = PageLiteRadioBinding.inflate(layoutInflater)
 
-        // 2. Initialize Core Engines
+        // 2. Initialize Core Engines via LitePlaybackService
+        hapticEngine = LiteHapticEngine(this)
         dbHelper = LiteDbHelper.getInstance(this)
-        audioEngine = LiteAudioEngine(this).apply {
+        audioEngine = LitePlaybackService.getAudioEngine(this).apply {
             listener = this@LiteMainActivity
         }
-        radioEngine = LiteRadioEngine(this).apply {
+        radioEngine = LitePlaybackService.getRadioEngine(this).apply {
             listener = setupRadioListener()
         }
-        analogFmEngine = LiteAnalogFmEngine(this).apply {
+        analogFmEngine = LitePlaybackService.getAnalogFmEngine(this).apply {
             listener = object : LiteAnalogFmEngine.AnalogFmListener {
                 override fun onSignalChanged(frequencyMhz: Float, signalStrength: Float, isStereo: Boolean, stationName: String?) {
                     runOnUiThread {
@@ -137,6 +189,15 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
         // 5. System Permissions & Hardware Interception
         checkPermissionsAndLoad()
         setupHardwareButtonHooks()
+
+        // 6. Connect to Foreground Playback Service
+        val serviceIntent = Intent(this, LitePlaybackService::class.java)
+        try {
+            startService(serviceIntent)
+        } catch (ignored: Exception) {
+            ContextCompat.startForegroundService(this, serviceIntent)
+        }
+        bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE)
     }
 
     private fun setupViewPager() {
@@ -167,6 +228,7 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
     }
 
     private fun selectDrawerTab(tabIndex: Int) {
+        currentDrawerTab = tabIndex
         drawerBinding.containerEq.visibility = if (tabIndex == 0) View.VISIBLE else View.GONE
         drawerBinding.containerApps.visibility = if (tabIndex == 1) View.VISIBLE else View.GONE
         drawerBinding.containerSettings.visibility = if (tabIndex == 2) View.VISIBLE else View.GONE
@@ -322,6 +384,105 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
         })
 
         updateBandViewsFromFx()
+
+        // --- Audiophile DSP & Gain Stage Console ---
+        val sp = getSharedPreferences("spindle_lite_settings", Context.MODE_PRIVATE)
+
+        // 1. Headphone Output Stage (+0dB IEM vs +6dB Studio Cans)
+        val savedStageName = sp.getString("key_gain_stage", LiteAudioEngine.GainStage.LOW_IEM.name)
+        val initialStage = try {
+            LiteAudioEngine.GainStage.valueOf(savedStageName ?: LiteAudioEngine.GainStage.LOW_IEM.name)
+        } catch (_: Exception) {
+            LiteAudioEngine.GainStage.LOW_IEM
+        }
+        audioEngine.gainStage = initialStage
+
+        fun updateGainStageViews(stage: LiteAudioEngine.GainStage) {
+            val activeColor = ContextCompat.getColor(this, R.color.brand_orange)
+            val inactiveColor = ContextCompat.getColor(this, R.color.lite_text_secondary)
+            drawerBinding.btnGainIem.setTextColor(if (stage == LiteAudioEngine.GainStage.LOW_IEM) activeColor else inactiveColor)
+            drawerBinding.btnGainCans.setTextColor(if (stage == LiteAudioEngine.GainStage.HIGH_CANS) activeColor else inactiveColor)
+        }
+        updateGainStageViews(initialStage)
+
+        drawerBinding.btnGainIem.setOnClickListener {
+            audioEngine.gainStage = LiteAudioEngine.GainStage.LOW_IEM
+            sp.edit().putString("key_gain_stage", LiteAudioEngine.GainStage.LOW_IEM.name).apply()
+            updateGainStageViews(LiteAudioEngine.GainStage.LOW_IEM)
+        }
+        drawerBinding.btnGainCans.setOnClickListener {
+            audioEngine.gainStage = LiteAudioEngine.GainStage.HIGH_CANS
+            sp.edit().putString("key_gain_stage", LiteAudioEngine.GainStage.HIGH_CANS.name).apply()
+            updateGainStageViews(LiteAudioEngine.GainStage.HIGH_CANS)
+        }
+
+        // 2. ReplayGain Normalization Mode (OFF, TRACK, ALBUM)
+        val savedRgName = sp.getString("key_replay_gain_mode", LiteAudioEngine.ReplayGainMode.TRACK.name)
+        val initialRg = try {
+            LiteAudioEngine.ReplayGainMode.valueOf(savedRgName ?: LiteAudioEngine.ReplayGainMode.TRACK.name)
+        } catch (_: Exception) {
+            LiteAudioEngine.ReplayGainMode.TRACK
+        }
+        audioEngine.replayGainMode = initialRg
+
+        fun updateRgViews(mode: LiteAudioEngine.ReplayGainMode) {
+            val activeColor = ContextCompat.getColor(this, R.color.brand_orange)
+            val inactiveColor = ContextCompat.getColor(this, R.color.lite_text_secondary)
+            drawerBinding.btnRgOff.setTextColor(if (mode == LiteAudioEngine.ReplayGainMode.OFF) activeColor else inactiveColor)
+            drawerBinding.btnRgTrack.setTextColor(if (mode == LiteAudioEngine.ReplayGainMode.TRACK) activeColor else inactiveColor)
+            drawerBinding.btnRgAlbum.setTextColor(if (mode == LiteAudioEngine.ReplayGainMode.ALBUM) activeColor else inactiveColor)
+        }
+        updateRgViews(initialRg)
+
+        drawerBinding.btnRgOff.setOnClickListener {
+            audioEngine.replayGainMode = LiteAudioEngine.ReplayGainMode.OFF
+            sp.edit().putString("key_replay_gain_mode", LiteAudioEngine.ReplayGainMode.OFF.name).apply()
+            updateRgViews(LiteAudioEngine.ReplayGainMode.OFF)
+        }
+        drawerBinding.btnRgTrack.setOnClickListener {
+            audioEngine.replayGainMode = LiteAudioEngine.ReplayGainMode.TRACK
+            sp.edit().putString("key_replay_gain_mode", LiteAudioEngine.ReplayGainMode.TRACK.name).apply()
+            updateRgViews(LiteAudioEngine.ReplayGainMode.TRACK)
+        }
+        drawerBinding.btnRgAlbum.setOnClickListener {
+            audioEngine.replayGainMode = LiteAudioEngine.ReplayGainMode.ALBUM
+            sp.edit().putString("key_replay_gain_mode", LiteAudioEngine.ReplayGainMode.ALBUM.name).apply()
+            updateRgViews(LiteAudioEngine.ReplayGainMode.ALBUM)
+        }
+
+        // 3. Audio Track Transition / Crossfade Mode (GAPLESS, 2s, 4s)
+        val savedCrossfadeName = sp.getString("key_crossfade_mode", LiteAudioEngine.CrossfadeMode.GAPLESS.name)
+        val initialCrossfade = try {
+            LiteAudioEngine.CrossfadeMode.valueOf(savedCrossfadeName ?: LiteAudioEngine.CrossfadeMode.GAPLESS.name)
+        } catch (_: Exception) {
+            LiteAudioEngine.CrossfadeMode.GAPLESS
+        }
+        audioEngine.crossfadeMode = initialCrossfade
+
+        fun updateCrossfadeViews(mode: LiteAudioEngine.CrossfadeMode) {
+            val activeColor = ContextCompat.getColor(this, R.color.brand_orange)
+            val inactiveColor = ContextCompat.getColor(this, R.color.lite_text_secondary)
+            drawerBinding.btnTransGapless.setTextColor(if (mode == LiteAudioEngine.CrossfadeMode.GAPLESS) activeColor else inactiveColor)
+            drawerBinding.btnTransFade2s.setTextColor(if (mode == LiteAudioEngine.CrossfadeMode.CROSSFADE_2S) activeColor else inactiveColor)
+            drawerBinding.btnTransFade4s.setTextColor(if (mode == LiteAudioEngine.CrossfadeMode.CROSSFADE_4S) activeColor else inactiveColor)
+        }
+        updateCrossfadeViews(initialCrossfade)
+
+        drawerBinding.btnTransGapless.setOnClickListener {
+            audioEngine.crossfadeMode = LiteAudioEngine.CrossfadeMode.GAPLESS
+            sp.edit().putString("key_crossfade_mode", LiteAudioEngine.CrossfadeMode.GAPLESS.name).apply()
+            updateCrossfadeViews(LiteAudioEngine.CrossfadeMode.GAPLESS)
+        }
+        drawerBinding.btnTransFade2s.setOnClickListener {
+            audioEngine.crossfadeMode = LiteAudioEngine.CrossfadeMode.CROSSFADE_2S
+            sp.edit().putString("key_crossfade_mode", LiteAudioEngine.CrossfadeMode.CROSSFADE_2S.name).apply()
+            updateCrossfadeViews(LiteAudioEngine.CrossfadeMode.CROSSFADE_2S)
+        }
+        drawerBinding.btnTransFade4s.setOnClickListener {
+            audioEngine.crossfadeMode = LiteAudioEngine.CrossfadeMode.CROSSFADE_4S
+            sp.edit().putString("key_crossfade_mode", LiteAudioEngine.CrossfadeMode.CROSSFADE_4S.name).apply()
+            updateCrossfadeViews(LiteAudioEngine.CrossfadeMode.CROSSFADE_4S)
+        }
     }
 
     private fun setupAppsPage() {
@@ -344,10 +505,12 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
 
-        // App List RecyclerView
-        appAdapter = LiteAppAdapter(emptyList()) { appInfo ->
-            launchApp(appInfo)
-        }
+        // App List RecyclerView with Tap to Open and Long-Press for Properties/Uninstall
+        appAdapter = LiteAppAdapter(
+            allApps = emptyList(),
+            onAppClick = { appInfo -> launchApp(appInfo) },
+            onAppLongClick = { appInfo -> showAppActionsDialog(appInfo) }
+        )
         drawerBinding.rvApps.apply {
             layoutManager = LinearLayoutManager(this@LiteMainActivity)
             adapter = appAdapter
@@ -467,7 +630,8 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
                     val cls = ri.activityInfo.name
                     val label = ri.loadLabel(packageManager)?.toString() ?: pkg
                     val icon = ri.loadIcon(packageManager)
-                    apps.add(LiteAppInfo(label = label, packageName = pkg, className = cls, icon = icon))
+                    val isSystem = (ri.activityInfo.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
+                    apps.add(LiteAppInfo(label = label, packageName = pkg, className = cls, icon = icon, isSystemApp = isSystem))
                 }
                 apps.sortBy { it.label.lowercase(Locale.getDefault()) }
                 runOnUiThread {
@@ -497,6 +661,116 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
         }
     }
 
+    private fun showAppActionsDialog(appInfo: LiteAppInfo) {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_lite_app_actions, null)
+        val ivIcon = dialogView.findViewById<ImageView>(R.id.ivDialogAppIcon)
+        val tvName = dialogView.findViewById<TextView>(R.id.tvDialogAppName)
+        val tvPackage = dialogView.findViewById<TextView>(R.id.tvDialogAppPackage)
+        val tvBadge = dialogView.findViewById<TextView>(R.id.tvDialogAppBadge)
+        val btnOpen = dialogView.findViewById<Button>(R.id.btnActionOpen)
+        val btnProperties = dialogView.findViewById<Button>(R.id.btnActionProperties)
+        val btnUninstall = dialogView.findViewById<Button>(R.id.btnActionUninstall)
+        val btnCancel = dialogView.findViewById<Button>(R.id.btnActionCancel)
+
+        if (appInfo.icon != null) {
+            ivIcon.setImageDrawable(appInfo.icon)
+        } else {
+            ivIcon.setImageResource(android.R.drawable.sym_def_app_icon)
+        }
+        tvName.text = appInfo.label
+        tvPackage.text = appInfo.packageName
+
+        if (appInfo.isSystemApp) {
+            tvBadge.visibility = View.VISIBLE
+            tvBadge.text = "SYSTEM APP"
+            btnUninstall.setTextColor(ContextCompat.getColor(this, R.color.lite_text_muted))
+            btnUninstall.text = "UNINSTALL (SYSTEM PROTECTED)"
+        } else {
+            tvBadge.visibility = View.GONE
+            btnUninstall.setTextColor(ContextCompat.getColor(this, R.color.lite_led_red))
+            btnUninstall.text = "UNINSTALL APPLICATION"
+        }
+
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogView)
+            .create()
+
+        activeAppDialog = dialog
+        dialog.setOnDismissListener {
+            if (activeAppDialog === dialog) {
+                activeAppDialog = null
+            }
+        }
+        dialog.setOnCancelListener {
+            if (activeAppDialog === dialog) {
+                activeAppDialog = null
+            }
+        }
+
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        btnOpen.setOnClickListener {
+            dialog.dismiss()
+            launchApp(appInfo)
+        }
+
+        btnProperties.setOnClickListener {
+            dialog.dismiss()
+            openAppProperties(appInfo)
+        }
+
+        btnUninstall.setOnClickListener {
+            dialog.dismiss()
+            uninstallApp(appInfo)
+        }
+
+        btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.show()
+    }
+
+    private fun openAppProperties(appInfo: LiteAppInfo) {
+        try {
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.parse("package:${appInfo.packageName}")
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            startActivity(intent)
+        } catch (e: Exception) {
+            Toast.makeText(this, "Could not open properties: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun uninstallApp(appInfo: LiteAppInfo) {
+        if (appInfo.packageName == packageName) {
+            Toast.makeText(this, "Cannot uninstall active launcher", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (appInfo.isSystemApp) {
+            Toast.makeText(this, "${appInfo.label} is a protected system app", Toast.LENGTH_SHORT).show()
+            return
+        }
+        try {
+            val intent = Intent(Intent.ACTION_UNINSTALL_PACKAGE).apply {
+                data = Uri.parse("package:${appInfo.packageName}")
+                putExtra(Intent.EXTRA_RETURN_RESULT, true)
+            }
+            startActivity(intent)
+        } catch (e: Exception) {
+            // Fallback for older API versions
+            try {
+                val fallback = Intent(Intent.ACTION_DELETE).apply {
+                    data = Uri.parse("package:${appInfo.packageName}")
+                }
+                startActivity(fallback)
+            } catch (ex: Exception) {
+                Toast.makeText(this, "Could not initiate uninstall: ${ex.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     // --- Page 1: Kinetic Cassette Deck ---
 
     private fun setupPlayerPage() {
@@ -522,29 +796,64 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
             audioEngine.seekToFraction(fraction)
         }
 
-        // Default Idle Display (before track is loaded)
-        if (audioEngine.currentTrack == null) {
-            playerBinding.deckView.setNowPlaying("", "READY • TAP EJECT", "", "")
-            playerBinding.tvIndexBadge.text = "INDEX: 000"
+        // Tap index badge to toggle PlayMode (ALL -> SHUFFLE -> REPEAT 1)
+        playerBinding.tvIndexBadge.setOnClickListener {
+            val nextMode = when (audioEngine.playMode) {
+                LiteAudioEngine.PlayMode.ALL -> LiteAudioEngine.PlayMode.SHUFFLE
+                LiteAudioEngine.PlayMode.SHUFFLE -> LiteAudioEngine.PlayMode.REPEAT_ONE
+                LiteAudioEngine.PlayMode.REPEAT_ONE -> LiteAudioEngine.PlayMode.ALL
+            }
+            audioEngine.playMode = nextMode
+            val modeName = when (nextMode) {
+                LiteAudioEngine.PlayMode.ALL -> "REPEAT ALL"
+                LiteAudioEngine.PlayMode.SHUFFLE -> "SHUFFLE RANDOM"
+                LiteAudioEngine.PlayMode.REPEAT_ONE -> "REPEAT SINGLE"
+            }
+            updateIndexBadge()
+            Toast.makeText(this, "Transport: $modeName", Toast.LENGTH_SHORT).show()
         }
 
-        // Transport Controls
+        // Long-press Next button cycles play mode as hardware shortcut
+        playerBinding.btnNext.setOnLongClickListener {
+            playerBinding.tvIndexBadge.performClick()
+            true
+        }
+
+        // Default Idle Display or sync if already playing
+        if (audioEngine.currentTrack == null) {
+            playerBinding.deckView.setNowPlaying("", "READY • TAP EJECT", "", "")
+            updateIndexBadge(0)
+            updateDacTelemetry(null)
+        } else {
+            syncUiFromActiveEngines()
+        }
+
+        // Transport Controls with Mechanical Solenoid Haptics
         playerBinding.btnPlay.setOnClickListener {
             if (radioEngine.isPlaying || radioEngine.isBuffering) {
                 radioEngine.stop()
+            }
+            val willPlay = !audioEngine.isPlaying
+            if (willPlay) {
+                hapticEngine.solenoidEngage()
+            } else {
+                hapticEngine.solenoidDisengage()
             }
             audioEngine.togglePlayPause()
         }
 
         playerBinding.btnNext.setOnClickListener {
+            hapticEngine.tapeAdvance()
             audioEngine.next()
         }
 
         playerBinding.btnPrev.setOnClickListener {
+            hapticEngine.tapeAdvance()
             audioEngine.previous()
         }
 
         playerBinding.btnEject.setOnClickListener {
+            hapticEngine.ejectDoor()
             toggleVaultDrawer()
         }
     }
@@ -1035,13 +1344,116 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
             if (radioEngine.isPlaying || radioEngine.isBuffering) {
                 radioEngine.stop()
             }
-            audioEngine.setPlaylist(currentPlaylist, position)
+            val activeList = trackAdapter.getTracks().ifEmpty { currentPlaylist }
+            audioEngine.setPlaylist(activeList, position)
             binding.drawerLayout.visibility = View.GONE
         }
+
+        queueAdapter = LiteTrackAdapter(emptyList()) { position, _ ->
+            if (radioEngine.isPlaying || radioEngine.isBuffering) {
+                radioEngine.stop()
+            }
+            audioEngine.playTrackAt(position)
+            binding.drawerLayout.visibility = View.GONE
+        }
+
+        folderAdapter = LiteFolderAdapter(
+            onDirectoryClicked = { dir ->
+                loadVaultFolder(dir)
+            },
+            onAudioFileClicked = { file, audioFiles, index ->
+                val folderTracks = audioFiles.map { f ->
+                    dbHelper.getTrackByPath(f.absolutePath) ?: run {
+                        val meta = AudioHeaderParser.extractMetadataFast(f)
+                        Track(
+                            title = meta?.title ?: f.nameWithoutExtension,
+                            artist = meta?.artist ?: (f.parentFile?.name ?: "Audio"),
+                            album = meta?.album ?: (currentVaultDirectory?.name ?: "Folder"),
+                            durationMs = meta?.durationMs ?: 0L,
+                            filePath = f.absolutePath,
+                            format = f.extension.uppercase(Locale.getDefault()),
+                            bitrate = meta?.bitrate ?: 0,
+                            sampleRate = meta?.sampleRate ?: 0,
+                            bitDepth = meta?.bitDepth ?: 0,
+                            replayGainDb = meta?.replayGainTrackDb ?: meta?.replayGainAlbumDb
+                        )
+                    }
+                }
+                if (radioEngine.isPlaying || radioEngine.isBuffering) {
+                    radioEngine.stop()
+                }
+                audioEngine.setPlaylist(folderTracks, index)
+                binding.drawerLayout.visibility = View.GONE
+            }
+        )
+
         binding.rvTrackList.apply {
             layoutManager = LinearLayoutManager(this@LiteMainActivity)
             adapter = trackAdapter
             setHasFixedSize(true)
+        }
+
+        // Audiophile 1-Tap Quick Filter Shelf
+        binding.btnFilterAll.setOnClickListener { selectVaultFilter(LiteTrackAdapter.VaultFilter.ALL) }
+        binding.btnFilterHiRes.setOnClickListener { selectVaultFilter(LiteTrackAdapter.VaultFilter.HI_RES) }
+        binding.btnFilterLossless.setOnClickListener { selectVaultFilter(LiteTrackAdapter.VaultFilter.LOSSLESS) }
+        binding.btnFilterNormal.setOnClickListener { selectVaultFilter(LiteTrackAdapter.VaultFilter.NORMAL) }
+
+        // Vault Sub-tab Switchers
+        binding.btnVaultTracks.setOnClickListener { selectVaultTab(0) }
+        binding.btnVaultFolders.setOnClickListener { selectVaultTab(1) }
+        binding.btnVaultQueue.setOnClickListener { selectVaultTab(2) }
+
+        // Filter / Search Input
+        binding.etSearchVault.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val q = s?.toString().orEmpty()
+                when (currentVaultTab) {
+                    0 -> trackAdapter.filter(q)
+                    2 -> queueAdapter.filter(q)
+                }
+            }
+            override fun afterTextChanged(s: Editable?) {}
+        })
+
+        // Folder Navigation Actions
+        binding.btnFolderUp.setOnClickListener {
+            val parent = currentVaultDirectory?.parentFile
+            if (parent != null && parent.canRead()) {
+                loadVaultFolder(parent)
+            }
+        }
+
+        binding.btnPlayFolder.setOnClickListener {
+            val audioItems = folderAdapter.getItems().filterIsInstance<LiteFolderAdapter.Item.Audio>()
+            if (audioItems.isNotEmpty()) {
+                val folderTracks = audioItems.map { item ->
+                    item.track ?: run {
+                        val f = item.file
+                        val meta = AudioHeaderParser.extractMetadataFast(f)
+                        Track(
+                            title = meta?.title ?: f.nameWithoutExtension,
+                            artist = meta?.artist ?: (f.parentFile?.name ?: "Audio"),
+                            album = meta?.album ?: (currentVaultDirectory?.name ?: "Folder"),
+                            durationMs = meta?.durationMs ?: 0L,
+                            filePath = f.absolutePath,
+                            format = f.extension.uppercase(Locale.getDefault()),
+                            bitrate = meta?.bitrate ?: 0,
+                            sampleRate = meta?.sampleRate ?: 0,
+                            bitDepth = meta?.bitDepth ?: 0,
+                            replayGainDb = meta?.replayGainTrackDb ?: meta?.replayGainAlbumDb
+                        )
+                    }
+                }
+                if (radioEngine.isPlaying || radioEngine.isBuffering) {
+                    radioEngine.stop()
+                }
+                audioEngine.setPlaylist(folderTracks, 0)
+                binding.drawerLayout.visibility = View.GONE
+            } else {
+                Toast.makeText(this, "No audio tracks in this folder", Toast.LENGTH_SHORT).show()
+            }
         }
 
         binding.btnCloseDrawer.setOnClickListener {
@@ -1053,12 +1465,151 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
         }
     }
 
+    private fun getInitialMusicDirectory(): File {
+        // 1. Check mounted secondary storage / MicroSD volumes in /storage/
+        try {
+            val storageRoot = File("/storage")
+            if (storageRoot.exists() && storageRoot.canRead()) {
+                val sdCards = storageRoot.listFiles()?.filter {
+                    it.isDirectory && it.name != "emulated" && it.name != "self" && it.canRead()
+                } ?: emptyList()
+
+                for (sd in sdCards) {
+                    val musicFolder = File(sd, "Music")
+                    if (musicFolder.exists() && musicFolder.canRead()) {
+                        return musicFolder
+                    }
+                    return sd
+                }
+            }
+        } catch (ignored: Exception) {}
+
+        // 2. Check standard candidates
+        val sdCandidates = listOf(
+            File("/storage/sdcard1/Music"),
+            File("/storage/sdcard1"),
+            File("/storage/extSdCard/Music"),
+            File("/storage/extSdCard"),
+            File("/mnt/extSdCard"),
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC),
+            Environment.getExternalStorageDirectory()
+        )
+        return sdCandidates.firstOrNull { it.exists() && it.canRead() }
+            ?: Environment.getExternalStorageDirectory()
+    }
+
+    private fun loadVaultFolder(dir: File) {
+        currentVaultDirectory = dir
+        val displayPath = try {
+            val path = dir.absolutePath
+            if (path.length > 32) ".../" + dir.name else path
+        } catch (e: Throwable) {
+            dir.name
+        }
+        binding.tvCurrentFolderPath.text = displayPath
+        val parent = dir.parentFile
+        binding.btnFolderUp.isEnabled = parent != null && parent.canRead()
+
+        Thread {
+            val files: List<File> = dir.listFiles()?.filter { !it.name.startsWith(".") } ?: emptyList()
+            val dirItems = files.filter { it.isDirectory }
+                .sortedBy { it.name.lowercase(Locale.getDefault()) }
+                .map { subDir ->
+                    val childCount = subDir.listFiles()?.count { !it.name.startsWith(".") } ?: 0
+                    LiteFolderAdapter.Item.Directory(subDir, childCount)
+                }
+
+            val audioExtensions = setOf("mp3", "flac", "wav", "ogg", "m4a", "aac", "opus", "ape", "wv", "dsf", "dff")
+            val audioFiles = files.filter { it.isFile && it.extension.lowercase(Locale.getDefault()) in audioExtensions }
+                .sortedBy { it.name.lowercase(Locale.getDefault()) }
+
+            val audioItems = audioFiles.map { file ->
+                val track = dbHelper.getTrackByPath(file.absolutePath)
+                LiteFolderAdapter.Item.Audio(file, track)
+            }
+
+            val allItems = ArrayList<LiteFolderAdapter.Item>(dirItems.size + audioItems.size)
+            allItems.addAll(dirItems)
+            allItems.addAll(audioItems)
+
+            runOnUiThread {
+                folderAdapter.setItems(allItems, audioEngine.currentTrack?.filePath)
+                binding.tvVaultStatus.text = "${dirItems.size} folders • ${audioItems.size} audio tracks"
+            }
+        }.start()
+    }
+
+    private fun selectVaultFilter(mode: LiteTrackAdapter.VaultFilter) {
+        hapticEngine.microTick()
+        val activeColor = ContextCompat.getColor(this, R.color.brand_orange)
+        val inactiveColor = ContextCompat.getColor(this, R.color.lite_text_secondary)
+
+        binding.btnFilterAll.setTextColor(if (mode == LiteTrackAdapter.VaultFilter.ALL) activeColor else inactiveColor)
+        binding.btnFilterHiRes.setTextColor(if (mode == LiteTrackAdapter.VaultFilter.HI_RES) activeColor else inactiveColor)
+        binding.btnFilterLossless.setTextColor(if (mode == LiteTrackAdapter.VaultFilter.LOSSLESS) activeColor else inactiveColor)
+        binding.btnFilterNormal.setTextColor(if (mode == LiteTrackAdapter.VaultFilter.NORMAL) activeColor else inactiveColor)
+
+        trackAdapter.setFilterMode(mode)
+        val modeName = when (mode) {
+            LiteTrackAdapter.VaultFilter.ALL -> "All Tapes"
+            LiteTrackAdapter.VaultFilter.HI_RES -> "Type IV Metal (24-bit/Hi-Res)"
+            LiteTrackAdapter.VaultFilter.LOSSLESS -> "Lossless (FLAC/WAV)"
+            LiteTrackAdapter.VaultFilter.NORMAL -> "Type I Normal (MP3/AAC)"
+        }
+        binding.tvVaultStatus.text = "Vault: ${trackAdapter.itemCount} tracks ($modeName)"
+    }
+
+    private fun selectVaultTab(tabIndex: Int) {
+        currentVaultTab = tabIndex
+        val activeColor = ContextCompat.getColor(this, R.color.brand_orange)
+        val inactiveColor = ContextCompat.getColor(this, R.color.lite_text_primary)
+
+        binding.btnVaultTracks.setTextColor(if (tabIndex == 0) activeColor else inactiveColor)
+        binding.btnVaultFolders.setTextColor(if (tabIndex == 1) activeColor else inactiveColor)
+        binding.btnVaultQueue.setTextColor(if (tabIndex == 2) activeColor else inactiveColor)
+
+        when (tabIndex) {
+            0 -> { // TRACKS
+                binding.containerFolderPath.visibility = View.GONE
+                binding.vaultFilterShelf.visibility = View.VISIBLE
+                binding.etSearchVault.visibility = View.VISIBLE
+                binding.etSearchVault.hint = "Filter tape vault..."
+                binding.rvTrackList.adapter = trackAdapter
+                binding.tvVaultStatus.text = "Vault: ${trackAdapter.itemCount} tracks"
+            }
+            1 -> { // FOLDERS
+                binding.containerFolderPath.visibility = View.VISIBLE
+                binding.vaultFilterShelf.visibility = View.GONE
+                binding.etSearchVault.visibility = View.GONE
+                binding.rvTrackList.adapter = folderAdapter
+                if (currentVaultDirectory == null) {
+                    loadVaultFolder(getInitialMusicDirectory())
+                } else {
+                    currentVaultDirectory?.let { loadVaultFolder(it) }
+                }
+            }
+            2 -> { // QUEUE
+                binding.containerFolderPath.visibility = View.GONE
+                binding.vaultFilterShelf.visibility = View.GONE
+                binding.etSearchVault.visibility = View.VISIBLE
+                binding.etSearchVault.hint = "Filter playback queue..."
+                queueAdapter.updateTracks(audioEngine.playlist)
+                queueAdapter.setActivePath(audioEngine.currentTrack?.filePath)
+                binding.rvTrackList.adapter = queueAdapter
+                binding.tvVaultStatus.text = "Queue: ${audioEngine.playlist.size} tracks in transport"
+            }
+        }
+    }
+
     private fun toggleVaultDrawer() {
         if (binding.drawerLayout.visibility == View.VISIBLE) {
             binding.drawerLayout.visibility = View.GONE
         } else {
             binding.drawerLayout.visibility = View.VISIBLE
-            refreshTrackList()
+            selectVaultTab(currentVaultTab)
+            if (currentVaultTab == 0) {
+                refreshTrackList()
+            }
         }
     }
 
@@ -1126,7 +1677,9 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
     private fun updateLibrary(tracks: List<Track>) {
         this.currentPlaylist = tracks
         trackAdapter.updateTracks(tracks)
-        binding.tvVaultStatus.text = "Vault: ${tracks.size} tracks"
+        if (currentVaultTab == 0) {
+            binding.tvVaultStatus.text = "Vault: ${tracks.size} tracks"
+        }
         if (tracks.isNotEmpty()) {
             if (audioEngine.currentTrack == null) {
                 audioEngine.setPlaylist(tracks, startIndex = 0, autoPlay = false)
@@ -1150,6 +1703,14 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
 
     override fun onPlaybackStateChanged(state: PlaybackState) {
         val track = state.currentTrack
+        trackAdapter.setActivePath(track?.filePath)
+        if (::queueAdapter.isInitialized) {
+            queueAdapter.setActivePath(track?.filePath)
+        }
+        if (::folderAdapter.isInitialized) {
+            folderAdapter.setActivePath(track?.filePath)
+        }
+
         if (track != null) {
             playerBinding.deckView.setNowPlaying(
                 track.title,
@@ -1159,9 +1720,11 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
             )
             playerBinding.deckView.setCassetteLabel(track.tapeBiasType)
             val counterVal = (state.progressFraction * 999).toInt().coerceIn(0, 999)
-            playerBinding.tvIndexBadge.text = String.format(Locale.US, "INDEX: %03d", counterVal)
+            updateIndexBadge(counterVal)
+            updateDacTelemetry(track)
         } else {
-            playerBinding.tvIndexBadge.text = "INDEX: 000"
+            updateIndexBadge(0)
+            updateDacTelemetry(null)
         }
 
         playerBinding.btnPlay.setImageResource(
@@ -1172,6 +1735,73 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
         playerBinding.ledMeterView.setPlaybackState(state.isPlaying, state.progressFraction)
     }
 
+    private fun updateDacTelemetry(track: Track?) {
+        if (track != null) {
+            val formatUpper = track.format.uppercase().ifEmpty { "PCM" }
+            playerBinding.tvDacFormat.text = when {
+                formatUpper.contains("FLAC") -> "FLAC DIRECT"
+                formatUpper.contains("WAV") -> "WAV PCM"
+                formatUpper.contains("DSD") -> "DSD STREAM"
+                formatUpper.contains("MP3") -> "MP3 DIRECT"
+                formatUpper.contains("AAC") -> "AAC LC"
+                formatUpper.contains("OGG") -> "OGG VORBIS"
+                else -> "$formatUpper DIRECT"
+            }
+            playerBinding.tvDacSpecs.text = track.audioSpecsLine
+
+            val rgStr = track.replayGainDb?.let { String.format(Locale.US, "RG: %+.1fdB", it) }
+            val gainStageStr = if (audioEngine.gainStage == LiteAudioEngine.GainStage.HIGH_CANS) "CANS +6dB" else "IEM 0dB"
+            playerBinding.tvDacGain.text = rgStr ?: gainStageStr
+        } else {
+            playerBinding.tvDacFormat.text = "DAC READY"
+            playerBinding.tvDacSpecs.text = "PCM 16-BIT / 44.1 kHz • DIRECT"
+            playerBinding.tvDacGain.text = if (audioEngine.gainStage == LiteAudioEngine.GainStage.HIGH_CANS) "CANS +6dB" else "IEM 0dB"
+        }
+    }
+
+    private fun updateIndexBadge(counterVal: Int = 0) {
+        val prefix = when (audioEngine.playMode) {
+            LiteAudioEngine.PlayMode.ALL -> "INDEX"
+            LiteAudioEngine.PlayMode.SHUFFLE -> "SHUF"
+            LiteAudioEngine.PlayMode.REPEAT_ONE -> "RPT1"
+        }
+        playerBinding.tvIndexBadge.text = String.format(Locale.US, "%s: %03d", prefix, counterVal)
+    }
+
+    private fun syncUiFromActiveEngines() {
+        runOnUiThread {
+            val track = audioEngine.currentTrack
+            if (track != null) {
+                val isPlaying = audioEngine.isPlaying
+                playerBinding.btnPlay.setImageResource(
+                    if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play
+                )
+                playerBinding.deckView.setNowPlaying(
+                    track.title,
+                    track.artist,
+                    "00:00 / ${track.formattedDuration}",
+                    track.audioSpecsLine
+                )
+                playerBinding.deckView.setCassetteLabel(track.tapeBiasType)
+                playerBinding.deckView.setPlaybackState(isPlaying, 0f)
+                playerBinding.ledMeterView.setPlaybackState(isPlaying, 0f)
+                updateIndexBadge(0)
+                updateDacTelemetry(track)
+            } else {
+                updateDacTelemetry(null)
+            }
+
+            if (radioEngine.isPlaying || radioEngine.isBuffering) {
+                radioBinding.btnRadioPlayToggle.setImageResource(R.drawable.ic_pause)
+                radioBinding.speakerGrilleView.isPlaying = radioEngine.isPlaying
+                radioBinding.tvRadioStreamStatus.text = if (radioEngine.isBuffering) "BUFFERING" else "LIVE IN"
+                radioBinding.tvRadioStreamStatus.setTextColor(
+                    if (radioEngine.isBuffering) 0xFFF59E0B.toInt() else 0xFF10B981.toInt()
+                )
+            }
+        }
+    }
+
     override fun onTrackCompleted(track: Track?) {
         // Automatic gapless transition handled by LiteAudioEngine
     }
@@ -1180,7 +1810,7 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
         Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT).show()
     }
 
-    // --- Hardware Button Interception ---
+    // --- Hardware Button Interception & Navigation ---
 
     private fun setupHardwareButtonHooks() {
         HardwareButtonReceiver.buttonListener = { event ->
@@ -1190,37 +1820,301 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
         }
     }
 
-    private fun handleHardwareAction(keyCode: Int): Boolean {
+    private fun handlePlayPauseToggle() {
         val isRadioScreen = binding.viewPager.currentItem == 2
+        if (isRadioScreen) {
+            toggleRadioPlayback()
+        } else {
+            if (audioEngine.isPlaying) {
+                hapticEngine.solenoidDisengage()
+            } else {
+                hapticEngine.solenoidEngage()
+            }
+            audioEngine.togglePlayPause()
+        }
+    }
+
+    private fun handleNextTrackOrStation() {
+        val isRadioScreen = binding.viewPager.currentItem == 2
+        hapticEngine.tapeAdvance()
+        if (isRadioScreen) {
+            radioEngine.tuneNext()
+        } else {
+            audioEngine.next()
+        }
+    }
+
+    private fun handlePrevTrackOrStation() {
+        val isRadioScreen = binding.viewPager.currentItem == 2
+        hapticEngine.tapeAdvance()
+        if (isRadioScreen) {
+            radioEngine.tunePrev()
+        } else {
+            audioEngine.previous()
+        }
+    }
+
+    private fun handleRecentAppsPress() {
+        activeAppDialog?.dismiss()
+        activeAppDialog = null
+
+        if (binding.drawerLayout.visibility == View.VISIBLE) {
+            binding.drawerLayout.visibility = View.GONE
+        }
+
+        binding.viewPager.currentItem = 0
+        selectDrawerTab(1)
+        hapticEngine.microTick()
+    }
+
+    private fun handleHomeButtonPress() {
+        activeAppDialog?.dismiss()
+        activeAppDialog = null
+
+        if (binding.drawerLayout.visibility == View.VISIBLE) {
+            binding.drawerLayout.visibility = View.GONE
+            hapticEngine.solenoidDisengage()
+        }
+
+        if (binding.viewPager.currentItem != 1) {
+            binding.viewPager.setCurrentItem(1, true)
+            hapticEngine.microTick()
+        }
+    }
+
+    private fun handleMenuButtonPress() {
+        if (binding.drawerLayout.visibility == View.VISIBLE) {
+            val nextVaultTab = (currentVaultTab + 1) % 3
+            selectVaultTab(nextVaultTab)
+            hapticEngine.microTick()
+            return
+        }
+
+        when (binding.viewPager.currentItem) {
+            1 -> {
+                hapticEngine.ejectDoor()
+                toggleVaultDrawer()
+            }
+            0 -> {
+                val nextDrawerTab = (currentDrawerTab + 1) % 3
+                selectDrawerTab(nextDrawerTab)
+                hapticEngine.microTick()
+            }
+            2 -> {
+                val newMode = !isAnalogMode
+                setRadioMode(newMode)
+                radioBinding.rockerSwitchView.isFmMode = newMode
+                hapticEngine.microTick()
+            }
+        }
+    }
+
+    private fun handleSearchButtonPress() {
+        if (binding.drawerLayout.visibility == View.VISIBLE) {
+            binding.etSearchVault.requestFocus()
+            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
+            imm?.showSoftInput(binding.etSearchVault, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+            hapticEngine.microTick()
+        } else if (binding.viewPager.currentItem == 0) {
+            selectDrawerTab(1)
+            drawerBinding.etSearchApps.requestFocus()
+            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
+            imm?.showSoftInput(drawerBinding.etSearchApps, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+            hapticEngine.microTick()
+        } else {
+            toggleVaultDrawer()
+            binding.etSearchVault.requestFocus()
+            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
+            imm?.showSoftInput(binding.etSearchVault, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+        }
+    }
+
+    private fun handleHeadsetHook() {
+        headsetClickCount++
+        headsetHandler.removeCallbacks(headsetRunnable)
+        if (headsetClickCount >= 3) {
+            headsetHandler.post(headsetRunnable)
+        } else {
+            headsetHandler.postDelayed(headsetRunnable, 350L)
+        }
+    }
+
+    private fun handleHardwareAction(keyCode: Int): Boolean {
         return when (keyCode) {
             KeyEvent.KEYCODE_CAMERA,
-            KeyEvent.KEYCODE_HEADSETHOOK,
             KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE -> {
+                handlePlayPauseToggle()
+                true
+            }
+            KeyEvent.KEYCODE_FOCUS,
+            KeyEvent.KEYCODE_MEDIA_NEXT,
+            KeyEvent.KEYCODE_MEDIA_FAST_FORWARD -> {
+                handleNextTrackOrStation()
+                true
+            }
+            KeyEvent.KEYCODE_MEDIA_PREVIOUS,
+            KeyEvent.KEYCODE_MEDIA_REWIND -> {
+                handlePrevTrackOrStation()
+                true
+            }
+            KeyEvent.KEYCODE_MEDIA_PLAY -> {
+                val isRadioScreen = binding.viewPager.currentItem == 2
                 if (isRadioScreen) {
-                    toggleRadioPlayback()
+                    val st = radioEngine.currentStation ?: LiteRadioEngine.PRESETS[0]
+                    radioEngine.playStation(st)
                 } else {
-                    audioEngine.togglePlayPause()
+                    hapticEngine.solenoidEngage()
+                    audioEngine.play()
                 }
                 true
             }
-            KeyEvent.KEYCODE_MEDIA_NEXT -> {
+            KeyEvent.KEYCODE_MEDIA_PAUSE,
+            KeyEvent.KEYCODE_MEDIA_STOP -> {
+                val isRadioScreen = binding.viewPager.currentItem == 2
                 if (isRadioScreen) {
-                    radioEngine.tuneNext()
+                    radioEngine.stop()
                 } else {
-                    audioEngine.next()
+                    hapticEngine.solenoidDisengage()
+                    audioEngine.pause()
                 }
                 true
             }
-            KeyEvent.KEYCODE_MEDIA_PREVIOUS -> {
-                if (isRadioScreen) {
-                    radioEngine.tunePrev()
-                } else {
-                    audioEngine.previous()
-                }
+            KeyEvent.KEYCODE_HEADSETHOOK -> {
+                handleHeadsetHook()
+                true
+            }
+            KeyEvent.KEYCODE_APP_SWITCH -> {
+                handleRecentAppsPress()
+                true
+            }
+            KeyEvent.KEYCODE_MENU -> {
+                handleMenuButtonPress()
+                true
+            }
+            KeyEvent.KEYCODE_SEARCH -> {
+                handleSearchButtonPress()
                 true
             }
             else -> false
         }
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        val keyCode = event.keyCode
+        val isDown = event.action == KeyEvent.ACTION_DOWN
+
+        when (keyCode) {
+            KeyEvent.KEYCODE_APP_SWITCH -> {
+                if (isDown) handleRecentAppsPress()
+                return true
+            }
+            KeyEvent.KEYCODE_MENU -> {
+                if (isDown) handleMenuButtonPress()
+                return true
+            }
+            KeyEvent.KEYCODE_CAMERA -> {
+                if (isDown) handlePlayPauseToggle()
+                return true
+            }
+            KeyEvent.KEYCODE_FOCUS -> {
+                if (isDown) handleNextTrackOrStation()
+                return true
+            }
+            KeyEvent.KEYCODE_HEADSETHOOK -> {
+                if (isDown) handleHeadsetHook()
+                return true
+            }
+            KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE -> {
+                if (isDown) handlePlayPauseToggle()
+                return true
+            }
+            KeyEvent.KEYCODE_MEDIA_PLAY -> {
+                if (isDown) {
+                    val isRadioScreen = binding.viewPager.currentItem == 2
+                    if (isRadioScreen) {
+                        val st = radioEngine.currentStation ?: LiteRadioEngine.PRESETS[0]
+                        radioEngine.playStation(st)
+                    } else {
+                        hapticEngine.solenoidEngage()
+                        audioEngine.play()
+                    }
+                }
+                return true
+            }
+            KeyEvent.KEYCODE_MEDIA_PAUSE,
+            KeyEvent.KEYCODE_MEDIA_STOP -> {
+                if (isDown) {
+                    val isRadioScreen = binding.viewPager.currentItem == 2
+                    if (isRadioScreen) {
+                        radioEngine.stop()
+                    } else {
+                        hapticEngine.solenoidDisengage()
+                        audioEngine.pause()
+                    }
+                }
+                return true
+            }
+            KeyEvent.KEYCODE_MEDIA_NEXT,
+            KeyEvent.KEYCODE_MEDIA_FAST_FORWARD -> {
+                if (isDown) handleNextTrackOrStation()
+                return true
+            }
+            KeyEvent.KEYCODE_MEDIA_PREVIOUS,
+            KeyEvent.KEYCODE_MEDIA_REWIND -> {
+                if (isDown) handlePrevTrackOrStation()
+                return true
+            }
+            KeyEvent.KEYCODE_SEARCH -> {
+                if (isDown) handleSearchButtonPress()
+                return true
+            }
+            KeyEvent.KEYCODE_VOLUME_UP,
+            KeyEvent.KEYCODE_VOLUME_DOWN -> {
+                val handled = super.dispatchKeyEvent(event)
+                if (isDown) {
+                    hapticEngine.microTick()
+                    syncVolumeSlider()
+                }
+                return handled
+            }
+            KeyEvent.KEYCODE_VOLUME_MUTE -> {
+                if (isDown) {
+                    val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+                    val isMuted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        audioManager.isStreamMute(AudioManager.STREAM_MUSIC)
+                    } else false
+                    audioManager.setStreamMute(AudioManager.STREAM_MUSIC, !isMuted)
+                    syncVolumeSlider()
+                    hapticEngine.microTick()
+                }
+                return true
+            }
+            KeyEvent.KEYCODE_DPAD_LEFT -> {
+                if (currentFocus !is android.widget.EditText) {
+                    if (isDown && binding.viewPager.currentItem > 0) {
+                        binding.viewPager.currentItem -= 1
+                        hapticEngine.microTick()
+                    }
+                    return true
+                }
+            }
+            KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                if (currentFocus !is android.widget.EditText) {
+                    if (isDown && binding.viewPager.currentItem < 2) {
+                        binding.viewPager.currentItem += 1
+                        hapticEngine.microTick()
+                    }
+                    return true
+                }
+            }
+            KeyEvent.KEYCODE_DPAD_CENTER -> {
+                if (currentFocus !is android.widget.EditText && currentFocus !is Button) {
+                    if (isDown) handlePlayPauseToggle()
+                    return true
+                }
+            }
+        }
+        return super.dispatchKeyEvent(event)
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
@@ -1232,30 +2126,75 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
                 return handled
             }
             KeyEvent.KEYCODE_CAMERA,
+            KeyEvent.KEYCODE_FOCUS,
             KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
             KeyEvent.KEYCODE_HEADSETHOOK,
+            KeyEvent.KEYCODE_MEDIA_PLAY,
+            KeyEvent.KEYCODE_MEDIA_PAUSE,
+            KeyEvent.KEYCODE_MEDIA_STOP,
             KeyEvent.KEYCODE_MEDIA_NEXT,
-            KeyEvent.KEYCODE_MEDIA_PREVIOUS -> {
+            KeyEvent.KEYCODE_MEDIA_FAST_FORWARD,
+            KeyEvent.KEYCODE_MEDIA_PREVIOUS,
+            KeyEvent.KEYCODE_MEDIA_REWIND,
+            KeyEvent.KEYCODE_APP_SWITCH,
+            KeyEvent.KEYCODE_MENU,
+            KeyEvent.KEYCODE_SEARCH -> {
                 if (handleHardwareAction(keyCode)) return true
             }
         }
         return super.onKeyDown(keyCode, event)
     }
 
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleHomeButtonPress()
+    }
+
+    @Suppress("DEPRECATION")
     override fun onBackPressed() {
+        if (activeAppDialog?.isShowing == true) {
+            activeAppDialog?.dismiss()
+            activeAppDialog = null
+            return
+        }
+
         if (binding.drawerLayout.visibility == View.VISIBLE) {
+            // 1. If in subfolder in FOLDERS tab, step up to parent folder
+            if (currentVaultTab == 1 && currentVaultDirectory != null && currentVaultDirectory != getInitialMusicDirectory()) {
+                val parent = currentVaultDirectory?.parentFile
+                if (parent != null && parent.canRead()) {
+                    loadVaultFolder(parent)
+                    hapticEngine.microTick()
+                    return
+                }
+            }
+            // 2. If search filter active in Tape Vault, clear query
+            if (binding.etSearchVault.text.isNotEmpty()) {
+                binding.etSearchVault.setText("")
+                hapticEngine.microTick()
+                return
+            }
+            // 3. Close Tape Vault drawer
             binding.drawerLayout.visibility = View.GONE
+            hapticEngine.solenoidDisengage()
         } else if (binding.viewPager.currentItem != 1) {
-            // Return to Center Cassette Player Deck
+            // Return to Center Cassette Player Deck (root)
             binding.viewPager.currentItem = 1
+            hapticEngine.microTick()
         } else {
-            // Act as Home launcher: don't exit to blank screen
-            super.onBackPressed()
+            // On root (Page 1 Center Deck, drawer closed): Open catalogue!
+            hapticEngine.ejectDoor()
+            toggleVaultDrawer()
         }
     }
 
     override fun onStart() {
         super.onStart()
+        audioEngine.listener = this@LiteMainActivity
+        radioEngine.listener = setupRadioListener()
+        syncUiFromActiveEngines()
+
         noisyReceiver = NoisyAudioReceiver {
             audioEngine.pause()
             radioEngine.stop()
@@ -1294,10 +2233,36 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
             }
         }
         registerReceiver(headsetReceiver, IntentFilter(Intent.ACTION_HEADSET_PLUG))
+
+        // Dynamic Package Add/Remove/Replace Receiver
+        packageReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                loadInstalledApps()
+            }
+        }
+        val packageFilter = IntentFilter().apply {
+            addAction(Intent.ACTION_PACKAGE_ADDED)
+            addAction(Intent.ACTION_PACKAGE_REMOVED)
+            addAction(Intent.ACTION_PACKAGE_REPLACED)
+            addDataScheme("package")
+        }
+        registerReceiver(packageReceiver, packageFilter)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Refresh installed apps list if changed while in system settings/uninstaller
+        loadInstalledApps()
     }
 
     override fun onStop() {
         super.onStop()
+        packageReceiver?.let {
+            try {
+                unregisterReceiver(it)
+            } catch (ignored: Exception) {}
+            packageReceiver = null
+        }
         noisyReceiver?.let {
             try {
                 unregisterReceiver(it)
@@ -1320,10 +2285,15 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
 
     override fun onDestroy() {
         super.onDestroy()
+        headsetHandler.removeCallbacks(headsetRunnable)
         stopChannelSearch()
-        audioEngine.release()
-        radioEngine.release()
-        analogFmEngine.release()
+        if (isServiceBound) {
+            try {
+                unbindService(serviceConnection)
+            } catch (ignored: Exception) {}
+            isServiceBound = false
+        }
+        audioEngine.listener = null
         LiteBitmapCache.clear()
         HardwareButtonReceiver.buttonListener = null
     }

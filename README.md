@@ -1,106 +1,102 @@
 <div align="center">
 
-  <img src="docs/assets/spindle_hero_banner.jpg" alt="Spindle Audiophile Android Launcher" width="100%" />
+  <img src="docs/assets/spindle_hero_banner.jpg" alt="Spindle Cassette Music Player" width="100%" />
 
   <br/><br/>
 
-  <img src="docs/assets/spindle_app_icon.png" alt="Spindle Icon" width="96" height="96" />
+  <img src="docs/assets/spindle_app_icon.png" alt="Spindle Icon" width="80" height="80" />
 
-  <h1>SPINDLE</h1>
-  <p><b>Analog Soul. Hi-Res Heart. Zero Bloat.</b></p>
-  <p><i>The ultra-lightweight, hardware-tactile Android Home Launcher specifically crafted to repurpose compact smartphones and low-RAM DAPs into dedicated, physical-feeling audiophile music players.</i></p>
+  <h1>Spindle</h1>
+  <p><b>Give your old Android phone a second life as a retro cassette Walkman.</b></p>
+  <p>Turn that dusty phone in your drawer into a distraction-free music player. 100% offline, zero ads, no subscriptions, and pure tape nostalgia.</p>
+
+  <br/>
 
   <p>
-    <a href="https://github.com/manaphassan/Spindle/releases/tag/v1.4.0-alpha"><img src="https://img.shields.io/badge/Release-v1.4.0--alpha-crimson.svg?style=flat-square" alt="Version"></a>
-    <img src="https://img.shields.io/badge/Platform-Android%208.0%2B%20(Oreo%20to%2015)-black.svg?style=flat-square&logo=android" alt="Android Support">
-    <img src="https://img.shields.io/badge/RAM%20Footprint-%3C%2025MB-emerald.svg?style=flat-square" alt="RAM">
-    <img src="https://img.shields.io/badge/APK%20Size-%3C%204.5MB-blue.svg?style=flat-square" alt="APK Size">
-    <img src="https://img.shields.io/badge/AI%20Status-100%25%20AI--FREE-orange.svg?style=flat-square" alt="No AI">
-    <img src="https://img.shields.io/badge/Audio-Bit--Perfect%20Direct%20ALSA-green.svg?style=flat-square" alt="Hi-Res Audio">
-    <a href="https://paypal.me/manaphassan"><img src="https://img.shields.io/badge/Donate-PayPal-00457C.svg?style=flat-square&logo=paypal" alt="Donate via PayPal"></a>
-    <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-lightgrey.svg?style=flat-square" alt="License"></a>
+    <a href="#-choose-your-flavor"><img src="https://img.shields.io/badge/Download-Free%20APK-crimson.svg?style=for-the-badge" alt="Download APK"></a>
+    <a href="https://paypal.me/manaphassan"><img src="https://img.shields.io/badge/Support-Buy%20A%20Coffee-00457C.svg?style=for-the-badge&logo=paypal" alt="Support via PayPal"></a>
   </p>
 
-  <h4>
-    <a href="https://manaphassan.github.io/Spindle/">🌐 Live Project Website</a>
+  <br/>
+
+  <p>
+    <a href="#-choose-your-flavor">Downloads</a>
     <span> · </span>
-    <a href="docs/BRANDING.md">🎨 Branding Guide</a>
+    <a href="#-features-youll-love">Features</a>
     <span> · </span>
-    <a href="MASTER_DOCUMENTATION.md">📖 Technical Specs</a>
+    <a href="#-how-to-install-in-3-steps">Quick Start</a>
     <span> · </span>
-    <a href="docs/SPINDLE_LITE_MASTER_DOCUMENTATION.md">⚡ Spindle Lite Docs</a>
+    <a href="https://manaphassan.github.io/Spindle/">Website</a>
     <span> · </span>
-    <a href="#-quick-start">🚀 Installation</a>
+    <a href="#-support-the-project">Support</a>
     <span> · </span>
-    <a href="#-support-development">💖 Donate</a>
-  </h4>
+    <a href="MASTER_DOCUMENTATION.md">Tech Specs</a>
+  </p>
 
 </div>
 
 ---
 
-## 💡 The Philosophy & 5 Core Pillars
-
-Modern smartphones are overloaded with algorithmic distractions, background trackers, and bloated operating systems. Meanwhile, millions of compact devices with extraordinary audio hardware—such as compact vintage smartphones with dedicated DACs and dedicated Digital Audio Players (DAPs)—sit idle in drawers due to low RAM.
-
-```
-   ┌────────────────────────────────────────────────────────┐
-   │                  THE 5 PILLARS OF SPINDLE              │
-   ├────────────────────────────────────────────────────────┤
-   │  1. 🔓 ALWAYS FREE         │  Zero paywalls on music   │
-   │  2. 📴 OFFLINE FIRST       │  100% local, zero tracking│
-   │  3. ⚡ ULTRA-LIGHTWEIGHT   │  < 25MB RAM, pure Canvas  │
-   │  4. 🛡️ ZERO AI             │  No algorithms, no bloat  │
-   │  5. 📼 ANALOG INSPIRED     │  Kinetic reels & mechanics│
-   └────────────────────────────────────────────────────────┘
-```
-
-**Spindle transforms these devices into dedicated, standalone physical audiophile players:**
-- **Zero AI & Zero Cloud Tracking**: No background machine learning models, no intrusive recommendations, no telemetry beacons, no cloud subscriptions. 100% deterministic, local, and private.
-- **Pure Physical Feel**: Every dial, switch, knob, and lever is modeled after iconic industrial audio gear, providing rich haptic feedback and mechanical detents.
-- **Extreme Low-RAM Architecture**: Runs fluidly at 60 FPS on as little as **1GB RAM** with an idle footprint under **25MB** ($<18\text{MB}$ on Spindle Lite).
-- **Modern Audiophile Catalog & Lyrics**: Elegant single-audio Now Playing screen with circular radial scrub arc, live audio waveform, synced lyrics drawer, and A-Z alphabet index scroller.
+> [!NOTE]
+> **💬 A Quick Note from the Creator:**  
+> Hey there! I'm not a big corporate dev team or professional programmer—just someone who loves music, misses the tactile feel of cassettes, and wanted to rescue old phones from landfills. This is a personal passion project shared freely with fellow music lovers. Please use it **"as is"**, have fun with it, and enjoy the retro vibes!
 
 ---
 
-## 📸 Interface Showcase
+## 📥 Choose Your Flavor
+
+Spindle comes in two editions so you get the smoothest experience on whatever device you have:
+
+| Edition | Best For... | What You Get | Download |
+| :--- | :--- | :--- | :---: |
+| **Spindle Standard**<br/>`v1.4.0-alpha` | **Modern phones & newer DAPs**<br/>Android 8.0 or newer | • Smooth animated cassette tape reels<br/>• Full music library with fast A-Z jumping & folder browser<br/>• Live sound visualizer & synced scrolling lyrics<br/>• Vintage FM radio dial and online radio streaming<br/>• 10-band tone equalizer with dual dancing VU meters<br/>• Crisp high-resolution audio (FLAC, MP3, WAV) | [**Download APK**](docs/releases/Spindle-Standard-v1.4.0-alpha.apk)<br/><sub>Size: 4.88 MB</sub><br/><sub>[GitHub Release](https://github.com/manaphassan/Spindle/releases/tag/v1.4.0-alpha)</sub> |
+| **Spindle Lite**<br/>`v1.0.0-LITE` | **Vintage phones & compact players**<br/>Android 4.4 (KitKat) down to 4.1<br/>Tiny 3-inch screens & 512MB RAM | • Super lightweight — sips battery & uses almost zero RAM<br/>• 3-digit mechanical tape drum counter & cassette skins<br/>• Tape Vault library with folder navigation<br/>• Full physical button control (camera shutter, volume, d-pad)<br/>• Blazing fast on decade-old hardware | [**Download APK**](docs/releases/Spindle-Lite-v1.0.0-LITE.apk)<br/><sub>Size: 1.79 MB</sub><br/><sub>[GitHub Release](https://github.com/manaphassan/Spindle/releases/tag/v1.0.0-LITE)</sub> |
+
+> 💡 **Not sure which one to pick?**  
+> If your phone was made in the last 6–8 years, grab **Spindle Standard**.  
+> If you're reviving an old phone from 2011–2014 (like an Xperia active, Galaxy S3, or low-RAM player), grab **Spindle Lite**.  
+> Checksums and package verification files are available in [`release_package/latest/`](release_package/latest/).
+
+---
+
+## 📸 Snapshots
 
 <div align="center">
   <table>
     <tr>
       <td width="50%" align="center">
-        <b>Kinetic Cassette Deck & 2-Row Routing</b><br/>
-        <sub>Traveling tape ribbon, rotating anisotropic sheen & 2-row bit-perfect badges</sub><br/><br/>
-        <img src="docs/assets/screenshot_walkman_home.png?v=1.3.0-alpha" width="320" alt="Kinetic Cassette Deck"/>
+        <b>Cassette Tape Deck</b><br/>
+        <sub>Watch the reels turn and tape advance</sub><br/><br/>
+        <img src="docs/assets/screenshot_walkman_home.png?v=1.3.0-alpha" width="280" alt="Cassette Tape Deck"/>
       </td>
       <td width="50%" align="center">
-        <b>Dedicated Vintage Lock Screen Player</b><br/>
-        <sub>Keyguard transport deck, digital counter & hardware battery telemetry</sub><br/><br/>
-        <img src="docs/assets/screenshot_lockscreen.png?v=1.3.0-alpha" width="320" alt="Vintage Lock Screen Player"/>
-      </td>
-    </tr>
-    <tr>
-      <td width="50%" align="center">
-        <b>Analog FM Radio & Ballistic RF Meter</b><br/>
-        <sub>Galvanometer RF signal needle, ruby red STEREO pilot & 4-color lamp glow</sub><br/><br/>
-        <img src="docs/assets/screenshot_braun_radio.png?v=1.3.0-alpha" width="320" alt="Analog FM Radio"/>
-      </td>
-      <td width="50%" align="center">
-        <b>Dual Analog VU Meters & 10-Band EQ</b><br/>
-        <sub>Ballistic needle physics with +3dB redline, peak LEDs & AutoEq headphone curves</sub><br/><br/>
-        <img src="docs/assets/screenshot_vu_meters.png?v=1.3.0-alpha" width="320" alt="Dual Analog VU Meters"/>
+        <b>Lock Screen Player</b><br/>
+        <sub>Full tape controls right on your lock screen</sub><br/><br/>
+        <img src="docs/assets/screenshot_lockscreen.png?v=1.3.0-alpha" width="280" alt="Lock Screen Player"/>
       </td>
     </tr>
     <tr>
       <td width="50%" align="center">
-        <b>Dedicated Single Audio Now Playing</b><br/>
-        <sub>Minimalist circular cover, radial arc scrubber, dynamic waveform & lyrics drawer</sub><br/><br/>
-        <img src="docs/assets/screenshot_now_playing.png?v=1.3.0-alpha" width="320" alt="Single Audio Now Playing Screen"/>
+        <b>Now Playing & Lyrics</b><br/>
+        <sub>Circular album art, live visualizer & synced lyrics</sub><br/><br/>
+        <img src="docs/assets/screenshot_now_playing.png?v=1.3.0-alpha" width="280" alt="Now Playing Screen"/>
       </td>
       <td width="50%" align="center">
-        <b>Audiophile Music Catalog (⏏ EJECT)</b><br/>
-        <sub>A-Z alphabet fast scroller, sorting chips, format filters & floating mini-player</sub><br/><br/>
-        <img src="docs/assets/screenshot_catalog.png?v=1.3.0-alpha" width="320" alt="Audiophile Music Catalog"/>
+        <b>Music Library</b><br/>
+        <sub>Fast A-Z index, folder browsing & instant search</sub><br/><br/>
+        <img src="docs/assets/screenshot_catalog.png?v=1.3.0-alpha" width="280" alt="Music Catalog"/>
+      </td>
+    </tr>
+    <tr>
+      <td width="50%" align="center">
+        <b>FM & Online Radio</b><br/>
+        <sub>Flywheel tuning dial with signal meter</sub><br/><br/>
+        <img src="docs/assets/screenshot_braun_radio.png?v=1.3.0-alpha" width="280" alt="Radio Interface"/>
+      </td>
+      <td width="50%" align="center">
+        <b>Sound Equalizer</b><br/>
+        <sub>Dual dancing VU needles & 10-band tone control</sub><br/><br/>
+        <img src="docs/assets/screenshot_vu_meters.png?v=1.3.0-alpha" width="280" alt="Equalizer & VU Meters"/>
       </td>
     </tr>
   </table>
@@ -108,213 +104,61 @@ Modern smartphones are overloaded with algorithmic distractions, background trac
 
 ---
 
-## 🎛️ Key Features
+## ✨ Features You'll Love
 
-### 1. 📼 Flagship Cassette Deck (Home Launcher)
-- **Default Sony Metal-XR Type IV Shell**: Iconic 1990s Sony Metal-XR cassette chassis with centered gold/red metallic foil hot-stamping (`SONY METAL-XR • TYPE IV METAL`) and halved spindle hub gap for tighter vintage proportions.
-- **Centered Spindle Deck Window**: Horizontally centered clear acrylic window showcasing mechanical tape spools with true differential kinematics ($v = 4.7625\text{ cm/s}$).
-- **Transparent Polyester Leader Tape & Amber Splice**: Authentic clear polyfilm ribbon rendering at reel boundaries (`progress <= 0.025` and `>= 0.975`), bonded to the ferric/metal magnetic tape with an angled 45° amber splice line right at the guide rollers.
-- **Continuous High-Speed Kinematics & Acoustic Foley**:
-  - Reel angular speed continuously accelerates up to 8x during sustained FWD/REW button holds.
-  - Real-time looping motor spool foley with dynamic gear pitch modulation (0.9x to 1.65x).
-  - Mechanical release click upon key release, and heavy solenoid auto-stop clack when hitting reel limits.
-- **Kinetic Magnetic Ribbon & Spool Motion**:
-  - **Traveling Magnetic Tape Oxide**: Traveling micro-striations actively gliding vertically between the supply and take-up spools at physical tape playback speed.
-  - **Rotating Anisotropic Specular Sheen**: Two opposing radial glare cones sweeping across the wound tape pack as the reels spin.
-  - **Classic 3-Spoke Flange Cutouts**: Three vintage strobe circular window cutouts orbiting the hub core at 60 FPS with zero GC allocation.
-- **Standardized Status Row & Interactive Badges**:
-  - Left-aligned tactile badges: `[TYPE I / II / IV]`, `[DOLBY B / C / OFF]`, and `[J-CARD]`.
-  - Right-aligned hardware status: dynamic `Battery` bar and green `Run` transport LED.
-- **Dynamic 3D J-Card Liner Notes (Tape Body / [J-CARD] Tab)**:
-  - Smooth 3D spatial perspective flip animation (`rotationY`, `cameraDistance = 8000dp`) between the cassette deck and the folded jewel-case J-Card.
-  - Classic spine fold with tape formulation badge (`SONY METAL-XR 90 • TYPE IV`), album title, artist, and Side A / Side B runtimes (`A: mm:ss | B: mm:ss`).
-  - Album booklet fold with album artwork frame, audiophile format specs (`FLAC 24-bit / 96kHz • Direct PCM`), and mastering notes.
-  - Dual-column Side A / Side B track listing (`A01..`, `B01..`) with theme-accented active playing indicator (`▶`).
-  - Direct touch-to-play track selection seamlessly flipping back to the running deck.
-- **24-bit 96kHz FLAC Bit-Perfect Engine**: Direct Qualcomm Snapdragon and USB-OTG ALSA playback with high-resolution codec negotiation.
-- **Physical Mechanical Controls**: Authentic `REW`, `FWD`, `PLAY/PAUSE`, and spring-loaded `⏏ EJECT` buttons with haptic clicks.
-
-### 2. 💿 Dedicated Single Audio Now Playing (Catalog Overlay)
-- **Minimalist Audiophile Interface**: Pure distraction-free now playing page with deep obsidian backdrop.
-- **Circular Album Art & Radial Arc Scrubber**: Custom touch-sensitive radial arc tracking playback progress with smooth rotational touch scrub.
-- **Live Dynamic Waveform Visualizer**: Hardware-accelerated 24-band frequency envelope visualizer pulsing in sync with music playback.
-- **Hi-Res Format Telemetry Badge**: Real-time pill displaying container, bit depth, sample frequency, and live bitrate (`FLAC 16-bit / 44.1kHz • 846 kbps`).
-- **Expandable Synced Lyrics Drawer**: Clean bottom drawer parsing `.lrc` timestamp files with real-time autoscroll, or displaying embedded text lyrics.
-- **Technical File Specs Dialog**: Instant inspector revealing codec, format, sample rate, bit depth, channel configuration, exact bitrate, file size, and filesystem path.
-- **Audiophile Transport Strip**: Shuffle mode, 3-state Repeat toggle (`Off` ➔ `Repeat All` ➔ `Repeat Single`), track skip (`⏮ / ⏭`), smooth play/pause (`▶ / ❚❚`), and favorite toggle.
-
-### 3. 🗂️ Audiophile Music Catalog (`⏏ EJECT` Overlay)
-- **A-Z Fast Alphabet Scroller**: Tactile right-edge vertical alphabet index strip with haptic vibration detents for instant library jumping.
-- **Minimalist Sorting & Grouping**: One-tap dialog sorting library by **Title**, **Artist**, **Album**, **Year**, **Duration**, or **Bitrate**.
-- **Hi-Res Format Filtering**: Instant filter chips for `All`, `Hi-Res (24-bit+)`, `Lossless (FLAC/WAV)`, and `MP3`.
-- **Persistent Floating Mini-Player**: Bottom docked player with track thumbnail, metadata, transport controls, and tap-to-expand into the single audio Now Playing screen.
-- **Direct Return to Home**: Tapping back smoothly resumes the physical analog cassette home deck.
-
-### 4. 📻 Bauhaus Minimalist Radio with Hardware Antenna Detection
-- **Dedicated FM vs DIGI Modes**: 
-  - **FM Mode**: Local over-the-air analog FM receiver requiring 3.5mm wired headphones connected as an antenna, with safety guidance if unplugged.
-  - **DIGI Mode**: Dedicated DAB+ / online stream mode for internet radio stations with zero static.
-- **Streamlined Ballistic RF Signal Meter**: High-density compact galvanometer meter displaying signal strength (0–5 S-units) and center-channel tuning needle.
-- **Ruby Red STEREO Pilot LED**: Dynamic diode glow illuminating upon receiving stereo FM lock.
-- **4-Color Incandescent Lamp Cycling**: Tap the signal window to toggle backlights: **Amber Incandescent**, **Vintage Cyan/Teal**, **Mint Green**, and **Warm Parchment**.
-- **Concentric Acoustic Speaker Grille**: Hardware-accelerated custom view rendering concentric perforation rings with realistic acoustic recess shadows.
-- **3D Flywheel Inertia Tuning Dial**: Tactile thumbwheel with physical momentum coasting, velocity decay, and detent vibration ticks when passing stations.
-- **Backlit Vintage LCD Panel**: Mint-green LCD display showing frequency, station RDS marquee, and live stream connection status.
-
-### 5. 🔒 Dedicated Vintage Lock Screen Player
-- **Keyguard-Bypassing Transport Deck**: Dedicated full-screen player displaying securely over the Android lock screen on screen-off.
-- **Vintage Hardware Interface**: Features full physical REW / FWD / PLAY / EJECT transport levers, live 7-segment digital counter, and direct battery/route telemetry.
-- **Swipe-Up Dismissal**: Effortless upward swipe gesture to dismiss back to the device launcher.
-- **Toggleable in Settings**: User-configurable switch under DAP Hardware & Audio Engine settings.
-
-### 6. 🎚️ Studio Sound Deck: Dual Analog VU Meters, 10-Band ISO EQ & DSP Lock
-- **Lockable Studio Parametric EQ & DSP**: Tactile `[LOCK]` button securing the 10-band ISO graphic equalizer and parametric DSP knobs against accidental touches during playback.
-- **Dual Analog Ballistic VU Meters**: Dedicated left and right channel galvanometer needles with warm vintage dial face, +3dB redline scale, and glowing peak indicator LEDs.
-- **10-Band ISO Parametric Studio Equalizer**: Full hardware-accelerated equalizer with preloaded AutoEq frequency curves for legendary audiophile headphones.
-- **Mechanical Cassette Foley Engine**: Procedural 16-bit sound generation for continuous motor gear spool whir with dynamic pitch ramping, solenoid clicks, and heavy auto-stop arrest clack.
-
-### 7. 🎨 Settings, App Drawer & 3 Hardware Themes
-- **3 Curated Hardware Themes**:
-  - **Audiophile Dark (Obsidian)**: Deep charcoal and OLED black with glowing mint accents.
-  - **Monochrome E-Ink**: Ultra-high-contrast pure black and white tailored specifically for e-paper / e-ink DAPs (Onyx Boox, Hisense).
-  - **Clean Light (Brushed Aluminum)**: Industrial silver and crisp white minimalist aesthetic.
-- **Master Volume Slider Deck**: Tactile hardware slider with Left/Right stereo channel balance visualization.
-- **Offline Storage Scanner**: Direct directory selector for microSD card or internal music folders with fast background metadata indexing.
-- **Lightweight App Drawer**: Zero-bloat app launcher (<2MB overhead) with touch-magnified Niagara-style alphabet rail.
+- 📼 **Real Tape Action**: Watch the tape reels spin as your music plays. Fast-forward and rewind speed up the spools just like real magnetic tape.
+- 📴 **100% Offline & Distraction-Free**: Put your phone on airplane mode, plug in your favorite wired headphones, and escape the internet. No accounts, no logins, no notifications, and zero tracking.
+- 🚫 **Forever Free, Zero Ads**: No annoying banner ads interrupting your album, no popups, no subscriptions, and no paywalls. Ever.
+- ⚡ **Light as a Feather**: Opens in a flash, sips battery, and won't bog down your device.
+- 🎛️ **Clicky Real Buttons**: Keep your screen off and your phone in your pocket! Change tracks and adjust volume using your physical volume rocker, camera shutter key, or wired headphone remote.
+- 📁 **Your Music, Your Folders**: If you organize your albums in folders on your SD card, you'll feel right at home with direct folder browsing, fast A-Z jumping, and instant search.
+- 📻 **Analog Radio Fun**: Spin the virtual tuning flywheel to dial in FM radio stations or listen to curated online streams.
 
 ---
 
-## ⚡ Technical Benchmarks: Extreme Low RAM
+## 🚀 How to Install in 3 Steps
 
-| Metric | Standard Android Player | Spindle Launcher | Advantage |
-| :--- | :--- | :--- | :--- |
-| **Idle Memory** | 120MB – 250MB | **< 25MB** | **85% less RAM** |
-| **Active Playback RAM** | 180MB – 350MB | **< 38MB** | **80% less RAM** |
-| **APK File Size** | 45MB – 95MB | **< 4.5MB** | **92% smaller** |
-| **UI Framework** | Compose / WebView | **Pure Native Canvas** | Zero GC stutters |
-| **Bitmap Format** | ARGB_8888 (32-bit) | **RGB_565 (16-bit)** | 50% image cache savings |
-| **Background AI / ML** | 150MB+ models | **NONE (0MB)** | Zero battery drain |
-| **Min SDK** | Android 10+ | **Android 8.0 (API 26)** | Legacy device revive |
+Getting started takes less than a minute:
+
+1. **Download the APK** — Tap the download button above on your Android phone or music player.
+2. **Tap & Install** — Open the downloaded file from your notifications or Downloads folder. *(If your phone asks for permission to install, just tap "Settings" and turn on "Allow from this source".)*
+3. **Press Play & Enjoy** — Open Spindle, grant storage access so it can find your songs, and watch the tape roll!
+
+> 💡 **Dedicated Walkman Tip:** Want to turn an old phone into a dedicated music machine? In your Android Settings, go to *Default Apps → Home app* and set **Spindle** as your default home screen. Every time you press the Home button, you'll go straight back to your cassette deck!
 
 ---
 
-### 📦 Spindle Edition Matrix
+## 💖 Support the Project
 
-| Feature | Spindle Standard (`:app-main`) | Spindle Lite (`:app-lite` / `satsuma`) |
-| :--- | :--- | :--- |
-| **Target OS** | Android 8.0 – 15 (API 26 – 35) | **Android 4.4 KitKat (API 19)** *(down to API 16)* |
-| **Target Hardware** | 1GB – 4GB RAM DAPs & Compacts | **512MB RAM Legacy Devices** *(3.0" HVGA & Compact DAPs)* |
-| **Audio Engine** | `androidx.media3` (ExoPlayer 1.5.1) | **Native `android.media.MediaPlayer`** (Zero bloat) |
-| **Screen Target** | 720p – 1080p (16:9 – 21:9) | **320 × 480 (HVGA 3:2)** Responsive Canvas |
-| **Hardware Key Hooks** | Android MediaSession | **Dedicated Camera Key (`KEYCODE_CAMERA`) + Volume Skip** |
-| **Active Playback RAM** | $< 38\text{ MB}$ | **$< 18\text{ MB}$** |
-| **APK Binary Size** | $< 4.5\text{ MB}$ | **$< 1.8\text{ MB}$** |
-| **Documentation** | [MASTER_DOCUMENTATION.md](MASTER_DOCUMENTATION.md) | [SPINDLE_LITE_MASTER_DOCUMENTATION.md](docs/SPINDLE_LITE_MASTER_DOCUMENTATION.md) |
+Spindle is made by **HaNa Innovation** as a pure passion project. There are no venture capitalists, no ads, and no user tracking.
 
----
-
-## 🛠️ Architecture & Project Structure
-
-```
-dap_launcher/
-├── app-main/src/main/            # Spindle Standard (Android 8.0+, Media3, Room, AutoEq)
-│   ├── java/com/hana/spindle/
-│   │   ├── data/                 # Room DB, POSIX Storage Scanner, ImageLoader (RGB_565), TagParser, LyricsParser
-│   │   ├── playback/             # ExoPlayer Engine, RadioStreamEngine, AudioMetricsTracker
-│   │   ├── launcher/             # Lightweight App Drawer Loader (<2MB overhead)
-│   │   ├── theme/                # Cassette Themes & Color Palettes (Dark, E-Ink, Light)
-│   │   └── ui/                   # Flagship Cassette Deck, Now Playing Arc, FM Radio, VU Meters
-│   └── res/                      # Hardware vector graphics, layouts, and styles
-├── app-lite/src/main/            # Spindle Lite (Android 4.4+, <18MB RAM, 1.53MB APK, satsuma HVGA)
-│   ├── java/com/hana/spindle/lite/
-│   │   ├── audio/                # Chained MediaPlayer gapless engine (<0.1ms handoff)
-│   │   ├── db/                   # Native SQLiteOpenHelper (v2 with bit-depth column) & MediaScanner
-│   │   ├── ui/                   # Kinetic LiteDeckView (Type IV/II/I formulations, drum counter, sheen)
-│   │   └── util/                 # Binary AudioHeaderParser (FLAC/WAV bit-depth), DeviceNameFormatter
-│   └── res/                      # Micro-footprint HVGA layouts, colors, vectors
-├── docs/                         # Live GitHub Pages assets and branding guides
-│   ├── assets/                   # High-res logos, banners, and verified screenshots
-│   ├── BRANDING.md               # Design systems, color specs, and industrial design philosophy
-│   ├── SPINDLE_LITE_MASTER_DOCUMENTATION.md # Spindle Lite architecture & specs
-│   └── index.html                # Live interactive showcase page
-```
-
----
-
-## 🗺️ Development Roadmap
-
-| Version | Phase / Tier | Key Deliverables | Status |
-| :--- | :--- | :--- | :---: |
-| **`v1.2.0`** | **Spindle Basic (Flagship)** | Kinetic Spindle Deck, Radial Arc Scrubber, 24-Band Waveform, Dynamic Nameplate, A-Z Index | **✅ Released** |
-| **`v1.3.0-alpha`** | **Spindle Flagship** | Kinetic Ribbon Reels, 2-Row Routing Badges, Lock Screen Player, Analog RF Meter, 24-bit FLAC | **✅ Alpha Released** |
-| **`v1.0.0-LITE`** | **Spindle Lite (Release)** | 1.53 MB APK, &lt;18 MB RAM, Type IV/II/I Cassette Formulations, Mechanical Drum Counter, Bit-Depth Parser | **✅ Verified Release** |
-| **`v1.4.0`** | **Spindle Pro (Studio)** | Reel-to-Reel Open Deck, 10-Band ISO Parametric EQ, Tape Saturation DSP, Foley Sound Engine | **📅 Planned** |
-| **`v2.0.0`** | **Ecosystem & Bit-Perfect** | Direct USB-OTG ALSA Class 2.0 driver, Cross-DAP MicroSD Catalog Sync, CUE Sheet Splitter | **🔮 Future** |
-
----
-
-## 🚀 Quick Start
-
-### 1. Spindle Standard (`:app-main`) — Android 8.0+ DAPs & Modern Compacts
-```bash
-# Build optimized release APK (< 4.5 MB with R8 & ProGuard)
-./gradlew :app-main:assembleRelease
-
-# Install directly to connected device or DAP
-adb install -r app-main/build/outputs/apk/release/app-main-release.apk
-
-# Launch Spindle Home
-adb shell am start -n com.hana.spindle/com.hana.spindle.ui.MainActivity
-```
-
-### 2. Spindle Lite (`:app-lite`) — Vintage 512MB RAM & 3.0" HVGA Hardware
-```bash
-# Build ultra-compact release APK (1.53 MB verified binary)
-./gradlew :app-lite:assembleRelease
-
-# Install directly to connected legacy device or DAP
-adb install -r app-lite/build/outputs/apk/release/app-lite-release.apk
-
-# Launch Spindle Lite Home
-adb shell am start -n com.hana.spindle.lite/com.hana.spindle.lite.ui.LiteMainActivity
-```
-
-### Set as Default Home Launcher
-1. Navigate to Android **Settings** → **Apps & Notifications** → **Default Apps**.
-2. Select **Home app** → Choose **Spindle**.
-3. Press hardware Home button anytime to return directly to the Spindle Cassette Player.
-
----
-
-## 💖 Support Development
-
-Spindle is **100% free**, **open-source**, and developed with immense passion for analog aesthetics, audio purism, and extending the lifespan of compact smartphones and digital audio players (DAPs).
-
-We have **zero ads, zero cloud telemetry, and zero algorithmic subscriptions**.
-
-If Spindle has breathed new life into your vintage hardware or you appreciate the craftsmanship behind our custom physical UI and bit-perfect audio engine, please consider supporting ongoing development:
+If Spindle helped you rescue an old device from the junk drawer or simply brought back the fun of listening to full albums, consider tossing a few bucks into the tip jar. Your support helps buy vintage test devices and keeps classic hardware out of landfills:
 
 <div align="center">
-  <a href="https://paypal.me/manaphassan">
-    <img src="https://img.shields.io/badge/Donate%20via%20PayPal-paypal.me%2Fmanaphassan-00457C?style=for-the-badge&logo=paypal&logoColor=white" alt="Donate via PayPal" />
-  </a>
-  <br/><br/>
+  <p>
+    <a href="https://paypal.me/manaphassan">
+      <img src="https://img.shields.io/badge/Buy%20A%20Coffee-paypal.me%2Fmanaphassan-00457C?style=for-the-badge&logo=paypal&logoColor=white" alt="Donate with PayPal" />
+    </a>
+  </p>
   <p><b>Direct Link:</b> <a href="https://paypal.me/manaphassan">https://paypal.me/manaphassan</a></p>
-  <sub>Every contribution directly funds testing hardware, low-RAM optimization, and direct ALSA audio driver engineering. Thank you!</sub>
+  <sub>Every little bit helps keep old hardware alive. Thank you for listening!</sub>
 </div>
 
 ---
 
-## 🎨 Design Heritage & Accreditations
-- **1980s Japanese Industrial Design**: Mechanical tape spool kinematics and tactile physical button ergonomics.
-- **Bauhaus & German Functionalism**: Acoustic perforation patterns, geometric speaker grilles, and calibrated tuning dials.
-- **Classic Studio Audio Consoles**: Potentiometer ergonomics and high-precision dB ballistics.
+## 🛠️ For Developers & Tinkerers
+
+Want to poke around under the hood, build from source, or check out the audio engine specs?
+
+- **[Master Technical Documentation](MASTER_DOCUMENTATION.md)** — Architecture, audio pipeline, and roadmap.
+- **[Spindle Lite Master Documentation](docs/SPINDLE_LITE_MASTER_DOCUMENTATION.md)** — Hardware key dispatch matrix and memory optimization specs.
+- **[Brand & Design Guide](docs/BRANDING.md)** — Typography, colors, and design standards.
 
 ---
 
 ## 🛡️ License
 
-Spindle is distributed under the **Apache License 2.0**. See the [LICENSE](LICENSE) file for details.
+Spindle is free and open-source software licensed under the **Apache License 2.0**.
 
 ```
 Copyright 2026 HaNa Innovation
@@ -327,5 +171,5 @@ You may obtain a copy of the License at
 ```
 
 <div align="center">
-  <sub>Engineered with precision for audiophiles, analog purists, and old hardware preservation.</sub>
+  <sub>Made with ❤️ for analog lovers and classic gadget tinkerers.</sub>
 </div>

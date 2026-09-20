@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_drawer"
+    android:orientation="vertical"
+    android:paddingLeft="14dp"
+    android:paddingTop="12dp"
+    android:paddingRight="14dp"
+    android:paddingBottom="12dp">
+
+    <!-- App Header Info -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingBottom="10dp">
+
+        <ImageView
+            android:id="@+id/ivDialogAppIcon"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:contentDescription="Application Icon"
+            android:scaleType="fitCenter" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvDialogAppName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:fontFamily="monospace"
+                android:singleLine="true"
+                android:text="Application Name"
+                android:textColor="@color/lite_text_primary"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvDialogAppPackage"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:fontFamily="monospace"
+                android:singleLine="true"
+                android:text="com.example.app"
+                android:textColor="@color/lite_text_muted"
+                android:textSize="8.5sp" />
+
+            <TextView
+                android:id="@+id/tvDialogAppBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:background="@drawable/bg_format_pill"
+                android:fontFamily="monospace"
+                android:paddingLeft="5dp"
+                android:paddingTop="1dp"
+                android:paddingRight="5dp"
+                android:paddingBottom="1dp"
+                android:text="SYSTEM APP"
+                android:textColor="@color/lite_amber_glow"
+                android:textSize="7.5sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Bezel Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/lite_border"
+        android:layout_marginBottom="10dp" />
+
+    <!-- Action 1: Open App -->
+    <Button
+        android:id="@+id/btnActionOpen"
+        style="?android:attr/borderlessButtonStyle"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_marginBottom="6dp"
+        android:background="@drawable/bg_preset_button"
+        android:fontFamily="monospace"
+        android:text="OPEN APPLICATION"
+        android:textColor="@color/brand_orange"
+        android:textSize="10sp"
+        android:textStyle="bold" />
+
+    <!-- Action 2: App Properties / Details Settings -->
+    <Button
+        android:id="@+id/btnActionProperties"
+        style="?android:attr/borderlessButtonStyle"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_marginBottom="6dp"
+        android:background="@drawable/bg_preset_button"
+        android:fontFamily="monospace"
+        android:text="APP PROPERTIES"
+        android:textColor="@color/lite_text_primary"
+        android:textSize="10sp"
+        android:textStyle="bold" />
+
+    <!-- Action 3: Uninstall App -->
+    <Button
+        android:id="@+id/btnActionUninstall"
+        style="?android:attr/borderlessButtonStyle"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/bg_preset_button"
+        android:fontFamily="monospace"
+        android:text="UNINSTALL APP"
+        android:textColor="@color/lite_led_red"
+        android:textSize="10sp"
+        android:textStyle="bold" />
+
+    <!-- Action 4: Cancel / Dismiss -->
+    <Button
+        android:id="@+id/btnActionCancel"
+        style="?android:attr/borderlessButtonStyle"
+        android:layout_width="match_parent"
+        android:layout_height="34dp"
+        android:background="@drawable/bg_format_pill"
+        android:fontFamily="monospace"
+        android:text="CANCEL"
+        android:textColor="@color/lite_text_secondary"
+        android:textSize="9.5sp"
+        android:textStyle="bold" />
+
+</LinearLayout>
