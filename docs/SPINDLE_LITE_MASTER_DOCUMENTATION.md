@@ -5,7 +5,7 @@
 **Version:** 1.0.0-LITE-RELEASE  
 **Platform Target:** Android 4.4 KitKat (API 19) down to Android 4.1 Jelly Bean (API 16)  
 **Hardware Baseline:** Single-Core ARMv7 SoC (1.0 GHz), 512 MB RAM, 3.0" 320×480 HVGA Display  
-**License:** Apache License 2.0  
+**License:** PolyForm Noncommercial License 1.0.0 (Open & free for personal use; commercial sale strictly prohibited)  
 
 ---
 

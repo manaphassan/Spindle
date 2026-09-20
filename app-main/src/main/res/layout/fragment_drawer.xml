@@ -2177,7 +2177,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="High-performance, low-RAM home launcher custom-tailored for repurposed Android devices and dedicated digital audio players.\n\n• 100% Offline with zero background tracking\n• Pure ALSA direct / native PCM hardware routing\n• Zero AI Bloatware • Apache 2.0 Open Source"
+                            android:text="High-performance, low-RAM home launcher custom-tailored for repurposed Android devices and dedicated digital audio players.\n\n• 100% Offline with zero background tracking\n• Pure ALSA direct / native PCM hardware routing\n• Zero AI Bloatware • Open Non-Commercial License"
                             android:textColor="#A1A1AA"
                             android:textSize="11.5sp"
                             android:lineSpacingMultiplier="1.2"

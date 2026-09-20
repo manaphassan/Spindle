@@ -19,3 +19,7 @@ Captures
 !docs/releases/*.apk
 .vscode/
 .kotlin/
+*.jks
+*.keystore
+keystore.properties
+

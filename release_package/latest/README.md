@@ -1,7 +1,8 @@
 # Spindle — Official Latest Release Package
 **Build Date:** September 20, 2026  
 **Publisher:** HaNa Innovation  
-**License:** Apache 2.0  
+**License:** PolyForm Noncommercial 1.0.0 (Open & free for personal use; commercial sale strictly prohibited)  
+**Signing:** Verified authentic private release keystore (`HaNa Innovation`, SHA-256 fingerprint ending in `...7D:C2`)  
 
 ---
 
@@ -37,8 +38,8 @@ sha256sum -c SHA256SUMS.txt
 
 ### Official Checksums:
 ```
-9e0f3d0d47554c6dd32c146ce3dadf09ce02ef2f1f54d2bae236cc90c053dd68  Spindle-Standard-v1.4.0-alpha.apk
-eaa7d70a40598d84154a8a8351d69ddccda1af611ad0a35b0768cd2a91d17c34  Spindle-Lite-v1.0.0-LITE.apk
+8d8aea592ddf0121f99d14023d3cd077201b228ef282f835d01f47fafb48d76b  Spindle-Standard-v1.4.0-alpha.apk
+677cd6e2b355a4e4502aea40cd62368d50a32afd31178ffe3f4ce45457250ad6  Spindle-Lite-v1.0.0-LITE.apk
 2bef5520584c4fa45af4aa6f389641f93755378004cb593a04db491262a11d9f  Spindle-Standard-v1.4.0-alpha-debug.apk
 e4a5795e33a3777fa97f4ba3ac42f4b537dff47c9d0958c12b87d6483c31639d  Spindle-Lite-v1.0.0-LITE-debug.apk
 ```

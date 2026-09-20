@@ -158,16 +158,14 @@ Want to poke around under the hood, build from source, or check out the audio en
 
 ## 🛡️ License
 
-Spindle is free and open-source software licensed under the **Apache License 2.0**.
+Spindle is free and open-source software licensed under the **[PolyForm Noncommercial License 1.0.0](LICENSE)**.
 
 ```
-Copyright 2026 HaNa Innovation
+Copyright (c) 2026 HaNa Innovation
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
+Licensed under the PolyForm Noncommercial License 1.0.0.
+Free to use, inspect, modify, and distribute for any non-commercial purpose.
+Commercial sale, paid distribution, or monetization is strictly prohibited.
 ```
 
 <div align="center">

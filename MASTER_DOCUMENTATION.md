@@ -6,7 +6,7 @@
 **Author / Art Director & Lead Systems Architect:** Spindle Core Team  
 **Platform Target:** Android 8.0 (API 26) through Android 14/15 (API 34/35)  
 **Primary Hardware Targets:** Ultra-low-resource Android DAPs, Compact Smartphones with Hardware DACs, and E-Ink DAPs  
-**License:** Apache License 2.0 (with Trademark & Visual IP Reservation)
+**License:** PolyForm Noncommercial License 1.0.0 (Open source for personal/non-commercial use; commercial sale strictly prohibited)
 
 ---
 
