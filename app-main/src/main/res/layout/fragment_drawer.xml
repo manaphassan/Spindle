@@ -2185,6 +2185,16 @@
                             android:fontFamily="sans-serif-medium"
                             android:textSize="14sp" />
 
+                        <TextView
+                            android:id="@+id/tvCatalogCacheStatus"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="⚡ Fast MicroSD Cache: Active (.spindle_catalog.bin)"
+                            android:textColor="#A1A1AA"
+                            android:textSize="11sp"
+                            android:fontFamily="sans-serif"
+                            android:layout_marginTop="3dp" />
+
                         <ProgressBar
                             android:id="@+id/progressScan"
                             style="?android:attr/progressBarStyleHorizontal"
@@ -2209,6 +2219,45 @@
                             android:padding="0dp"
                             app:cornerRadius="8dp"
                             android:layout_marginTop="10dp" />
+
+                        <!-- MicroSD Cross-DAP Sync and Fast Index Rebuild -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginTop="8dp">
+
+                            <Button
+                                android:id="@+id/btnSyncMicroSdPlaylists"
+                                android:layout_width="0dp"
+                                android:layout_height="36dp"
+                                android:layout_weight="1"
+                                android:text="SYNC PLAYLISTS"
+                                android:textColor="@color/white"
+                                android:textSize="10.5sp"
+                                android:textStyle="bold"
+                                android:backgroundTint="#242731"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="8dp" />
+
+                            <Button
+                                android:id="@+id/btnRebuildIndexCache"
+                                android:layout_width="0dp"
+                                android:layout_height="36dp"
+                                android:layout_weight="1"
+                                android:layout_marginStart="8dp"
+                                android:text="REBUILD INDEX"
+                                android:textColor="#A1A1AA"
+                                android:textSize="10.5sp"
+                                android:textStyle="bold"
+                                android:backgroundTint="#1A1C22"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="8dp" />
+                        </LinearLayout>
 
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>

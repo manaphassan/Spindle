@@ -43,6 +43,7 @@ import com.hana.spindle.R
 import com.hana.spindle.SpindleApp
 import com.hana.spindle.databinding.FragmentDrawerBinding
 import com.hana.spindle.launcher.AppInfo
+import com.hana.spindle.ui.catalog.MixtapeDialogs
 import com.hana.spindle.launcher.AppListAdapter
 import com.hana.spindle.launcher.AppListLoader
 import com.hana.spindle.launcher.AppPropertiesDialog
@@ -1226,10 +1227,35 @@ class DrawerFragment : Fragment() {
                 app.musicScanner.scanAll()
                 val count = app.database.songDao().getSongCount()
                 binding.tvSongCount.text = "$count tracks indexed in local database"
+                updateMusicPathDisplay(app)
                 binding.btnRescanLibrary.text = "RESCAN MUSIC STORAGE"
                 binding.btnRescanLibrary.isEnabled = true
                 binding.progressScan.visibility = View.GONE
                 Toast.makeText(requireContext(), "Scan complete: $count tracks ready", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        binding.btnSyncMicroSdPlaylists.setOnClickListener {
+            MixtapeDialogs.showSyncMicroSdMixtapesDialog(
+                requireContext(),
+                app.database,
+                viewLifecycleOwner.lifecycleScope
+            )
+        }
+
+        binding.btnRebuildIndexCache.setOnClickListener {
+            binding.btnRebuildIndexCache.isEnabled = false
+            binding.progressScan.visibility = View.VISIBLE
+            Toast.makeText(requireContext(), "Rebuilding fast binary index cache...", Toast.LENGTH_SHORT).show()
+
+            viewLifecycleOwner.lifecycleScope.launch {
+                app.musicScanner.rebuildFastIndexCache()
+                val count = app.database.songDao().getSongCount()
+                binding.tvSongCount.text = "$count tracks indexed in local database"
+                updateMusicPathDisplay(app)
+                binding.btnRebuildIndexCache.isEnabled = true
+                binding.progressScan.visibility = View.GONE
+                Toast.makeText(requireContext(), "Fast index cache (.spindle_catalog.bin) updated!", Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -1240,6 +1266,12 @@ class DrawerFragment : Fragment() {
             custom
         } else {
             "All Mounted Storage (Internal & MicroSD)"
+        }
+        val hasCache = app.musicScanner.hasFastIndexCache()
+        binding.tvCatalogCacheStatus.text = if (hasCache) {
+            "⚡ Fast Index Cache: Active (.spindle_catalog.bin)"
+        } else {
+            "⚡ Fast Index Cache: Auto-generated on scan"
         }
     }
 

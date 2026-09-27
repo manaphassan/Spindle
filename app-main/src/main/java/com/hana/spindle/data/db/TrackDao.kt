@@ -95,6 +95,9 @@ interface TrackDao {
     @Query("SELECT * FROM songs WHERE path = :path LIMIT 1")
     suspend fun getTrackByPath(path: String): TrackEntity?
 
+    @Query("SELECT * FROM songs WHERE path LIKE :prefix || '%' ORDER BY path ASC")
+    suspend fun getTracksByPathPrefix(prefix: String): List<TrackEntity>
+
     @Query("SELECT * FROM songs WHERE id = :id LIMIT 1")
     suspend fun getTrackById(id: Long): TrackEntity?
 

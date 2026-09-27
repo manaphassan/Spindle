@@ -207,13 +207,86 @@ object MixtapeDialogs {
             val dir = com.hana.spindle.data.M3uManager.getDefaultPlaylistDirectory()
             val sanitizedName = playlistName.replace(Regex("[^a-zA-Z0-9._ -]"), "_")
             val targetFile = java.io.File(dir, "$sanitizedName.m3u8")
-            val success = com.hana.spindle.data.M3uManager.exportMixtape(targetFile, playlistName, tracks)
+            val success = com.hana.spindle.data.M3uManager.exportMixtape(targetFile, playlistName, tracks, useRelativePaths = true)
             withContext(Dispatchers.Main) {
                 if (success) {
-                    Toast.makeText(context, "Exported to: ${targetFile.absolutePath}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, "Exported portable mixtape to:\n${targetFile.name}", Toast.LENGTH_LONG).show()
                     onExported?.invoke(targetFile)
                 } else {
                     Toast.makeText(context, "Failed to export mixtape", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    /**
+     * Bulk exports all mixtapes in the library to the MicroSD/storage Playlists directory.
+     */
+    fun showExportAllMixtapesDialog(
+        context: Context,
+        database: SpindleDatabase,
+        scope: CoroutineScope,
+        onCompleted: (() -> Unit)? = null
+    ) {
+        AlertDialog.Builder(context)
+            .setTitle("Export All Mixtapes to MicroSD")
+            .setMessage("Export all custom mixtapes to standard Extended M3U8 files with portable relative paths?\n\nPlaylists will be saved to your MicroSD/Music/Playlists directory, ready for any DAP or music player.")
+            .setPositiveButton("Export All") { _, _ ->
+                scope.launch {
+                    val result = com.hana.spindle.data.M3uManager.exportAllMixtapes(context, database)
+                    withContext(Dispatchers.Main) {
+                        if (result.playlistsExported > 0) {
+                            AlertDialog.Builder(context)
+                                .setTitle("Mixtapes Exported Successfully")
+                                .setMessage("✓ ${result.playlistsExported} mixtapes exported\n✓ ${result.tracksExported} total tracks mapped\n\nDestination:\n${result.destinationDir.absolutePath}")
+                                .setPositiveButton("OK", null)
+                                .show()
+                            onCompleted?.invoke()
+                        } else {
+                            Toast.makeText(context, "No non-empty mixtapes found to export", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    /**
+     * Discovers all M3U/M3U8 playlists across internal and external MicroSD storage,
+     * importing them into Spindle.
+     */
+    fun showSyncMicroSdMixtapesDialog(
+        context: Context,
+        database: SpindleDatabase,
+        scope: CoroutineScope,
+        onSynced: (() -> Unit)? = null
+    ) {
+        Toast.makeText(context, "Scanning MicroSD storage for playlists...", Toast.LENGTH_SHORT).show()
+        scope.launch {
+            val result = com.hana.spindle.data.M3uManager.syncAllMixtapesFromStorage(context, database)
+            withContext(Dispatchers.Main) {
+                if (result.playlistsImported > 0) {
+                    val listStr = result.playlistNames.joinToString("\n• ", prefix = "• ")
+                    AlertDialog.Builder(context)
+                        .setTitle("MicroSD Mixtape Sync Complete")
+                        .setMessage("Found ${result.playlistsFound} playlist files.\nImported ${result.playlistsImported} mixtapes (${result.totalTracksMapped} tracks):\n\n$listStr")
+                        .setPositiveButton("OK") { _, _ ->
+                            onSynced?.invoke()
+                        }
+                        .show()
+                } else if (result.playlistsFound > 0) {
+                    AlertDialog.Builder(context)
+                        .setTitle("Playlists Found But Unmatched")
+                        .setMessage("Found ${result.playlistsFound} playlist files, but none of the track paths could be matched to currently indexed library tracks.\n\nRun 'RESCAN MUSIC STORAGE' first to index all audio files.")
+                        .setPositiveButton("OK", null)
+                        .show()
+                } else {
+                    AlertDialog.Builder(context)
+                        .setTitle("No MicroSD Playlists Found")
+                        .setMessage("No .m3u or .m3u8 playlist files were found on internal or MicroSD storage.\n\nPlace playlist files into your Playlists or Music folders.")
+                        .setPositiveButton("OK", null)
+                        .show()
                 }
             }
         }
@@ -226,19 +299,7 @@ object MixtapeDialogs {
         onImported: ((Long) -> Unit)? = null
     ) {
         scope.launch(Dispatchers.IO) {
-            val candidates = mutableListOf<java.io.File>()
-            val searchDirs = listOf(
-                com.hana.spindle.data.M3uManager.getDefaultPlaylistDirectory(),
-                android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_MUSIC),
-                android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
-            )
-            for (dir in searchDirs) {
-                if (dir != null && dir.exists() && dir.canRead()) {
-                    dir.listFiles { f ->
-                        f.isFile && (f.extension.equals("m3u", ignoreCase = true) || f.extension.equals("m3u8", ignoreCase = true))
-                    }?.let { candidates.addAll(it) }
-                }
-            }
+            val candidates = com.hana.spindle.data.M3uManager.findPlaylistFiles(context)
 
             withContext(Dispatchers.Main) {
                 if (candidates.isEmpty()) {
@@ -254,11 +315,11 @@ object MixtapeDialogs {
                         .setItems(names) { _, which ->
                             val selectedFile = candidates[which]
                             scope.launch {
-                                val playlistId = com.hana.spindle.data.M3uManager.importMixtape(selectedFile, database)
+                                val result = com.hana.spindle.data.M3uManager.importMixtape(selectedFile, database)
                                 withContext(Dispatchers.Main) {
-                                    if (playlistId != null) {
-                                        Toast.makeText(context, "Imported mixtape '${selectedFile.nameWithoutExtension}'!", Toast.LENGTH_SHORT).show()
-                                        onImported?.invoke(playlistId)
+                                    if (result != null && result.tracksCount > 0) {
+                                        Toast.makeText(context, "Imported '${result.playlistName}' (${result.tracksCount} tracks)!", Toast.LENGTH_SHORT).show()
+                                        onImported?.invoke(result.playlistId)
                                     } else {
                                         Toast.makeText(context, "Could not match tracks from '${selectedFile.name}'", Toast.LENGTH_LONG).show()
                                     }

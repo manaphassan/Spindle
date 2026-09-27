@@ -72,6 +72,14 @@ class MainActivity : AppCompatActivity() {
             binding.viewPager.post {
                 navigateToRadio()
             }
+        } else if (intent?.getStringExtra("navigate") == "drawer") {
+            binding.viewPager.post {
+                navigateToDrawer()
+            }
+        } else if (intent?.getStringExtra("navigate") == "catalog") {
+            binding.viewPager.post {
+                navigateToCatalog()
+            }
         }
         handlePlaybackIntent(intent)
         checkAndRequestStoragePermissions(app)

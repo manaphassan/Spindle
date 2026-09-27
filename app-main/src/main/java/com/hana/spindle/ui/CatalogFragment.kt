@@ -693,10 +693,12 @@ class CatalogFragment : Fragment() {
         binding.btnNewMixtape.setOnClickListener {
             val options = arrayOf(
                 getString(R.string.mixtape_cut_new),
-                "Import .M3U Playlist"
+                "Import .M3U / .M3U8 Playlist...",
+                "Export All Mixtapes to MicroSD (.M3U8)",
+                "Sync MicroSD Mixtapes (Auto-Import)"
             )
             android.app.AlertDialog.Builder(requireContext())
-                .setTitle("Mixtapes")
+                .setTitle("Mixtapes & MicroSD Sync")
                 .setItems(options) { _, which ->
                     when (which) {
                         0 -> {
@@ -706,6 +708,14 @@ class CatalogFragment : Fragment() {
                         }
                         1 -> {
                             MixtapeDialogs.showImportM3uDialog(requireContext(), app.database, viewLifecycleOwner.lifecycleScope) {
+                                loadMixtapes(app)
+                            }
+                        }
+                        2 -> {
+                            MixtapeDialogs.showExportAllMixtapesDialog(requireContext(), app.database, viewLifecycleOwner.lifecycleScope)
+                        }
+                        3 -> {
+                            MixtapeDialogs.showSyncMicroSdMixtapesDialog(requireContext(), app.database, viewLifecycleOwner.lifecycleScope) {
                                 loadMixtapes(app)
                             }
                         }
