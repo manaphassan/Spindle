@@ -175,6 +175,21 @@
                     app:cornerRadius="16dp" />
 
                 <Button
+                    android:id="@+id/tabComposers"
+                    android:layout_width="wrap_content"
+                    android:layout_height="32dp"
+                    android:layout_marginHorizontal="3dp"
+                    android:text="@string/tab_composers"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_secondary"
+                    android:backgroundTint="#212228"
+                    android:paddingHorizontal="14dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    app:cornerRadius="16dp" />
+
+                <Button
                     android:id="@+id/tabFolders"
                     android:layout_width="wrap_content"
                     android:layout_height="32dp"

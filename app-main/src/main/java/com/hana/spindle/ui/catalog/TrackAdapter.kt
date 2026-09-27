@@ -91,7 +91,12 @@ class TrackAdapter(
         }
 
         b.tvSongTitle.text = track.title
-        b.tvSongArtist.text = track.artist
+        val artistDisplay = if (!track.composer.isNullOrBlank() && !track.composer.equals(track.artist, ignoreCase = true)) {
+            "${track.artist} • ${track.composer}"
+        } else {
+            track.artist
+        }
+        b.tvSongArtist.text = artistDisplay
 
         val isCurrentlyPlaying = track.id == activeTrackId
         val activeColor = if (isEinkMode) Color.BLACK else Color.parseColor("#F97316")

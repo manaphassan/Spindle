@@ -110,8 +110,8 @@ interface TrackDao {
     @Query("UPDATE songs SET playCount = playCount + 1, lastPlayedAt = :playedAt WHERE id = :trackId")
     suspend fun incrementPlayCount(trackId: Long, playedAt: Long = System.currentTimeMillis())
 
-    @Query("UPDATE songs SET title = :title, artist = :artist, album = :album, year = :year, trackNumber = :trackNumber, genre = :genre WHERE id = :id")
-    suspend fun updateTrackMetadata(id: Long, title: String, artist: String, album: String, year: Int, trackNumber: Int, genre: String?)
+    @Query("UPDATE songs SET title = :title, artist = :artist, album = :album, year = :year, trackNumber = :trackNumber, genre = :genre, composer = :composer WHERE id = :id")
+    suspend fun updateTrackMetadata(id: Long, title: String, artist: String, album: String, year: Int, trackNumber: Int, genre: String?, composer: String? = null)
 
     @Query("DELETE FROM songs WHERE path = :path")
     suspend fun deleteByPath(path: String)
@@ -140,8 +140,8 @@ interface TrackDao {
 
     suspend fun getSongByPath(path: String): TrackEntity? = getTrackByPath(path)
 
-    suspend fun updateSongMetadata(id: Long, title: String, artist: String, album: String, year: Int, trackNumber: Int, genre: String?) =
-        updateTrackMetadata(id, title, artist, album, year, trackNumber, genre)
+    suspend fun updateSongMetadata(id: Long, title: String, artist: String, album: String, year: Int, trackNumber: Int, genre: String?, composer: String? = null) =
+        updateTrackMetadata(id, title, artist, album, year, trackNumber, genre, composer)
 
     suspend fun getSongCount(): Int = getTrackCount()
 }

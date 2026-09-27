@@ -15,7 +15,8 @@ import com.hana.spindle.databinding.ItemSearchSuggestionBinding
 enum class SuggestionType {
     TRACK,
     ALBUM,
-    ARTIST
+    ARTIST,
+    COMPOSER
 }
 
 data class SearchSuggestion(
@@ -77,6 +78,7 @@ class SearchSuggestionAdapter(
             SuggestionType.TRACK -> android.R.drawable.ic_media_play
             SuggestionType.ALBUM -> android.R.drawable.ic_menu_agenda
             SuggestionType.ARTIST -> android.R.drawable.ic_menu_myplaces
+            SuggestionType.COMPOSER -> android.R.drawable.ic_menu_edit
         }
         b.ivSuggestionIcon.setImageResource(iconRes)
 

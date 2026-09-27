@@ -129,7 +129,7 @@ class CatalogFragment : Fragment() {
         observeScanProgress(app)
 
         val initTab = arguments?.getInt(ARG_INITIAL_TAB, -1) ?: -1
-        if (initTab in 0..5) {
+        if (initTab in 0..6) {
             binding.root.post { switchToTab(initTab) }
         } else {
             loadSongs(app)
@@ -163,7 +163,7 @@ class CatalogFragment : Fragment() {
             }
             onAddToMixtape = { song ->
                 MixtapeDialogs.showAddToMixtapeDialog(requireContext(), app.database, viewLifecycleOwner.lifecycleScope, song) {
-                    if (currentTab == 5) {
+                    if (currentTab == 6) {
                         loadMixtapes(app)
                     }
                 }
@@ -279,7 +279,7 @@ class CatalogFragment : Fragment() {
             }
             onAddToMixtape = { song ->
                 MixtapeDialogs.showAddToMixtapeDialog(requireContext(), app.database, viewLifecycleOwner.lifecycleScope, song) {
-                    if (currentTab == 5) {
+                    if (currentTab == 6) {
                         loadMixtapes(app)
                     }
                 }
@@ -492,22 +492,29 @@ class CatalogFragment : Fragment() {
             loadArtists(app)
         }
 
-        binding.tabFolders.setOnClickListener {
+        binding.tabComposers.setOnClickListener {
             selectTab(3)
+            binding.rvCatalog.layoutManager = GridLayoutManager(requireContext(), 2)
+            binding.rvCatalog.adapter = albumAdapter
+            loadComposers(app)
+        }
+
+        binding.tabFolders.setOnClickListener {
+            selectTab(4)
             binding.rvCatalog.layoutManager = LinearLayoutManager(requireContext())
             binding.rvCatalog.adapter = folderAdapter
             loadFolders()
         }
 
         binding.tabFavorites.setOnClickListener {
-            selectTab(4)
+            selectTab(5)
             binding.rvCatalog.layoutManager = LinearLayoutManager(requireContext())
             binding.rvCatalog.adapter = songAdapter
             loadFavorites(app)
         }
 
         binding.tabMixtapes.setOnClickListener {
-            selectTab(5)
+            selectTab(6)
             binding.rvCatalog.layoutManager = GridLayoutManager(requireContext(), 2)
             binding.rvCatalog.adapter = albumAdapter
             loadMixtapes(app)
@@ -529,7 +536,7 @@ class CatalogFragment : Fragment() {
                 val diffY = e2.y - e1.y
                 if (kotlin.math.abs(diffX) > kotlin.math.abs(diffY) && kotlin.math.abs(diffX) > 120 && kotlin.math.abs(velocityX) > 200) {
                     if (diffX < 0) {
-                        if (currentTab < 5) switchToTab(currentTab + 1)
+                        if (currentTab < 6) switchToTab(currentTab + 1)
                     } else {
                         if (currentTab > 0) switchToTab(currentTab - 1)
                     }
@@ -551,9 +558,10 @@ class CatalogFragment : Fragment() {
             0 -> binding.tabSongs.performClick()
             1 -> binding.tabAlbums.performClick()
             2 -> binding.tabArtists.performClick()
-            3 -> binding.tabFolders.performClick()
-            4 -> binding.tabFavorites.performClick()
-            5 -> binding.tabMixtapes.performClick()
+            3 -> binding.tabComposers.performClick()
+            4 -> binding.tabFolders.performClick()
+            5 -> binding.tabFavorites.performClick()
+            6 -> binding.tabMixtapes.performClick()
         }
     }
 
@@ -573,6 +581,7 @@ class CatalogFragment : Fragment() {
             binding.tabSongs,
             binding.tabAlbums,
             binding.tabArtists,
+            binding.tabComposers,
             binding.tabFolders,
             binding.tabFavorites,
             binding.tabMixtapes
@@ -583,7 +592,7 @@ class CatalogFragment : Fragment() {
             btn.setTextColor(if (i == index) activeText else inactiveText)
         }
 
-        val isMixtapeTab = (index == 5)
+        val isMixtapeTab = (index == 6)
         binding.btnNewMixtape.visibility = if (isMixtapeTab) View.VISIBLE else View.GONE
         binding.btnShuffle.visibility = if (isMixtapeTab) View.GONE else View.VISIBLE
         binding.btnPlayAll.visibility = if (isMixtapeTab) View.GONE else View.VISIBLE
@@ -712,7 +721,7 @@ class CatalogFragment : Fragment() {
 
     private fun setupSortAndGroup() {
         binding.btnSortGroup.setOnClickListener {
-            val isAlbum = (currentTab == 1 || currentTab == 2 || currentTab == 5)
+            val isAlbum = (currentTab == 1 || currentTab == 2 || currentTab == 3 || currentTab == 6)
             val dialog = SortGroupBottomSheet(
                 isAlbumTab = isAlbum,
                 currentTrackSort = trackSortOrder,
@@ -739,7 +748,7 @@ class CatalogFragment : Fragment() {
     }
 
     private fun updateSortLabel() {
-        val isAlbum = (currentTab == 1 || currentTab == 2 || currentTab == 5)
+        val isAlbum = (currentTab == 1 || currentTab == 2 || currentTab == 3 || currentTab == 6)
         val sortText = if (isAlbum) albumSortOrder.displayName else trackSortOrder.displayName
         binding.tvCurrentSortLabel.text = "Sort: $sortText"
     }
@@ -764,7 +773,7 @@ class CatalogFragment : Fragment() {
         val lm = binding.rvCatalog.layoutManager ?: return
 
         when (currentTab) {
-            0, 4 -> {
+            0, 5 -> {
                 val index = currentDisplayedSongs.indexOfFirst {
                     val firstChar = it.title.trim().firstOrNull()?.uppercaseChar() ?: '#'
                     if (targetChar == '#') !firstChar.isLetter() else firstChar == targetChar
@@ -773,13 +782,22 @@ class CatalogFragment : Fragment() {
                     (lm as? LinearLayoutManager)?.scrollToPositionWithOffset(index, 0)
                 }
             }
-            1, 2, 5 -> {
+            1, 2, 3, 6 -> {
                 val index = currentDisplayedAlbums.indexOfFirst {
                     val firstChar = it.album.trim().firstOrNull()?.uppercaseChar() ?: '#'
                     if (targetChar == '#') !firstChar.isLetter() else firstChar == targetChar
                 }
                 if (index >= 0) {
                     (lm as? GridLayoutManager)?.scrollToPositionWithOffset(index, 0)
+                }
+            }
+            4 -> {
+                val index = allFoldersList.indexOfFirst {
+                    val firstChar = it.name.trim().firstOrNull()?.uppercaseChar() ?: '#'
+                    if (targetChar == '#') !firstChar.isLetter() else firstChar == targetChar
+                }
+                if (index >= 0) {
+                    (lm as? LinearLayoutManager)?.scrollToPositionWithOffset(index, 0)
                 }
             }
         }
@@ -910,6 +928,20 @@ class CatalogFragment : Fragment() {
             )
         }
 
+        // 4. Matches in Composers (up to 2)
+        val matchingComposers = allSongsList.mapNotNull { it.composer?.trim() }.filter { it.isNotEmpty() }.distinct().filter {
+            it.lowercase(Locale.ROOT).contains(q)
+        }.take(2)
+        for (composer in matchingComposers) {
+            suggestions.add(
+                SearchSuggestion(
+                    title = composer,
+                    subtitle = "Classical Composer",
+                    type = SuggestionType.COMPOSER
+                )
+            )
+        }
+
         if (suggestions.isNotEmpty()) {
             searchSuggestionAdapter.submitList(suggestions)
             binding.rvSearchSuggestions.visibility = View.VISIBLE
@@ -922,7 +954,7 @@ class CatalogFragment : Fragment() {
         val query = binding.etCatalogSearch.text?.toString()?.trim()?.lowercase(Locale.ROOT) ?: ""
 
         when (currentTab) {
-            0, 4 -> {
+            0, 5 -> {
                 var list = allSongsList
 
                 // 1. Filter Chips
@@ -972,11 +1004,23 @@ class CatalogFragment : Fragment() {
                     TrackSortOrder.LAST_PLAYED_DESC -> list.sortedByDescending { it.lastPlayedAt ?: 0L }
                 }
 
+                // 4. Grouping
+                if (groupByMode != GroupByMode.NONE) {
+                    list = when (groupByMode) {
+                        GroupByMode.NONE -> list
+                        GroupByMode.ARTIST -> list.sortedWith(compareBy({ it.artist.lowercase(Locale.ROOT) }, { it.album.lowercase(Locale.ROOT) }, { it.trackNumber }))
+                        GroupByMode.COMPOSER -> list.sortedWith(compareBy({ it.composer?.lowercase(Locale.ROOT) ?: "\uffff" }, { it.album.lowercase(Locale.ROOT) }, { it.trackNumber }))
+                        GroupByMode.DECADE -> list.sortedWith(compareBy({ if (it.year > 0) it.year / 10 * 10 else 9999 }, { it.year }, { it.album.lowercase(Locale.ROOT) }, { it.trackNumber }))
+                        GroupByMode.INITIAL_LETTER -> list.sortedWith(compareBy({ it.title.trim().firstOrNull()?.uppercaseChar() ?: '#' }, { it.title.lowercase(Locale.ROOT) }))
+                        GroupByMode.FORMAT -> list.sortedWith(compareBy({ it.fileFormat.uppercase(Locale.ROOT) }, { it.title.lowercase(Locale.ROOT) }))
+                    }
+                }
+
                 currentDisplayedSongs = list
                 songAdapter.submitList(list)
                 binding.tvCatalogCount.text = "${list.size} tracks"
             }
-            1, 2, 5 -> {
+            1, 2, 3, 6 -> {
                 var list = allAlbumsList
 
                 // 1. Search Query
@@ -988,7 +1032,7 @@ class CatalogFragment : Fragment() {
                 }
 
                 // 2. Sorting
-                list = if (currentTab == 5 && query.isEmpty()) {
+                list = if (currentTab == 6 && query.isEmpty()) {
                     val smart = list.filter { it.format == "SMART_MIXTAPE" }
                     val custom = list.filter { it.format != "SMART_MIXTAPE" }
                     val sortedCustom = when (albumSortOrder) {
@@ -1015,10 +1059,15 @@ class CatalogFragment : Fragment() {
 
                 currentDisplayedAlbums = list
                 albumAdapter.submitList(list)
-                val unitLabel = if (currentTab == 5) "mixtapes" else "albums"
+                val unitLabel = when (currentTab) {
+                    6 -> "mixtapes"
+                    3 -> "composers"
+                    2 -> "artists"
+                    else -> "albums"
+                }
                 binding.tvCatalogCount.text = "${list.size} $unitLabel"
             }
-            3 -> {
+            4 -> {
                 var list = allFoldersList
                 if (query.isNotEmpty()) {
                     list = list.filter { it.name.lowercase(Locale.ROOT).contains(query) }
@@ -1379,6 +1428,7 @@ class CatalogFragment : Fragment() {
 
         binding.tvAlbumDetailHeaderTitle.text = when (album.format) {
             "DISCOGRAPHY" -> "ARTIST"
+            "COMPOSER" -> "COMPOSER"
             "GENRE" -> "GENRE"
             "MIXTAPE" -> "MIXTAPE"
             "SMART_MIXTAPE" -> "SMART CASSETTE"
@@ -1416,6 +1466,19 @@ class CatalogFragment : Fragment() {
                     requireContext(),
                     viewLifecycleOwner.lifecycleScope,
                     album.album,
+                    songs
+                )
+            }
+        } else if (album.format == "COMPOSER") {
+            albumTracksAdapter.isReorderable = false
+            binding.tvAlbumDetailFormat.text = "CLASSICAL COMPOSER"
+            binding.tvAlbumDetailFormat.setTextColor(Color.parseColor("#38BDF8"))
+            binding.btnAlbumDetailExportM3u.visibility = View.VISIBLE
+            binding.btnAlbumDetailExportM3u.setOnClickListener {
+                MixtapeDialogs.exportSmartMixtape(
+                    requireContext(),
+                    viewLifecycleOwner.lifecycleScope,
+                    "Composer - ${album.album}",
                     songs
                 )
             }
@@ -1581,6 +1644,27 @@ class CatalogFragment : Fragment() {
         }
     }
 
+    private fun loadComposers(app: SpindleApp) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            app.database.trackDao().getAllTracks().collectLatest { songs ->
+                val composers = songs.filter { !it.composer.isNullOrBlank() }
+                    .groupBy { it.composer!!.trim() }
+                    .map { (composer, list) ->
+                        AlbumItem(
+                            album = composer,
+                            artist = "${list.size} compositions",
+                            trackCount = list.size,
+                            representativePath = list.firstOrNull()?.path ?: "",
+                            year = list.maxOfOrNull { it.year } ?: 0,
+                            format = "COMPOSER"
+                        )
+                    }
+                allAlbumsList = composers
+                applyFilterAndSort()
+            }
+        }
+    }
+
     private fun loadFolders() {
         val folders = allSongsList.groupBy { File(it.path).parent ?: "Music" }.map { (dir, songs) ->
             FolderItem(
@@ -1646,6 +1730,7 @@ class CatalogFragment : Fragment() {
                 }
             }
             "DISCOGRAPHY" -> app.database.trackDao().getTracksByArtist(album.album)
+            "COMPOSER" -> app.database.trackDao().getTracksByComposer(album.album)
             "GENRE" -> app.database.trackDao().getTracksByGenre(album.album)
             "MIXTAPE" -> app.database.playlistDao().getTracksForPlaylist(album.year.toLong())
             else -> app.database.trackDao().getTracksByAlbum(album.album)

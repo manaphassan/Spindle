@@ -108,6 +108,7 @@ object TagInspectorDialog {
         addSpecRow("BITRATE:", "${if (song.bitrateKbps > 0) song.bitrateKbps else 1411} kbps • 2-Ch Stereo")
         addSpecRow("DURATION:", "$durationMinSec • $fileSizeMb")
         addSpecRow("REPLAYGAIN:", replayGainStr)
+        addSpecRow("COMPOSER:", song.composer ?: "None (Unassigned)")
         addSpecRow("LOCATION:", file.name)
 
         root.addView(specsCard)
@@ -158,6 +159,7 @@ object TagInspectorDialog {
 
         val etTitle = createInputField("TITLE:", song.title)
         val etArtist = createInputField("ARTIST:", song.artist)
+        val etComposer = createInputField("COMPOSER:", song.composer ?: "")
         val etAlbum = createInputField("ALBUM:", song.album)
         val etYear = createInputField("YEAR:", if (song.year > 0) song.year.toString() else "")
         val etTrack = createInputField("TRACK #:", if (song.trackNumber > 0) song.trackNumber.toString() else "")
@@ -192,6 +194,7 @@ object TagInspectorDialog {
             setOnClickListener {
                 val newTitle = etTitle.text.toString().trim().ifEmpty { song.title }
                 val newArtist = etArtist.text.toString().trim().ifEmpty { song.artist }
+                val newComposer = etComposer.text.toString().trim().ifEmpty { null }
                 val newAlbum = etAlbum.text.toString().trim().ifEmpty { song.album }
                 val newYear = etYear.text.toString().trim().toIntOrNull() ?: song.year
                 val newTrack = etTrack.text.toString().trim().toIntOrNull() ?: song.trackNumber
@@ -200,6 +203,7 @@ object TagInspectorDialog {
                 val updatedSong = song.copy(
                     title = newTitle,
                     artist = newArtist,
+                    composer = newComposer,
                     album = newAlbum,
                     year = newYear,
                     trackNumber = newTrack,
@@ -216,7 +220,8 @@ object TagInspectorDialog {
                             album = newAlbum,
                             year = newYear,
                             trackNumber = newTrack,
-                            genre = newGenre
+                            genre = newGenre,
+                            composer = newComposer
                         )
 
                         withContext(Dispatchers.Main) {

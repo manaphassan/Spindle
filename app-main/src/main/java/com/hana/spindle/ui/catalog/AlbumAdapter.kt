@@ -73,6 +73,10 @@ class AlbumAdapter(
                 b.tvGridFormat.setTextColor(android.graphics.Color.parseColor("#FDE68A"))
                 b.tvGridFormat.setBackgroundColor(android.graphics.Color.parseColor("#CC1E293B"))
                 b.tvGridFormat.text = "SMART"
+            } else if (album.format == "COMPOSER") {
+                b.tvGridFormat.setTextColor(android.graphics.Color.parseColor("#38BDF8"))
+                b.tvGridFormat.setBackgroundColor(android.graphics.Color.parseColor("#CC1E293B"))
+                b.tvGridFormat.text = "COMPOSER"
             } else {
                 b.tvGridFormat.setTextColor(holder.itemView.context.getColor(com.hana.spindle.R.color.vfd_emerald))
                 b.tvGridFormat.setBackgroundColor(android.graphics.Color.parseColor("#CC1E293B"))
@@ -96,7 +100,7 @@ class AlbumAdapter(
             b.tvGridYear.visibility = View.GONE
         }
 
-        if (album.format != "SMART_MIXTAPE") {
+        if (album.format != "SMART_MIXTAPE" && album.format != "COMPOSER") {
             b.tvGridFormat.text = album.format
         }
 
