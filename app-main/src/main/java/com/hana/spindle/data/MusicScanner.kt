@@ -62,7 +62,7 @@ class MusicScanner(
     val progress: StateFlow<ScanProgress> = _progress.asStateFlow()
 
     private val supportedExtensions = setOf(
-        "flac", "wav", "aif", "aiff", "alac", "m4a", "mp3", "ogg", "opus", "dsf", "dff"
+        "flac", "wav", "aif", "aiff", "alac", "m4a", "mp3", "ogg", "opus", "dsf", "dff", "ape", "wv"
     )
 
     /**
@@ -300,10 +300,11 @@ class MusicScanner(
                         val entity = cueTrack.toTrackEntity(
                             fileFormat = audioInfo?.fileFormat ?: audioFile.extension.uppercase(Locale.ROOT),
                             bitDepth = audioInfo?.bitDepth ?: 16,
-                            sampleRate = audioInfo?.sampleRate ?: 44100
-                        ).copy(
-                            dateModified = cueFile.lastModified(),
+                            sampleRate = audioInfo?.sampleRate ?: 44100,
+                            channels = audioInfo?.channels ?: 2,
                             bitrateKbps = audioInfo?.bitrateKbps ?: 1411
+                        ).copy(
+                            dateModified = cueFile.lastModified()
                         )
                         val existing = trackDao.getTrackByPath(entity.path)
                         if (existing == null || Math.abs(existing.dateModified - cueFile.lastModified()) > 2000L) {
@@ -328,7 +329,7 @@ class MusicScanner(
             } catch (ignored: Exception) {}
         }
 
-        // 2. Process subdirectories and non-CUE audio tracks
+        // 2. Process subdirectories and audio tracks (with embedded CUE support)
         for (file in files) {
             if (file.isDirectory) {
                 val name = file.name
@@ -344,17 +345,50 @@ class MusicScanner(
             } else {
                 val ext = file.extension.lowercase(Locale.ROOT)
                 if (ext in supportedExtensions && file.absolutePath !in referencedAudioPaths) {
-                    val existing = trackDao.getTrackByPath(file.absolutePath)
-                    // Skip if already indexed with matching timestamp (+- 2000ms)
-                    if (existing == null || Math.abs(existing.dateModified - file.lastModified()) > 2000L) {
-                        val parsed = TagParser.parseTrack(file)
-                        if (parsed != null) {
-                            batch.add(parsed)
+                    // Check for embedded CUE sheet in FLAC/Vorbis comments
+                    val embeddedCueTracks = if (ext == "flac" || ext == "ogg") {
+                        CueSheetParser.parseEmbeddedCueFromAudioFile(file)
+                    } else {
+                        emptyList()
+                    }
 
-                            if (batch.size >= 50) {
-                                trackDao.insertTracks(batch)
-                                onProgress(batch.size, file.parent ?: file.name)
-                                batch.clear()
+                    if (embeddedCueTracks.isNotEmpty()) {
+                        referencedAudioPaths.add(file.absolutePath)
+                        try { trackDao.deleteByPath(file.absolutePath) } catch (ignored: Exception) {}
+
+                        val audioInfo = TagParser.parseTrack(file)
+                        for (cueTrack in embeddedCueTracks) {
+                            val entity = cueTrack.toTrackEntity(
+                                fileFormat = audioInfo?.fileFormat ?: file.extension.uppercase(Locale.ROOT),
+                                bitDepth = audioInfo?.bitDepth ?: 16,
+                                sampleRate = audioInfo?.sampleRate ?: 44100,
+                                channels = audioInfo?.channels ?: 2,
+                                bitrateKbps = audioInfo?.bitrateKbps ?: 1411
+                            ).copy(dateModified = file.lastModified())
+
+                            val existing = trackDao.getTrackByPath(entity.path)
+                            if (existing == null || Math.abs(existing.dateModified - file.lastModified()) > 2000L) {
+                                batch.add(entity)
+                                if (batch.size >= 50) {
+                                    trackDao.insertTracks(batch)
+                                    onProgress(batch.size, file.name)
+                                    batch.clear()
+                                }
+                            }
+                        }
+                    } else {
+                        val existing = trackDao.getTrackByPath(file.absolutePath)
+                        // Skip if already indexed with matching timestamp (+- 2000ms)
+                        if (existing == null || Math.abs(existing.dateModified - file.lastModified()) > 2000L) {
+                            val parsed = TagParser.parseTrack(file)
+                            if (parsed != null) {
+                                batch.add(parsed)
+
+                                if (batch.size >= 50) {
+                                    trackDao.insertTracks(batch)
+                                    onProgress(batch.size, file.parent ?: file.name)
+                                    batch.clear()
+                                }
                             }
                         }
                     }
@@ -375,6 +409,40 @@ class MusicScanner(
     ) {
         val files = dir.listFiles() ?: return
 
+        // 1. Check for modified/new external CUE sheets
+        val cueFiles = files.filter { it.isFile && it.extension.equals("cue", ignoreCase = true) }
+        val referencedAudioPaths = mutableSetOf<String>()
+
+        for (cueFile in cueFiles) {
+            if (cueFile.lastModified() > sinceTimestamp) {
+                try {
+                    val cueTracks = CueSheetParser.parseCueFile(cueFile)
+                    for (cueTrack in cueTracks) {
+                        val audioFile = File(cueTrack.audioFilePath)
+                        if (audioFile.exists()) {
+                            referencedAudioPaths.add(audioFile.absolutePath)
+                            val audioInfo = TagParser.parseTrack(audioFile)
+                            val entity = cueTrack.toTrackEntity(
+                                fileFormat = audioInfo?.fileFormat ?: audioFile.extension.uppercase(Locale.ROOT),
+                                bitDepth = audioInfo?.bitDepth ?: 16,
+                                sampleRate = audioInfo?.sampleRate ?: 44100,
+                                channels = audioInfo?.channels ?: 2,
+                                bitrateKbps = audioInfo?.bitrateKbps ?: 1411
+                            ).copy(dateModified = cueFile.lastModified())
+                            batch.add(entity)
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed incremental CUE parse: ${cueFile.absolutePath}", e)
+                }
+            }
+        }
+
+        for (audioPath in referencedAudioPaths) {
+            try { trackDao.deleteByPath(audioPath) } catch (ignored: Exception) {}
+        }
+
+        // 2. Check modified subdirectories and audio tracks
         for (file in files) {
             if (file.isDirectory) {
                 val name = file.name
@@ -388,14 +456,35 @@ class MusicScanner(
                 }
             } else {
                 val ext = file.extension.lowercase(Locale.ROOT)
-                if (ext in supportedExtensions && file.lastModified() > sinceTimestamp) {
-                    val parsed = TagParser.parseTrack(file)
-                    if (parsed != null) {
-                        batch.add(parsed)
-                        if (batch.size >= 50) {
-                            trackDao.insertTracks(batch)
-                            onProgress(batch.size, file.name)
-                            batch.clear()
+                if (ext in supportedExtensions && file.lastModified() > sinceTimestamp && file.absolutePath !in referencedAudioPaths) {
+                    val embeddedCueTracks = if (ext == "flac" || ext == "ogg") {
+                        CueSheetParser.parseEmbeddedCueFromAudioFile(file)
+                    } else {
+                        emptyList()
+                    }
+
+                    if (embeddedCueTracks.isNotEmpty()) {
+                        try { trackDao.deleteByPath(file.absolutePath) } catch (ignored: Exception) {}
+                        val audioInfo = TagParser.parseTrack(file)
+                        for (cueTrack in embeddedCueTracks) {
+                            val entity = cueTrack.toTrackEntity(
+                                fileFormat = audioInfo?.fileFormat ?: file.extension.uppercase(Locale.ROOT),
+                                bitDepth = audioInfo?.bitDepth ?: 16,
+                                sampleRate = audioInfo?.sampleRate ?: 44100,
+                                channels = audioInfo?.channels ?: 2,
+                                bitrateKbps = audioInfo?.bitrateKbps ?: 1411
+                            ).copy(dateModified = file.lastModified())
+                            batch.add(entity)
+                        }
+                    } else {
+                        val parsed = TagParser.parseTrack(file)
+                        if (parsed != null) {
+                            batch.add(parsed)
+                            if (batch.size >= 50) {
+                                trackDao.insertTracks(batch)
+                                onProgress(batch.size, file.name)
+                                batch.clear()
+                            }
                         }
                     }
                 }

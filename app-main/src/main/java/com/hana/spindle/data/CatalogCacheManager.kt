@@ -241,7 +241,8 @@ object CatalogCacheManager {
         var validSamples = 0
         for (idx in sampleIndices) {
             val track = result.tracks.getOrNull(idx) ?: continue
-            val file = File(track.path)
+            val physicalPath = CueSheetParser.getAudioFilePath(track.path)
+            val file = File(physicalPath)
             if (file.exists()) validSamples++
         }
         return validSamples > 0
@@ -265,27 +266,39 @@ object CatalogCacheManager {
 
     /**
      * Converts an absolute track path into a forward-slash relative path from the root.
+     * Preserves `#cue:<trackNumber>:<startMs>` suffixes on virtual tracks.
      */
     fun toRelativePath(rootPath: String, absolutePath: String): String {
+        val isCue = CueSheetParser.isCueVirtualPath(absolutePath)
+        val cueSuffix = if (isCue) "#cue:" + absolutePath.substringAfter("#cue:") else ""
+        val realAbs = CueSheetParser.getAudioFilePath(absolutePath)
+
         val normRoot = rootPath.replace('\\', '/').trimEnd('/')
-        val normAbs = absolutePath.replace('\\', '/')
-        return if (normAbs.startsWith("$normRoot/")) {
+        val normAbs = realAbs.replace('\\', '/')
+        val rel = if (normAbs.startsWith("$normRoot/")) {
             normAbs.substring(normRoot.length + 1)
         } else {
             normAbs
         }
+        return rel + cueSuffix
     }
 
     /**
      * Re-anchors a relative path to the current root directory.
+     * Preserves `#cue:<trackNumber>:<startMs>` suffixes on virtual tracks.
      */
     fun resolveAbsolutePath(rootPath: String, relPath: String): String {
-        val normRel = relPath.replace('/', File.separatorChar)
-        val file = File(relPath)
-        return if (file.isAbsolute) {
-            relPath
+        val isCue = CueSheetParser.isCueVirtualPath(relPath)
+        val cueSuffix = if (isCue) "#cue:" + relPath.substringAfter("#cue:") else ""
+        val realRel = CueSheetParser.getAudioFilePath(relPath)
+
+        val normRel = realRel.replace('/', File.separatorChar)
+        val file = File(realRel)
+        val resolvedBase = if (file.isAbsolute) {
+            realRel
         } else {
             File(rootPath, normRel).absolutePath
         }
+        return resolvedBase + cueSuffix
     }
 }

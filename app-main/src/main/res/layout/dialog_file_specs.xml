@@ -265,6 +265,49 @@
             android:singleLine="true" />
 
         <LinearLayout
+            android:id="@+id/containerSpecCueInfo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:layout_marginTop="8dp"
+            android:background="#15171C"
+            android:padding="8dp">
+
+            <TextView
+                android:id="@+id/tvSpecCueBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="AUDIOPHILE CUE VIRTUAL SUB-TRACK"
+                android:textColor="@color/vfd_cyan"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.08" />
+
+            <TextView
+                android:id="@+id/tvSpecCueOffset"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Track #03 • Start Offset: 04:13:25"
+                android:textColor="@color/text_primary"
+                android:textSize="12sp"
+                android:fontFamily="monospace"
+                android:layout_marginTop="2dp" />
+
+            <TextView
+                android:id="@+id/tvSpecCuePhysicalFile"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Physical File: Album.flac"
+                android:textColor="@color/text_secondary"
+                android:textSize="10sp"
+                android:fontFamily="monospace"
+                android:ellipsize="middle"
+                android:singleLine="true"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"

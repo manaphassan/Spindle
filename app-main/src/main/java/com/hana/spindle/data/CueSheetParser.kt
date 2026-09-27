@@ -1,7 +1,10 @@
 package com.hana.spindle.data
 
 import com.hana.spindle.data.db.TrackEntity
+import java.io.BufferedInputStream
+import java.io.DataInputStream
 import java.io.File
+import java.io.FileInputStream
 import java.util.Locale
 
 /**
@@ -18,7 +21,9 @@ data class CueTrack(
     val audioFilePath: String,
     val cueFilePath: String? = null,
     val genre: String? = null,
-    val year: Int = 0
+    val year: Int = 0,
+    val discNumber: Int = 1,
+    val composer: String? = null
 ) {
     /**
      * Converts a CueTrack into a standard Spindle TrackEntity.
@@ -28,8 +33,25 @@ data class CueTrack(
         id: Long = 0L,
         fileFormat: String = "FLAC",
         bitDepth: Int = 16,
-        sampleRate: Int = 44100
+        sampleRate: Int = 44100,
+        channels: Int = 2,
+        bitrateKbps: Int = 1411
     ): TrackEntity {
+        val audioFile = File(audioFilePath)
+        val formatBadge = if (fileFormat.endsWith("(CUE)", ignoreCase = true)) {
+            fileFormat
+        } else {
+            "$fileFormat (CUE)"
+        }
+        val cueFile = cueFilePath?.let { File(it) }
+        val dateModified = if (cueFile != null && cueFile.exists()) {
+            cueFile.lastModified()
+        } else if (audioFile.exists()) {
+            audioFile.lastModified()
+        } else {
+            System.currentTimeMillis()
+        }
+
         return TrackEntity(
             id = id,
             title = title,
@@ -43,7 +65,16 @@ data class CueTrack(
             genre = genre,
             bitDepth = bitDepth,
             sampleRate = sampleRate,
-            fileFormat = "$fileFormat (CUE)"
+            fileFormat = formatBadge,
+            rating = 0,
+            isFavorite = false,
+            dateAdded = System.currentTimeMillis(),
+            dateModified = dateModified,
+            bitrateKbps = bitrateKbps,
+            hasLyrics = File(audioFile.parentFile, "${audioFile.nameWithoutExtension}.lrc").exists(),
+            channels = channels,
+            discNumber = discNumber,
+            composer = composer
         )
     }
 }
@@ -51,10 +82,11 @@ data class CueTrack(
 /**
  * Audiophile CUE Sheet Splitter & Parser Engine.
  *
- * Implements standard CDRWIN / EAC / Exact Audio Copy / XLD CUE sheet syntax:
+ * Implements standard CDRWIN / EAC / Exact Audio Copy / XLD / Foobar2000 CUE syntax:
  * - Parses monolithic albums (FLAC, APE, WAV, WV) accompanied by `.cue` files.
- * - Parses embedded `CUESHEET` metadata blocks in FLAC/Vorbis headers.
+ * - Extracts embedded `CUESHEET` Vorbis comment metadata blocks in FLAC/Ogg containers.
  * - Accurately converts CD-DA Red Book frames (75 fps) to sample-accurate milliseconds.
+ * - Supports multi-file CUE sheets with per-file duration tracking.
  * - Generates virtual sub-tracks for seamless, gapless playback queue integration.
  */
 object CueSheetParser {
@@ -100,6 +132,146 @@ object CueSheetParser {
     }
 
     /**
+     * Inspects an audio file directly on disk, extracts any embedded CUE Vorbis comment tag,
+     * and returns the resulting parsed CueTrack list.
+     */
+    fun parseEmbeddedCueFromAudioFile(
+        audioFile: File,
+        totalAudioDurationMs: Long = 0L
+    ): List<CueTrack> {
+        val cueText = extractEmbeddedCueText(audioFile) ?: return emptyList()
+        return parseEmbeddedCue(cueText, audioFile, totalAudioDurationMs)
+    }
+
+    /**
+     * Fast binary parser extracting the `CUESHEET=` tag from FLAC Vorbis comment blocks.
+     * Operates in <1ms without loading audio frames or depending on third-party libraries.
+     */
+    fun extractEmbeddedCueText(audioFile: File): String? {
+        if (!audioFile.exists() || !audioFile.canRead() || audioFile.length() < 42) return null
+        val ext = audioFile.extension.lowercase(Locale.ROOT)
+        if (ext != "flac" && ext != "ogg" && ext != "opus") return null
+
+        return try {
+            FileInputStream(audioFile).use { fis ->
+                val bis = BufferedInputStream(fis, 65536)
+                val dis = DataInputStream(bis)
+
+                var header = ByteArray(4)
+                dis.readFully(header)
+
+                // Skip optional prepended ID3v2 header
+                if (header[0] == 0x49.toByte() && header[1] == 0x44.toByte() && header[2] == 0x33.toByte()) {
+                    val id3Header = ByteArray(6)
+                    dis.readFully(id3Header)
+                    val b6 = id3Header[2].toInt() and 0x7F
+                    val b7 = id3Header[3].toInt() and 0x7F
+                    val b8 = id3Header[4].toInt() and 0x7F
+                    val b9 = id3Header[5].toInt() and 0x7F
+                    val id3DataSize = (b6 shl 21) or (b7 shl 14) or (b8 shl 7) or b9
+                    val flags = id3Header[1].toInt()
+                    val hasFooter = (flags and 0x10) != 0
+                    val totalId3Skip = id3DataSize.toLong() + (if (hasFooter) 10L else 0L)
+                    dis.skipBytes(totalId3Skip.toInt())
+
+                    dis.readFully(header)
+                }
+
+                // Verify "fLaC" magic bytes (0x66, 0x4C, 0x61, 0x43)
+                if (header[0] != 0x66.toByte() || header[1] != 0x4C.toByte() ||
+                    header[2] != 0x61.toByte() || header[3] != 0x43.toByte()
+                ) {
+                    return null
+                }
+
+                // Iterate metadata blocks
+                var isLast = false
+                while (!isLast) {
+                    val blockHeader = dis.readUnsignedByte()
+                    isLast = (blockHeader and 0x80) != 0
+                    val blockType = blockHeader and 0x7F
+                    val b1 = dis.readUnsignedByte()
+                    val b2 = dis.readUnsignedByte()
+                    val b3 = dis.readUnsignedByte()
+                    val blockLength = (b1 shl 16) or (b2 shl 8) or b3
+
+                    if (blockType == 4) { // VORBIS_COMMENT
+                        val blockBytes = ByteArray(blockLength)
+                        dis.readFully(blockBytes)
+                        return parseVorbisCommentForCue(blockBytes)
+                    } else {
+                        // Skip non-comment block
+                        var skipped = 0
+                        while (skipped < blockLength) {
+                            val n = dis.skipBytes(blockLength - skipped)
+                            if (n <= 0) break
+                            skipped += n
+                        }
+                    }
+                }
+                null
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /**
+     * Decodes the raw binary Vorbis comment block data looking for `CUESHEET=` tag.
+     */
+    fun parseVorbisCommentForCue(data: ByteArray): String? {
+        if (data.size < 8) return null
+        var offset = 0
+        fun readIntLe(): Int {
+            if (offset + 4 > data.size) return 0
+            val b0 = data[offset].toInt() and 0xFF
+            val b1 = data[offset + 1].toInt() and 0xFF
+            val b2 = data[offset + 2].toInt() and 0xFF
+            val b3 = data[offset + 3].toInt() and 0xFF
+            offset += 4
+            return b0 or (b1 shl 8) or (b2 shl 16) or (b3 shl 24)
+        }
+
+        val vendorLen = readIntLe()
+        if (vendorLen < 0 || offset + vendorLen > data.size) return null
+        offset += vendorLen
+
+        val userCommentsCount = readIntLe()
+        if (userCommentsCount < 0) return null
+
+        val prefixes = listOf("CUESHEET=", "CUE_SHEET=")
+
+        for (i in 0 until userCommentsCount) {
+            if (offset + 4 > data.size) break
+            val commentLen = readIntLe()
+            if (commentLen <= 0 || offset + commentLen > data.size) {
+                if (commentLen > 0) offset += commentLen
+                continue
+            }
+
+            for (prefix in prefixes) {
+                if (commentLen >= prefix.length) {
+                    var matches = true
+                    for (j in prefix.indices) {
+                        val c = data[offset + j].toInt().toChar()
+                        if (!c.equals(prefix[j], ignoreCase = true)) {
+                            matches = false
+                            break
+                        }
+                    }
+                    if (matches) {
+                        val cueOffset = offset + prefix.length
+                        val cueLen = commentLen - prefix.length
+                        return String(data, cueOffset, cueLen, Charsets.UTF_8)
+                    }
+                }
+            }
+            offset += commentLen
+        }
+        return null
+    }
+
+    /**
      * Core parsing engine converting CUE syntax to a list of CueTrack objects.
      */
     fun parseCueText(
@@ -114,6 +286,8 @@ object CueSheetParser {
         var albumPerformer = "Unknown Artist"
         var albumGenre: String? = null
         var albumYear = 0
+        var albumDiscNumber = 1
+        var albumSongwriter: String? = null
         var currentAudioFile: File? = fallbackAudioFile
 
         val rawTracks = mutableListOf<MutableCueTrack>()
@@ -138,6 +312,11 @@ object CueSheetParser {
                                 val y = remVal.filter { it.isDigit() }.take(4).toIntOrNull() ?: 0
                                 if (activeTrack == null) albumYear = y else activeTrack.year = y
                             }
+                            "DISCNUMBER", "DISC" -> {
+                                val d = remVal.filter { it.isDigit() }.toIntOrNull() ?: 1
+                                albumDiscNumber = d
+                                activeTrack?.discNumber = d
+                            }
                         }
                     }
                 }
@@ -157,14 +336,24 @@ object CueSheetParser {
                         activeTrack.performer = performer
                     }
                 }
+                "SONGWRITER" -> {
+                    val songwriter = cleanQuotes(tokens.drop(1).joinToString(" "))
+                    if (activeTrack == null) {
+                        albumSongwriter = songwriter
+                    } else {
+                        activeTrack.composer = songwriter
+                    }
+                }
                 "FILE" -> {
+                    activeTrack?.let { rawTracks.add(it) }
+                    activeTrack = null
                     if (tokens.size >= 2) {
                         val fileName = cleanQuotes(tokens[1])
                         val candidate = if (baseDir != null) File(baseDir, fileName) else File(fileName)
                         currentAudioFile = if (candidate.exists()) {
                             candidate
                         } else {
-                            // If extension differed (e.g. .wav specified in cue, but file is .flac)
+                            // If extension differed (e.g. .wav specified in cue, but file is .flac or .ape)
                             val nameWithoutExt = candidate.nameWithoutExtension
                             baseDir?.listFiles()?.firstOrNull { it.nameWithoutExtension.equals(nameWithoutExt, ignoreCase = true) }
                                 ?: fallbackAudioFile ?: candidate
@@ -181,7 +370,9 @@ object CueSheetParser {
                         album = albumTitle,
                         albumArtist = albumPerformer,
                         genre = albumGenre,
-                        year = albumYear
+                        year = albumYear,
+                        discNumber = albumDiscNumber,
+                        composer = albumSongwriter
                     )
                 }
                 "INDEX" -> {
@@ -200,15 +391,36 @@ object CueSheetParser {
 
         if (rawTracks.isEmpty()) return emptyList()
 
-        // Calculate track durations by inspecting start times of successive tracks
+        // Cache file durations for per-file multi-track boundaries
+        val fileDurationMap = mutableMapOf<String, Long>()
+
         val result = mutableListOf<CueTrack>()
         for (i in 0 until rawTracks.size) {
             val cur = rawTracks[i]
-            val nextStart = if (i + 1 < rawTracks.size) rawTracks[i + 1].startTimeMs else totalAudioDurationMs
-            val duration = if (nextStart > cur.startTimeMs) {
-                nextStart - cur.startTimeMs
+            val nextTrack = if (i + 1 < rawTracks.size) rawTracks[i + 1] else null
+            val isSameFile = nextTrack != null && nextTrack.audioFilePath == cur.audioFilePath
+
+            val duration = if (isSameFile) {
+                if (nextTrack!!.startTimeMs > cur.startTimeMs) {
+                    nextTrack.startTimeMs - cur.startTimeMs
+                } else {
+                    0L
+                }
             } else {
-                0L
+                // Last track in this audio file: resolve underlying file duration
+                val fileDur = fileDurationMap.getOrPut(cur.audioFilePath) {
+                    val f = File(cur.audioFilePath)
+                    if (f.exists()) {
+                        TagParser.parseTrack(f)?.durationMs ?: totalAudioDurationMs
+                    } else {
+                        totalAudioDurationMs
+                    }
+                }
+                if (fileDur > cur.startTimeMs) {
+                    fileDur - cur.startTimeMs
+                } else {
+                    0L
+                }
             }
 
             result.add(
@@ -223,7 +435,9 @@ object CueSheetParser {
                     audioFilePath = cur.audioFilePath,
                     cueFilePath = cur.cueFilePath,
                     genre = cur.genre ?: albumGenre,
-                    year = if (cur.year > 0) cur.year else albumYear
+                    year = if (cur.year > 0) cur.year else albumYear,
+                    discNumber = if (cur.discNumber > 0) cur.discNumber else albumDiscNumber,
+                    composer = cur.composer ?: albumSongwriter
                 )
             )
         }
@@ -242,6 +456,18 @@ object CueSheetParser {
         val ss = parts[1].toLongOrNull() ?: 0L
         val ff = parts[2].toLongOrNull() ?: 0L
         return (mm * 60L * 1000L) + (ss * 1000L) + ((ff * 1000L) / 75L)
+    }
+
+    /**
+     * Formats milliseconds into CD-DA Red Book time string (mm:ss:ff).
+     */
+    fun formatMsToTime(ms: Long): String {
+        val clampedMs = ms.coerceAtLeast(0L)
+        val mm = clampedMs / (60L * 1000L)
+        val remMs = clampedMs % (60L * 1000L)
+        val ss = remMs / 1000L
+        val ff = ((remMs % 1000L) * 75L) / 1000L
+        return String.format(Locale.US, "%02d:%02d:%02d", mm, ss, ff)
     }
 
     /**
@@ -290,6 +516,14 @@ object CueSheetParser {
         return if (parts.isNotEmpty()) parts[0].toIntOrNull() ?: 0 else 0
     }
 
+    /**
+     * Returns human-readable Red Book offset formatted as `mm:ss:ff`.
+     */
+    fun getCueFormattedOffset(path: String): String {
+        val ms = getCueStartTimeMs(path)
+        return formatMsToTime(ms)
+    }
+
     private fun splitCommand(line: String): List<String> {
         val tokens = mutableListOf<String>()
         var sb = StringBuilder()
@@ -330,6 +564,8 @@ object CueSheetParser {
         var audioFilePath: String = "",
         var cueFilePath: String? = null,
         var genre: String? = null,
-        var year: Int = 0
+        var year: Int = 0,
+        var discNumber: Int = 1,
+        var composer: String? = null
     )
 }

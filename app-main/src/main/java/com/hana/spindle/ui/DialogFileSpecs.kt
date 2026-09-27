@@ -30,7 +30,9 @@ class DialogFileSpecs(
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val file = File(song.path)
+        val isCueVirtual = com.hana.spindle.data.CueSheetParser.isCueVirtualPath(song.path)
+        val physicalPath = com.hana.spindle.data.CueSheetParser.getAudioFilePath(song.path)
+        val file = File(physicalPath)
         val fileLengthMb = if (file.exists()) {
             String.format(Locale.US, "%.2f MB", file.length().toDouble() / (1024.0 * 1024.0))
         } else {
@@ -63,6 +65,16 @@ class DialogFileSpecs(
 
         binding.tvSpecPath.text = song.path
         binding.tvSpecSize.text = fileLengthMb
+
+        if (isCueVirtual) {
+            binding.containerSpecCueInfo.visibility = View.VISIBLE
+            val trackNum = com.hana.spindle.data.CueSheetParser.getCueTrackNumber(song.path)
+            val formattedOffset = com.hana.spindle.data.CueSheetParser.getCueFormattedOffset(song.path)
+            binding.tvSpecCueOffset.text = "Track #${String.format(Locale.US, "%02d", trackNum)} • Start Offset: $formattedOffset"
+            binding.tvSpecCuePhysicalFile.text = "Physical Container: ${file.name}"
+        } else {
+            binding.containerSpecCueInfo.visibility = View.GONE
+        }
 
         val lrcFile = File(file.parentFile, "${file.nameWithoutExtension}.lrc")
         val txtFile = File(file.parentFile, "${file.nameWithoutExtension}.txt")
