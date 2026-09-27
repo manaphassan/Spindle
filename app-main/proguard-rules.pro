@@ -54,3 +54,6 @@
 -keep class com.hana.spindle.licensing.** { *; }
 -keep class com.hana.spindle.data.** { *; }
 
+# 9. Hardware Button Receiver
+-keep class com.hana.spindle.receiver.** { *; }
+

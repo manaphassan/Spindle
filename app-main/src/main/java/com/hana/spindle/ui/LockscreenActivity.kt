@@ -19,6 +19,8 @@ import com.hana.spindle.databinding.ActivityLockscreenBinding
 import com.hana.spindle.playback.AudioEngine
 import com.hana.spindle.playback.PlaybackState
 import com.hana.spindle.theme.ThemeManager
+import com.hana.spindle.playback.HardwareKeyController
+import com.hana.spindle.receiver.HardwareButtonReceiver
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -33,6 +35,7 @@ class LockscreenActivity : AppCompatActivity() {
     private lateinit var binding: ActivityLockscreenBinding
     private lateinit var audioEngine: AudioEngine
     private lateinit var themeManager: ThemeManager
+    private val hardwareKeyController = HardwareKeyController()
 
     private var touchStartY = 0f
     private var isDraggingUnlock = false
@@ -100,10 +103,20 @@ class LockscreenActivity : AppCompatActivity() {
         applyImmersiveMode()
         registerReceiver(batteryReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
         syncState(audioEngine.playbackState.value)
+        HardwareButtonReceiver.buttonListener = { keyEvent ->
+            if (keyEvent.action == android.view.KeyEvent.ACTION_DOWN) {
+                hardwareKeyController.onKeyDown(keyEvent.keyCode, keyEvent, this, audioEngine)
+            } else if (keyEvent.action == android.view.KeyEvent.ACTION_UP) {
+                hardwareKeyController.onKeyUp(keyEvent.keyCode, keyEvent, this, audioEngine)
+            } else {
+                false
+            }
+        }
     }
 
     override fun onPause() {
         super.onPause()
+        HardwareButtonReceiver.buttonListener = null
         try {
             unregisterReceiver(batteryReceiver)
         } catch (_: Exception) {}
@@ -183,6 +196,27 @@ class LockscreenActivity : AppCompatActivity() {
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         unlockDevice()
+    }
+
+    override fun onKeyDown(keyCode: Int, event: android.view.KeyEvent?): Boolean {
+        if (hardwareKeyController.onKeyDown(keyCode, event, this, audioEngine)) {
+            return true
+        }
+        return super.onKeyDown(keyCode, event)
+    }
+
+    override fun onKeyLongPress(keyCode: Int, event: android.view.KeyEvent?): Boolean {
+        if (hardwareKeyController.onKeyLongPress(keyCode, event, this, audioEngine)) {
+            return true
+        }
+        return super.onKeyLongPress(keyCode, event)
+    }
+
+    override fun onKeyUp(keyCode: Int, event: android.view.KeyEvent?): Boolean {
+        if (hardwareKeyController.onKeyUp(keyCode, event, this, audioEngine)) {
+            return true
+        }
+        return super.onKeyUp(keyCode, event)
     }
 
     private fun setupAudioObservation() {

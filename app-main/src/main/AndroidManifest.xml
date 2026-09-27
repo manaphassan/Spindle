@@ -107,6 +107,16 @@
                 android:resource="@xml/spindle_widget_info" />
         </receiver>
 
+        <!-- Dedicated Hardware Button Receiver for DAP & Pocket Screen-Off Control (§8.2) -->
+        <receiver
+            android:name=".receiver.HardwareButtonReceiver"
+            android:exported="true">
+            <intent-filter android:priority="1000">
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+                <action android:name="android.intent.action.CAMERA_BUTTON" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>

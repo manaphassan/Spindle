@@ -37,7 +37,32 @@ class PlaybackService : MediaSessionService() {
         super.onCreate()
         val app = application as SpindleApp
         val player = app.audioEngine.exoPlayer
-        mediaSession = MediaSession.Builder(this, player).build()
+        val callback = object : MediaSession.Callback {
+            override fun onMediaButtonEvent(
+                session: MediaSession,
+                controllerInfo: MediaSession.ControllerInfo,
+                intent: Intent
+            ): Boolean {
+                val keyEvent: android.view.KeyEvent? = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                    intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT, android.view.KeyEvent::class.java)
+                } else {
+                    @Suppress("DEPRECATION")
+                    intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT)
+                }
+                if (keyEvent != null) {
+                    val app = application as? SpindleApp
+                    if (app != null) {
+                        val handled = HardwareKeyController.handleBroadcastKeyEvent(keyEvent, this@PlaybackService, app.audioEngine)
+                        if (handled) return true
+                    }
+                }
+                return super.onMediaButtonEvent(session, controllerInfo, intent)
+            }
+        }
+
+        mediaSession = MediaSession.Builder(this, player)
+            .setCallback(callback)
+            .build()
 
         registerReceiver(screenOffReceiver, IntentFilter(Intent.ACTION_SCREEN_OFF))
     }

@@ -89,7 +89,9 @@ data class PlaybackState(
 class AudioEngine(
     private val context: Context,
     val metricsTracker: AudioMetricsTracker = AudioMetricsTracker(context)
-) {
+) : AudioTransport {
+
+    override val isPlaying: Boolean get() = _playbackState.value.isPlaying
 
     private val scope = CoroutineScope(Dispatchers.Main + Job())
     private var progressPollJob: Job? = null
@@ -821,7 +823,7 @@ class AudioEngine(
         )
     }
 
-    fun togglePlayPause() {
+    override fun togglePlayPause() {
         if (exoPlayer.isPlaying) {
             exoPlayer.pause()
         } else {
@@ -829,13 +831,13 @@ class AudioEngine(
         }
     }
 
-    fun pause() {
+    override fun pause() {
         foleyEngine.playReleaseClick()
         exoPlayer.pause()
         saveLastPlayed(playlist.getOrNull(currentIndex)?.path, exoPlayer.currentPosition)
     }
 
-    fun play() {
+    override fun play() {
         foleyEngine.playSolenoidClack()
         try {
             (context.applicationContext as? com.hana.spindle.SpindleApp)?.radioStreamEngine?.pause()
@@ -904,7 +906,7 @@ class AudioEngine(
         exoPlayer.repeatMode = if (mode == RepeatMode.ONE) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
     }
 
-    fun playNext() {
+    override fun playNext() {
         foleyEngine.playMotorSpool()
         if (playlist.isEmpty()) return
         if (playlist.size <= 1) {
@@ -931,7 +933,7 @@ class AudioEngine(
         playCurrentTrack()
     }
 
-    fun playPrevious(forcePreviousSong: Boolean = false) {
+    override fun playPrevious(forcePreviousSong: Boolean) {
         foleyEngine.playMotorSpool()
         if (playlist.isEmpty()) return
         if (!forcePreviousSong && exoPlayer.currentPosition > 3000L) {
@@ -1049,13 +1051,13 @@ class AudioEngine(
         updateProgress()
     }
 
-    fun rewind(deltaMs: Long = 10_000L) {
+    override fun rewind(deltaMs: Long) {
         val current = exoPlayer.currentPosition
         val target = (current - deltaMs).coerceAtLeast(0L)
         seekTo(target)
     }
 
-    fun fastForward(deltaMs: Long = 10_000L) {
+    override fun fastForward(deltaMs: Long) {
         val current = exoPlayer.currentPosition
         val duration = if (exoPlayer.duration > 0) exoPlayer.duration else _playbackState.value.durationMs
         val target = (current + deltaMs).coerceAtMost(if (duration > 0) duration else Long.MAX_VALUE)

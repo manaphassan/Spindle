@@ -25,6 +25,8 @@ import com.hana.spindle.SpindleApp
 import com.hana.spindle.databinding.ActivityMainBinding
 import com.hana.spindle.theme.ThemeManager
 import com.hana.spindle.ui.radio.RadioFragment
+import com.hana.spindle.playback.HardwareKeyController
+import com.hana.spindle.receiver.HardwareButtonReceiver
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -50,6 +52,11 @@ class MainActivity : AppCompatActivity() {
     var isImmersiveModeEnabled: Boolean = true
         private set
     private var previousBrightness: Float = -1f
+
+    private val hardwareKeyController = HardwareKeyController(
+        onNavigateToCatalog = { navigateToCatalog(openNowPlaying = false) },
+        onNavigateToDrawer = { navigateToDrawer() }
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -140,6 +147,25 @@ class MainActivity : AppCompatActivity() {
             applyImmersiveFlags()
         }
         syncPlayerFragmentState()
+        HardwareButtonReceiver.buttonListener = { keyEvent ->
+            val engine = (application as? SpindleApp)?.audioEngine
+            if (engine != null) {
+                if (keyEvent.action == android.view.KeyEvent.ACTION_DOWN) {
+                    hardwareKeyController.onKeyDown(keyEvent.keyCode, keyEvent, this, engine)
+                } else if (keyEvent.action == android.view.KeyEvent.ACTION_UP) {
+                    hardwareKeyController.onKeyUp(keyEvent.keyCode, keyEvent, this, engine)
+                } else {
+                    false
+                }
+            } else {
+                false
+            }
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        HardwareButtonReceiver.buttonListener = null
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -465,202 +491,29 @@ class MainActivity : AppCompatActivity() {
         navigateToPlayer()
     }
 
-    private var isVolumeLongPress = false
+
 
     override fun onKeyDown(keyCode: Int, event: android.view.KeyEvent?): Boolean {
-        val prefs = getSharedPreferences("spindle_prefs", MODE_PRIVATE)
-        val isDapMode = prefs.getBoolean("pref_dap_hardware_mode", false)
         val engine = (application as? SpindleApp)?.audioEngine
-
-        // Dedicated Audiophile DAP Hardware Mode Interception
-        if (isDapMode) {
-            when (keyCode) {
-                android.view.KeyEvent.KEYCODE_MEDIA_NEXT,
-                android.view.KeyEvent.KEYCODE_MEDIA_FAST_FORWARD -> {
-                    engine?.playNext()
-                    return true
-                }
-                android.view.KeyEvent.KEYCODE_MEDIA_PREVIOUS,
-                android.view.KeyEvent.KEYCODE_MEDIA_REWIND -> {
-                    engine?.playPrevious()
-                    return true
-                }
-                android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
-                android.view.KeyEvent.KEYCODE_HEADSETHOOK,
-                android.view.KeyEvent.KEYCODE_DPAD_CENTER -> {
-                    engine?.togglePlayPause()
-                    return true
-                }
-                android.view.KeyEvent.KEYCODE_MEDIA_PLAY -> {
-                    engine?.play()
-                    return true
-                }
-                android.view.KeyEvent.KEYCODE_MEDIA_PAUSE,
-                android.view.KeyEvent.KEYCODE_MEDIA_STOP -> {
-                    engine?.pause()
-                    return true
-                }
-                android.view.KeyEvent.KEYCODE_FOCUS -> {
-                    // Half-shutter key advances to next track on classic hardware
-                    engine?.playNext()
-                    return true
-                }
-                android.view.KeyEvent.KEYCODE_DPAD_LEFT -> {
-                    engine?.rewind(5000L)
-                    return true
-                }
-                android.view.KeyEvent.KEYCODE_DPAD_RIGHT -> {
-                    engine?.fastForward(5000L)
-                    return true
-                }
-                android.view.KeyEvent.KEYCODE_VOLUME_MUTE -> {
-                    val audioManager = getSystemService(AUDIO_SERVICE) as android.media.AudioManager
-                    audioManager.adjustStreamVolume(
-                        android.media.AudioManager.STREAM_MUSIC,
-                        android.media.AudioManager.ADJUST_TOGGLE_MUTE,
-                        android.media.AudioManager.FLAG_SHOW_UI
-                    )
-                    return true
-                }
-                android.view.KeyEvent.KEYCODE_SEARCH -> {
-                    navigateToCatalog(openNowPlaying = false)
-                    return true
-                }
-                android.view.KeyEvent.KEYCODE_MENU,
-                android.view.KeyEvent.KEYCODE_APP_SWITCH -> {
-                    navigateToDrawer()
-                    return true
-                }
-            }
-        }
-
-        val volumeSkipEnabled = prefs.getBoolean("pref_volume_skip", true)
-        if (volumeSkipEnabled && (keyCode == android.view.KeyEvent.KEYCODE_VOLUME_UP || keyCode == android.view.KeyEvent.KEYCODE_VOLUME_DOWN)) {
-            event?.startTracking()
-            if (event?.repeatCount == 0) {
-                isVolumeLongPress = false
-            }
+        if (engine != null && hardwareKeyController.onKeyDown(keyCode, event, this, engine)) {
             return true
         }
-
-        // Dedicated Hardware Camera Button Remapped to Play/Pause
-        val cameraKeyRemap = prefs.getBoolean("pref_camera_key_play_pause", true)
-        if (cameraKeyRemap && (keyCode == android.view.KeyEvent.KEYCODE_CAMERA || keyCode == android.view.KeyEvent.KEYCODE_FOCUS)) {
-            if (engine?.playbackState?.value?.isPlaying == true) {
-                engine.pause()
-                Toast.makeText(this, "Audio Paused", Toast.LENGTH_SHORT).show()
-            } else {
-                engine?.play()
-                Toast.makeText(this, "Audio Playing", Toast.LENGTH_SHORT).show()
-            }
-            return true
-        }
-
-        when (keyCode) {
-            android.view.KeyEvent.KEYCODE_MEDIA_NEXT -> {
-                (application as? SpindleApp)?.audioEngine?.playNext()
-                return true
-            }
-            android.view.KeyEvent.KEYCODE_MEDIA_PREVIOUS -> {
-                (application as? SpindleApp)?.audioEngine?.playPrevious()
-                return true
-            }
-            android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
-            android.view.KeyEvent.KEYCODE_HEADSETHOOK -> {
-                (application as? SpindleApp)?.audioEngine?.togglePlayPause()
-                return true
-            }
-            android.view.KeyEvent.KEYCODE_MEDIA_PLAY -> {
-                (application as? SpindleApp)?.audioEngine?.play()
-                return true
-            }
-            android.view.KeyEvent.KEYCODE_MEDIA_PAUSE -> {
-                (application as? SpindleApp)?.audioEngine?.pause()
-                return true
-            }
-        }
-
-        if (keyCode == android.view.KeyEvent.KEYCODE_VOLUME_UP || keyCode == android.view.KeyEvent.KEYCODE_VOLUME_DOWN) {
-            event?.startTracking()
-            return false
-        }
-
         return super.onKeyDown(keyCode, event)
     }
 
     override fun onKeyLongPress(keyCode: Int, event: android.view.KeyEvent?): Boolean {
-        val prefs = getSharedPreferences("spindle_prefs", MODE_PRIVATE)
-        val volumeSkipEnabled = prefs.getBoolean("pref_volume_skip", true)
-
-        if (volumeSkipEnabled) {
-            val engine = (application as? SpindleApp)?.audioEngine
-            when (keyCode) {
-                android.view.KeyEvent.KEYCODE_VOLUME_UP -> {
-                    isVolumeLongPress = true
-                    engine?.playNext()
-                    Toast.makeText(this, "Next Track", Toast.LENGTH_SHORT).show()
-                    return true
-                }
-                android.view.KeyEvent.KEYCODE_VOLUME_DOWN -> {
-                    isVolumeLongPress = true
-                    engine?.playPrevious()
-                    Toast.makeText(this, "Previous Track", Toast.LENGTH_SHORT).show()
-                    return true
-                }
-            }
+        val engine = (application as? SpindleApp)?.audioEngine
+        if (engine != null && hardwareKeyController.onKeyLongPress(keyCode, event, this, engine)) {
+            return true
         }
         return super.onKeyLongPress(keyCode, event)
     }
 
     override fun onKeyUp(keyCode: Int, event: android.view.KeyEvent?): Boolean {
-        val prefs = getSharedPreferences("spindle_prefs", MODE_PRIVATE)
-        val isDapMode = prefs.getBoolean("pref_dap_hardware_mode", false)
-        if (isDapMode) {
-            when (keyCode) {
-                android.view.KeyEvent.KEYCODE_CAMERA,
-                android.view.KeyEvent.KEYCODE_FOCUS,
-                android.view.KeyEvent.KEYCODE_MEDIA_NEXT,
-                android.view.KeyEvent.KEYCODE_MEDIA_PREVIOUS,
-                android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
-                android.view.KeyEvent.KEYCODE_MEDIA_PLAY,
-                android.view.KeyEvent.KEYCODE_MEDIA_PAUSE,
-                android.view.KeyEvent.KEYCODE_MEDIA_STOP,
-                android.view.KeyEvent.KEYCODE_DPAD_LEFT,
-                android.view.KeyEvent.KEYCODE_DPAD_RIGHT,
-                android.view.KeyEvent.KEYCODE_DPAD_CENTER,
-                android.view.KeyEvent.KEYCODE_SEARCH,
-                android.view.KeyEvent.KEYCODE_MENU,
-                android.view.KeyEvent.KEYCODE_APP_SWITCH -> return true
-            }
-        }
-
-        val volumeSkipEnabled = prefs.getBoolean("pref_volume_skip", true)
-        if (volumeSkipEnabled && (keyCode == android.view.KeyEvent.KEYCODE_VOLUME_UP || keyCode == android.view.KeyEvent.KEYCODE_VOLUME_DOWN)) {
-            if (isVolumeLongPress) {
-                isVolumeLongPress = false
-                return true
-            } else {
-                val audioManager = getSystemService(AUDIO_SERVICE) as android.media.AudioManager
-                val direction = if (keyCode == android.view.KeyEvent.KEYCODE_VOLUME_UP) {
-                    android.media.AudioManager.ADJUST_RAISE
-                } else {
-                    android.media.AudioManager.ADJUST_LOWER
-                }
-                audioManager.adjustStreamVolume(
-                    android.media.AudioManager.STREAM_MUSIC,
-                    direction,
-                    android.media.AudioManager.FLAG_SHOW_UI
-                )
-                return true
-            }
-        }
-
-        // Suppress system camera launch when camera button is released
-        val cameraKeyRemap = prefs.getBoolean("pref_camera_key_play_pause", true)
-        if (cameraKeyRemap && (keyCode == android.view.KeyEvent.KEYCODE_CAMERA || keyCode == android.view.KeyEvent.KEYCODE_FOCUS)) {
+        val engine = (application as? SpindleApp)?.audioEngine
+        if (engine != null && hardwareKeyController.onKeyUp(keyCode, event, this, engine)) {
             return true
         }
-
         return super.onKeyUp(keyCode, event)
     }
 }
