@@ -920,6 +920,36 @@ class DrawerFragment : Fragment() {
             }
         }
 
+        // 4b. DLNA / UPnP / Volumio Remote Audio Transport
+        val openRemoteDialog = View.OnClickListener {
+            com.hana.spindle.remote.DialogRemoteStreamer(app.remoteTransportManager)
+                .show(parentFragmentManager, "DialogRemoteStreamer")
+        }
+        binding.cardRemoteStreamer.setOnClickListener(openRemoteDialog)
+        binding.btnRemoteStreamerAction.setOnClickListener(openRemoteDialog)
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                app.remoteTransportManager.activeDevice.collectLatest { device ->
+                    if (device != null) {
+                        binding.tvRemoteStreamerBadge.text = "● ${device.typeBadge} ACTIVE"
+                        binding.tvRemoteStreamerBadge.setTextColor(Color.parseColor("#00E676"))
+                        binding.btnRemoteStreamerAction.text = "CONTROL"
+                        binding.btnRemoteStreamerAction.setTextColor(Color.parseColor("#00E676"))
+                        binding.tvRemoteStreamerDetails.text =
+                            "${device.name}\n${device.displaySubtitle}"
+                    } else {
+                        binding.tvRemoteStreamerBadge.text = "DLNA / VOLUMIO REMOTE TRANSPORT"
+                        binding.tvRemoteStreamerBadge.setTextColor(Color.parseColor("#71717A"))
+                        binding.btnRemoteStreamerAction.text = "STREAMERS"
+                        binding.btnRemoteStreamerAction.setTextColor(Color.WHITE)
+                        binding.tvRemoteStreamerDetails.text =
+                            "Remote transport control for UPnP/DLNA renderers and Volumio endpoints."
+                    }
+                }
+            }
+        }
+
         // 5. 1-Bit Monochrome E-Ink Mode
         val isEinkTheme = themeManager.currentTheme.value.id == CassetteTheme.MONOCHROME_EINK.id
         val isEinkPref = prefs.getBoolean("pref_eink_mode", isEinkTheme)

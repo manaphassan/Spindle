@@ -35,6 +35,10 @@ class SpindleApp : Application() {
         com.hana.spindle.playback.UsbDacManager(this)
     }
 
+    val remoteTransportManager: com.hana.spindle.remote.RemoteTransportManager by lazy {
+        com.hana.spindle.remote.RemoteTransportManager(this)
+    }
+
     companion object {
         const val PLAYBACK_CHANNEL_ID = "spindle_playback_channel"
         lateinit var instance: SpindleApp

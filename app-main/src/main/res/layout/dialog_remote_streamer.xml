@@ -1,0 +1,411 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@color/surface_container"
+    android:padding="20dp">
+
+    <!-- Header & Close -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="REMOTE AUDIO TRANSPORT"
+                android:textColor="@color/text_primary"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.08" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="UPnP / DLNA MediaRenderer &amp; Volumio"
+                android:textColor="@color/text_secondary"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnCloseStreamer"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:text="@string/action_close"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:textColor="@color/white"
+            android:backgroundTint="@color/surface_elevated"
+            android:paddingHorizontal="14dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            app:cornerRadius="16dp" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/divider"
+        android:layout_marginVertical="12dp" />
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Active Remote Connection Card -->
+            <LinearLayout
+                android:id="@+id/cardActiveRemote"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@color/surface_card"
+                android:padding="14dp"
+                android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="ACTIVE REMOTE STREAMER"
+                android:textColor="@color/text_secondary"
+                android:textSize="10.5sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.1" />
+
+            <TextView
+                android:id="@+id/tvActiveRemoteBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="● CONNECTED"
+                android:textColor="@color/vfd_emerald"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:background="#1B382B"
+                android:paddingHorizontal="6dp"
+                android:paddingVertical="2dp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvActiveRemoteName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Volumio Living Room"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginTop="6dp" />
+
+        <TextView
+            android:id="@+id/tvActiveRemoteDetails"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="192.168.1.120:3000 • Volumio Audiophile Linux OS"
+            android:textColor="@color/vfd_cyan"
+            android:textSize="10.5sp"
+            android:fontFamily="monospace"
+            android:layout_marginTop="2dp" />
+
+        <!-- Remote Now Playing metadata -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#12141A"
+            android:padding="10dp"
+            android:layout_marginTop="10dp">
+
+            <TextView
+                android:id="@+id/tvRemoteNowPlayingTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Remote Streamer Idle"
+                android:textColor="@color/text_primary"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <TextView
+                android:id="@+id/tvRemoteNowPlayingArtist"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Ready for transport commands"
+                android:textColor="@color/text_secondary"
+                android:textSize="10.5sp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:layout_marginTop="2dp" />
+
+            <!-- Remote Progress -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="6dp">
+
+                <TextView
+                    android:id="@+id/tvRemotePosition"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="00:00"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="9.5sp"
+                    android:fontFamily="monospace" />
+
+                <ProgressBar
+                    android:id="@+id/progressRemoteTransport"
+                    style="@android:style/Widget.ProgressBar.Horizontal"
+                    android:layout_width="0dp"
+                    android:layout_height="4dp"
+                    android:layout_weight="1"
+                    android:layout_marginHorizontal="8dp"
+                    android:progress="0"
+                    android:max="100"
+                    android:progressTint="@color/vfd_cyan"
+                    android:progressBackgroundTint="#27272A" />
+
+                <TextView
+                    android:id="@+id/tvRemoteDuration"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="00:00"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="9.5sp"
+                    android:fontFamily="monospace" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Remote Tactile Transport Controls -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginTop="10dp">
+
+            <Button
+                android:id="@+id/btnRemotePrev"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:text="◀ PREV"
+                android:textSize="10.5sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                android:backgroundTint="#20232B"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:layout_marginEnd="4dp"
+                app:cornerRadius="6dp" />
+
+            <Button
+                android:id="@+id/btnRemotePlayPause"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1.3"
+                android:text="▶ PLAY"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="@color/white"
+                android:backgroundTint="#F97316"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:layout_marginEnd="4dp"
+                app:cornerRadius="6dp" />
+
+            <Button
+                android:id="@+id/btnRemoteStop"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:text="■ STOP"
+                android:textSize="10.5sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                android:backgroundTint="#20232B"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:layout_marginEnd="4dp"
+                app:cornerRadius="6dp" />
+
+            <Button
+                android:id="@+id/btnRemoteNext"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:text="NEXT ▶"
+                android:textSize="10.5sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                android:backgroundTint="#20232B"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                app:cornerRadius="6dp" />
+        </LinearLayout>
+
+        <!-- Remote Volume Control -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="12dp">
+
+            <TextView
+                android:id="@+id/tvRemoteVolumeLabel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="REMOTE VOLUME: 80%"
+                android:textColor="@color/text_secondary"
+                android:textSize="9.5sp"
+                android:fontFamily="monospace" />
+
+            <SeekBar
+                android:id="@+id/seekRemoteVolume"
+                android:layout_width="160dp"
+                android:layout_height="wrap_content"
+                android:max="100"
+                android:progress="80"
+                android:progressTint="@color/vfd_cyan"
+                android:thumbTint="@color/vfd_cyan" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnDisconnectRemote"
+            android:layout_width="match_parent"
+            android:layout_height="34dp"
+            android:text="DISCONNECT (RETURN TO LOCAL DAC)"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:textColor="#EF4444"
+            android:backgroundTint="#2A1618"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:layout_marginTop="12dp"
+            app:cornerRadius="6dp" />
+    </LinearLayout>
+
+    <!-- Local Audio Engine Status (Shown when disconnected) -->
+    <LinearLayout
+        android:id="@+id/cardLocalAudioRoute"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@color/surface_card"
+        android:padding="14dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="AUDIO OUTPUT ROUTE"
+                android:textColor="@color/text_secondary"
+                android:textSize="10.5sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.1" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="LOCAL DAC DIRECT"
+                android:textColor="@color/vfd_emerald"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:background="#1B382B"
+                android:paddingHorizontal="6dp"
+                android:paddingVertical="2dp" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Local Snapdragon DAC / USB-OTG"
+            android:textColor="@color/text_primary"
+            android:textSize="13.5sp"
+            android:textStyle="bold"
+            android:layout_marginTop="6dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Audio decodes locally via 3.5mm Headphone Jack or external USB DAC."
+            android:textColor="@color/text_secondary"
+            android:textSize="10.5sp"
+            android:layout_marginTop="2dp" />
+    </LinearLayout>
+
+    <!-- Discovered Streamers Section -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="8dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="DISCOVERED STREAMERS"
+            android:textColor="@color/text_secondary"
+            android:textSize="10.5sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.1" />
+
+        <Button
+            android:id="@+id/btnScanStreamers"
+            android:layout_width="wrap_content"
+            android:layout_height="28dp"
+            android:text="⟳ SCAN SUBNET"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:textColor="@color/vfd_cyan"
+            android:backgroundTint="#152836"
+            android:paddingHorizontal="10dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            app:cornerRadius="14dp" />
+    </LinearLayout>
+
+    <!-- Discovered Devices List -->
+    <LinearLayout
+        android:id="@+id/containerStreamersList"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical" />
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+</LinearLayout>
