@@ -1455,6 +1455,59 @@
                                 android:checked="true" />
                         </LinearLayout>
 
+                        <!-- External USB DAC Hardware Telemetry Pill -->
+                        <LinearLayout
+                            android:id="@+id/cardUsbDacTelemetry"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:background="#15171C"
+                            android:padding="12dp"
+                            android:layout_marginTop="8dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical">
+
+                                <TextView
+                                    android:id="@+id/tvUsbDacStatusBadge"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="NO EXTERNAL USB DAC DETECTED"
+                                    android:textColor="#71717A"
+                                    android:textSize="10.5sp"
+                                    android:textStyle="bold"
+                                    android:fontFamily="monospace"
+                                    android:letterSpacing="0.05" />
+
+                                <Button
+                                    android:id="@+id/btnUsbDacProbe"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="26dp"
+                                    android:text="PROBE BUS"
+                                    android:textColor="@color/white"
+                                    android:textSize="9.5sp"
+                                    android:textStyle="bold"
+                                    android:backgroundTint="#24262E"
+                                    android:insetTop="0dp"
+                                    android:insetBottom="0dp"
+                                    android:paddingHorizontal="10dp"
+                                    app:cornerRadius="6dp" />
+                            </LinearLayout>
+
+                            <TextView
+                                android:id="@+id/tvUsbDacTelemetryDetails"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="Direct ALSA routing will activate automatically upon USB-OTG connection."
+                                android:textColor="#A1A1AA"
+                                android:textSize="11sp"
+                                android:layout_marginTop="4dp" />
+                        </LinearLayout>
+
                         <View
                             android:layout_width="match_parent"
                             android:layout_height="1dp"

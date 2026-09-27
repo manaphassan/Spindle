@@ -5,9 +5,14 @@ import android.media.AudioDeviceCallback
 import android.media.AudioDeviceInfo
 import android.media.AudioManager
 import android.os.Build
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import java.io.File
 
 data class AudioMetrics(
@@ -25,7 +30,16 @@ data class AudioMetrics(
     val bluetoothConnectionStatus: String = "DISCONNECTED",
     val jackType: String? = null,
     val hasMic: Boolean = false,
-    val jackCapabilities: String? = null
+    val jackCapabilities: String? = null,
+    val isUsbDacConnected: Boolean = false,
+    val usbDacName: String? = null,
+    val usbDacVid: String? = null,
+    val usbDacPid: String? = null,
+    val usbDacAudioClass: String? = null,
+    val usbDacMaxSampleRateHz: Int = 0,
+    val usbDacBitDepthBits: Int = 0,
+    val usbDacCapabilities: String? = null,
+    val usbDacBrandBadge: String? = null
 )
 
 /**
@@ -35,10 +49,16 @@ data class AudioMetrics(
  */
 class AudioMetricsTracker(private val context: Context) {
 
+    private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
     private val _metrics = MutableStateFlow(AudioMetrics())
     val metrics: StateFlow<AudioMetrics> = _metrics.asStateFlow()
+
+    fun queryActiveUsbDac(): UsbDacInfo? {
+        val app = context.applicationContext as? com.hana.spindle.SpindleApp
+        return app?.usbDacManager?.usbDacState?.value
+    }
 
     private val bluetoothReceiver = object : android.content.BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: android.content.Intent?) {
@@ -137,6 +157,16 @@ class AudioMetricsTracker(private val context: Context) {
                 e.printStackTrace()
             }
         }
+
+        val app = context.applicationContext as? com.hana.spindle.SpindleApp
+        if (app != null) {
+            scope.launch {
+                app.usbDacManager.usbDacState.collect {
+                    updateRouteTelemetry()
+                }
+            }
+        }
+
         updateRouteTelemetry()
     }
 
@@ -263,10 +293,11 @@ class AudioMetricsTracker(private val context: Context) {
      * Re-evaluates active audio routing and notifies listeners.
      */
     fun updateRouteTelemetry() {
+        val activeUsb = queryActiveUsbDac()
         val route = detectActiveOutputRoute()
         val prefs = context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
         val bitPerfectPref = prefs.getBoolean("pref_bitperfect_direct", true)
-        val isDirectRoute = route.contains("USB DAC") || route.contains("3.5mm")
+        val isDirectRoute = (activeUsb != null) || route.contains("USB DAC") || route.contains("3.5mm")
         val isBitPerfect = if (bitPerfectPref && isDirectRoute) {
             true
         } else {
@@ -289,7 +320,16 @@ class AudioMetricsTracker(private val context: Context) {
             bluetoothConnectionStatus = btStatus,
             jackType = jackInfo.jackType,
             hasMic = jackInfo.hasMic,
-            jackCapabilities = jackInfo.capabilities
+            jackCapabilities = jackInfo.capabilities,
+            isUsbDacConnected = activeUsb != null,
+            usbDacName = activeUsb?.productName,
+            usbDacVid = activeUsb?.vidHex,
+            usbDacPid = activeUsb?.pidHex,
+            usbDacAudioClass = activeUsb?.audioClass,
+            usbDacMaxSampleRateHz = activeUsb?.maxSampleRateHz ?: 0,
+            usbDacBitDepthBits = activeUsb?.bitDepthBits ?: 0,
+            usbDacCapabilities = activeUsb?.capabilitiesDescription,
+            usbDacBrandBadge = activeUsb?.brandBadge
         )
     }
 
@@ -303,10 +343,11 @@ class AudioMetricsTracker(private val context: Context) {
         bitrateKbps: Int,
         replayGainDb: Float = 0.0f
     ) {
+        val activeUsb = queryActiveUsbDac()
         val outputRoute = detectActiveOutputRoute()
         val prefs = context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
         val bitPerfectPref = prefs.getBoolean("pref_bitperfect_direct", true)
-        val isDirectRoute = outputRoute.contains("USB DAC") || outputRoute.contains("3.5mm")
+        val isDirectRoute = (activeUsb != null) || outputRoute.contains("USB DAC") || outputRoute.contains("3.5mm")
         val isBitPerfect = if (bitPerfectPref && isDirectRoute) {
             true
         } else {
@@ -334,7 +375,16 @@ class AudioMetricsTracker(private val context: Context) {
             bluetoothConnectionStatus = btStatus,
             jackType = jackInfo.jackType,
             hasMic = jackInfo.hasMic,
-            jackCapabilities = jackInfo.capabilities
+            jackCapabilities = jackInfo.capabilities,
+            isUsbDacConnected = activeUsb != null,
+            usbDacName = activeUsb?.productName,
+            usbDacVid = activeUsb?.vidHex,
+            usbDacPid = activeUsb?.pidHex,
+            usbDacAudioClass = activeUsb?.audioClass,
+            usbDacMaxSampleRateHz = activeUsb?.maxSampleRateHz ?: 0,
+            usbDacBitDepthBits = activeUsb?.bitDepthBits ?: 0,
+            usbDacCapabilities = activeUsb?.capabilitiesDescription,
+            usbDacBrandBadge = activeUsb?.brandBadge
         )
     }
 
@@ -342,14 +392,20 @@ class AudioMetricsTracker(private val context: Context) {
      * Detects physical output device (3.5mm Jack, USB DAC, or Bluetooth codec).
      */
     fun detectActiveOutputRoute(): String {
+        // Priority 1: Hardware USB-OTG DAC via UsbDacManager
+        val activeUsb = queryActiveUsbDac()
+        if (activeUsb != null) {
+            return "USB DAC (${activeUsb.shortBadgeTitle})"
+        }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             val devices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
-            // Priority: USB DAC > Wired Headphone / Line Out > Bluetooth > Builtin Speaker
+            // Priority: USB Audio fallback > Wired Headphone / Line Out > Bluetooth > Builtin Speaker
             for (device in devices) {
                 when (device.type) {
                     AudioDeviceInfo.TYPE_USB_DEVICE,
                     AudioDeviceInfo.TYPE_USB_HEADSET,
-                    AudioDeviceInfo.TYPE_USB_ACCESSORY -> return "USB DAC (Hi-Res Passthrough)"
+                    AudioDeviceInfo.TYPE_USB_ACCESSORY -> return "USB Audio (Hi-Res Passthrough)"
                 }
             }
             for (device in devices) {
@@ -382,6 +438,10 @@ class AudioMetricsTracker(private val context: Context) {
     }
 
     fun release() {
+        try {
+            scope.cancel()
+        } catch (_: Exception) { }
+
         try {
             context.unregisterReceiver(bluetoothReceiver)
         } catch (e: Exception) {

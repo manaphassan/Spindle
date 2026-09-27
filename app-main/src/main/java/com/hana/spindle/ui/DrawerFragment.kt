@@ -884,6 +884,34 @@ class DrawerFragment : Fragment() {
             app.audioEngine.metricsTracker.updateRouteTelemetry()
         }
 
+        binding.btnUsbDacProbe.setOnClickListener {
+            val dac = app.usbDacManager.refreshUsbDacTelemetry()
+            app.audioEngine.metricsTracker.updateRouteTelemetry()
+            if (dac != null) {
+                Toast.makeText(requireContext(), "Detected ${dac.shortBadgeTitle}", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(requireContext(), "No USB DAC detected on USB bus", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                app.usbDacManager.usbDacState.collectLatest { dac ->
+                    if (dac != null) {
+                        binding.tvUsbDacStatusBadge.text = "● USB-OTG DAC ACTIVE"
+                        binding.tvUsbDacStatusBadge.setTextColor(Color.parseColor("#00E676"))
+                        binding.tvUsbDacTelemetryDetails.text =
+                            "${dac.shortBadgeTitle} • VID:${dac.vidHex} PID:${dac.pidHex}\n${dac.audioClass}\n${dac.capabilitiesDescription}"
+                    } else {
+                        binding.tvUsbDacStatusBadge.text = "NO EXTERNAL USB DAC DETECTED"
+                        binding.tvUsbDacStatusBadge.setTextColor(Color.parseColor("#71717A"))
+                        binding.tvUsbDacTelemetryDetails.text =
+                            "Direct ALSA routing will activate automatically upon USB-OTG connection."
+                    }
+                }
+            }
+        }
+
         // 5. 1-Bit Monochrome E-Ink Mode
         val isEinkTheme = themeManager.currentTheme.value.id == CassetteTheme.MONOCHROME_EINK.id
         val isEinkPref = prefs.getBoolean("pref_eink_mode", isEinkTheme)

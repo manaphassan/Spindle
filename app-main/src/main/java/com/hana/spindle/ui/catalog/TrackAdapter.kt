@@ -34,6 +34,7 @@ class TrackAdapter(
     var onAddToQueue: ((TrackEntity) -> Unit)? = null
     var onAddToMixtape: ((TrackEntity) -> Unit)? = null
     var onInspectTags: ((TrackEntity) -> Unit)? = null
+    var onViewAudioSpecs: ((TrackEntity) -> Unit)? = null
 
     var activeSongId: Long?
         get() = activeTrackId
@@ -169,7 +170,7 @@ class TrackAdapter(
 
         val showTrackOptions = {
             val context = holder.itemView.context
-            val optionsList = mutableListOf("Play Now", "Play Next", "Add to Queue", "Add to Mixtape", "Inspect & Edit Tags")
+            val optionsList = mutableListOf("Play Now", "Play Next", "Add to Queue", "Add to Mixtape", "Inspect & Edit Tags", "Audio Specs & Hardware DAC")
             if (isReorderable && onRemoveFromMixtape != null) {
                 optionsList.add("Remove from Mixtape")
             }
@@ -182,7 +183,8 @@ class TrackAdapter(
                         2 -> onAddToQueue?.invoke(track)
                         3 -> onAddToMixtape?.invoke(track)
                         4 -> onInspectTags?.invoke(track)
-                        5 -> onRemoveFromMixtape?.invoke(track, holder.bindingAdapterPosition)
+                        5 -> onViewAudioSpecs?.invoke(track)
+                        6 -> onRemoveFromMixtape?.invoke(track, holder.bindingAdapterPosition)
                     }
                 }
                 .show()

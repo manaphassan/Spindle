@@ -31,6 +31,10 @@ class SpindleApp : Application() {
         com.hana.spindle.playback.RadioStreamEngine(this)
     }
 
+    val usbDacManager: com.hana.spindle.playback.UsbDacManager by lazy {
+        com.hana.spindle.playback.UsbDacManager(this)
+    }
+
     companion object {
         const val PLAYBACK_CHANNEL_ID = "spindle_playback_channel"
         lateinit var instance: SpindleApp

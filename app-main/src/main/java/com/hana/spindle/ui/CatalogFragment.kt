@@ -173,6 +173,9 @@ class CatalogFragment : Fragment() {
                     loadSongs(app)
                 }
             }
+            onViewAudioSpecs = { song ->
+                DialogFileSpecs(song).show(parentFragmentManager, "DialogFileSpecs")
+            }
         }
 
         val reorderCallback = object : androidx.recyclerview.widget.ItemTouchHelper.SimpleCallback(
@@ -285,6 +288,9 @@ class CatalogFragment : Fragment() {
                 TagInspectorDialog.show(requireContext(), song) {
                     loadSongs(app)
                 }
+            }
+            onViewAudioSpecs = { song ->
+                DialogFileSpecs(song).show(parentFragmentManager, "DialogFileSpecs")
             }
             onStartDrag = { holder ->
                 if (currentAlbumItem?.format == "MIXTAPE") {

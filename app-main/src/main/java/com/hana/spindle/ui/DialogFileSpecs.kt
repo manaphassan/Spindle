@@ -77,6 +77,43 @@ class DialogFileSpecs(
         }
         binding.tvSpecLyrics.text = lyricsStatus
 
+        // Output Route & Hardware DAC Telemetry
+        val app = requireActivity().application as? com.hana.spindle.SpindleApp
+        val metrics = app?.audioEngine?.metricsTracker?.metrics?.value
+        val usbDac = app?.usbDacManager?.usbDacState?.value
+
+        val routeText = metrics?.outputRoute ?: "3.5mm Headphone Jack"
+        binding.tvSpecOutputRoute.text = routeText
+
+        val isBitPerfect = metrics?.isBitPerfect ?: true
+        binding.tvSpecBitPerfectBadge.text = if (isBitPerfect) "BIT-PERFECT" else "RESAMPLED"
+        binding.tvSpecBitPerfectBadge.setTextColor(
+            if (isBitPerfect) android.graphics.Color.parseColor("#00E676") else android.graphics.Color.parseColor("#FFB74D")
+        )
+
+        if (usbDac != null) {
+            binding.tvSpecDacStatus.text = "${usbDac.brandBadge} External"
+            binding.tvSpecDacStatus.setTextColor(android.graphics.Color.parseColor("#00E676"))
+
+            binding.containerSpecUsbDac.visibility = View.VISIBLE
+            binding.tvSpecUsbDacName.text = usbDac.productName
+            binding.tvSpecUsbDacTelemetry.text = "VID: ${usbDac.vidHex} • PID: ${usbDac.pidHex} • ${usbDac.audioClass}"
+            binding.tvSpecUsbDacCapabilities.text = usbDac.capabilitiesDescription
+        } else {
+            binding.containerSpecUsbDac.visibility = View.GONE
+            val jackInfo = app?.audioEngine?.metricsTracker?.inspectHeadphoneJack()
+            if (jackInfo?.jackType != null) {
+                binding.tvSpecDacStatus.text = "3.5mm HiFi DAC"
+                binding.tvSpecDacStatus.setTextColor(android.graphics.Color.parseColor("#00E676"))
+            } else if (metrics?.isBluetoothConnected == true) {
+                binding.tvSpecDacStatus.text = "Bluetooth DSP"
+                binding.tvSpecDacStatus.setTextColor(android.graphics.Color.parseColor("#64B5F6"))
+            } else {
+                binding.tvSpecDacStatus.text = "Internal Qualcomm"
+                binding.tvSpecDacStatus.setTextColor(android.graphics.Color.parseColor("#A1A1AA"))
+            }
+        }
+
         binding.btnCloseSpecs.setOnClickListener {
             dismiss()
         }
