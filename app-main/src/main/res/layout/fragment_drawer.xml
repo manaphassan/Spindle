@@ -306,6 +306,7 @@
 
                             <!-- Section A2 Sub-bar: Hardware DSP Telemetry & Headroom Readout -->
                             <LinearLayout
+                                android:id="@+id/containerEqHardwareHeader"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:orientation="horizontal"
@@ -325,6 +326,17 @@
                                     android:ellipsize="end" />
 
                                 <TextView
+                                    android:id="@+id/tvEqHardwareBadge"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="[DETAILS]"
+                                    android:textColor="#38BDF8"
+                                    android:textSize="8.5sp"
+                                    android:fontFamily="monospace"
+                                    android:textStyle="bold"
+                                    android:layout_marginEnd="6dp" />
+
+                                <TextView
                                     android:id="@+id/tvEqHeadroom"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
@@ -332,7 +344,7 @@
                                     android:textColor="#00E676"
                                     android:textSize="9sp"
                                     android:fontFamily="monospace"
-                                    android:layout_marginStart="8dp" />
+                                    android:layout_marginStart="4dp" />
                             </LinearLayout>
 
                             <com.hana.spindle.ui.eq.Iso10BandEqView

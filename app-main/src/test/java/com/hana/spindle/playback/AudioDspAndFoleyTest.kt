@@ -263,4 +263,56 @@ class AudioDspAndFoleyTest {
         // Must be registered in ALL_PRESETS
         assertTrue(com.hana.spindle.theme.CassetteTheme.ALL_PRESETS.contains(studioReel))
     }
+
+    @Test
+    fun testEqualPowerSinusoidalCrossfadeCurve() {
+        // Equal-power crossfade requires: P_out + P_in = cos^2(angle) + sin^2(angle) == 1.0
+        // for any angle = t * (PI / 2), where t is normalized progress in [0.0 .. 1.0]
+        val steps = 100
+        for (i in 0..steps) {
+            val t = i.toFloat() / steps
+            val angle = t * (Math.PI / 2.0)
+            val fadeOutMultiplier = Math.cos(angle).toFloat()
+            val fadeInMultiplier = Math.sin(angle).toFloat()
+
+            // Sum of squared acoustic pressure (total acoustic power) must equal 1.0
+            val totalPower = (fadeOutMultiplier * fadeOutMultiplier) + (fadeInMultiplier * fadeInMultiplier)
+            assertEquals(1.0f, totalPower, 0.0001f)
+        }
+
+        // At midpoint t = 0.5, both channels should be at exactly sqrt(2)/2 ~= 0.7071 (-3.01 dB)
+        val midAngle = 0.5 * (Math.PI / 2.0)
+        val midOut = Math.cos(midAngle).toFloat()
+        val midIn = Math.sin(midAngle).toFloat()
+        assertEquals(0.7071f, midOut, 0.001f)
+        assertEquals(0.7071f, midIn, 0.001f)
+        assertEquals(1.0f, (midOut * midOut) + (midIn * midIn), 0.001f)
+    }
+
+    @Test
+    fun testHardwareEqBandModelAndRange() {
+        val fx = AudioFxController()
+
+        // In JVM unit test environment without Android Media server, hardware Equalizer is null
+        val hwBands = fx.getHardwareBands()
+        assertTrue("JVM unit test without audio session should return empty list safely", hwBands.isEmpty())
+
+        val range = fx.getHardwareLevelRangeDb()
+        assertEquals(-15.0f, range.first, 0.01f)
+        assertEquals(15.0f, range.second, 0.01f)
+
+        // Verify HardwareEqBand data class structure
+        val sampleBand = AudioFxController.HardwareEqBand(
+            index = 2,
+            centerFreqHz = 1000,
+            minFreqHz = 500,
+            maxFreqHz = 2000,
+            currentGainDb = 2.5f
+        )
+        assertEquals(2, sampleBand.index)
+        assertEquals(1000, sampleBand.centerFreqHz)
+        assertEquals(500, sampleBand.minFreqHz)
+        assertEquals(2000, sampleBand.maxFreqHz)
+        assertEquals(2.5f, sampleBand.currentGainDb, 0.001f)
+    }
 }

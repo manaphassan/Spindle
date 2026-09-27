@@ -654,6 +654,9 @@ class AudioEngine(
         exoPlayer.setMediaItems(mediaItems, currentIndex, 0L)
         exoPlayer.prepare()
         applyReplayGain(file)
+        if (crossfadeMode != com.hana.spindle.core.CrossfadeMode.GAPLESS) {
+            exoPlayer.volume = 0.02f
+        }
         foleyEngine.playSolenoidClack()
         exoPlayer.play()
 
@@ -1092,22 +1095,33 @@ class AudioEngine(
         )
 
         // Equal-power sinusoidal crossfade modulation near track boundaries
-        if (!isFadingOut && crossfadeMode != com.hana.spindle.core.CrossfadeMode.GAPLESS && duration > crossfadeMode.durationMs) {
-            val remainingMs = duration - current
-            val fadeMs = crossfadeMode.durationMs
+        if (!isFadingOut) {
             val effectiveDb = if (replayGainMode == com.hana.spindle.core.ReplayGainMode.OFF) 0f else (currentReplayGainDb + replayGainPreampDb)
             val baseVol = if (effectiveDb == 0f) 1.0f else Math.pow(10.0, (effectiveDb / 20.0)).toFloat().coerceIn(0.1f, 1.0f)
 
-            if (remainingMs in 0L..fadeMs) {
-                val fadeProgress = 1.0f - (remainingMs.toFloat() / fadeMs).coerceIn(0f, 1f)
-                val angle = fadeProgress * (Math.PI / 2.0)
-                val mult = Math.cos(angle).toFloat().coerceIn(0.01f, 1.0f)
-                exoPlayer.volume = baseVol * mult
-            } else if (current in 0L..fadeMs && current > 0L) {
-                val fadeProgress = (current.toFloat() / fadeMs).coerceIn(0f, 1f)
-                val angle = fadeProgress * (Math.PI / 2.0)
-                val mult = Math.sin(angle).toFloat().coerceIn(0.01f, 1.0f)
-                exoPlayer.volume = baseVol * mult
+            if (crossfadeMode != com.hana.spindle.core.CrossfadeMode.GAPLESS && duration > crossfadeMode.durationMs) {
+                val remainingMs = duration - current
+                val fadeMs = crossfadeMode.durationMs
+
+                if (remainingMs in 0L..fadeMs) {
+                    val fadeProgress = 1.0f - (remainingMs.toFloat() / fadeMs).coerceIn(0f, 1f)
+                    val angle = fadeProgress * (Math.PI / 2.0)
+                    val mult = Math.cos(angle).toFloat().coerceIn(0.01f, 1.0f)
+                    exoPlayer.volume = baseVol * mult
+                } else if (current in 0L..fadeMs && current > 0L) {
+                    val fadeProgress = (current.toFloat() / fadeMs).coerceIn(0f, 1f)
+                    val angle = fadeProgress * (Math.PI / 2.0)
+                    val mult = Math.sin(angle).toFloat().coerceIn(0.01f, 1.0f)
+                    exoPlayer.volume = baseVol * mult
+                } else {
+                    if (exoPlayer.volume != baseVol) {
+                        exoPlayer.volume = baseVol
+                    }
+                }
+            } else {
+                if (exoPlayer.volume != baseVol) {
+                    exoPlayer.volume = baseVol
+                }
             }
         }
 

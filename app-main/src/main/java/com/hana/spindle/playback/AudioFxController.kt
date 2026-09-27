@@ -87,6 +87,34 @@ class AudioFxController {
     val isHardwareInterpolated: Boolean
         get() = numBands < 10
 
+    data class HardwareEqBand(
+        val index: Int,
+        val centerFreqHz: Int,
+        val minFreqHz: Int,
+        val maxFreqHz: Int,
+        val currentGainDb: Float
+    )
+
+    fun getHardwareBands(): List<HardwareEqBand> {
+        val eq = equalizer ?: return emptyList()
+        val count = numBands.toInt()
+        val list = ArrayList<HardwareEqBand>(count)
+        for (b in 0 until count) {
+            val band = b.toShort()
+            val centerHz = try { eq.getCenterFreq(band) / 1000 } catch (e: Exception) { 0 }
+            val range = try { eq.getBandFreqRange(band) } catch (e: Exception) { intArrayOf(0, 0) }
+            val minHz = if (range.size >= 2) range[0] / 1000 else 0
+            val maxHz = if (range.size >= 2) range[1] / 1000 else 0
+            val levelMb = try { eq.getBandLevel(band) } catch (e: Exception) { 0.toShort() }
+            list.add(HardwareEqBand(b, centerHz, minHz, maxHz, levelMb / 100f))
+        }
+        return list
+    }
+
+    fun getHardwareLevelRangeDb(): Pair<Float, Float> {
+        return Pair(minBandLevel / 100f, maxBandLevel / 100f)
+    }
+
     var crossfadeMode: com.hana.spindle.core.CrossfadeMode = com.hana.spindle.core.CrossfadeMode.GAPLESS
 
     // Hi-Res Passthrough Bypass state

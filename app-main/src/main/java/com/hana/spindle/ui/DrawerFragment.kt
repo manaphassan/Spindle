@@ -349,6 +349,14 @@ class DrawerFragment : Fragment() {
             "${fxController.hardwareBandsCount} active hardware bands detected"
         }
         binding.tvEqHardwareBands.text = bandsText
+
+        val openHwSpecs = View.OnClickListener {
+            DialogHardwareEqSpecs(fxController).show(parentFragmentManager, "DialogHardwareEqSpecs")
+        }
+        binding.containerEqHardwareHeader.setOnClickListener(openHwSpecs)
+        binding.tvEqHardwareBands.setOnClickListener(openHwSpecs)
+        binding.tvEqHardwareBadge.setOnClickListener(openHwSpecs)
+
         binding.iso10BandEqView.setBands(fxController.isoBandsGainDb)
         binding.iso10BandEqView.onBandsChanged = { gains ->
             fxController.setAllIsoBands(gains)
