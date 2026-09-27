@@ -248,52 +248,30 @@
                             android:orientation="vertical"
                             android:layout_marginTop="8dp">
 
+                            <!-- Section A2 Header: Title and Mode/Lock Controls -->
                             <LinearLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:orientation="horizontal"
                                 android:gravity="center_vertical"
-                                android:layout_marginBottom="6dp">
+                                android:layout_marginBottom="4dp">
 
-                                <LinearLayout
+                                <TextView
                                     android:layout_width="0dp"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1"
-                                    android:orientation="vertical">
-
-                                    <TextView
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:text="@string/drawer_iso_eq_header"
-                                        android:textColor="#71717A"
-                                        android:textStyle="bold"
-                                        android:textSize="10sp"
-                                        android:fontFamily="monospace" />
-
-                                    <TextView
-                                        android:id="@+id/tvEqHardwareBands"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:text="5 active hardware bands detected"
-                                        android:textColor="#38BDF8"
-                                        android:textSize="8.5sp"
-                                        android:fontFamily="monospace" />
-                                </LinearLayout>
-
-                                <TextView
-                                    android:id="@+id/tvEqHeadroom"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="0.0 dB HEADROOM"
-                                    android:textColor="#00E676"
-                                    android:textSize="9sp"
-                                    android:fontFamily="monospace"
-                                    android:layout_marginEnd="8dp" />
+                                    android:text="@string/drawer_iso_eq_header"
+                                    android:textColor="#71717A"
+                                    android:textStyle="bold"
+                                    android:textSize="10sp"
+                                    android:fontFamily="monospace" />
 
                                 <Button
                                     android:id="@+id/btnEqMode"
                                     android:layout_width="wrap_content"
                                     android:layout_height="24dp"
+                                    android:minWidth="0dp"
+                                    android:minHeight="0dp"
                                     android:text="GRAPHIC"
                                     android:textColor="#38BDF8"
                                     android:textSize="8.5sp"
@@ -303,6 +281,7 @@
                                     android:insetTop="0dp"
                                     android:insetBottom="0dp"
                                     android:paddingHorizontal="6dp"
+                                    android:paddingVertical="0dp"
                                     android:layout_marginEnd="6dp"
                                     app:cornerRadius="4dp" />
 
@@ -310,6 +289,8 @@
                                     android:id="@+id/btnEqLock"
                                     android:layout_width="wrap_content"
                                     android:layout_height="24dp"
+                                    android:minWidth="0dp"
+                                    android:minHeight="0dp"
                                     android:text="LOCK"
                                     android:textColor="#94A3B8"
                                     android:textSize="8.5sp"
@@ -319,7 +300,39 @@
                                     android:insetTop="0dp"
                                     android:insetBottom="0dp"
                                     android:paddingHorizontal="6dp"
+                                    android:paddingVertical="0dp"
                                     app:cornerRadius="4dp" />
+                            </LinearLayout>
+
+                            <!-- Section A2 Sub-bar: Hardware DSP Telemetry & Headroom Readout -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical"
+                                android:layout_marginBottom="6dp">
+
+                                <TextView
+                                    android:id="@+id/tvEqHardwareBands"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="5 active hardware bands detected"
+                                    android:textColor="#38BDF8"
+                                    android:textSize="8.5sp"
+                                    android:fontFamily="monospace"
+                                    android:maxLines="2"
+                                    android:ellipsize="end" />
+
+                                <TextView
+                                    android:id="@+id/tvEqHeadroom"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="0.0 dB HEADROOM"
+                                    android:textColor="#00E676"
+                                    android:textSize="9sp"
+                                    android:fontFamily="monospace"
+                                    android:layout_marginStart="8dp" />
                             </LinearLayout>
 
                             <com.hana.spindle.ui.eq.Iso10BandEqView
