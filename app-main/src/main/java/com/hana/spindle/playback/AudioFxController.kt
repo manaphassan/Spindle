@@ -3,6 +3,9 @@ package com.hana.spindle.playback
 import android.media.audiofx.BassBoost
 import android.media.audiofx.Equalizer
 import android.media.audiofx.Virtualizer
+import com.hana.spindle.core.AudioDspConstants
+import kotlin.math.abs
+import kotlin.math.exp
 import kotlin.math.ln
 import kotlin.math.max
 
@@ -10,11 +13,12 @@ import kotlin.math.max
  * Audiophile Hardware Audio DSP & 10-Band ISO Graphic Equalizer Controller.
  *
  * Features:
- * - Bit-Perfect Direct Bypass Switch (0.00% distortion for USB DACs and reference gear)
+ * - Hi-Res Passthrough (device-dependent) Bypass Switch (bypasses DSP for reference gear)
  * - 10-Band ISO Graphic Equalizer (31Hz, 63Hz, 125Hz, 250Hz, 500Hz, 1kHz, 2kHz, 4kHz, 8kHz, 16kHz)
  * - Frequency-weighted logarithmic interpolation to underlying hardware bands (5-band to 10-band)
  * - Calibrated 3-Way Acoustic Tone Stack (LOW shelf, MID bell, HI air shelf)
  * - Binaural Headphone Crossfeed / Soundstage (Virtualizer)
+ * - Crossfade Transition Controller (GAPLESS, 2s, 4s)
  * - Scientific Audiophile AutoEq Target Curves:
  *   - Harman In-Ear Target 2019
  *   - Crinacle IEF Neutral Target
@@ -29,29 +33,32 @@ import kotlin.math.max
 class AudioFxController {
 
     companion object {
-        val ISO_FREQUENCIES = intArrayOf(31, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000)
-        val ISO_LABELS = arrayOf("31", "63", "125", "250", "500", "1k", "2k", "4k", "8k", "16k")
+        val ISO_FREQUENCIES = AudioDspConstants.ISO_FREQUENCIES
+        val ISO_LABELS = AudioDspConstants.ISO_LABELS
 
         // AutoEq Target Frequency Profiles (-12.0f to +12.0f dB)
-        val CURVE_FLAT = floatArrayOf(0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f)
-        val CURVE_HARMAN_2019 = floatArrayOf(5.5f, 5.0f, 3.0f, 0.5f, 0.0f, 0.5f, 3.0f, 4.0f, 1.5f, 1.0f)
-        val CURVE_CRINACLE_IEF = floatArrayOf(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.5f, 2.5f, 3.0f, 0.0f, -1.0f)
-        val CURVE_DIFFUSE_FIELD = floatArrayOf(-1.0f, -0.5f, 0.0f, 0.5f, 1.0f, 2.0f, 4.0f, 3.0f, 1.0f, 0.0f)
-        val CURVE_MOONDROP_VDSF = floatArrayOf(3.5f, 3.0f, 1.5f, 0.0f, 0.0f, 1.0f, 3.5f, 3.0f, 1.0f, 2.0f)
-        val CURVE_SENNHEISER_HD600 = floatArrayOf(4.5f, 3.0f, 1.0f, -0.5f, 0.0f, 0.0f, 0.0f, 1.5f, 2.5f, 3.0f)
-        val CURVE_WARM_ANALOG_TAPE = floatArrayOf(4.0f, 3.5f, 2.5f, 1.5f, 1.0f, 0.5f, 0.0f, -1.0f, -2.5f, -4.0f)
-        val CURVE_V_SHAPE_PUNCH = floatArrayOf(6.0f, 5.0f, 3.0f, 1.0f, -1.5f, -2.0f, -0.5f, 2.5f, 4.5f, 5.0f)
-        val CURVE_AIR_STAGE = floatArrayOf(0.5f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 2.0f, 3.5f, 5.0f, 5.5f)
-        val CURVE_BASS_BOOST = floatArrayOf(7.0f, 6.0f, 4.5f, 2.0f, 0.0f, 0.0f, 0.0f, 0.0f, -0.5f, -1.0f)
+        val CURVE_FLAT = AudioDspConstants.CURVE_FLAT
+        val CURVE_HARMAN_2019 = AudioDspConstants.CURVE_HARMAN_2019
+        val CURVE_CRINACLE_IEF = AudioDspConstants.CURVE_CRINACLE_IEF
+        val CURVE_DIFFUSE_FIELD = AudioDspConstants.CURVE_DIFFUSE_FIELD
+        val CURVE_MOONDROP_VDSF = AudioDspConstants.CURVE_MOONDROP_VDSF
+        val CURVE_SENNHEISER_HD600 = AudioDspConstants.CURVE_SENNHEISER_HD600
+        val CURVE_WARM_ANALOG_TAPE = AudioDspConstants.CURVE_WARM_ANALOG_TAPE
+        val CURVE_V_SHAPE_PUNCH = AudioDspConstants.CURVE_V_SHAPE_PUNCH
+        val CURVE_AIR_STAGE = AudioDspConstants.CURVE_AIR_STAGE
+        val CURVE_BASS_BOOST = AudioDspConstants.CURVE_BASS_BOOST
 
         // Vintage Cassette Tape Formulation Profiles (EQ / Saturation)
-        val CURVE_TYPE_I_NORMAL = floatArrayOf(2.5f, 3.0f, 2.0f, 1.0f, 0.5f, 0.0f, -0.5f, -1.0f, -1.8f, -3.0f) // Warm Ferric lows, gentle tape treble roll-off
-        val CURVE_TYPE_II_CHROME = floatArrayOf(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f)    // Reference 70µs CrO₂ studio benchmark
-        val CURVE_TYPE_IV_METAL = floatArrayOf(1.0f, 0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 0.5f, 1.0f, 1.2f, 1.5f)     // Wide-bandwidth pure metal, extended transients
+        val CURVE_TYPE_I_NORMAL = AudioDspConstants.CURVE_TYPE_I_NORMAL
+        val CURVE_TYPE_II_CHROME = AudioDspConstants.CURVE_TYPE_II_CHROME
+        val CURVE_TYPE_IV_METAL = AudioDspConstants.CURVE_TYPE_IV_METAL
 
         // Dolby Noise Reduction Compander Emulation Curves
-        val CURVE_DOLBY_B = floatArrayOf(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, -0.5f, -1.5f, -3.0f, -5.5f, -8.0f)       // ~10dB HF noise reduction de-emphasis
-        val CURVE_DOLBY_C = floatArrayOf(0.0f, 0.0f, 0.0f, 0.0f, -1.0f, -2.0f, -4.0f, -6.5f, -9.5f, -12.5f)    // ~20dB dual-stage compander curve
+        val CURVE_DOLBY_B = AudioDspConstants.CURVE_DOLBY_B
+        val CURVE_DOLBY_C = AudioDspConstants.CURVE_DOLBY_C
+
+        // Studio Collector Harmonic Tape Saturation DSP
+        val CURVE_TAPE_SATURATION_WARMTH = AudioDspConstants.CURVE_TAPE_SATURATION_WARMTH
     }
 
     enum class TapeFormulation(val label: String, val tag: String) {
@@ -74,7 +81,15 @@ class AudioFxController {
     private var maxBandLevel: Short = 1500  // +15 dB in millibels
     private var numBands: Short = 5
 
-    // Bit-Perfect Direct Bypass state
+    val hardwareBandsCount: Int
+        get() = numBands.toInt()
+
+    val isHardwareInterpolated: Boolean
+        get() = numBands < 10
+
+    var crossfadeMode: com.hana.spindle.core.CrossfadeMode = com.hana.spindle.core.CrossfadeMode.GAPLESS
+
+    // Hi-Res Passthrough Bypass state
     var isBypassEnabled: Boolean = false
         private set
 
@@ -92,6 +107,12 @@ class AudioFxController {
     var currentDolbyMode: DolbyMode = DolbyMode.OFF
         private set
 
+    // Studio Collector Harmonic Tape Saturation DSP
+    var isTapeSaturationEnabled: Boolean = false
+        private set
+    var tapeSaturationDrive: Float = 1.0f // 0.0f to 1.0f
+        private set
+
     // Cached 3-band tone gains (-12.0f to +12.0f dB)
     var lowGainDb: Float = 0.0f
         private set
@@ -106,6 +127,27 @@ class AudioFxController {
 
     var currentPresetName: String = "FLAT"
         private set
+
+    // Parametric Mode & Q-Factors (0.5 to 6.0, default 1.414 = 1-octave bandwidth)
+    var isParametricMode: Boolean = false
+        private set
+    val isoBandsQ: FloatArray = FloatArray(10) { 1.414f }
+
+    fun setParametricMode(enabled: Boolean, force: Boolean = false) {
+        if (isLocked && !force) return
+        isParametricMode = enabled
+        if (!isBypassEnabled) applyEq()
+    }
+
+    fun setBandQ(bandIndex: Int, q: Float, force: Boolean = false) {
+        if (isLocked && !force) return
+        if (bandIndex in 0 until 10) {
+            isoBandsQ[bandIndex] = q.coerceIn(0.5f, 6.0f)
+            if (isParametricMode && !isBypassEnabled) {
+                applyEq()
+            }
+        }
+    }
 
     init {
         recomputeEffectiveGains()
@@ -123,6 +165,20 @@ class AudioFxController {
         recomputeEffectiveGains()
     }
 
+    fun setTapeSaturationEnabled(enabled: Boolean, force: Boolean = false) {
+        if (isLocked && !force) return
+        isTapeSaturationEnabled = enabled
+        recomputeEffectiveGains()
+    }
+
+    fun setTapeSaturationDrive(drive: Float, force: Boolean = false) {
+        if (isLocked && !force) return
+        tapeSaturationDrive = drive.coerceIn(0.0f, 1.0f)
+        if (isTapeSaturationEnabled) {
+            recomputeEffectiveGains()
+        }
+    }
+
     fun recomputeEffectiveGains() {
         val tapeCurve = when (currentTapeFormulation) {
             TapeFormulation.TYPE_I_NORMAL -> CURVE_TYPE_I_NORMAL
@@ -134,9 +190,14 @@ class AudioFxController {
             DolbyMode.DOLBY_B -> CURVE_DOLBY_B
             DolbyMode.DOLBY_C -> CURVE_DOLBY_C
         }
+        val satCurve = if (isTapeSaturationEnabled) {
+            FloatArray(10) { i -> CURVE_TAPE_SATURATION_WARMTH[i] * tapeSaturationDrive }
+        } else {
+            CURVE_FLAT
+        }
 
         for (i in 0 until 10) {
-            isoBandsGainDb[i] = (baseIsoBandsGainDb[i] + tapeCurve[i] + dolbyCurve[i]).coerceIn(-15.0f, 15.0f)
+            isoBandsGainDb[i] = (baseIsoBandsGainDb[i] + tapeCurve[i] + dolbyCurve[i] + satCurve[i]).coerceIn(-15.0f, 15.0f)
         }
         syncToneFromIso()
         if (!isBypassEnabled) applyEq()
@@ -415,21 +476,37 @@ class AudioFxController {
      * Uses log2 frequency space for natural acoustic interpolation.
      */
     fun interpolateIsoGain(freqHz: Int): Float {
-        if (freqHz <= ISO_FREQUENCIES[0]) return isoBandsGainDb[0]
-        if (freqHz >= ISO_FREQUENCIES[9]) return isoBandsGainDb[9]
+        if (!isParametricMode) {
+            if (freqHz <= ISO_FREQUENCIES[0]) return isoBandsGainDb[0]
+            if (freqHz >= ISO_FREQUENCIES[9]) return isoBandsGainDb[9]
 
-        for (i in 0 until 9) {
-            val f0 = ISO_FREQUENCIES[i]
-            val f1 = ISO_FREQUENCIES[i + 1]
-            if (freqHz in f0..f1) {
-                val logF0 = ln(f0.toDouble())
-                val logF1 = ln(f1.toDouble())
-                val logF = ln(freqHz.toDouble())
-                val t = ((logF - logF0) / (logF1 - logF0)).toFloat()
-                return isoBandsGainDb[i] * (1f - t) + isoBandsGainDb[i + 1] * t
+            for (i in 0 until 9) {
+                val f0 = ISO_FREQUENCIES[i]
+                val f1 = ISO_FREQUENCIES[i + 1]
+                if (freqHz in f0..f1) {
+                    val logF0 = ln(f0.toDouble())
+                    val logF1 = ln(f1.toDouble())
+                    val logF = ln(freqHz.toDouble())
+                    val t = ((logF - logF0) / (logF1 - logF0)).toFloat()
+                    return isoBandsGainDb[i] * (1f - t) + isoBandsGainDb[i + 1] * t
+                }
             }
+            return 0f
+        } else {
+            // Parametric multi-bell acoustic summation
+            var totalGain = 0f
+            val f = freqHz.toDouble()
+            for (i in 0 until 10) {
+                val gain = isoBandsGainDb[i]
+                if (abs(gain) < 0.05f) continue
+                val fc = ISO_FREQUENCIES[i].toDouble()
+                val q = isoBandsQ[i].toDouble()
+                val logRatio = ln(f / fc)
+                val bell = exp(-0.5 * (logRatio * q * 1.5) * (logRatio * q * 1.5)).toFloat()
+                totalGain += gain * bell
+            }
+            return totalGain.coerceIn(-15.0f, 15.0f)
         }
-        return 0f
     }
 
     fun release() {

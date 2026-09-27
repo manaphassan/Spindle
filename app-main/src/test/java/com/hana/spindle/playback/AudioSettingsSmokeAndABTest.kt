@@ -32,7 +32,7 @@ class AudioSettingsSmokeAndABTest {
         var isCassetteEjected = false
         var isSongLoaded = true
         var trackTitle = "Bohemian Rhapsody"
-        val defaultHardwareName = "SONY SO-02J"
+        val defaultHardwareName = "FIIO M11"
         var navigatedToCatalog = false
         var foleyPlayed = false
 
@@ -362,15 +362,15 @@ class AudioSettingsSmokeAndABTest {
 
         // Connected State with Battery Telemetry
         val connectedWithBattery = AudioMetrics(
-            outputRoute = "Bluetooth (Sony WH-1000XM5)",
-            bluetoothDeviceName = "Sony WH-1000XM5",
+            outputRoute = "Bluetooth (Studio ANC-500)",
+            bluetoothDeviceName = "Studio ANC-500",
             bluetoothBatteryPct = 90,
             isBluetoothConnected = true,
             bluetoothConnectionStatus = "CONNECTED"
         )
         assertTrue("Metrics must reflect active Bluetooth connection", connectedWithBattery.isBluetoothConnected)
         assertEquals("CONNECTED", connectedWithBattery.bluetoothConnectionStatus)
-        assertEquals("Sony WH-1000XM5", connectedWithBattery.bluetoothDeviceName)
+        assertEquals("Studio ANC-500", connectedWithBattery.bluetoothDeviceName)
         assertEquals(90, connectedWithBattery.bluetoothBatteryPct)
 
         // Connected State without Battery Telemetry

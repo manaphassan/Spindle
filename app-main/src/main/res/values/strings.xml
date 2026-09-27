@@ -22,10 +22,124 @@
     <string name="tab_equalizer">EQ &amp; DSP</string>
     <string name="tab_themes">Themes</string>
 
-    <!-- Catalog Tabs -->
-    <string name="tab_folders">Folders</string>
+    <!-- Navigation & Vault Tabs (Canonical Glossary) -->
+    <string name="nav_vault">VAULT</string>
+    <string name="tab_vault">Vault</string>
+    <string name="hint_search_vault">Search vault…</string>
+    <string name="tab_tracks">Tracks</string>
     <string name="tab_albums">Albums</string>
     <string name="tab_artists">Artists</string>
-    <string name="tab_songs">Songs</string>
-    <string name="tab_playlists">Playlists</string>
+    <string name="tab_folders">Folders</string>
+    <string name="tab_mixtapes">Mixtapes</string>
+    <string name="tab_favorites">Favorites</string>
+    <string name="tab_composers">Composers</string>
+
+    <!-- Backward Compatibility Aliases -->
+    <string name="tab_songs">Tracks</string>
+    <string name="tab_playlists">Mixtapes</string>
+
+    <!-- Playback Queue Sheet -->
+    <string name="queue_header_title">UP NEXT • PLAYBACK QUEUE</string>
+    <string name="queue_clear_upcoming">CLEAR UPCOMING</string>
+    <string name="queue_empty_message">No tracks in playback queue\nSelect tracks from the vault to build your queue.</string>
+
+    <!-- Mixtape Dialogs -->
+    <string name="mixtape_cut_new">CUT NEW MIXTAPE</string>
+    <string name="mixtape_record_tape">RECORD TAPE</string>
+    <string name="mixtape_add_to">Add to Mixtape</string>
+    <string name="mixtape_select_accent">Select Tape Shell Accent:</string>
+
+    <!-- General Dialog & Action Buttons -->
+    <string name="action_done">DONE</string>
+    <string name="action_close">CLOSE</string>
+    <string name="action_reset">⟲ RESET</string>
+    <string name="action_lock">LOCK</string>
+    <string name="action_unlocked">UNLOCKED</string>
+
+    <!-- Sort & Group Dialog -->
+    <string name="dialog_sort_group_title">SORT &amp; GROUP LIBRARY</string>
+    <string name="section_sort_order">SORT ORDER</string>
+    <string name="section_group_by">GROUP BY</string>
+
+    <!-- Audiophile File Specs Dialog -->
+    <string name="specs_title">AUDIOPHILE FILE TELEMETRY</string>
+    <string name="specs_stream_header">STREAM SPECIFICATIONS</string>
+    <string name="specs_format_codec">FORMAT / CODEC</string>
+    <string name="specs_sample_rate">SAMPLE RATE</string>
+    <string name="specs_bit_depth">BIT DEPTH</string>
+    <string name="specs_channels">CHANNELS</string>
+    <string name="specs_bitrate">BITRATE</string>
+    <string name="specs_fs_header">FILE SYSTEM METADATA</string>
+    <string name="specs_file_size">FILE SIZE</string>
+    <string name="specs_location_uri">LOCATION / URI</string>
+
+    <!-- J-Card Liner Notes -->
+    <string name="jcard_btn_flip">◀ FLIP</string>
+    <string name="jcard_flip_back">◀ FLIP BACK TO CASSETTE DECK</string>
+
+    <!-- Radio Console -->
+    <string name="radio_band_fm">FM</string>
+    <string name="radio_band_bt">BT</string>
+    <string name="radio_btn_mono">[MONO]</string>
+    <string name="radio_btn_scan">[SCAN]</string>
+    <string name="radio_live_in">LIVE IN</string>
+    <string name="radio_no_track_info">NO TRACK INFO</string>
+    <string name="radio_preset_lofi">LO-FI</string>
+    <string name="radio_preset_animefm">ANIMEFM</string>
+    <string name="radio_preset_initiald">INITIAL D</string>
+    <string name="radio_preset_citypop">CITYPOP</string>
+
+    <!-- Catalog Actions & Status -->
+    <string name="catalog_new_tape">NEW TAPE</string>
+    <string name="catalog_shuffle">SHUFFLE</string>
+    <string name="catalog_play_all">PLAY ALL</string>
+    <string name="catalog_scanning">Scanning…</string>
+    <string name="catalog_sort_prefix">Sort: </string>
+    <string name="catalog_no_track_loaded">No Track Loaded</string>
+    <string name="catalog_default_artist">Spindle Player</string>
+    <string name="catalog_album_header">ALBUM</string>
+    <string name="catalog_export_m3u">EXPORT .M3U</string>
+    <string name="catalog_no_lyrics">No synchronized lyrics available\nTap to return to artwork</string>
+
+    <!-- Ambient Deck & Lockscreen -->
+    <string name="ambient_default_track">Spindle Ambient Deck</string>
+    <string name="ambient_tap_to_wake">● Double-tap anywhere to wake ●</string>
+
+    <!-- Player & Deck Labels -->
+    <string name="player_time_divider"> / </string>
+    <string name="player_btn_prev_label">|&lt;&lt;</string>
+    <string name="player_btn_play_label">&gt; PLAY</string>
+    <string name="player_btn_next_label">&gt;&gt;|</string>
+    <string name="spindle_deck_title">Spindle Tape Deck</string>
+    <string name="spindle_deck_ready">Ready to Play</string>
+
+    <!-- Drawer Navigation & DSP Console -->
+    <string name="drawer_tab_sound_deck">SOUND DECK</string>
+    <string name="drawer_tab_apps">APPS</string>
+    <string name="drawer_tab_settings">SETTINGS</string>
+    <string name="drawer_search_apps_hint">Search installed apps…</string>
+    <string name="drawer_eq_title">STUDIO DSP &amp; PARAMETRIC EQ</string>
+    <string name="drawer_iso_eq_header">10-BAND ISO GRAPHIC EQUALIZER</string>
+    <string name="drawer_vu_meter_label">ANALOG VU GALVANOMETER • 0 dB = 1.228V RMS</string>
+
+    <!-- Studio Collector & Fair Ownership Licensing -->
+    <string name="studio_dialog_title">STUDIO COLLECTOR EDITION</string>
+    <string name="studio_dialog_subtitle">ONE-TIME PASS • FAIR OWNERSHIP</string>
+    <string name="studio_badge_free">FREE CORE EDITION</string>
+    <string name="studio_badge_unlocked">★ STUDIO COLLECTOR ACTIVE</string>
+    <string name="studio_policy_desc">Pay Once, Own Forever. $2.99 – $3.99 lifetime pass.\nZero Subscriptions • Zero Ads • 100% Offline.</string>
+    <string name="studio_feature_dsp">Analog Tape Saturation &amp; Tube Harmonics DSP</string>
+    <string name="studio_feature_laser">Custom Laser Nameplate Deck Engraving</string>
+    <string name="studio_feature_foley">Procedural Cassette Foley Engine (Mechanical Clacks)</string>
+    <string name="studio_feature_skins">Studio Collector Skins &amp; Open Reel-to-Reel Decks</string>
+    <string name="studio_btn_google_play">UNLOCK VIA GOOGLE PLAY</string>
+    <string name="studio_btn_redeem">REDEEM TOKEN</string>
+    <string name="studio_hint_token">Enter Sponsor Token (SPINDLE-STUDIO-…)</string>
+    <string name="studio_redeem_success">Studio Collector Edition Activated! Thank you for supporting Spindle.</string>
+    <string name="studio_redeem_failed">Invalid sponsor token. Please verify or support via PayPal/GitHub.</string>
+    <string name="studio_btn_sponsor">SUPPORT ON PAYPAL / GITHUB</string>
+    <string name="studio_nameplate_title">CUSTOM LASER NAMEPLATE ENGRAVING</string>
+    <string name="studio_nameplate_hint">Enter callsign (e.g. SPINDLE // ALEX)</string>
+    <string name="studio_nameplate_saved">Custom nameplate engraved successfully!</string>
+    <string name="studio_nameplate_locked_prompt">Personalized laser nameplate engraving is an exclusive Spindle Studio Collector feature.</string>
 </resources>

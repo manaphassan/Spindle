@@ -22,7 +22,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.hana.spindle.SpindleApp
-import com.hana.spindle.data.db.SongEntity
+import com.hana.spindle.data.db.TrackEntity
 import com.hana.spindle.databinding.FragmentPlayerBinding
 import com.hana.spindle.playback.AudioEngine
 import com.hana.spindle.playback.RepeatMode
@@ -50,7 +50,7 @@ class PlayerFragment : Fragment() {
     private var currentFormatString: String = ""
     private var spoolFoleyStreamId = 0
 
-    // Battery Receiver for WM-2 Hardware LED
+    // Battery Receiver for Metal-81 Hardware LED
     private val batteryReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action == Intent.ACTION_BATTERY_CHANGED) {
@@ -62,8 +62,8 @@ class PlayerFragment : Fragment() {
                 val isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
                         status == BatteryManager.BATTERY_STATUS_FULL
 
-                _binding?.wm2ChassisView?.batteryLevel = batteryPct
-                _binding?.wm2ChassisView?.isCharging = isCharging
+                _binding?.metal81ChassisView?.batteryLevel = batteryPct
+                _binding?.metal81ChassisView?.isCharging = isCharging
                 _binding?.verticalDeckView?.batteryLevel = batteryPct
                 _binding?.verticalDeckView?.isLowBattery = (batteryPct <= 20)
             }
@@ -99,7 +99,7 @@ class PlayerFragment : Fragment() {
                 val scale = initialBattery.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
                 val batteryPct = if (level >= 0 && scale > 0) (level * 100) / scale else 80
                 binding.verticalDeckView.batteryLevel = batteryPct
-                binding.wm2ChassisView.batteryLevel = batteryPct
+                binding.metal81ChassisView.batteryLevel = batteryPct
             }
         } catch (_: Exception) {}
 
@@ -122,15 +122,19 @@ class PlayerFragment : Fragment() {
     override fun onPause() {
         super.onPause()
         requireContext().unregisterReceiver(batteryReceiver)
+        if (spoolFoleyStreamId != 0) {
+            audioEngine.foleyEngine.stopMotorSpoolLoop(spoolFoleyStreamId)
+            spoolFoleyStreamId = 0
+        }
     }
 
     private fun setupThemeObservation() {
         viewLifecycleOwner.lifecycleScope.launch {
             themeManager.currentTheme.collectLatest { theme ->
                 _binding?.let { b ->
-                    val isWm2 = theme.chassisStyle == ChassisStyle.WM2_RED
-                    b.verticalDeckContainer.visibility = if (isWm2) View.GONE else View.VISIBLE
-                    b.wm2Container.visibility = if (isWm2) View.VISIBLE else View.GONE
+                    val isMetal81 = theme.chassisStyle == ChassisStyle.METAL_81_RED
+                    b.verticalDeckContainer.visibility = if (isMetal81) View.GONE else View.VISIBLE
+                    b.metal81Container.visibility = if (isMetal81) View.VISIBLE else View.GONE
 
                     b.verticalDeckView.theme = theme
                     b.verticalCassetteView.theme = theme
@@ -138,8 +142,8 @@ class PlayerFragment : Fragment() {
                     val isVaporwave = theme.chassisStyle == ChassisStyle.VAPORWAVE_80S
                     b.tvVerticalTime.setTextColor(if (isVaporwave) Color.parseColor("#475569") else Color.parseColor("#80FFFFFF"))
 
-                    b.wm2ChassisView.theme = theme
-                    b.wm2CassetteView.theme = theme
+                    b.metal81ChassisView.theme = theme
+                    b.metal81CassetteView.theme = theme
                     b.root.setBackgroundColor(theme.chassisColor)
                 }
             }
@@ -158,10 +162,10 @@ class PlayerFragment : Fragment() {
             b.verticalCassetteView.isPlaying = state.isPlaying
             b.verticalCassetteView.progress = state.progress
 
-            // 2. WM-2 Red Layout
-            b.wm2ChassisView.isPlaying = state.isPlaying
-            b.wm2CassetteView.isPlaying = state.isPlaying
-            b.wm2CassetteView.progress = state.progress
+            // 2. Metal-81 Red Layout
+            b.metal81ChassisView.isPlaying = state.isPlaying
+            b.metal81CassetteView.isPlaying = state.isPlaying
+            b.metal81CassetteView.progress = state.progress
 
             state.currentSong?.let { song ->
                 // Deck values
@@ -202,8 +206,8 @@ class PlayerFragment : Fragment() {
 
                 b.verticalCassetteView.trackTitle = song.title
                 b.verticalCassetteView.artistName = song.artist
-                b.wm2CassetteView.trackTitle = song.title
-                b.wm2CassetteView.artistName = song.artist
+                b.metal81CassetteView.trackTitle = song.title
+                b.metal81CassetteView.artistName = song.artist
             } ?: run {
                 val hardwareName = com.hana.spindle.util.DeviceUtils.getHardwareDeviceName()
                 b.verticalDeckView.isSongLoaded = false
@@ -217,9 +221,9 @@ class PlayerFragment : Fragment() {
                 b.verticalCassetteView.trackTitle = hardwareName
                 b.verticalCassetteView.artistName = ""
                 b.verticalCassetteView.albumArtBitmap = null
-                b.wm2CassetteView.trackTitle = hardwareName
-                b.wm2CassetteView.artistName = ""
-                b.wm2CassetteView.albumArtBitmap = null
+                b.metal81CassetteView.trackTitle = hardwareName
+                b.metal81CassetteView.artistName = ""
+                b.metal81CassetteView.albumArtBitmap = null
             }
 
             // Sync live synchronized lyric ticker
@@ -260,12 +264,12 @@ class PlayerFragment : Fragment() {
     private fun setupControls() {
         // Vertical Deck Controls (Reference 1 & 2)
         binding.verticalDeckView.onPlayClicked = {
-            if (audioEngine.playbackState.value.currentSong == null) {
+            if (audioEngine.playbackState.value.currentTrack == null) {
                 viewLifecycleOwner.lifecycleScope.launch {
                     val app = requireActivity().application as SpindleApp
-                    val songs = app.database.songDao().getAllSongs().firstOrNull()
-                    if (!songs.isNullOrEmpty()) {
-                        audioEngine.playQueue(songs, 0)
+                    val tracks = app.database.trackDao().getAllTracks().firstOrNull()
+                    if (!tracks.isNullOrEmpty()) {
+                        audioEngine.playQueue(tracks, 0)
                     } else {
                         audioEngine.togglePlayPause()
                     }
@@ -332,8 +336,8 @@ class PlayerFragment : Fragment() {
             binding.verticalDeckView.audioFormat = ""
             binding.verticalCassetteView.trackTitle = hardwareName
             binding.verticalCassetteView.artistName = ""
-            binding.wm2CassetteView.trackTitle = hardwareName
-            binding.wm2CassetteView.artistName = ""
+            binding.metal81CassetteView.trackTitle = hardwareName
+            binding.metal81CassetteView.artistName = ""
             android.widget.Toast.makeText(requireContext(), "Cassette Ejected & Stopped", android.widget.Toast.LENGTH_SHORT).show()
         }
         binding.verticalDeckView.onDoubleTapChassis = {
@@ -353,17 +357,17 @@ class PlayerFragment : Fragment() {
             android.widget.Toast.makeText(requireContext(), "DOLBY NR: ${mode.label}", android.widget.Toast.LENGTH_SHORT).show()
         }
 
-        // WM-2 Red Controls
-        binding.wm2ChassisView.onPlayClicked = { audioEngine.togglePlayPause() }
-        binding.wm2ChassisView.onStopClicked = { audioEngine.pause() }
-        binding.wm2ChassisView.onEjectClicked = {
+        // Metal-81 Red Controls
+        binding.metal81ChassisView.onPlayClicked = { audioEngine.togglePlayPause() }
+        binding.metal81ChassisView.onStopClicked = { audioEngine.pause() }
+        binding.metal81ChassisView.onEjectClicked = {
             (activity as? MainActivity)?.navigateToCatalog()
         }
         binding.btnPlayPause.setOnClickListener { audioEngine.togglePlayPause() }
         binding.btnPrev.setOnClickListener { audioEngine.playPrevious() }
         binding.btnNext.setOnClickListener { audioEngine.playNext() }
-        binding.wm2ChassisView.onPrevClicked = { audioEngine.playPrevious() }
-        binding.wm2ChassisView.onNextClicked = { audioEngine.playNext() }
+        binding.metal81ChassisView.onPrevClicked = { audioEngine.playPrevious() }
+        binding.metal81ChassisView.onNextClicked = { audioEngine.playNext() }
         binding.btnEject.setOnClickListener {
             // Single-press: only open music catalogue, don't stop music
             (activity as? MainActivity)?.navigateToCatalog()
@@ -379,8 +383,8 @@ class PlayerFragment : Fragment() {
             binding.verticalDeckView.audioFormat = ""
             binding.verticalCassetteView.trackTitle = hardwareName
             binding.verticalCassetteView.artistName = ""
-            binding.wm2CassetteView.trackTitle = hardwareName
-            binding.wm2CassetteView.artistName = ""
+            binding.metal81CassetteView.trackTitle = hardwareName
+            binding.metal81CassetteView.artistName = ""
             android.widget.Toast.makeText(requireContext(), "Cassette Ejected & Stopped", android.widget.Toast.LENGTH_SHORT).show()
             true
         }
@@ -496,11 +500,11 @@ class PlayerFragment : Fragment() {
                 flipCassette(binding.verticalCassetteView)
             }
         }
-        binding.wm2CassetteView.setOnClickListener {
+        binding.metal81CassetteView.setOnClickListener {
             if (audioEngine.playbackState.value.currentSong != null) {
                 (activity as? MainActivity)?.navigateToCatalog(openNowPlaying = true)
             } else {
-                flipCassette(binding.wm2CassetteView)
+                flipCassette(binding.metal81CassetteView)
             }
         }
     }
@@ -533,6 +537,10 @@ class PlayerFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        if (spoolFoleyStreamId != 0) {
+            audioEngine.foleyEngine.stopMotorSpoolLoop(spoolFoleyStreamId)
+            spoolFoleyStreamId = 0
+        }
         super.onDestroyView()
         _binding = null
     }

@@ -349,7 +349,7 @@ class AudioMetricsTracker(private val context: Context) {
                 when (device.type) {
                     AudioDeviceInfo.TYPE_USB_DEVICE,
                     AudioDeviceInfo.TYPE_USB_HEADSET,
-                    AudioDeviceInfo.TYPE_USB_ACCESSORY -> return "USB DAC (Bit-Perfect Direct)"
+                    AudioDeviceInfo.TYPE_USB_ACCESSORY -> return "USB DAC (Hi-Res Passthrough)"
                 }
             }
             for (device in devices) {

@@ -7,7 +7,7 @@
   <img src="docs/assets/spindle_app_icon.png" alt="Spindle Icon" width="80" height="80" />
 
   <h1>Spindle</h1>
-  <p><b>Give your old Android phone a second life as a retro cassette Walkman.</b></p>
+  <p><b>Give your old Android phone a second life as a retro cassette player.</b></p>
   <p>Turn that dusty phone in your drawer into a distraction-free music player. 100% offline, zero ads, no subscriptions, and pure tape nostalgia.</p>
 
   <br/>
@@ -67,7 +67,7 @@ Spindle comes in two editions so you get the smoothest experience on whatever de
       <td width="50%" align="center">
         <b>Cassette Tape Deck</b><br/>
         <sub>Watch the reels turn and tape advance</sub><br/><br/>
-        <img src="docs/assets/screenshot_walkman_home.png?v=1.3.0-alpha" width="280" alt="Cassette Tape Deck"/>
+        <img src="docs/assets/screenshot_deck_home.png?v=1.3.0-alpha" width="280" alt="Cassette Tape Deck"/>
       </td>
       <td width="50%" align="center">
         <b>Lock Screen Player</b><br/>
@@ -113,6 +113,8 @@ Spindle comes in two editions so you get the smoothest experience on whatever de
 - 🎛️ **Clicky Real Buttons**: Keep your screen off and your phone in your pocket! Change tracks and adjust volume using your physical volume rocker, camera shutter key, or wired headphone remote.
 - 📁 **Your Music, Your Folders**: If you organize your albums in folders on your SD card, you'll feel right at home with direct folder browsing, fast A-Z jumping, and instant search.
 - 📻 **Analog Radio Fun**: Spin the virtual tuning flywheel to dial in FM radio stations or listen to curated online streams.
+- 📼 **Mixtapes & .M3U Portability**: Craft custom mixtape playlists with drag-and-drop track reordering, export standard `.m3u8` playlists, and import existing libraries effortlessly.
+- 🎚️ **Audiophile Engine & Tone**: 10-band equalizer with live hardware band disclosure, 89 dB ReplayGain volume normalization, and equal-power crossfade transitions.
 
 ---
 
@@ -124,7 +126,7 @@ Getting started takes less than a minute:
 2. **Tap & Install** — Open the downloaded file from your notifications or Downloads folder. *(If your phone asks for permission to install, just tap "Settings" and turn on "Allow from this source".)*
 3. **Press Play & Enjoy** — Open Spindle, grant storage access so it can find your songs, and watch the tape roll!
 
-> 💡 **Dedicated Walkman Tip:** Want to turn an old phone into a dedicated music machine? In your Android Settings, go to *Default Apps → Home app* and set **Spindle** as your default home screen. Every time you press the Home button, you'll go straight back to your cassette deck!
+> 💡 **Dedicated Player Tip:** Want to turn an old phone into a dedicated music machine? In your Android Settings, go to *Default Apps → Home app* and set **Spindle** as your default home screen. Every time you press the Home button, you'll go straight back to your cassette deck!
 
 ---
 

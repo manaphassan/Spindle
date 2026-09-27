@@ -13,7 +13,7 @@ enum class ShellTexture {
 enum class ChassisStyle {
     VERTICAL_DECK,     // Dark brushed aluminum faceplate, vertical cassette, linear ruler, 4 bottom buttons
     VAPORWAVE_80S,     // Minimalist light faceplate
-    WM2_RED            // 1981 WM-2 Red horizontal cut chassis
+    METAL_81_RED       // 1981 Metal-81 Red horizontal cut chassis
 }
 
 /**
@@ -230,10 +230,10 @@ data class CassetteTheme(
             isDarkAppTheme = true
         )
 
-        // 8. Sony Metal-XR (Flagship 1990s Type IV Metal Position)
-        val SONY_METAL_XR = CassetteTheme(
-            id = "theme_sony_metal_xr",
-            name = "Sony Metal-XR",
+        // 8. Metal-XR (Flagship 1990s Type IV Metal Position)
+        val METAL_XR_TYPE4 = CassetteTheme(
+            id = "theme_metal_xr_type4",
+            name = "Metal-XR Type IV",
             subtitle = "Extralloy Pure Metal • 70µs Type IV",
             chassisStyle = ChassisStyle.VERTICAL_DECK,
             chassisColor = Color.parseColor("#18191E"), // Dark Titanium / Anthracite Slate
@@ -243,12 +243,12 @@ data class CassetteTheme(
             cardBorderColor = Color.parseColor("#2C2E38"),
             textPrimaryColor = Color.parseColor("#FAFAF9"),
             textSecondaryColor = Color.parseColor("#A1A1AA"),
-            accentColor = Color.parseColor("#EF4444"), // Iconic Sony Red
+            accentColor = Color.parseColor("#EF4444"), // Anodized Red Accent
             shellColor = Color.parseColor("#131418"), // Smoked Precision Ceramic/Metal Composite
             shellTexture = ShellTexture.BRUSHED_METAL,
             labelBackgroundColor = Color.parseColor("#1A1B22"), // Gunmetal Slate Paper
             labelTextColor = Color.parseColor("#F4F4F5"), // Silver/white high contrast
-            labelAccentColor = Color.parseColor("#EF4444"), // Sony Red Accent Stripe
+            labelAccentColor = Color.parseColor("#EF4444"), // Red Accent Stripe
             windowTint = Color.argb(30, 240, 240, 245), // Clear Prismatic Window
             reelHubColor = Color.parseColor("#F5F5F5"), // Precision White Hubs
             tapeRibbonColor = Color.parseColor("#0A0B0C"), // Pure Extralloy Metal Particle Jet-Black Tape
@@ -256,24 +256,51 @@ data class CassetteTheme(
             isDarkAppTheme = true
         )
 
+        // 9. Studio Reel-to-Reel (Studio Collector Edition 10.5" Master Deck)
+        val REEL_TO_REEL_STUDIO = CassetteTheme(
+            id = "theme_reel_to_reel_studio",
+            name = "Studio Reel-to-Reel",
+            subtitle = "10.5\" Aluminum NAB Master • 15 IPS",
+            chassisStyle = ChassisStyle.VERTICAL_DECK,
+            chassisColor = Color.parseColor("#181B22"), // Deep brushed studio console titanium
+            diagonalBezelColor = Color.parseColor("#12141A"),
+            dialColor = Color.parseColor("#F8FAFC"),
+            surfaceColor = Color.parseColor("#1C2029"), // Precision milled console surface
+            cardBorderColor = Color.parseColor("#2F3646"),
+            textPrimaryColor = Color.parseColor("#FAFAF9"),
+            textSecondaryColor = Color.parseColor("#94A3B8"),
+            accentColor = Color.parseColor("#F97316"), // Studio Tangerine Master Indicator
+            shellColor = Color.parseColor("#13161D"), // Dark studio deck well
+            shellTexture = ShellTexture.BRUSHED_METAL,
+            labelBackgroundColor = Color.parseColor("#10131A"),
+            labelTextColor = Color.parseColor("#F1F5F9"),
+            labelAccentColor = Color.parseColor("#F97316"),
+            windowTint = Color.argb(18, 255, 255, 255), // Ultra-clear studio safety acrylic
+            reelHubColor = Color.parseColor("#E2E8F0"), // Precision Aluminum Flange & NAB Adapter
+            tapeRibbonColor = Color.parseColor("#1C130E"), // 1/4" Studio Master Oxide tape
+            vfdGlowColor = Color.parseColor("#F97316"),
+            isDarkAppTheme = true
+        )
+
         // All Curated Theme Presets
         val ALL_PRESETS = listOf(
-            SONY_METAL_XR,
+            METAL_XR_TYPE4,
             DARK,
             LIGHT,
             MONOCHROME_EINK,
             TDK_SA_90,
             MAXELL_XLII,
             BASF_CHROME,
-            SKELETON_REEL
+            SKELETON_REEL,
+            REEL_TO_REEL_STUDIO
         )
 
         // Backward compatibility aliases for legacy references
-        val VERTICAL_STUDIO_DECK = SONY_METAL_XR
+        val VERTICAL_STUDIO_DECK = METAL_XR_TYPE4
         val VAPORWAVE_80S = LIGHT
-        val WM2_RED_HERO = DARK
+        val METAL_81_RED_HERO = DARK
         val TYPE_I_NORMAL = DARK
-        val TYPE_IV_METAL = SONY_METAL_XR
+        val TYPE_IV_METAL = METAL_XR_TYPE4
         val TYPE_II_CHROME = DARK
         val ALBUM_ADAPTIVE = DARK
     }

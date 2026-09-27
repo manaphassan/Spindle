@@ -14,5 +14,6 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "Spindle"
+include(":core")
 include(":app-main")
 include(":app-lite")

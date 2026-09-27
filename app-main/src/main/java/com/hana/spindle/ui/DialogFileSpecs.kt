@@ -5,14 +5,15 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import com.hana.spindle.data.db.SongEntity
+import com.hana.spindle.data.db.TrackEntity
 import com.hana.spindle.databinding.DialogFileSpecsBinding
 import java.io.File
 import java.util.Locale
 
 class DialogFileSpecs(
-    private val song: SongEntity
+    private val track: TrackEntity
 ) : BottomSheetDialogFragment() {
+    private val song: TrackEntity get() = track
 
     private var _binding: DialogFileSpecsBinding? = null
     private val binding get() = _binding!!

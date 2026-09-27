@@ -9,7 +9,7 @@ import android.widget.*
 import com.hana.spindle.R
 import com.hana.spindle.data.db.PlaylistEntity
 import com.hana.spindle.data.db.PlaylistSongCrossRef
-import com.hana.spindle.data.db.SongEntity
+import com.hana.spindle.data.db.TrackEntity
 import com.hana.spindle.data.db.SpindleDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -42,7 +42,7 @@ object MixtapeDialogs {
         }
 
         val titleView = TextView(context).apply {
-            text = "CUT NEW MIXTAPE"
+            text = context.getString(R.string.mixtape_cut_new)
             textSize = 15f
             setTextColor(Color.WHITE)
             typeface = android.graphics.Typeface.DEFAULT_BOLD
@@ -61,7 +61,7 @@ object MixtapeDialogs {
         view.addView(input)
 
         val colorLabel = TextView(context).apply {
-            text = "Select Tape Shell Accent:"
+            text = context.getString(R.string.mixtape_select_accent)
             textSize = 12f
             setTextColor(Color.parseColor("#94A3B8"))
             val padTop = (12 * context.resources.displayMetrics.density).toInt()
@@ -98,7 +98,7 @@ object MixtapeDialogs {
 
         AlertDialog.Builder(context)
             .setView(view)
-            .setPositiveButton("RECORD TAPE") { _, _ ->
+            .setPositiveButton(context.getString(R.string.mixtape_record_tape)) { _, _ ->
                 val name = input.text.toString().trim()
                 if (name.isNotBlank()) {
                     scope.launch {
@@ -120,7 +120,7 @@ object MixtapeDialogs {
         context: Context,
         database: SpindleDatabase,
         scope: CoroutineScope,
-        song: SongEntity,
+        track: TrackEntity,
         onAdded: (() -> Unit)? = null
     ) {
         scope.launch {
@@ -135,10 +135,10 @@ object MixtapeDialogs {
                             showCreateMixtapeDialog(context, database, scope) { newId ->
                                 scope.launch {
                                     database.playlistDao().addSongToPlaylist(
-                                        PlaylistSongCrossRef(newId, song.id, System.currentTimeMillis())
+                                        PlaylistSongCrossRef(newId, track.id, System.currentTimeMillis())
                                     )
                                     withContext(Dispatchers.Main) {
-                                        Toast.makeText(context, "Added '${song.title}' to Mixtape!", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, "Added '${track.title}' to Mixtape!", Toast.LENGTH_SHORT).show()
                                         onAdded?.invoke()
                                     }
                                 }
@@ -154,16 +154,16 @@ object MixtapeDialogs {
                     }
 
                     AlertDialog.Builder(context)
-                        .setTitle("Add to Mixtape")
+                        .setTitle(context.getString(R.string.mixtape_add_to))
                         .setItems(items.toTypedArray()) { _, which ->
                             if (which == 0) {
                                 showCreateMixtapeDialog(context, database, scope) { newId ->
                                     scope.launch {
                                         database.playlistDao().addSongToPlaylist(
-                                            PlaylistSongCrossRef(newId, song.id, System.currentTimeMillis())
+                                            PlaylistSongCrossRef(newId, track.id, System.currentTimeMillis())
                                         )
                                         withContext(Dispatchers.Main) {
-                                            Toast.makeText(context, "Added '${song.title}' to Mixtape!", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(context, "Added '${track.title}' to Mixtape!", Toast.LENGTH_SHORT).show()
                                             onAdded?.invoke()
                                         }
                                     }
@@ -172,11 +172,95 @@ object MixtapeDialogs {
                                 val playlist = playlists[which - 1]
                                 scope.launch {
                                     database.playlistDao().addSongToPlaylist(
-                                        PlaylistSongCrossRef(playlist.id, song.id, System.currentTimeMillis())
+                                        PlaylistSongCrossRef(playlist.id, track.id, System.currentTimeMillis())
                                     )
                                     withContext(Dispatchers.Main) {
-                                        Toast.makeText(context, "Added '${song.title}' to ${playlist.name}!", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, "Added '${track.title}' to ${playlist.name}!", Toast.LENGTH_SHORT).show()
                                         onAdded?.invoke()
+                                    }
+                                }
+                            }
+                        }
+                        .setNegativeButton("Cancel", null)
+                        .show()
+                }
+            }
+        }
+    }
+
+    fun exportMixtape(
+        context: Context,
+        database: SpindleDatabase,
+        scope: CoroutineScope,
+        playlistId: Long,
+        playlistName: String,
+        onExported: ((java.io.File) -> Unit)? = null
+    ) {
+        scope.launch {
+            val tracks = database.playlistDao().getTracksForPlaylist(playlistId).first()
+            if (tracks.isEmpty()) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Cannot export empty mixtape", Toast.LENGTH_SHORT).show()
+                }
+                return@launch
+            }
+            val dir = com.hana.spindle.data.M3uManager.getDefaultPlaylistDirectory()
+            val sanitizedName = playlistName.replace(Regex("[^a-zA-Z0-9._ -]"), "_")
+            val targetFile = java.io.File(dir, "$sanitizedName.m3u8")
+            val success = com.hana.spindle.data.M3uManager.exportMixtape(targetFile, playlistName, tracks)
+            withContext(Dispatchers.Main) {
+                if (success) {
+                    Toast.makeText(context, "Exported to: ${targetFile.absolutePath}", Toast.LENGTH_LONG).show()
+                    onExported?.invoke(targetFile)
+                } else {
+                    Toast.makeText(context, "Failed to export mixtape", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    fun showImportM3uDialog(
+        context: Context,
+        database: SpindleDatabase,
+        scope: CoroutineScope,
+        onImported: ((Long) -> Unit)? = null
+    ) {
+        scope.launch(Dispatchers.IO) {
+            val candidates = mutableListOf<java.io.File>()
+            val searchDirs = listOf(
+                com.hana.spindle.data.M3uManager.getDefaultPlaylistDirectory(),
+                android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_MUSIC),
+                android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
+            )
+            for (dir in searchDirs) {
+                if (dir != null && dir.exists() && dir.canRead()) {
+                    dir.listFiles { f ->
+                        f.isFile && (f.extension.equals("m3u", ignoreCase = true) || f.extension.equals("m3u8", ignoreCase = true))
+                    }?.let { candidates.addAll(it) }
+                }
+            }
+
+            withContext(Dispatchers.Main) {
+                if (candidates.isEmpty()) {
+                    AlertDialog.Builder(context)
+                        .setTitle("No M3U Playlists Found")
+                        .setMessage("No .m3u or .m3u8 playlist files found in Music or Downloads directories.\n\nPlace standard M3U files into /sdcard/Music/Playlists/ to import.")
+                        .setPositiveButton("OK", null)
+                        .show()
+                } else {
+                    val names = candidates.map { "${it.name} (${it.parentFile?.name ?: ""})" }.toTypedArray()
+                    AlertDialog.Builder(context)
+                        .setTitle("Import M3U Playlist")
+                        .setItems(names) { _, which ->
+                            val selectedFile = candidates[which]
+                            scope.launch {
+                                val playlistId = com.hana.spindle.data.M3uManager.importMixtape(selectedFile, database)
+                                withContext(Dispatchers.Main) {
+                                    if (playlistId != null) {
+                                        Toast.makeText(context, "Imported mixtape '${selectedFile.nameWithoutExtension}'!", Toast.LENGTH_SHORT).show()
+                                        onImported?.invoke(playlistId)
+                                    } else {
+                                        Toast.makeText(context, "Could not match tracks from '${selectedFile.name}'", Toast.LENGTH_LONG).show()
                                     }
                                 }
                             }

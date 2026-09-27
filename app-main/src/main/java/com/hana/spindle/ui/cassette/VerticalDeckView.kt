@@ -1923,14 +1923,14 @@ class VerticalDeckView @JvmOverloads constructor(
         )
 
         // 11. Specular Hot-Stamped Metallic Foil Stamping on Cassette Shell
-        val isSony = (theme.id == com.hana.spindle.theme.CassetteTheme.SONY_METAL_XR.id || theme.name.contains("Metal-XR", ignoreCase = true))
+        val isMetalXr = (theme.id == com.hana.spindle.theme.CassetteTheme.METAL_XR_TYPE4.id || theme.name.contains("Metal-XR", ignoreCase = true))
         val isTdk = (theme.id == com.hana.spindle.theme.CassetteTheme.TDK_SA_90.id)
         val isMaxell = (theme.id == com.hana.spindle.theme.CassetteTheme.MAXELL_XLII.id)
         val isBasf = (theme.id == com.hana.spindle.theme.CassetteTheme.BASF_CHROME.id)
 
-        if (isSony || isTdk || isMaxell || isBasf) {
+        if (isMetalXr || isTdk || isMaxell || isBasf) {
             val foilBrand = when {
-                isSony -> "SONY METAL-XR • TYPE IV METAL"
+                isMetalXr -> "EXTRALLOY METAL-XR • TYPE IV METAL"
                 isTdk -> "TDK SA-90 • HIGH BIAS"
                 isMaxell -> "MAXELL XLII-S • HIGH BIAS"
                 else -> "BASF CHROME EXTRA II"
@@ -1938,8 +1938,8 @@ class VerticalDeckView @JvmOverloads constructor(
             val foilX = cassetteRect.left + cw * 0.35f
             val foilY = cassetteRect.top + ch * 0.045f
 
-            val foilColor1 = if (isSony) Color.parseColor("#EF4444") else if (isTdk) Color.parseColor("#FEF08A") else if (isMaxell) Color.parseColor("#FFFFFF") else Color.parseColor("#FEF08A")
-            val foilColor2 = if (isSony) Color.parseColor("#F59E0B") else if (isTdk) Color.parseColor("#D4AF37") else if (isMaxell) Color.parseColor("#94A3B8") else Color.parseColor("#EAB308")
+            val foilColor1 = if (isMetalXr) Color.parseColor("#EF4444") else if (isTdk) Color.parseColor("#FEF08A") else if (isMaxell) Color.parseColor("#FFFFFF") else Color.parseColor("#FEF08A")
+            val foilColor2 = if (isMetalXr) Color.parseColor("#F59E0B") else if (isTdk) Color.parseColor("#D4AF37") else if (isMaxell) Color.parseColor("#94A3B8") else Color.parseColor("#EAB308")
 
             foilBadgePaint.shader = LinearGradient(
                 foilX, foilY, foilX + cw * 0.38f, foilY,
@@ -2232,6 +2232,11 @@ class VerticalDeckView @JvmOverloads constructor(
      * Draws a cassette spindle hub with metallic teeth, inner axle cap, and spinning orange marker notch.
      */
     private fun drawHubMechanism(canvas: Canvas, cx: Float, cy: Float, radius: Float, rotationAngle: Float) {
+        if (theme.id == CassetteTheme.REEL_TO_REEL_STUDIO.id) {
+            drawStudioNabHub(canvas, cx, cy, radius, rotationAngle)
+            return
+        }
+
         // Outer silver gear ring
         canvas.drawCircle(cx, cy, radius, hubRimPaint)
 
@@ -2264,6 +2269,62 @@ class VerticalDeckView @JvmOverloads constructor(
         val dimpleR = innerRadius * 0.055f
         for (j in 0 until 3) {
             val dAngle = Math.toRadians(j * 120.0)
+            val dx = cx + (dimpleDist * Math.cos(dAngle)).toFloat()
+            val dy = cy + (dimpleDist * Math.sin(dAngle)).toFloat()
+            canvas.drawCircle(dx, dy, dimpleR, hubClutchDimplePaint)
+        }
+
+        canvas.restore()
+    }
+
+    /**
+     * Draws an authentic 10.5" Studio Reel-to-Reel NAB locking hub adapter.
+     * Features:
+     * - Machined aluminum clamping collar with knurled outer rim
+     * - 3 heavy-duty 120° NAB drive latches / locking wings
+     * - Concentric brushed lathe scorelines
+     * - High-contrast studio anodized locking knob with center chrome spindle pip
+     */
+    private fun drawStudioNabHub(canvas: Canvas, cx: Float, cy: Float, radius: Float, rotationAngle: Float) {
+        // Outer machined aluminum clamping collar
+        canvas.drawCircle(cx, cy, radius * 1.05f, hubRimPaint)
+        canvas.drawCircle(cx, cy, radius * 0.95f, tapeTexturePaint)
+
+        canvas.save()
+        canvas.rotate(rotationAngle, cx, cy)
+
+        // 3 Heavy-duty NAB Locking Flange Wings (120° apart)
+        val wingW = radius * 0.32f
+        val wingH = radius * 0.46f
+        for (i in 0 until 3) {
+            tempRectF.set(cx - wingW * 0.5f, cy - radius * 1.02f, cx + wingW * 0.5f, cy - radius * 1.02f + wingH)
+            canvas.drawRoundRect(tempRectF, 3f, 3f, hubTeethPaint)
+            // Latch release notch inside wing
+            val notchW = wingW * 0.40f
+            val notchH = wingH * 0.35f
+            tempRectF.set(cx - notchW * 0.5f, cy - radius * 0.95f, cx + notchW * 0.5f, cy - radius * 0.95f + notchH)
+            canvas.drawRoundRect(tempRectF, 1.5f, 1.5f, hubInnerCapPaint)
+            canvas.rotate(120f, cx, cy)
+        }
+
+        // Inner machined aluminum hub body
+        val innerRadius = radius * 0.72f
+        canvas.drawCircle(cx, cy, innerRadius, hubInnerCapPaint)
+        canvas.drawCircle(cx, cy, innerRadius * 0.85f, tapeTexturePaint)
+
+        // Studio Tangerine Anodized Center Locking Knob
+        val knobRadius = innerRadius * 0.52f
+        canvas.drawCircle(cx, cy, knobRadius, orangeNotchPaint)
+
+        // Center Chrome Spindle Pin & Core
+        canvas.drawCircle(cx, cy, knobRadius * 0.50f, hubRimPaint)
+        canvas.drawCircle(cx, cy, knobRadius * 0.22f, hubCenterPipPaint)
+
+        // 3 Knurled Grip Recesses on Locking Knob
+        val dimpleDist = knobRadius * 0.65f
+        val dimpleR = knobRadius * 0.12f
+        for (j in 0 until 3) {
+            val dAngle = Math.toRadians(j * 120.0 + 30.0)
             val dx = cx + (dimpleDist * Math.cos(dAngle)).toFloat()
             val dy = cy + (dimpleDist * Math.sin(dAngle)).toFloat()
             canvas.drawCircle(dx, dy, dimpleR, hubClutchDimplePaint)
@@ -2989,40 +3050,70 @@ class VerticalDeckView @JvmOverloads constructor(
         canvas.save()
         canvas.rotate(rotationAngle, cx, cy)
 
-        // 1. Anisotropic Specular Sheen (2 opposing radial glare cones at 0° and 180°)
-        for (cone in 0..1) {
-            val baseAngle = cone * 180.0
-            for (lineOffset in -1..1) {
-                val rad = Math.toRadians(baseAngle + lineOffset * 9.0)
-                val cos = Math.cos(rad).toFloat()
-                val sin = Math.sin(rad).toFloat()
+        if (theme.id == CassetteTheme.REEL_TO_REEL_STUDIO.id) {
+            // 10.5" Studio Aluminum Master Reel:
+            // 3 Large Ampex/Revox circular flange cutout windows revealing the oxide pack beneath
+            val cutoutDist = innerR + (outerR - innerR) * 0.48f
+            val cutoutRadius = ((outerR - innerR) * 0.24f).coerceIn(4f, 14f)
+            for (s in 0 until 3) {
+                val sAngle = Math.toRadians(s * 120.0)
+                val mx = cx + (cutoutDist * Math.cos(sAngle)).toFloat()
+                val my = cy + (cutoutDist * Math.sin(sAngle)).toFloat()
+                // Outer chamfer ring of cutout
+                canvas.drawCircle(mx, my, cutoutRadius + 1.5f, tapeTexturePaint)
+                // Cutout hole revealing tape pack depth
+                canvas.drawCircle(mx, my, cutoutRadius, hubInnerCapPaint)
+            }
+
+            // Radial lathe turning sheen lines at 60° increments
+            for (ray in 0 until 6) {
+                val rAngle = Math.toRadians(ray * 60.0)
+                val cos = Math.cos(rAngle).toFloat()
+                val sin = Math.sin(rAngle).toFloat()
                 canvas.drawLine(
-                    cx + innerR * cos,
-                    cy + innerR * sin,
-                    cx + outerR * cos,
-                    cy + outerR * sin,
+                    cx + innerR * 1.08f * cos,
+                    cy + innerR * 1.08f * sin,
+                    cx + (outerR - 2f) * cos,
+                    cy + (outerR - 2f) * sin,
                     tapeSpoolSheenPaint
                 )
             }
-        }
+        } else {
+            // 1. Anisotropic Specular Sheen (2 opposing radial glare cones at 0° and 180°)
+            for (cone in 0..1) {
+                val baseAngle = cone * 180.0
+                for (lineOffset in -1..1) {
+                    val rad = Math.toRadians(baseAngle + lineOffset * 9.0)
+                    val cos = Math.cos(rad).toFloat()
+                    val sin = Math.sin(rad).toFloat()
+                    canvas.drawLine(
+                        cx + innerR * cos,
+                        cy + innerR * sin,
+                        cx + outerR * cos,
+                        cy + outerR * sin,
+                        tapeSpoolSheenPaint
+                    )
+                }
+            }
 
-        // 2. Three Classic Reel Flange Spoke Windows / Strobe Cutouts (at 0°, 120°, 240°)
-        val spokeR = innerR + (outerR - innerR) * 0.38f
-        val markerRadius = ((outerR - innerR) * 0.12f).coerceIn(2.5f, 6.0f)
-        for (s in 0 until 3) {
-            val sAngle = Math.toRadians(s * 120.0)
-            val mx = cx + (spokeR * Math.cos(sAngle)).toFloat()
-            val my = cy + (spokeR * Math.sin(sAngle)).toFloat()
-            canvas.drawCircle(mx, my, markerRadius, spoolFlangeSpokePaint)
-        }
+            // 2. Three Classic Reel Flange Spoke Windows / Strobe Cutouts (at 0°, 120°, 240°)
+            val spokeR = innerR + (outerR - innerR) * 0.38f
+            val markerRadius = ((outerR - innerR) * 0.12f).coerceIn(2.5f, 6.0f)
+            for (s in 0 until 3) {
+                val sAngle = Math.toRadians(s * 120.0)
+                val mx = cx + (spokeR * Math.cos(sAngle)).toFloat()
+                val my = cy + (spokeR * Math.sin(sAngle)).toFloat()
+                canvas.drawCircle(mx, my, markerRadius, spoolFlangeSpokePaint)
+            }
 
-        // 3. Spool Tape Anchor Clamp Notch (holds tape to hub core)
-        val clampAngle = Math.toRadians(45.0)
-        val clampX = cx + (innerR * Math.cos(clampAngle)).toFloat()
-        val clampY = cy + (innerR * Math.sin(clampAngle)).toFloat()
-        val clampOuterX = cx + ((innerR + (outerR - innerR) * 0.28f) * Math.cos(clampAngle)).toFloat()
-        val clampOuterY = cy + ((innerR + (outerR - innerR) * 0.28f) * Math.sin(clampAngle)).toFloat()
-        canvas.drawLine(clampX, clampY, clampOuterX, clampOuterY, spoolFlangeSpokePaint)
+            // 3. Spool Tape Anchor Clamp Notch (holds tape to hub core)
+            val clampAngle = Math.toRadians(45.0)
+            val clampX = cx + (innerR * Math.cos(clampAngle)).toFloat()
+            val clampY = cy + (innerR * Math.sin(clampAngle)).toFloat()
+            val clampOuterX = cx + ((innerR + (outerR - innerR) * 0.28f) * Math.cos(clampAngle)).toFloat()
+            val clampOuterY = cy + ((innerR + (outerR - innerR) * 0.28f) * Math.sin(clampAngle)).toFloat()
+            canvas.drawLine(clampX, clampY, clampOuterX, clampOuterY, spoolFlangeSpokePaint)
+        }
 
         canvas.restore()
     }

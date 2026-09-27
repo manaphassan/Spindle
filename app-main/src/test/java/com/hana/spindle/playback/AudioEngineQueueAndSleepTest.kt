@@ -1,6 +1,6 @@
 package com.hana.spindle.playback
 
-import com.hana.spindle.data.db.SongEntity
+import com.hana.spindle.data.db.TrackEntity
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -8,8 +8,8 @@ import org.junit.Test
 
 class AudioEngineQueueAndSleepTest {
 
-    private fun createDummySong(id: Long, title: String): SongEntity {
-        return SongEntity(
+    private fun createDummySong(id: Long, title: String): TrackEntity {
+        return TrackEntity(
             id = id,
             title = title,
             artist = "Test Artist",
@@ -125,9 +125,9 @@ class AudioEngineQueueAndSleepTest {
         val ids = presets.map { it.id }
         assertEquals(ids.distinct().size, ids.size)
 
-        val sony = presets.find { it.id == com.hana.spindle.theme.CassetteTheme.SONY_METAL_XR.id }
-        assertTrue(sony != null)
-        assertEquals("Sony Metal-XR", sony!!.name)
+        val metalXr = presets.find { it.id == com.hana.spindle.theme.CassetteTheme.METAL_XR_TYPE4.id }
+        assertTrue(metalXr != null)
+        assertEquals("Metal-XR Type IV", metalXr!!.name)
 
         val tdk = presets.find { it.id == com.hana.spindle.theme.CassetteTheme.TDK_SA_90.id }
         assertTrue(tdk != null)
@@ -163,8 +163,8 @@ class AudioEngineQueueAndSleepTest {
             return routeBadge
         }
 
-        assertEquals("• USB DIRECT", getFormattedBadge("USB DAC (Bit-Perfect Direct)", true))
-        assertEquals("• USB DAC", getFormattedBadge("USB DAC (Bit-Perfect Direct)", false))
+        assertEquals("• USB DIRECT", getFormattedBadge("USB DAC (Hi-Res Passthrough)", true))
+        assertEquals("• USB DAC", getFormattedBadge("USB DAC (Hi-Res Passthrough)", false))
         assertEquals("• 3.5mm DIRECT", getFormattedBadge("3.5mm Headphone Jack (Hi-Res)", true))
         assertEquals("• 3.5mm", getFormattedBadge("3.5mm Headphone Jack (Hi-Res)", false))
         assertEquals("• BT", getFormattedBadge("Bluetooth Audio (LDAC)", true))

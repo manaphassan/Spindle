@@ -15,7 +15,7 @@ import androidx.room.Index
             onDelete = ForeignKey.CASCADE
         ),
         ForeignKey(
-            entity = SongEntity::class,
+            entity = TrackEntity::class,
             parentColumns = ["id"],
             childColumns = ["songId"],
             onDelete = ForeignKey.CASCADE

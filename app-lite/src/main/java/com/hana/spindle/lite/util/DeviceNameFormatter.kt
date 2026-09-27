@@ -27,7 +27,7 @@ object DeviceNameFormatter {
 
     /**
      * Resolves the hardware manufacturer and model cleanly without repetition.
-     * Examples: "SONY ERICSSON ST17i", "SONY SO-02J", "FIIO M11"
+     * Examples: "FIIO M11", "IBASSO DX160", "ASTELL&KERN SR25"
      */
     fun getHardwareDeviceName(): String {
         val manufacturer = Build.MANUFACTURER.orEmpty().trim()

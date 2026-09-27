@@ -17,12 +17,12 @@ class ThemeManager(context: Context) {
         if (themeVer < 2) {
             prefs.edit()
                 .putInt("theme_version", 2)
-                .putString("selected_theme_id", CassetteTheme.SONY_METAL_XR.id)
+                .putString("selected_theme_id", CassetteTheme.METAL_XR_TYPE4.id)
                 .apply()
-            return CassetteTheme.SONY_METAL_XR
+            return CassetteTheme.METAL_XR_TYPE4
         }
-        val savedId = prefs.getString("selected_theme_id", CassetteTheme.SONY_METAL_XR.id)
-        return CassetteTheme.ALL_PRESETS.find { it.id == savedId } ?: CassetteTheme.SONY_METAL_XR
+        val savedId = prefs.getString("selected_theme_id", CassetteTheme.METAL_XR_TYPE4.id)
+        return CassetteTheme.ALL_PRESETS.find { it.id == savedId } ?: CassetteTheme.METAL_XR_TYPE4
     }
 
     fun setTheme(theme: CassetteTheme) {

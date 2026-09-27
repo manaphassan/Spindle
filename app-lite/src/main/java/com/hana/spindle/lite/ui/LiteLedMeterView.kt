@@ -15,7 +15,7 @@ import kotlin.math.sin
 /**
  * 60 FPS Hardware-Accelerated Dual-Channel Stereo Dynamic Hi-Fi VU & Peak Meter.
  * Designed to mount directly alongside the cassette deck.
- * Inspired by vintage studio cassette mastering decks (Nakamichi Dragon, Revox B215, Sony TC-K777).
+ * Inspired by vintage studio cassette mastering decks (Nakamichi Dragon, Revox B215, Technics RS-M95).
  *
  * Features:
  * - Dual L / R stereo vertical columns with independent ballistics (10ms attack, 1.2s decay, peak-hold markers).

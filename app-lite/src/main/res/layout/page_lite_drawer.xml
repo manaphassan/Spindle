@@ -948,7 +948,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:fontFamily="monospace"
-                        android:text="DEVICE: SONY ERICSSON ST17I (SATSUMA)"
+                        android:text="DEVICE: VINTAGE HARDWARE"
                         android:textColor="@color/lite_text_secondary"
                         android:textSize="8.5sp" />
 

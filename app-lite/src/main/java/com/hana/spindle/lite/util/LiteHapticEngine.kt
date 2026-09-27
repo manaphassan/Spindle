@@ -5,7 +5,7 @@ import android.os.Vibrator
 
 /**
  * Zero-allocation Mechanical Solenoid & Transport Relay Haptic Engine for Spindle Lite.
- * Engineered for Android 4.4 KitKat on the Sony Ericsson Xperia active.
+ * Engineered for Android 4.4 KitKat on compact vintage hardware.
  * Simulates the physical tactile weight of high-end analog tape deck solenoids,
  * pinch-roller latching, and cassette door damping springs.
  */

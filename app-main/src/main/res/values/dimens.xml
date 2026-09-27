@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Standard Spacing Scale (8-Point Grid System) -->
+    <dimen name="spacing_xxs">2dp</dimen>
+    <dimen name="spacing_xs">4dp</dimen>
+    <dimen name="spacing_s">8dp</dimen>
+    <dimen name="spacing_m">12dp</dimen>
+    <dimen name="spacing_l">16dp</dimen>
+    <dimen name="spacing_xl">20dp</dimen>
+    <dimen name="spacing_xxl">24dp</dimen>
+    <dimen name="spacing_xxxl">32dp</dimen>
+
+    <!-- Standard Icon Bounding Boxes (ui-consistency rule 4) -->
+    <dimen name="icon_compact">16dp</dimen>
+    <dimen name="icon_standard">20dp</dimen>
+    <dimen name="icon_prominent">24dp</dimen>
+    <dimen name="touch_target_min">48dp</dimen>
+
+    <!-- Standard Corner Radii -->
+    <dimen name="corner_radius_xs">4dp</dimen>
+    <dimen name="corner_radius_s">6dp</dimen>
+    <dimen name="corner_radius_m">8dp</dimen>
+    <dimen name="corner_radius_l">12dp</dimen>
+    <dimen name="corner_radius_pill">16dp</dimen>
+    <dimen name="corner_radius_circle">24dp</dimen>
+
+    <!-- Standard Typography Scale (Integers only - no fractional sp) -->
+    <dimen name="text_size_caption">10sp</dimen>
+    <dimen name="text_size_badge">11sp</dimen>
+    <dimen name="text_size_secondary">12sp</dimen>
+    <dimen name="text_size_body">14sp</dimen>
+    <dimen name="text_size_subhead">15sp</dimen>
+    <dimen name="text_size_title">16sp</dimen>
+    <dimen name="text_size_header">18sp</dimen>
+    <dimen name="text_size_headline">24sp</dimen>
+</resources>

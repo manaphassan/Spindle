@@ -13,7 +13,7 @@ import android.widget.TextView
 import android.widget.Toast
 import com.hana.spindle.SpindleApp
 import com.hana.spindle.data.TagParser
-import com.hana.spindle.data.db.SongEntity
+import com.hana.spindle.data.db.TrackEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -25,8 +25,8 @@ object TagInspectorDialog {
 
     fun show(
         context: Context,
-        song: SongEntity,
-        onMetadataUpdated: ((SongEntity) -> Unit)? = null
+        song: TrackEntity,
+        onMetadataUpdated: ((TrackEntity) -> Unit)? = null
     ) {
         val dialog = Dialog(context)
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
@@ -209,7 +209,7 @@ object TagInspectorDialog {
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
                         val app = context.applicationContext as SpindleApp
-                        app.database.songDao().updateSongMetadata(
+                        app.database.trackDao().updateTrackMetadata(
                             id = song.id,
                             title = newTitle,
                             artist = newArtist,

@@ -9,7 +9,7 @@
         android:id="@+id/viewPager"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/wm2_red" />
+        android:background="@color/surface_dark" />
 
     <FrameLayout
         android:id="@+id/catalogContainer"
@@ -43,7 +43,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="12:45"
-                android:textColor="#90FFFFFF"
+                android:textColor="@color/text_primary"
                 android:textSize="54sp"
                 android:fontFamily="monospace"
                 android:textStyle="bold" />
@@ -52,17 +52,17 @@
                 android:id="@+id/tvAmbientTrack"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Spindle Ambient Deck"
-                android:textColor="#60FFFFFF"
-                android:textSize="13.5sp"
+                android:text="@string/ambient_default_track"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp"
                 android:fontFamily="sans-serif-medium"
                 android:layout_marginTop="8dp" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="● Double-tap anywhere to wake ●"
-                android:textColor="#40FFFFFF"
+                android:text="@string/ambient_tap_to_wake"
+                android:textColor="@color/text_secondary"
                 android:textSize="11sp"
                 android:fontFamily="monospace"
                 android:layout_marginTop="28dp" />

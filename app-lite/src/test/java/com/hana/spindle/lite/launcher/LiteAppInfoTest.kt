@@ -38,7 +38,7 @@ class LiteAppInfoTest {
             LiteAppInfo("Browser", "com.android.browser", "com.android.browser.BrowserActivity", isSystemApp = true),
             LiteAppInfo("Gallery", "com.android.gallery3d", "com.android.gallery3d.app.Gallery", isSystemApp = true),
             LiteAppInfo("Spindle Lite", "com.hana.spindle.lite", "com.hana.spindle.lite.ui.LiteMainActivity", isSystemApp = false),
-            LiteAppInfo("Walkman", "com.sonyericsson.music", "com.sonyericsson.music.MusicActivity", isSystemApp = false)
+            LiteAppInfo("TapeDeck", "com.retro.music", "com.retro.music.MusicActivity", isSystemApp = false)
         )
 
         // Empty query returns all
@@ -51,9 +51,9 @@ class LiteAppInfoTest {
         assertEquals("Spindle Lite", nameFilter[0].label)
 
         // Package query
-        val pkgFilter = apps.filter { it.packageName.lowercase().contains("sonyericsson") }
+        val pkgFilter = apps.filter { it.packageName.lowercase().contains("retro") }
         assertEquals(1, pkgFilter.size)
-        assertEquals("Walkman", pkgFilter[0].label)
+        assertEquals("TapeDeck", pkgFilter[0].label)
     }
 
     @Test

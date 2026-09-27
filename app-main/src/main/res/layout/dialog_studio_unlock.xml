@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@color/surface_container"
+    android:padding="20dp">
+
+    <!-- Top Bar: Title & Close Button -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="8dp">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvStudioTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/studio_dialog_title"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.04" />
+
+            <TextView
+                android:id="@+id/tvStudioSubtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/studio_dialog_subtitle"
+                android:textColor="@color/vfd_amber"
+                android:textSize="10sp"
+                android:fontFamily="monospace"
+                android:textStyle="bold"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/btnStudioClose"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            app:tint="@color/text_secondary"
+            android:contentDescription="@string/action_close" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/border_subtle"
+        android:layout_marginBottom="14dp" />
+
+    <!-- Anti-Subscription Manifesto Box -->
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cardCornerRadius="8dp"
+        app:cardBackgroundColor="@color/surface_recessed"
+        app:cardElevation="0dp"
+        android:layout_marginBottom="14dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <TextView
+                android:id="@+id/tvStudioStatusBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/studio_badge_free"
+                android:textColor="@color/vfd_emerald"
+                android:textSize="11sp"
+                android:fontFamily="monospace"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvStudioPolicyDesc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/studio_policy_desc"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- Included Features Checklist -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginBottom="16dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="STUDIO COLLECTOR SUITE INCLUDES:"
+            android:textColor="@color/text_muted"
+            android:textSize="10sp"
+            android:fontFamily="monospace"
+            android:textStyle="bold"
+            android:layout_marginBottom="6dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="✔ Analog Tape Saturation &amp; Tube Harmonics DSP"
+            android:textColor="@color/text_primary"
+            android:textSize="12sp"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="✔ Custom Laser Nameplate Deck Engraving"
+            android:textColor="@color/text_primary"
+            android:textSize="12sp"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="✔ Procedural Cassette Foley Engine (Mechanical Clacks)"
+            android:textColor="@color/text_primary"
+            android:textSize="12sp"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="✔ Studio Collector Skins &amp; Open Reel-to-Reel Decks"
+            android:textColor="@color/text_primary"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <!-- Google Play Purchase Button -->
+    <Button
+        android:id="@+id/btnStudioGooglePlay"
+        android:layout_width="match_parent"
+        android:layout_height="42dp"
+        android:text="@string/studio_btn_google_play"
+        android:textColor="@color/white"
+        android:textStyle="bold"
+        android:textSize="12sp"
+        android:backgroundTint="@color/metal81_red"
+        app:cornerRadius="8dp"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:layout_marginBottom="14dp" />
+
+    <!-- Offline Sponsor Token Redemption Row -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="OFFLINE SPONSOR KEY REDEMPTION:"
+        android:textColor="@color/text_muted"
+        android:textSize="10sp"
+        android:fontFamily="monospace"
+        android:textStyle="bold"
+        android:layout_marginBottom="6dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="12dp">
+
+        <EditText
+            android:id="@+id/etStudioToken"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/bg_neumorphic_button"
+            android:backgroundTint="@color/surface_card"
+            android:hint="@string/studio_hint_token"
+            android:textColorHint="@color/text_secondary"
+            android:textColor="@color/text_primary"
+            android:textSize="11sp"
+            android:fontFamily="monospace"
+            android:paddingHorizontal="10dp"
+            android:singleLine="true" />
+
+        <Button
+            android:id="@+id/btnStudioRedeemToken"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_marginStart="8dp"
+            android:text="@string/studio_btn_redeem"
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            android:textSize="10sp"
+            android:backgroundTint="@color/vfd_emerald"
+            app:cornerRadius="6dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:paddingHorizontal="10dp" />
+    </LinearLayout>
+
+    <!-- Support Development Button -->
+    <Button
+        android:id="@+id/btnStudioSponsorLink"
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:text="@string/studio_btn_sponsor"
+        android:textColor="@color/text_secondary"
+        android:textSize="11sp"
+        android:backgroundTint="@color/surface_card"
+        app:cornerRadius="6dp"
+        android:insetTop="0dp"
+        android:insetBottom="0dp" />
+
+</LinearLayout>

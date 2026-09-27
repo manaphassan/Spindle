@@ -46,6 +46,12 @@ import com.hana.spindle.launcher.AppInfo
 import com.hana.spindle.launcher.AppListAdapter
 import com.hana.spindle.launcher.AppListLoader
 import com.hana.spindle.launcher.RecentAppsManager
+import com.hana.spindle.core.AudioDspConstants
+import com.hana.spindle.core.CrossfadeMode
+import com.hana.spindle.licensing.StudioUnlockManager
+import com.hana.spindle.licensing.StudioUnlockManager.StudioFeature
+import com.hana.spindle.core.ReplayGainMode
+import com.hana.spindle.playback.AudioFxController
 import com.hana.spindle.playback.RadioStation
 import com.hana.spindle.theme.CassetteTheme
 import com.hana.spindle.theme.ThemeManager
@@ -141,6 +147,7 @@ class DrawerFragment : Fragment() {
         setupRadioStationManager(app)
         setupAudioMetrics(app)
         setupLibraryRescan(app)
+        setupStudioCollectorSuite()
         setupAboutGithub()
     }
 
@@ -320,6 +327,12 @@ class DrawerFragment : Fragment() {
         }
 
         // 2. 10-Band ISO Graphic Equalizer View setup
+        val bandsText = if (fxController.isHardwareInterpolated) {
+            "${fxController.hardwareBandsCount} active hardware bands detected (interpolated to 10 ISO)"
+        } else {
+            "${fxController.hardwareBandsCount} active hardware bands detected"
+        }
+        binding.tvEqHardwareBands.text = bandsText
         binding.iso10BandEqView.setBands(fxController.isoBandsGainDb)
         binding.iso10BandEqView.onBandsChanged = { gains ->
             fxController.setAllIsoBands(gains)
@@ -383,6 +396,38 @@ class DrawerFragment : Fragment() {
             it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
             val msg = if (newLocked) "EQ & DSP Locked (Protected against accidental touches)" else "EQ & DSP Unlocked"
             Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+        }
+
+        // 2c. Parametric EQ Mode Toggle
+        fun updateEqModeVisual(isParametric: Boolean) {
+            binding.btnEqMode.text = if (isParametric) "PARAMETRIC" else "GRAPHIC"
+            binding.btnEqMode.setTextColor(
+                Color.parseColor(if (isParametric) "#00E676" else "#38BDF8")
+            )
+            binding.btnEqMode.backgroundTintList = ColorStateList.valueOf(
+                Color.parseColor(if (isParametric) "#16261B" else "#1C1E26")
+            )
+            binding.iso10BandEqView.isParametricMode = isParametric
+        }
+        updateEqModeVisual(fxController.isParametricMode)
+
+        binding.btnEqMode.setOnClickListener {
+            if (fxController.isLocked) {
+                Toast.makeText(requireContext(), "EQ is locked. Tap UNLOCKED to switch mode.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            val newMode = !fxController.isParametricMode
+            fxController.setParametricMode(newMode)
+            updateEqModeVisual(newMode)
+            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            val msg = if (newMode) "Parametric EQ Mode Active (Tap/hold band to cycle Q-Factor)" else "Graphic EQ Mode Active (Standard ISO 1-Octave)"
+            Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+        }
+
+        binding.iso10BandEqView.onQChanged = { band, q ->
+            fxController.setBandQ(band, q)
+            val bandLabel = if (band in AudioDspConstants.ISO_LABELS.indices) AudioDspConstants.ISO_LABELS[band] else "Band $band"
+            Toast.makeText(requireContext(), "$bandLabel Q set to ${String.format(Locale.US, "%.1f", q)}", Toast.LENGTH_SHORT).show()
         }
 
         // 3. AutoEq Target Profile Buttons
@@ -497,7 +542,33 @@ class DrawerFragment : Fragment() {
         binding.switchBypass.setOnCheckedChangeListener { _, isChecked ->
             fxController.setBypass(isChecked)
             updateBypassVisuals(isChecked)
-            val msg = if (isChecked) "Bit-Perfect Direct ALSA Bypass Active (0.00% DSP Distortion)" else "DSP Equalization & Target Profile Enabled"
+            val msg = if (isChecked) "Hi-Res Passthrough Active (DSP Bypassed)" else "DSP Equalization & Target Profile Enabled"
+            Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+        }
+
+        // 5b. Harmonic Analog Tape Saturation Switch (Studio Collector)
+        binding.switchTapeSaturation.isChecked = app.audioEngine.isTapeSaturationEnabled
+        binding.switchTapeSaturation.setOnCheckedChangeListener { buttonView, isChecked ->
+            if (isChecked && !StudioUnlockManager.isFeatureUnlocked(
+                    requireContext(),
+                    StudioFeature.ANALOG_TAPE_SATURATION
+                )
+            ) {
+                buttonView.isChecked = false
+                Toast.makeText(
+                    requireContext(),
+                    "Studio Collector Required: Harmonic Analog Tape Saturation DSP",
+                    Toast.LENGTH_LONG
+                ).show()
+                DialogStudioUnlock(requireContext()) {
+                    setupStudioCollectorSuite()
+                    binding.switchTapeSaturation.isChecked = app.audioEngine.isTapeSaturationEnabled
+                }.show()
+                return@setOnCheckedChangeListener
+            }
+            app.audioEngine.setTapeSaturation(isChecked)
+            app.audioEngine.foleyEngine.playSwitchSnap()
+            val msg = if (isChecked) "Harmonic Tape Saturation Active (+3.2dB @ 63Hz Warmth)" else "Tape Saturation DSP Disabled"
             Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
         }
 
@@ -561,8 +632,9 @@ class DrawerFragment : Fragment() {
                 launch {
                     audioEngine.playbackState.collectLatest { state ->
                         _binding?.let { b ->
-                            if (state.currentSong != null) {
-                                b.tvDjTrackTitle.text = "${state.currentSong.title} • ${state.currentSong.artist}"
+                            val currentTrack = state.currentTrack
+                            if (currentTrack != null) {
+                                b.tvDjTrackTitle.text = "${currentTrack.title} • ${currentTrack.artist}"
                             } else {
                                 b.tvDjTrackTitle.text = "Spindle Direct ALSA / DSD DAC"
                             }
@@ -627,8 +699,8 @@ class DrawerFragment : Fragment() {
         _binding?.let { b ->
             if (isBypass) {
                 b.tvBypassTitle.setTextColor(Color.parseColor("#00E676"))
-                b.tvBypassTitle.text = "● BIT-PERFECT DIRECT BYPASS (ACTIVE)"
-                b.tvBypassSub.text = "DSP processing completely disabled for uncolored 0.00% distortion"
+                b.tvBypassTitle.text = "● HI-RES PASSTHROUGH (ACTIVE)"
+                b.tvBypassSub.text = "DSP processing bypassed for direct device passthrough"
                 b.knobLow.alpha = 0.35f
                 b.knobMid.alpha = 0.35f
                 b.knobHi.alpha = 0.35f
@@ -639,8 +711,8 @@ class DrawerFragment : Fragment() {
                 b.layoutAutoEqPills.alpha = 0.35f
             } else {
                 b.tvBypassTitle.setTextColor(Color.WHITE)
-                b.tvBypassTitle.text = "BIT-PERFECT DIRECT BYPASS"
-                b.tvBypassSub.text = "0.00% DSP distortion direct ALSA bypass for USB DACs"
+                b.tvBypassTitle.text = "HI-RES PASSTHROUGH (DEVICE-DEPENDENT)"
+                b.tvBypassSub.text = "Bypass DSP effects for native hardware passthrough where supported"
                 b.knobLow.alpha = 1.0f
                 b.knobMid.alpha = 1.0f
                 b.knobHi.alpha = 1.0f
@@ -696,7 +768,7 @@ class DrawerFragment : Fragment() {
             (requireActivity().application as? SpindleApp)?.audioEngine?.foleyEngine?.playCarriageEject()
         }
 
-        binding.btnThemeSonyMetal.setOnClickListener { switchTheme(CassetteTheme.SONY_METAL_XR) }
+        binding.btnThemeMetalXr.setOnClickListener { switchTheme(CassetteTheme.METAL_XR_TYPE4) }
         binding.btnThemeDark.setOnClickListener { switchTheme(CassetteTheme.DARK) }
         binding.btnThemeLight.setOnClickListener { switchTheme(CassetteTheme.LIGHT) }
         binding.btnThemeEink.setOnClickListener { switchTheme(CassetteTheme.MONOCHROME_EINK) }
@@ -704,6 +776,25 @@ class DrawerFragment : Fragment() {
         binding.btnThemeMaxell.setOnClickListener { switchTheme(CassetteTheme.MAXELL_XLII) }
         binding.btnThemeBasf.setOnClickListener { switchTheme(CassetteTheme.BASF_CHROME) }
         binding.btnThemeSkeleton.setOnClickListener { switchTheme(CassetteTheme.SKELETON_REEL) }
+        binding.btnThemeStudioReel.setOnClickListener {
+            if (!StudioUnlockManager.isFeatureUnlocked(
+                    requireContext(),
+                    StudioFeature.STUDIO_REEL_SKINS
+                )
+            ) {
+                Toast.makeText(
+                    requireContext(),
+                    "Studio Collector Required: 10.5\" Aluminum Reel-to-Reel Master Deck",
+                    Toast.LENGTH_LONG
+                ).show()
+                DialogStudioUnlock(requireContext()) {
+                    setupStudioCollectorSuite()
+                    updateThemeButtonsVisual()
+                }.show()
+                return@setOnClickListener
+            }
+            switchTheme(CassetteTheme.REEL_TO_REEL_STUDIO)
+        }
     }
 
     private fun updateThemeButtonsVisual() {
@@ -711,7 +802,7 @@ class DrawerFragment : Fragment() {
         val isEink = curId == CassetteTheme.MONOCHROME_EINK.id
         val activeColor = ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#F97316"))
 
-        binding.btnThemeSonyMetal.backgroundTintList = if (curId == CassetteTheme.SONY_METAL_XR.id) activeColor else ColorStateList.valueOf(Color.parseColor("#18191E"))
+        binding.btnThemeMetalXr.backgroundTintList = if (curId == CassetteTheme.METAL_XR_TYPE4.id) activeColor else ColorStateList.valueOf(Color.parseColor("#18191E"))
         binding.btnThemeDark.backgroundTintList = if (curId == CassetteTheme.DARK.id) activeColor else ColorStateList.valueOf(Color.parseColor("#202334"))
         binding.btnThemeLight.backgroundTintList = if (curId == CassetteTheme.LIGHT.id) activeColor else ColorStateList.valueOf(Color.parseColor("#E5E5E2"))
         binding.btnThemeEink.backgroundTintList = if (isEink) activeColor else ColorStateList.valueOf(Color.parseColor("#000000"))
@@ -720,6 +811,7 @@ class DrawerFragment : Fragment() {
         binding.btnThemeMaxell.backgroundTintList = if (curId == CassetteTheme.MAXELL_XLII.id) activeColor else ColorStateList.valueOf(Color.parseColor("#261E14"))
         binding.btnThemeBasf.backgroundTintList = if (curId == CassetteTheme.BASF_CHROME.id) activeColor else ColorStateList.valueOf(Color.parseColor("#1F2421"))
         binding.btnThemeSkeleton.backgroundTintList = if (curId == CassetteTheme.SKELETON_REEL.id) activeColor else ColorStateList.valueOf(Color.parseColor("#261418"))
+        binding.btnThemeStudioReel.backgroundTintList = if (curId == CassetteTheme.REEL_TO_REEL_STUDIO.id) activeColor else ColorStateList.valueOf(Color.parseColor("#241B14"))
 
         binding.tvActiveThemeName.text = themeManager.currentTheme.value.name
     }
@@ -731,6 +823,18 @@ class DrawerFragment : Fragment() {
         binding.switchLockscreenPlayer.isChecked = prefs.getBoolean("pref_lockscreen_player", true)
         binding.switchLockscreenPlayer.setOnCheckedChangeListener { _, isChecked ->
             prefs.edit().putBoolean("pref_lockscreen_player", isChecked).apply()
+        }
+
+        // 0b. DAP Physical Button Mode
+        binding.switchDapHardwareMode.isChecked = prefs.getBoolean("pref_dap_hardware_mode", false)
+        binding.switchDapHardwareMode.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean("pref_dap_hardware_mode", isChecked).apply()
+            val msg = if (isChecked) {
+                "DAP Hardware Mode Active: Physical buttons & wheel prioritized"
+            } else {
+                "DAP Hardware Mode Disabled"
+            }
+            Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
         }
 
         // 1. Volume Long-Press Skip
@@ -788,14 +892,77 @@ class DrawerFragment : Fragment() {
         }
 
         // 7. ReplayGain Loudness Calibration
-        binding.switchReplayGain.isChecked = app.audioEngine.isReplayGainEnabled
-        binding.switchReplayGain.setOnCheckedChangeListener { _, isChecked ->
-            app.audioEngine.setReplayGainEnabled(isChecked)
-            Toast.makeText(
-                requireContext(),
-                if (isChecked) "ReplayGain 89dB Calibration Active" else "ReplayGain Normalization Disabled",
-                Toast.LENGTH_SHORT
-            ).show()
+        fun updateReplayGainPills(mode: ReplayGainMode) {
+            val isOff = mode == ReplayGainMode.OFF
+            val isTrack = mode == ReplayGainMode.TRACK
+            val isAlbum = mode == ReplayGainMode.ALBUM
+
+            binding.btnRgOff.setTextColor(if (isOff) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnRgOff.backgroundTintList = ColorStateList.valueOf(if (isOff) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+
+            binding.btnRgTrack.setTextColor(if (isTrack) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnRgTrack.backgroundTintList = ColorStateList.valueOf(if (isTrack) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+
+            binding.btnRgAlbum.setTextColor(if (isAlbum) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnRgAlbum.backgroundTintList = ColorStateList.valueOf(if (isAlbum) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+        }
+
+        updateReplayGainPills(app.audioEngine.replayGainMode)
+
+        binding.btnRgOff.setOnClickListener {
+            app.audioEngine.setReplayGainMode(ReplayGainMode.OFF)
+            updateReplayGainPills(ReplayGainMode.OFF)
+            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            Toast.makeText(requireContext(), "ReplayGain Disabled", Toast.LENGTH_SHORT).show()
+        }
+        binding.btnRgTrack.setOnClickListener {
+            app.audioEngine.setReplayGainMode(ReplayGainMode.TRACK)
+            updateReplayGainPills(ReplayGainMode.TRACK)
+            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            Toast.makeText(requireContext(), "ReplayGain Track Gain Active (89 dB)", Toast.LENGTH_SHORT).show()
+        }
+        binding.btnRgAlbum.setOnClickListener {
+            app.audioEngine.setReplayGainMode(ReplayGainMode.ALBUM)
+            updateReplayGainPills(ReplayGainMode.ALBUM)
+            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            Toast.makeText(requireContext(), "ReplayGain Album Gain Active (89 dB)", Toast.LENGTH_SHORT).show()
+        }
+
+        // 8. Track Transition & Crossfade Mode
+        fun updateCrossfadePills(mode: CrossfadeMode) {
+            val isGapless = mode == CrossfadeMode.GAPLESS
+            val isFade2s = mode == CrossfadeMode.CROSSFADE_2S
+            val isFade4s = mode == CrossfadeMode.CROSSFADE_4S
+
+            binding.btnTransGapless.setTextColor(if (isGapless) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnTransGapless.backgroundTintList = ColorStateList.valueOf(if (isGapless) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+
+            binding.btnTransFade2s.setTextColor(if (isFade2s) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnTransFade2s.backgroundTintList = ColorStateList.valueOf(if (isFade2s) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+
+            binding.btnTransFade4s.setTextColor(if (isFade4s) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnTransFade4s.backgroundTintList = ColorStateList.valueOf(if (isFade4s) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+        }
+
+        updateCrossfadePills(app.audioEngine.crossfadeMode)
+
+        binding.btnTransGapless.setOnClickListener {
+            app.audioEngine.setCrossfadeMode(CrossfadeMode.GAPLESS)
+            updateCrossfadePills(CrossfadeMode.GAPLESS)
+            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            Toast.makeText(requireContext(), "Gapless Playback Enabled (0s)", Toast.LENGTH_SHORT).show()
+        }
+        binding.btnTransFade2s.setOnClickListener {
+            app.audioEngine.setCrossfadeMode(CrossfadeMode.CROSSFADE_2S)
+            updateCrossfadePills(CrossfadeMode.CROSSFADE_2S)
+            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            Toast.makeText(requireContext(), "Crossfade Transition Enabled (2s)", Toast.LENGTH_SHORT).show()
+        }
+        binding.btnTransFade4s.setOnClickListener {
+            app.audioEngine.setCrossfadeMode(CrossfadeMode.CROSSFADE_4S)
+            updateCrossfadePills(CrossfadeMode.CROSSFADE_4S)
+            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            Toast.makeText(requireContext(), "Crossfade Transition Enabled (4s)", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -1335,7 +1502,7 @@ class DrawerFragment : Fragment() {
                             b.tvMetricBtStatus.setTextColor(if (isEink) Color.BLACK else Color.parseColor("#71717A"))
                             b.tvMetricBtDevice.text = "No Bluetooth Device Connected"
                             b.tvMetricBtDevice.setTextColor(if (isEink) Color.BLACK else Color.parseColor("#A1A1AA"))
-                            b.tvMetricBtBattery.text = "Direct ALSA / 3.5mm DAC Active"
+                            b.tvMetricBtBattery.text = "Internal / 3.5mm DAC Active"
                             b.tvMetricBtBattery.setTextColor(if (isEink) Color.BLACK else Color.parseColor("#71717A"))
                         }
 
@@ -1343,13 +1510,13 @@ class DrawerFragment : Fragment() {
                         if (metrics.jackType != null) {
                             b.layoutJackTelemetry.visibility = View.VISIBLE
                             b.tvMetricJackType.text = metrics.jackType
-                            b.tvMetricJackCapabilities.text = metrics.jackCapabilities ?: "Direct ALSA DAC • 16-32bit / up to 384kHz"
+                            b.tvMetricJackCapabilities.text = metrics.jackCapabilities ?: "Hardware DAC • 16-32bit / up to 384kHz"
                         } else {
                             b.layoutJackTelemetry.visibility = View.GONE
                         }
 
                         if (metrics.isBitPerfect) {
-                            b.tvBitPerfectBadge.text = "BIT-PERFECT NATIVE"
+                            b.tvBitPerfectBadge.text = "● HI-RES PASSTHROUGH"
                             b.tvBitPerfectBadge.setTextColor(if (isEink) Color.BLACK else Color.parseColor("#00E676"))
                         } else {
                             b.tvBitPerfectBadge.text = "AudioFlinger Resampled"
@@ -1382,6 +1549,76 @@ class DrawerFragment : Fragment() {
             } catch (e: Exception) {
                 Toast.makeText(requireContext(), "Donate via PayPal: https://paypal.me/manaphassan", Toast.LENGTH_LONG).show()
             }
+        }
+    }
+
+    private fun setupStudioCollectorSuite() {
+        fun updateBadge() {
+            val isUnlocked = StudioUnlockManager.isStudioUnlocked(requireContext())
+            if (isUnlocked) {
+                binding.tvStudioStatusCardBadge.text = getString(R.string.studio_badge_unlocked)
+                binding.tvStudioStatusCardBadge.setTextColor(Color.parseColor("#00E676"))
+            } else {
+                binding.tvStudioStatusCardBadge.text = getString(R.string.studio_badge_free)
+                binding.tvStudioStatusCardBadge.setTextColor(Color.parseColor("#38BDF8"))
+            }
+            updateThemeButtonsVisual()
+            (requireActivity().application as? SpindleApp)?.audioEngine?.let { engine ->
+                binding.switchTapeSaturation.isChecked = engine.isTapeSaturationEnabled
+            }
+        }
+
+        updateBadge()
+
+        binding.btnManageStudioPass.setOnClickListener {
+            DialogStudioUnlock(requireContext()) {
+                updateBadge()
+            }.show()
+        }
+
+        binding.btnCustomLaserEngraving.setOnClickListener {
+            if (!StudioUnlockManager.isFeatureUnlocked(
+                    requireContext(),
+                    StudioFeature.LASER_NAMEPLATE_ENGRAVING
+                )
+            ) {
+                Toast.makeText(requireContext(), getString(R.string.studio_nameplate_locked_prompt), Toast.LENGTH_LONG).show()
+                DialogStudioUnlock(requireContext()) {
+                    updateBadge()
+                }.show()
+                return@setOnClickListener
+            }
+
+            val input = EditText(requireContext()).apply {
+                hint = getString(R.string.studio_nameplate_hint)
+                val current = requireContext().getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+                    .getString("pref_custom_device_name", null)
+                setText(current ?: com.hana.spindle.util.DeviceUtils.getHardwareDeviceName())
+                setSingleLine(true)
+                setTextColor(Color.WHITE)
+                setPadding(32, 24, 32, 24)
+            }
+
+            AlertDialog.Builder(requireContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                .setTitle(getString(R.string.studio_nameplate_title))
+                .setView(input)
+                .setPositiveButton(getString(R.string.action_done)) { _, _ ->
+                    val customName = input.text.toString().trim().uppercase()
+                    requireContext().getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+                        .edit()
+                        .putString("pref_custom_device_name", customName)
+                        .apply()
+                    Toast.makeText(requireContext(), getString(R.string.studio_nameplate_saved), Toast.LENGTH_SHORT).show()
+                }
+                .setNegativeButton(getString(R.string.action_close), null)
+                .setNeutralButton(getString(R.string.action_reset)) { _, _ ->
+                    requireContext().getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+                        .edit()
+                        .remove("pref_custom_device_name")
+                        .apply()
+                    Toast.makeText(requireContext(), "Hardware nameplate reset to default", Toast.LENGTH_SHORT).show()
+                }
+                .show()
         }
     }
 

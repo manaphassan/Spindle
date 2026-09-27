@@ -2,10 +2,11 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#12131A"
+    android:background="@color/surface_container"
     android:paddingTop="12dp"
     android:paddingBottom="16dp">
 
@@ -14,7 +15,7 @@
         android:layout_width="40dp"
         android:layout_height="4dp"
         android:layout_gravity="center_horizontal"
-        android:background="#334155"
+        android:background="@color/divider"
         android:layout_marginBottom="14dp" />
 
     <!-- Header Row: Title, Meta Info, and Clear Upcoming Button -->
@@ -35,9 +36,9 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="UP NEXT • PLAYBACK QUEUE"
-                android:textColor="#F97316"
-                android:textSize="11.5sp"
+                android:text="@string/queue_header_title"
+                android:textColor="@color/brand_orange"
+                android:textSize="12sp"
                 android:fontFamily="monospace"
                 android:textStyle="bold" />
 
@@ -45,9 +46,9 @@
                 android:id="@+id/tvQueueSummary"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="0 Tracks • 00:00 Remaining"
-                android:textColor="#94A3B8"
-                android:textSize="12.5sp"
+                tools:text="0 Tracks • 00:00 Remaining"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp"
                 android:layout_marginTop="2dp" />
         </LinearLayout>
 
@@ -55,11 +56,11 @@
             android:id="@+id/btnClearUpcoming"
             android:layout_width="wrap_content"
             android:layout_height="32dp"
-            android:text="CLEAR UPCOMING"
-            android:textColor="#FB7185"
-            android:textSize="10.5sp"
+            android:text="@string/queue_clear_upcoming"
+            android:textColor="@color/brand_pink"
+            android:textSize="11sp"
             android:textStyle="bold"
-            android:backgroundTint="#241B26"
+            android:backgroundTint="@color/surface_card"
             android:insetTop="0dp"
             android:insetBottom="0dp"
             android:paddingHorizontal="10dp"
@@ -70,7 +71,7 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#1E202C" />
+        android:background="@color/divider" />
 
     <!-- Empty State -->
     <TextView
@@ -78,8 +79,8 @@
         android:layout_width="match_parent"
         android:layout_height="180dp"
         android:gravity="center"
-        android:text="No songs in playback queue\nSelect tracks from the catalog to build your queue."
-        android:textColor="#64748B"
+        android:text="@string/queue_empty_message"
+        android:textColor="@color/text_secondary"
         android:textSize="13sp"
         android:lineSpacingMultiplier="1.2"
         android:visibility="gone" />

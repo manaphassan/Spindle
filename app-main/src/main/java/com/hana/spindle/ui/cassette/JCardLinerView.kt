@@ -14,7 +14,7 @@ import android.widget.FrameLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.hana.spindle.R
-import com.hana.spindle.data.db.SongEntity
+import com.hana.spindle.data.db.TrackEntity
 import com.hana.spindle.theme.CassetteTheme
 import java.util.Locale
 import java.util.concurrent.TimeUnit
@@ -23,7 +23,7 @@ import kotlin.math.ceil
 /**
  * Custom Hardware-accelerated View recreating an authentic folded paper Cassette J-Card.
  * Displays:
- * 1. Classic jewel case spine fold (Album, Artist, Tape model e.g. SONY METAL-XR 90, C-90).
+ * 1. Classic jewel case spine fold (Album, Artist, Tape model e.g. EXTRALLOY METAL-XR 90, C-90).
  * 2. Booklet fold (Cover Art thumbnail, FLAC / Bit-perfect specs, production notes).
  * 3. Side A / Side B dual-column track listing with A01/B01 numbering, active track indicator,
  *    and direct touch-to-play interaction.
@@ -54,7 +54,7 @@ class JCardLinerView @JvmOverloads constructor(
     var onTrackSelected: ((index: Int) -> Unit)? = null
     var onFlipBackClicked: (() -> Unit)? = null
 
-    private var fullQueue: List<SongEntity> = emptyList()
+    private var fullQueue: List<TrackEntity> = emptyList()
     private var activeQueueIndex: Int = -1
     private var showingSideB: Boolean = false
 
@@ -104,7 +104,7 @@ class JCardLinerView @JvmOverloads constructor(
     }
 
     fun setQueueData(
-        queue: List<SongEntity>,
+        queue: List<TrackEntity>,
         activeIndex: Int,
         albumCover: Bitmap?,
         audioFormat: String,
@@ -129,8 +129,8 @@ class JCardLinerView @JvmOverloads constructor(
         tvJCardAlbum.text = albumName
         tvJCardArtist.text = artistName
 
-        val isSony = (theme.id == CassetteTheme.SONY_METAL_XR.id || theme.name.contains("Metal-XR", ignoreCase = true))
-        val tapeModelName = if (isSony) "SONY METAL-XR 90 • TYPE IV" else "${theme.name.uppercase()} • C-90"
+        val isMetalXr = (theme.id == CassetteTheme.METAL_XR_TYPE4.id || theme.name.contains("Metal-XR", ignoreCase = true))
+        val tapeModelName = if (isMetalXr) "EXTRALLOY METAL-XR 90 • TYPE IV" else "${theme.name.uppercase()} • C-90"
         tvSpineTapeModel.text = tapeModelName
 
         val fmt = if (audioFormat.isNotBlank()) audioFormat else "FLAC 24-bit / 96kHz"
@@ -162,7 +162,7 @@ class JCardLinerView @JvmOverloads constructor(
 
     private fun updateSideSelection() {
         val splitIndex = getSplitIndex(fullQueue.size)
-        val sideTracks: List<Pair<Int, SongEntity>>
+        val sideTracks: List<Pair<Int, TrackEntity>>
         val sidePrefix: String
 
         if (!showingSideB) {
@@ -196,12 +196,12 @@ class JCardLinerView @JvmOverloads constructor(
     // Inner Adapter for J-Card Track Items
     private class JCardTrackAdapter : RecyclerView.Adapter<JCardTrackAdapter.TrackViewHolder>() {
 
-        private val items = mutableListOf<Pair<Int, SongEntity>>()
+        private val items = mutableListOf<Pair<Int, TrackEntity>>()
         private var activeIdx = -1
         private var prefix = "A"
         var onItemClicked: ((Int) -> Unit)? = null
 
-        fun submitTracks(tracks: List<Pair<Int, SongEntity>>, active: Int, sidePrefix: String) {
+        fun submitTracks(tracks: List<Pair<Int, TrackEntity>>, active: Int, sidePrefix: String) {
             items.clear()
             items.addAll(tracks)
             activeIdx = active

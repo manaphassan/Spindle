@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="#15161A"
+    android:background="@color/surface_container"
     android:padding="20dp">
 
     <!-- Header & Close -->
@@ -19,7 +19,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="SORT &amp; GROUP LIBRARY"
+            android:text="@string/dialog_sort_group_title"
             android:textColor="@color/text_primary"
             android:textSize="15sp"
             android:textStyle="bold"
@@ -29,11 +29,11 @@
             android:id="@+id/btnDoneSort"
             android:layout_width="wrap_content"
             android:layout_height="32dp"
-            android:text="DONE"
+            android:text="@string/action_done"
             android:textSize="11sp"
             android:textStyle="bold"
             android:textColor="@color/white"
-            android:backgroundTint="@color/wm2_red"
+            android:backgroundTint="@color/brand_orange"
             android:paddingHorizontal="14dp"
             android:insetTop="0dp"
             android:insetBottom="0dp"
@@ -43,15 +43,15 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#24262E"
+        android:background="@color/divider"
         android:layout_marginVertical="12dp" />
 
     <!-- Section 1: Sort Order -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="SORT ORDER"
-        android:textColor="#64748B"
+        android:text="@string/section_sort_order"
+        android:textColor="@color/text_secondary"
         android:textSize="11sp"
         android:textStyle="bold"
         android:letterSpacing="0.1" />
@@ -65,15 +65,15 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#24262E"
+        android:background="@color/divider"
         android:layout_marginVertical="12dp" />
 
     <!-- Section 2: Grouping Mode -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="GROUP BY"
-        android:textColor="#64748B"
+        android:text="@string/section_group_by"
+        android:textColor="@color/text_secondary"
         android:textSize="11sp"
         android:textStyle="bold"
         android:letterSpacing="0.1" />

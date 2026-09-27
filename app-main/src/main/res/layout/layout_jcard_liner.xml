@@ -9,13 +9,13 @@
     android:layout_margin="10dp"
     app:cardCornerRadius="14dp"
     app:cardElevation="8dp"
-    app:cardBackgroundColor="#16171D">
+    app:cardBackgroundColor="@color/surface_container">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:background="#16171D">
+        android:background="@color/surface_container">
 
         <!-- 1. Cassette Case J-Card Spine Fold (Top Header) -->
         <LinearLayout
@@ -24,7 +24,7 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:background="#1E202A"
+            android:background="@color/surface_card"
             android:paddingHorizontal="14dp"
             android:paddingVertical="10dp">
 
@@ -32,11 +32,11 @@
                 android:id="@+id/btnFlipToDeck"
                 android:layout_width="wrap_content"
                 android:layout_height="32dp"
-                android:text="◀ FLIP"
-                android:textColor="#E59825"
+                android:text="@string/jcard_btn_flip"
+                android:textColor="@color/brand_orange"
                 android:textSize="11sp"
                 android:textStyle="bold"
-                android:backgroundTint="#2D2F3E"
+                android:backgroundTint="@color/surface_elevated"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
                 android:paddingHorizontal="10dp"
@@ -55,7 +55,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="monospace"
-                    android:textColor="#FAFAF9"
+                    android:textColor="@color/text_primary"
                     android:textSize="12sp"
                     android:textStyle="bold"
                     android:ellipsize="end"
@@ -67,9 +67,9 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="monospace"
-                    android:textColor="#94A3B8"
-                    android:textSize="10.5sp"
-                    tools:text="SONY METAL-XR 90 • TYPE IV 70µs" />
+                    android:textColor="@color/text_secondary"
+                    android:textSize="11sp"
+                    tools:text="EXTRALLOY METAL-XR 90 • TYPE IV 70µs" />
             </LinearLayout>
 
             <TextView
@@ -77,7 +77,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="monospace"
-                android:textColor="#E59825"
+                android:textColor="@color/brand_orange"
                 android:textSize="11sp"
                 android:textStyle="bold"
                 tools:text="C-90" />
@@ -87,7 +87,7 @@
         <View
             android:layout_width="match_parent"
             android:layout_height="2dp"
-            android:background="#2E3344" />
+            android:background="@color/divider" />
 
         <!-- 2. Album Booklet Section (Cover Art + Specs + Notes) -->
         <LinearLayout
@@ -95,7 +95,7 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:padding="14dp"
-            android:background="#181921">
+            android:background="@color/surface_recessed">
 
             <!-- Square Album Art Frame with vintage border -->
             <androidx.cardview.widget.CardView
@@ -103,7 +103,7 @@
                 android:layout_height="84dp"
                 app:cardCornerRadius="8dp"
                 app:cardElevation="2dp"
-                app:cardBackgroundColor="#242634">
+                app:cardBackgroundColor="@color/surface_elevated">
 
                 <ImageView
                     android:id="@+id/ivJCardCover"
@@ -127,7 +127,7 @@
                     android:id="@+id/tvJCardAlbum"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textColor="#FAFAF9"
+                    android:textColor="@color/text_primary"
                     android:textSize="15sp"
                     android:textStyle="bold"
                     android:ellipsize="end"
@@ -138,7 +138,7 @@
                     android:id="@+id/tvJCardArtist"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textColor="#EF4444"
+                    android:textColor="@color/brand_orange"
                     android:textSize="13sp"
                     android:textStyle="bold"
                     android:ellipsize="end"
@@ -149,7 +149,7 @@
                     android:id="@+id/tvJCardAudioSpecs"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textColor="#94A3B8"
+                    android:textColor="@color/text_secondary"
                     android:textSize="11sp"
                     android:fontFamily="monospace"
                     android:layout_marginTop="3dp"
@@ -159,8 +159,8 @@
                     android:id="@+id/tvJCardTapeNotes"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textColor="#CBD5E1"
-                    android:textSize="10.5sp"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="11sp"
                     android:fontFamily="monospace"
                     android:layout_marginTop="2dp"
                     tools:text="Mastered for Spindle DAP • 12 Tracks" />
@@ -171,25 +171,25 @@
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:background="#2E3344" />
+            android:background="@color/divider" />
 
         <!-- 3. Side A / Side B Ribbon Tab Selector -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="36dp"
             android:orientation="horizontal"
-            android:background="#1C1D26">
+            android:background="@color/surface_card">
 
             <Button
                 android:id="@+id/btnSideA"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:text="SIDE A"
-                android:textColor="#EF4444"
-                android:textSize="11.5sp"
+                android:text="@string/cassette_side_a"
+                android:textColor="@color/brand_orange"
+                android:textSize="11sp"
                 android:textStyle="bold"
-                android:backgroundTint="#242635"
+                android:backgroundTint="@color/surface_elevated"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
                 android:padding="0dp"
@@ -198,18 +198,18 @@
             <View
                 android:layout_width="1dp"
                 android:layout_height="match_parent"
-                android:background="#2E3344" />
+                android:background="@color/divider" />
 
             <Button
                 android:id="@+id/btnSideB"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:text="SIDE B"
-                android:textColor="#94A3B8"
-                android:textSize="11.5sp"
+                android:text="@string/cassette_side_b"
+                android:textColor="@color/text_secondary"
+                android:textSize="11sp"
                 android:textStyle="bold"
-                android:backgroundTint="#1C1D26"
+                android:backgroundTint="@color/surface_card"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
                 android:padding="0dp"
@@ -219,7 +219,7 @@
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:background="#2E3344" />
+            android:background="@color/divider" />
 
         <!-- 4. Scrollable Tracklist for Selected Side -->
         <androidx.recyclerview.widget.RecyclerView
@@ -235,7 +235,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:background="#181921"
+            android:background="@color/surface_recessed"
             android:paddingHorizontal="14dp"
             android:paddingVertical="8dp">
 
@@ -243,11 +243,11 @@
                 android:id="@+id/btnFlipBackBottom"
                 android:layout_width="match_parent"
                 android:layout_height="38dp"
-                android:text="◀ FLIP BACK TO CASSETTE DECK"
-                android:textColor="#FAFAF9"
+                android:text="@string/jcard_flip_back"
+                android:textColor="@color/text_primary"
                 android:textSize="12sp"
                 android:textStyle="bold"
-                android:backgroundTint="#2B2D3C"
+                android:backgroundTint="@color/surface_elevated"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
                 app:cornerRadius="8dp" />

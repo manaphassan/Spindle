@@ -4,6 +4,8 @@ import android.content.Context
 import android.media.AudioAttributes
 import android.media.SoundPool
 import android.util.Log
+import com.hana.spindle.licensing.StudioUnlockManager
+import com.hana.spindle.licensing.StudioUnlockManager.StudioFeature
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -50,6 +52,9 @@ class CassetteFoleyEngine(private val context: Context) {
     private var isLoaded = false
 
     var isEnabled: Boolean = true
+
+    val isProceduralUnlocked: Boolean
+        get() = StudioUnlockManager.isFeatureUnlocked(context, StudioFeature.PROCEDURAL_FOLEY)
 
     init {
         val prefs = context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
@@ -103,34 +108,44 @@ class CassetteFoleyEngine(private val context: Context) {
     }
 
     fun playSolenoidClack() {
-        playSound(SOUND_PLAY_SOLENOID, 0.45f)
+        val vol = if (isProceduralUnlocked) 0.45f else 0.25f
+        playSound(SOUND_PLAY_SOLENOID, vol)
     }
 
     fun playReleaseClick() {
-        playSound(SOUND_STOP_RELEASE, 0.40f)
+        val vol = if (isProceduralUnlocked) 0.40f else 0.20f
+        playSound(SOUND_STOP_RELEASE, vol)
     }
 
     fun playMotorSpool() {
-        playSound(SOUND_MOTOR_SPOOL, 0.35f)
+        val vol = if (isProceduralUnlocked) 0.35f else 0.20f
+        playSound(SOUND_MOTOR_SPOOL, vol)
     }
 
     fun playCarriageEject() {
-        playSound(SOUND_CARRIAGE_EJECT, 0.50f)
+        val vol = if (isProceduralUnlocked) 0.50f else 0.25f
+        playSound(SOUND_CARRIAGE_EJECT, vol)
     }
 
     fun playSwitchSnap() {
-        playSound(SOUND_SWITCH_SNAP, 0.38f)
+        val vol = if (isProceduralUnlocked) 0.38f else 0.20f
+        playSound(SOUND_SWITCH_SNAP, vol)
     }
 
     fun startMotorSpoolLoop(initialPitch: Float = 0.9f): Int {
         if (!isEnabled || !isLoaded) return 0
+        if (!isProceduralUnlocked) {
+            // Free Core tier: single subtle mechanical spool burst without continuous motor looping or pitch-ramping
+            playSound(SOUND_MOTOR_SPOOL, 0.25f)
+            return 0
+        }
         val sp = soundPool ?: return 0
         val soundId = soundIdMap[SOUND_MOTOR_SPOOL] ?: return 0
         return sp.play(soundId, 0.38f, 0.38f, 2, -1, initialPitch.coerceIn(0.5f, 2.0f))
     }
 
     fun setMotorSpoolPitch(streamId: Int, pitch: Float) {
-        if (streamId == 0) return
+        if (streamId == 0 || !isProceduralUnlocked) return
         soundPool?.setRate(streamId, pitch.coerceIn(0.5f, 2.0f))
     }
 
@@ -140,8 +155,12 @@ class CassetteFoleyEngine(private val context: Context) {
     }
 
     fun playAutoStopClack() {
-        playSound(SOUND_PLAY_SOLENOID, 0.55f)
-        playSound(SOUND_STOP_RELEASE, 0.45f)
+        if (isProceduralUnlocked) {
+            playSound(SOUND_PLAY_SOLENOID, 0.55f)
+            playSound(SOUND_STOP_RELEASE, 0.45f)
+        } else {
+            playSound(SOUND_STOP_RELEASE, 0.25f)
+        }
     }
 
     private fun playSound(soundKey: Int, volume: Float) {

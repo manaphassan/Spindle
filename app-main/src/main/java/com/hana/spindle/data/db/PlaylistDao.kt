@@ -40,8 +40,29 @@ interface PlaylistDao {
         WHERE ps.playlistId = :playlistId
         ORDER BY ps.orderIndex ASC, s.title ASC
     """)
-    fun getSongsForPlaylist(playlistId: Long): Flow<List<SongEntity>>
+    fun getTracksForPlaylist(playlistId: Long): Flow<List<TrackEntity>>
+
+    fun getSongsForPlaylist(playlistId: Long): Flow<List<TrackEntity>> = getTracksForPlaylist(playlistId)
+
+    @Query("SELECT * FROM playlists WHERE id = :playlistId LIMIT 1")
+    suspend fun getPlaylistById(playlistId: Long): PlaylistEntity?
+
+    @Query("SELECT * FROM playlists WHERE name = :name LIMIT 1")
+    suspend fun getPlaylistByName(name: String): PlaylistEntity?
 
     @Query("SELECT COUNT(*) FROM playlist_songs WHERE playlistId = :playlistId")
     suspend fun getPlaylistTrackCount(playlistId: Long): Int
+
+    @Query("UPDATE playlist_songs SET orderIndex = :newOrder WHERE playlistId = :playlistId AND songId = :trackId")
+    suspend fun updateTrackOrder(playlistId: Long, trackId: Long, newOrder: Long)
+
+    @Transaction
+    suspend fun reorderPlaylist(playlistId: Long, trackIds: List<Long>) {
+        trackIds.forEachIndexed { index, trackId ->
+            updateTrackOrder(playlistId, trackId, index.toLong())
+        }
+    }
+
+    suspend fun addTrackToPlaylist(crossRef: PlaylistSongCrossRef) = addSongToPlaylist(crossRef)
+    suspend fun removeTrackFromPlaylist(playlistId: Long, trackId: Long) = removeSongFromPlaylist(playlistId, trackId)
 }

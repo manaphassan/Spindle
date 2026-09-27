@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="#15161A"
+    android:background="@color/surface_container"
     android:padding="20dp">
 
     <!-- Header & Close -->
@@ -19,9 +19,9 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="AUDIOPHILE FILE TELEMETRY"
+            android:text="@string/specs_title"
             android:textColor="@color/text_primary"
-            android:textSize="14.5sp"
+            android:textSize="15sp"
             android:textStyle="bold"
             android:letterSpacing="0.08" />
 
@@ -29,11 +29,11 @@
             android:id="@+id/btnCloseSpecs"
             android:layout_width="wrap_content"
             android:layout_height="32dp"
-            android:text="CLOSE"
+            android:text="@string/action_close"
             android:textSize="11sp"
             android:textStyle="bold"
             android:textColor="@color/white"
-            android:backgroundTint="#242630"
+            android:backgroundTint="@color/surface_elevated"
             android:paddingHorizontal="14dp"
             android:insetTop="0dp"
             android:insetBottom="0dp"
@@ -43,7 +43,7 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#24262E"
+        android:background="@color/divider"
         android:layout_marginVertical="12dp" />
 
     <!-- Audio Stream Specs Grid -->
@@ -51,15 +51,15 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:background="#1C1D24"
+        android:background="@color/surface_card"
         android:padding="14dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="STREAM SPECIFICATIONS"
-            android:textColor="#64748B"
-            android:textSize="10.5sp"
+            android:text="@string/specs_stream_header"
+            android:textColor="@color/text_secondary"
+            android:textSize="11sp"
             android:textStyle="bold"
             android:letterSpacing="0.1" />
 
@@ -78,8 +78,8 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="FORMAT / CODEC"
-                    android:textColor="#94A3B8"
+                    android:text="@string/specs_format_codec"
+                    android:textColor="@color/text_secondary"
                     android:textSize="10sp" />
 
                 <TextView
@@ -102,8 +102,8 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="BITRATE"
-                    android:textColor="#94A3B8"
+                    android:text="@string/specs_bitrate"
+                    android:textColor="@color/text_secondary"
                     android:textSize="10sp" />
 
                 <TextView
@@ -133,8 +133,8 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="SAMPLE RATE"
-                    android:textColor="#94A3B8"
+                    android:text="@string/specs_sample_rate"
+                    android:textColor="@color/text_secondary"
                     android:textSize="10sp" />
 
                 <TextView
@@ -157,8 +157,8 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="BIT DEPTH"
-                    android:textColor="#94A3B8"
+                    android:text="@string/specs_bit_depth"
+                    android:textColor="@color/text_secondary"
                     android:textSize="10sp" />
 
                 <TextView
@@ -188,8 +188,8 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="CHANNELS"
-                    android:textColor="#94A3B8"
+                    android:text="@string/specs_channels"
+                    android:textColor="@color/text_secondary"
                     android:textSize="10sp" />
 
                 <TextView
@@ -198,7 +198,7 @@
                     android:layout_height="wrap_content"
                     android:text="2 Channels (Stereo)"
                     android:textColor="@color/text_primary"
-                    android:textSize="12.5sp"
+                    android:textSize="12sp"
                     android:fontFamily="sans-serif-medium" />
             </LinearLayout>
 
@@ -212,7 +212,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="AUDIO QUALITY"
-                    android:textColor="#94A3B8"
+                    android:textColor="@color/text_secondary"
                     android:textSize="10sp" />
 
                 <TextView
@@ -221,7 +221,7 @@
                     android:layout_height="wrap_content"
                     android:text="Hi-Res Lossless Audio"
                     android:textColor="@color/vfd_emerald"
-                    android:textSize="12.5sp"
+                    android:textSize="12sp"
                     android:textStyle="bold" />
             </LinearLayout>
         </LinearLayout>
@@ -232,24 +232,24 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:background="#1C1D24"
+        android:background="@color/surface_card"
         android:padding="14dp"
         android:layout_marginTop="10dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="FILE &amp; METADATA STORAGE"
-            android:textColor="#64748B"
-            android:textSize="10.5sp"
+            android:text="@string/specs_fs_header"
+            android:textColor="@color/text_secondary"
+            android:textSize="11sp"
             android:textStyle="bold"
             android:letterSpacing="0.1" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="FILE PATH"
-            android:textColor="#94A3B8"
+            android:text="@string/specs_location_uri"
+            android:textColor="@color/text_secondary"
             android:textSize="10sp"
             android:layout_marginTop="8dp" />
 
@@ -259,7 +259,7 @@
             android:layout_height="wrap_content"
             android:text="/storage/emulated/0/Music/track.flac"
             android:textColor="@color/text_primary"
-            android:textSize="11.5sp"
+            android:textSize="12sp"
             android:fontFamily="monospace"
             android:ellipsize="middle"
             android:singleLine="true" />
@@ -279,8 +279,8 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="FILE SIZE"
-                    android:textColor="#94A3B8"
+                    android:text="@string/specs_file_size"
+                    android:textColor="@color/text_secondary"
                     android:textSize="10sp" />
 
                 <TextView
@@ -289,7 +289,7 @@
                     android:layout_height="wrap_content"
                     android:text="48.3 MB"
                     android:textColor="@color/text_primary"
-                    android:textSize="12.5sp"
+                    android:textSize="12sp"
                     android:fontFamily="monospace" />
             </LinearLayout>
 
@@ -303,7 +303,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="LYRICS STATUS"
-                    android:textColor="#94A3B8"
+                    android:textColor="@color/text_secondary"
                     android:textSize="10sp" />
 
                 <TextView
@@ -312,7 +312,7 @@
                     android:layout_height="wrap_content"
                     android:text="Synchronized (.lrc)"
                     android:textColor="@color/vfd_emerald"
-                    android:textSize="12.5sp"
+                    android:textSize="12sp"
                     android:fontFamily="sans-serif-medium" />
             </LinearLayout>
         </LinearLayout>

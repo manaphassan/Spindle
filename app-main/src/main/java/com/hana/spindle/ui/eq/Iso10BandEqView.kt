@@ -9,6 +9,8 @@ import android.view.MotionEvent
 import android.view.View
 import com.hana.spindle.playback.AudioFxController
 import kotlin.math.abs
+import kotlin.math.exp
+import kotlin.math.ln
 
 /**
  * Audiophile 10-Band ISO Graphic Equalizer View.
@@ -39,6 +41,39 @@ class Iso10BandEqView @JvmOverloads constructor(
 
     var onBandsChanged: ((FloatArray) -> Unit)? = null
     var onBandDragFinished: (() -> Unit)? = null
+    var onQChanged: ((Int, Float) -> Unit)? = null
+
+    var isParametricMode: Boolean = false
+        set(value) {
+            if (field != value) {
+                field = value
+                invalidate()
+            }
+        }
+
+    val bandQValues = FloatArray(NUM_BANDS) { 1.414f }
+
+    fun setBandQ(band: Int, q: Float) {
+        if (band in 0 until NUM_BANDS) {
+            bandQValues[band] = q
+            invalidate()
+        }
+    }
+
+    fun cycleBandQ(band: Int): Float {
+        if (band !in 0 until NUM_BANDS) return 1.414f
+        val currentQ = bandQValues[band]
+        val nextQ = when {
+            currentQ < 1.0f -> 1.414f  // Wide (0.7) -> Normal (1.4)
+            currentQ < 2.0f -> 2.828f  // Normal (1.4) -> Narrow (2.8)
+            currentQ < 4.0f -> 5.0f    // Narrow (2.8) -> Surgical (5.0)
+            else -> 0.707f             // Surgical (5.0) -> Wide (0.7)
+        }
+        bandQValues[band] = nextQ
+        invalidate()
+        onQChanged?.invoke(band, nextQ)
+        return nextQ
+    }
 
     var isLocked: Boolean = false
         set(value) {
@@ -141,13 +176,35 @@ class Iso10BandEqView @JvmOverloads constructor(
         override fun onDoubleTap(e: MotionEvent): Boolean {
             val band = getBandIndexAtX(e.x)
             if (band in 0 until NUM_BANDS) {
-                bandGains[band] = 0f
-                invalidate()
-                onBandsChanged?.invoke(bandGains.clone())
-                onBandDragFinished?.invoke()
-                return true
+                if (isParametricMode) {
+                    cycleBandQ(band)
+                    performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                    return true
+                } else {
+                    bandGains[band] = 0f
+                    invalidate()
+                    onBandsChanged?.invoke(bandGains.clone())
+                    onBandDragFinished?.invoke()
+                    return true
+                }
             }
             return false
+        }
+
+        override fun onLongPress(e: MotionEvent) {
+            val band = getBandIndexAtX(e.x)
+            if (band in 0 until NUM_BANDS) {
+                if (isParametricMode) {
+                    cycleBandQ(band)
+                    performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                } else {
+                    bandGains[band] = 0f
+                    invalidate()
+                    onBandsChanged?.invoke(bandGains.clone())
+                    onBandDragFinished?.invoke()
+                    performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                }
+            }
         }
     })
 
@@ -223,29 +280,60 @@ class Iso10BandEqView @JvmOverloads constructor(
         // 1. Draw 0 dB reference line
         canvas.drawLine(0f, zeroY, width.toFloat(), zeroY, zeroLinePaint)
 
-        // 2. Compute Spline Curve Path
+        // 2. Compute Spline / Parametric Curve Path
         curvePath.reset()
         fillPath.reset()
         fillPath.moveTo(0f, zeroY)
 
-        val firstX = bandCentersX[0]
-        val firstY = gainToY(bandGains[0])
-        curvePath.moveTo(firstX, firstY)
-        fillPath.lineTo(firstX, firstY)
+        if (isParametricMode) {
+            val steps = 50
+            val logMin = ln(20.0)
+            val logMax = ln(20000.0)
+            for (step in 0..steps) {
+                val frac = step.toFloat() / steps
+                val currentX = frac * width
+                val currentF = exp(logMin + frac * (logMax - logMin))
+                var totalGain = 0f
+                for (i in 0 until NUM_BANDS) {
+                    val gain = bandGains[i]
+                    if (abs(gain) < 0.05f) continue
+                    val fc = AudioFxController.ISO_FREQUENCIES[i].toDouble()
+                    val q = bandQValues[i].toDouble()
+                    val logRatio = ln(currentF / fc)
+                    val bell = exp(-0.5 * (logRatio * q * 1.5) * (logRatio * q * 1.5)).toFloat()
+                    totalGain += gain * bell
+                }
+                val currentY = gainToY(totalGain.coerceIn(MIN_DB, MAX_DB))
+                if (step == 0) {
+                    curvePath.moveTo(currentX, currentY)
+                    fillPath.lineTo(currentX, currentY)
+                } else {
+                    curvePath.lineTo(currentX, currentY)
+                    fillPath.lineTo(currentX, currentY)
+                }
+            }
+            fillPath.lineTo(width.toFloat(), zeroY)
+            fillPath.close()
+        } else {
+            val firstX = bandCentersX[0]
+            val firstY = gainToY(bandGains[0])
+            curvePath.moveTo(firstX, firstY)
+            fillPath.lineTo(firstX, firstY)
 
-        for (i in 0 until NUM_BANDS - 1) {
-            val x1 = bandCentersX[i]
-            val y1 = gainToY(bandGains[i])
-            val x2 = bandCentersX[i + 1]
-            val y2 = gainToY(bandGains[i + 1])
-            val cx = (x1 + x2) / 2f
-            curvePath.cubicTo(cx, y1, cx, y2, x2, y2)
-            fillPath.cubicTo(cx, y1, cx, y2, x2, y2)
+            for (i in 0 until NUM_BANDS - 1) {
+                val x1 = bandCentersX[i]
+                val y1 = gainToY(bandGains[i])
+                val x2 = bandCentersX[i + 1]
+                val y2 = gainToY(bandGains[i + 1])
+                val cx = (x1 + x2) / 2f
+                curvePath.cubicTo(cx, y1, cx, y2, x2, y2)
+                fillPath.cubicTo(cx, y1, cx, y2, x2, y2)
+            }
+
+            val lastX = bandCentersX[NUM_BANDS - 1]
+            fillPath.lineTo(lastX, zeroY)
+            fillPath.close()
         }
-
-        val lastX = bandCentersX[NUM_BANDS - 1]
-        fillPath.lineTo(lastX, zeroY)
-        fillPath.close()
 
         // Draw curve glow fill and curve line
         if (!isEink) {
@@ -288,7 +376,22 @@ class Iso10BandEqView @JvmOverloads constructor(
             textPaint.color = if (isEink) Color.BLACK else (if (gain != 0f) textActiveColor else textMutedColor)
             textPaint.isFakeBoldText = gain != 0f
             if (i < labels.size) {
-                canvas.drawText(labels[i], cx, height - 8f * density, textPaint)
+                if (isParametricMode) {
+                    canvas.drawText(labels[i], cx, height - 12f * density, textPaint)
+                    val qFormatted = when {
+                        bandQValues[i] < 1.0f -> "Q:0.7"
+                        bandQValues[i] < 2.0f -> "Q:1.4"
+                        bandQValues[i] < 4.0f -> "Q:2.8"
+                        else -> "Q:5.0"
+                    }
+                    val oldSize = textPaint.textSize
+                    textPaint.textSize = 7f * density
+                    textPaint.color = if (isEink) Color.BLACK else Color.parseColor("#38BDF8")
+                    canvas.drawText(qFormatted, cx, height - 3f * density, textPaint)
+                    textPaint.textSize = oldSize
+                } else {
+                    canvas.drawText(labels[i], cx, height - 8f * density, textPaint)
+                }
             }
 
             // dB value label above fader if boosted/cut

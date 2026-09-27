@@ -2,7 +2,7 @@ package com.hana.spindle.data
 
 import android.media.MediaMetadataRetriever
 import android.os.Build
-import com.hana.spindle.data.db.SongEntity
+import com.hana.spindle.data.db.TrackEntity
 import java.io.File
 import java.util.Locale
 
@@ -13,7 +13,7 @@ import java.util.Locale
  */
 object TagParser {
 
-    fun parseSong(file: File): SongEntity? {
+    fun parseTrack(file: File): TrackEntity? {
         if (!file.exists() || !file.canRead()) return null
 
         val format = file.extension.uppercase(Locale.ROOT)
@@ -23,6 +23,8 @@ object TagParser {
         var title: String? = null
         var artist: String? = null
         var album: String? = null
+        var albumArtist: String? = null
+        var composer: String? = null
         var durationStr: String? = null
         var trackStr: String? = null
         var discStr: String? = null
@@ -34,8 +36,10 @@ object TagParser {
         try {
             retriever.setDataSource(file.absolutePath)
             title = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
+            albumArtist = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST)
+            composer = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_COMPOSER)
             artist = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
-                ?: retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST)
+                ?: albumArtist
             album = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM)
             durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
             trackStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_CD_TRACK_NUMBER)
@@ -133,7 +137,7 @@ object TagParser {
         val txtFile = File(file.parentFile, "${file.nameWithoutExtension}.txt")
         val hasLyrics = lrcFile.exists() || txtFile.exists()
 
-        return SongEntity(
+        return TrackEntity(
             title = title.trim(),
             artist = artist.trim(),
             album = album.trim(),
@@ -146,6 +150,12 @@ object TagParser {
             sampleRate = sampleRate,
             fileFormat = format,
             rating = 0,
+            isFavorite = false,
+            albumArtist = albumArtist?.trim(),
+            dateAdded = System.currentTimeMillis(),
+            playCount = 0,
+            lastPlayedAt = null,
+            composer = composer?.trim(),
             dateModified = file.lastModified(),
             bitrateKbps = bitrateKbps,
             hasLyrics = hasLyrics,
@@ -153,6 +163,9 @@ object TagParser {
             discNumber = discNumber
         )
     }
+
+    @Deprecated("Use parseTrack instead", ReplaceWith("parseTrack(file)"))
+    fun parseSong(file: File): TrackEntity? = parseTrack(file)
 
     private fun parseTrackNumber(raw: String?): Int {
         if (raw.isNullOrBlank()) return 0
@@ -183,25 +196,47 @@ object TagParser {
         }
     }
 
+    data class ReplayGainInfo(
+        val trackGainDb: Float = 0f,
+        val albumGainDb: Float = 0f
+    )
+
     /**
-     * Fast binary header inspection for ReplayGain track gain tags (FLAC, OGG, ID3v2 TXXX).
-     * Returns gain in dB (e.g. -4.5f), or 0.0f if untagged.
+     * Inspects audio file header for both Track Gain and Album Gain ReplayGain tags.
      */
-    fun extractReplayGainDb(file: File): Float {
-        if (!file.exists() || !file.canRead()) return 0f
+    fun extractReplayGainInfo(file: File): ReplayGainInfo {
+        if (!file.exists() || !file.canRead()) return ReplayGainInfo()
         return try {
             val readSize = minOf(file.length().toInt(), 16384)
-            if (readSize <= 0) return 0f
+            if (readSize <= 0) return ReplayGainInfo()
             val buffer = ByteArray(readSize)
             java.io.FileInputStream(file).use { fis ->
                 fis.read(buffer)
             }
             val text = String(buffer, Charsets.ISO_8859_1)
-            val pattern = Regex("(?i)REPLAYGAIN_TRACK_GAIN[=:]\\s*([+-]?[0-9]+(?:\\.[0-9]+)?)\\s*(?:dB)?")
-            val match = pattern.find(text)
-            match?.groupValues?.getOrNull(1)?.toFloatOrNull() ?: 0f
+            val trackPattern = Regex("(?i)REPLAYGAIN_TRACK_GAIN[=:]\\s*([+-]?[0-9]+(?:\\.[0-9]+)?)\\s*(?:dB)?")
+            val albumPattern = Regex("(?i)REPLAYGAIN_ALBUM_GAIN[=:]\\s*([+-]?[0-9]+(?:\\.[0-9]+)?)\\s*(?:dB)?")
+            val trackMatch = trackPattern.find(text)?.groupValues?.getOrNull(1)?.toFloatOrNull() ?: 0f
+            val albumMatch = albumPattern.find(text)?.groupValues?.getOrNull(1)?.toFloatOrNull() ?: 0f
+            ReplayGainInfo(trackGainDb = trackMatch, albumGainDb = albumMatch)
         } catch (e: Exception) {
-            0f
+            ReplayGainInfo()
+        }
+    }
+
+    /**
+     * Fast binary header inspection for ReplayGain track or album gain tags (FLAC, OGG, ID3v2 TXXX).
+     * Returns gain in dB (e.g. -4.5f), or 0.0f if untagged.
+     */
+    fun extractReplayGainDb(
+        file: File,
+        mode: com.hana.spindle.core.ReplayGainMode = com.hana.spindle.core.ReplayGainMode.TRACK
+    ): Float {
+        val info = extractReplayGainInfo(file)
+        return when (mode) {
+            com.hana.spindle.core.ReplayGainMode.OFF -> 0f
+            com.hana.spindle.core.ReplayGainMode.TRACK -> info.trackGainDb
+            com.hana.spindle.core.ReplayGainMode.ALBUM -> if (info.albumGainDb != 0f) info.albumGainDb else info.trackGainDb
         }
     }
 

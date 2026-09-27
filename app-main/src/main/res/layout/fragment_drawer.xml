@@ -24,7 +24,7 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1.15"
-            android:text="SOUND DECK"
+            android:text="@string/drawer_tab_sound_deck"
             android:textColor="@color/white"
             android:textSize="11sp"
             android:textStyle="bold"
@@ -41,7 +41,7 @@
             android:layout_height="match_parent"
             android:layout_weight="0.85"
             android:layout_marginStart="4dp"
-            android:text="APPS"
+            android:text="@string/drawer_tab_apps"
             android:textColor="#A1A1AA"
             android:textSize="11sp"
             android:textStyle="bold"
@@ -58,7 +58,7 @@
             android:layout_height="match_parent"
             android:layout_weight="1.0"
             android:layout_marginStart="4dp"
-            android:text="SETTINGS"
+            android:text="@string/drawer_tab_settings"
             android:textColor="#A1A1AA"
             android:textSize="11sp"
             android:textStyle="bold"
@@ -93,11 +93,11 @@
                 android:layout_marginBottom="10dp"
                 android:background="@drawable/bg_neumorphic_button"
                 android:backgroundTint="#121318"
-                android:hint="Search installed apps..."
+                android:hint="@string/drawer_search_apps_hint"
                 android:textColorHint="@color/text_secondary"
                 android:textColor="@color/text_primary"
                 android:paddingHorizontal="14dp"
-                android:textSize="12.5sp"
+                android:textSize="12sp"
                 android:singleLine="true" />
 
             <!-- Frame containing Single-Column List, Niagara Vernier Wave Rail, and Floating Callout -->
@@ -169,10 +169,10 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="STUDIO DSP &amp; PARAMETRIC EQ"
+                                android:text="@string/drawer_eq_title"
                                 android:textColor="#71717A"
                                 android:textStyle="bold"
-                                android:textSize="10.5sp"
+                                android:textSize="10sp"
                                 android:fontFamily="monospace" />
 
                             <Button
@@ -255,15 +255,30 @@
                                 android:gravity="center_vertical"
                                 android:layout_marginBottom="6dp">
 
-                                <TextView
+                                <LinearLayout
                                     android:layout_width="0dp"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1"
-                                    android:text="10-BAND ISO GRAPHIC EQUALIZER"
-                                    android:textColor="#71717A"
-                                    android:textStyle="bold"
-                                    android:textSize="9.5sp"
-                                    android:fontFamily="monospace" />
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/drawer_iso_eq_header"
+                                        android:textColor="#71717A"
+                                        android:textStyle="bold"
+                                        android:textSize="10sp"
+                                        android:fontFamily="monospace" />
+
+                                    <TextView
+                                        android:id="@+id/tvEqHardwareBands"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="5 active hardware bands detected"
+                                        android:textColor="#38BDF8"
+                                        android:textSize="8.5sp"
+                                        android:fontFamily="monospace" />
+                                </LinearLayout>
 
                                 <TextView
                                     android:id="@+id/tvEqHeadroom"
@@ -274,6 +289,22 @@
                                     android:textSize="9sp"
                                     android:fontFamily="monospace"
                                     android:layout_marginEnd="8dp" />
+
+                                <Button
+                                    android:id="@+id/btnEqMode"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="24dp"
+                                    android:text="GRAPHIC"
+                                    android:textColor="#38BDF8"
+                                    android:textSize="8.5sp"
+                                    android:textStyle="bold"
+                                    android:fontFamily="monospace"
+                                    android:backgroundTint="#1C1E26"
+                                    android:insetTop="0dp"
+                                    android:insetBottom="0dp"
+                                    android:paddingHorizontal="6dp"
+                                    android:layout_marginEnd="6dp"
+                                    app:cornerRadius="4dp" />
 
                                 <Button
                                     android:id="@+id/btnEqLock"
@@ -435,8 +466,8 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="ANALOG VU GALVANOMETER • 0 dB = 1.228V RMS"
-                                android:textColor="#52525B"
+                                android:text="@string/drawer_vu_meter_label"
+                                android:textColor="@color/text_secondary"
                                 android:textStyle="bold"
                                 android:textSize="9sp"
                                 android:fontFamily="monospace" />
@@ -455,7 +486,7 @@
                             android:id="@+id/tvDjTrackTitle"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="Spindle Direct ALSA / DSD DAC"
+                            android:text="Spindle Direct / DSD DAC"
                             android:textColor="#A1A1AA"
                             android:textSize="11sp"
                             android:fontFamily="sans-serif-medium"
@@ -566,7 +597,7 @@
                                     android:id="@+id/tvBypassTitle"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="BIT-PERFECT DIRECT BYPASS"
+                                    android:text="HI-RES PASSTHROUGH (DEVICE-DEPENDENT)"
                                     android:textColor="@color/white"
                                     android:textStyle="bold"
                                     android:textSize="11.5sp"
@@ -576,7 +607,7 @@
                                     android:id="@+id/tvBypassSub"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="0.00% DSP distortion direct ALSA bypass for USB DACs"
+                                    android:text="Bypass DSP effects for native hardware passthrough where supported"
                                     android:textColor="#94A3B8"
                                     android:textSize="9.5sp"
                                     android:layout_marginTop="2dp" />
@@ -584,6 +615,67 @@
 
                             <androidx.appcompat.widget.SwitchCompat
                                 android:id="@+id/switchBypass"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:checked="false" />
+                        </LinearLayout>
+
+                        <!-- Harmonic Analog Tape Saturation DSP (Studio Collector) -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="12dp">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <LinearLayout
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:gravity="center_vertical">
+
+                                    <TextView
+                                        android:id="@+id/tvTapeSaturationTitle"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="ANALOG TAPE SATURATION"
+                                        android:textColor="@color/white"
+                                        android:textStyle="bold"
+                                        android:textSize="11.5sp"
+                                        android:fontFamily="monospace" />
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="STUDIO"
+                                        android:textColor="#F97316"
+                                        android:textStyle="bold"
+                                        android:textSize="8.5sp"
+                                        android:fontFamily="monospace"
+                                        android:background="#2E1B10"
+                                        android:paddingHorizontal="5dp"
+                                        android:paddingVertical="1dp"
+                                        android:layout_marginStart="6dp" />
+                                </LinearLayout>
+
+                                <TextView
+                                    android:id="@+id/tvTapeSaturationSub"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Magnetic flux head bump (+3.2dB @ 63Hz) &amp; soft-clipping warmth compression"
+                                    android:textColor="#94A3B8"
+                                    android:textSize="9.5sp"
+                                    android:layout_marginTop="2dp" />
+                            </LinearLayout>
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/switchTapeSaturation"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:checked="false" />
@@ -885,10 +977,10 @@
                                 android:orientation="horizontal">
 
                                 <Button
-                                    android:id="@+id/btnThemeSonyMetal"
+                                    android:id="@+id/btnThemeMetalXr"
                                     android:layout_width="wrap_content"
                                     android:layout_height="38dp"
-                                    android:text="SONY METAL-XR"
+                                    android:text="METAL-XR"
                                     android:textColor="#EF4444"
                                     android:textSize="9.5sp"
                                     android:textStyle="bold"
@@ -956,6 +1048,21 @@
                                     android:insetTop="0dp"
                                     android:insetBottom="0dp"
                                     android:paddingHorizontal="10dp"
+                                    app:cornerRadius="8dp" />
+
+                                <Button
+                                    android:id="@+id/btnThemeStudioReel"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="38dp"
+                                    android:text="★ STUDIO REEL"
+                                    android:textColor="#F97316"
+                                    android:textSize="9.5sp"
+                                    android:textStyle="bold"
+                                    android:backgroundTint="#241B14"
+                                    android:insetTop="0dp"
+                                    android:insetBottom="0dp"
+                                    android:paddingHorizontal="10dp"
+                                    android:layout_marginStart="5dp"
                                     app:cornerRadius="8dp" />
                             </LinearLayout>
                         </HorizontalScrollView>
@@ -1075,6 +1182,49 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:checked="true" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="#1E2026"
+                            android:layout_marginVertical="12dp" />
+
+                        <!-- Dedicated DAP Hardware Mode -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="DAP Physical Button Mode"
+                                    android:textColor="@color/white"
+                                    android:textStyle="bold"
+                                    android:textSize="13.5sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Prioritize hardware keys &amp; wheel transport on dedicated DAPs."
+                                    android:textColor="#A1A1AA"
+                                    android:textSize="11sp"
+                                    android:layout_marginTop="2dp" />
+                            </LinearLayout>
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/switchDapHardwareMode"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:checked="false" />
                         </LinearLayout>
 
                         <View
@@ -1279,7 +1429,7 @@
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Bypass Android mixer for bit-perfect hardware output."
+                                    android:text="Bypass DSP effects for direct hardware passthrough."
                                     android:textColor="#A1A1AA"
                                     android:textSize="11sp"
                                     android:layout_marginTop="2dp" />
@@ -1389,37 +1539,161 @@
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
+                            android:orientation="vertical"
+                            android:layout_marginBottom="12dp">
 
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="ReplayGain Volume Normalization"
-                                    android:textColor="@color/white"
-                                    android:textStyle="bold"
-                                    android:textSize="13.5sp" />
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Automatic 89.0 dB loudness calibration for untrimmed master tracks."
-                                    android:textColor="#A1A1AA"
-                                    android:textSize="11sp"
-                                    android:layout_marginTop="2dp" />
-                            </LinearLayout>
-
-                            <androidx.appcompat.widget.SwitchCompat
-                                android:id="@+id/switchReplayGain"
+                            <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:checked="true" />
+                                android:text="ReplayGain Volume Normalization"
+                                android:textColor="@color/white"
+                                android:textStyle="bold"
+                                android:textSize="13.5sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Calibrated 89.0 dB loudness normalization matching tagged metadata."
+                                android:textColor="#A1A1AA"
+                                android:textSize="11sp"
+                                android:layout_marginTop="2dp"
+                                android:layout_marginBottom="8dp" />
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal">
+
+                                <Button
+                                    android:id="@+id/btnRgOff"
+                                    android:layout_width="0dp"
+                                    android:layout_height="36dp"
+                                    android:layout_weight="1"
+                                    android:text="OFF"
+                                    android:textColor="@color/white"
+                                    android:textSize="11sp"
+                                    android:textStyle="bold"
+                                    android:backgroundTint="#242731"
+                                    android:insetTop="0dp"
+                                    android:insetBottom="0dp"
+                                    android:padding="0dp"
+                                    app:cornerRadius="8dp" />
+
+                                <Button
+                                    android:id="@+id/btnRgTrack"
+                                    android:layout_width="0dp"
+                                    android:layout_height="36dp"
+                                    android:layout_weight="1"
+                                    android:layout_marginStart="6dp"
+                                    android:text="TRACK GAIN"
+                                    android:textColor="@color/white"
+                                    android:textSize="11sp"
+                                    android:textStyle="bold"
+                                    android:backgroundTint="#242731"
+                                    android:insetTop="0dp"
+                                    android:insetBottom="0dp"
+                                    android:padding="0dp"
+                                    app:cornerRadius="8dp" />
+
+                                <Button
+                                    android:id="@+id/btnRgAlbum"
+                                    android:layout_width="0dp"
+                                    android:layout_height="36dp"
+                                    android:layout_weight="1"
+                                    android:layout_marginStart="6dp"
+                                    android:text="ALBUM GAIN"
+                                    android:textColor="@color/white"
+                                    android:textSize="11sp"
+                                    android:textStyle="bold"
+                                    android:backgroundTint="#242731"
+                                    android:insetTop="0dp"
+                                    android:insetBottom="0dp"
+                                    android:padding="0dp"
+                                    app:cornerRadius="8dp" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="#1E2026"
+                            android:layout_marginVertical="8dp" />
+
+                        <!-- Track Transition / Crossfade Mode -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Track Transition &amp; Crossfade"
+                                android:textColor="@color/white"
+                                android:textStyle="bold"
+                                android:textSize="13.5sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Equal-power sinusoidal crossfade or true bit-perfect gapless transition."
+                                android:textColor="#A1A1AA"
+                                android:textSize="11sp"
+                                android:layout_marginTop="2dp"
+                                android:layout_marginBottom="8dp" />
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal">
+
+                                <Button
+                                    android:id="@+id/btnTransGapless"
+                                    android:layout_width="0dp"
+                                    android:layout_height="36dp"
+                                    android:layout_weight="1"
+                                    android:text="GAPLESS"
+                                    android:textColor="@color/white"
+                                    android:textSize="11sp"
+                                    android:textStyle="bold"
+                                    android:backgroundTint="#242731"
+                                    android:insetTop="0dp"
+                                    android:insetBottom="0dp"
+                                    android:padding="0dp"
+                                    app:cornerRadius="8dp" />
+
+                                <Button
+                                    android:id="@+id/btnTransFade2s"
+                                    android:layout_width="0dp"
+                                    android:layout_height="36dp"
+                                    android:layout_weight="1"
+                                    android:layout_marginStart="6dp"
+                                    android:text="FADE 2S"
+                                    android:textColor="@color/white"
+                                    android:textSize="11sp"
+                                    android:textStyle="bold"
+                                    android:backgroundTint="#242731"
+                                    android:insetTop="0dp"
+                                    android:insetBottom="0dp"
+                                    android:padding="0dp"
+                                    app:cornerRadius="8dp" />
+
+                                <Button
+                                    android:id="@+id/btnTransFade4s"
+                                    android:layout_width="0dp"
+                                    android:layout_height="36dp"
+                                    android:layout_weight="1"
+                                    android:layout_marginStart="6dp"
+                                    android:text="FADE 4S"
+                                    android:textColor="@color/white"
+                                    android:textSize="11sp"
+                                    android:textStyle="bold"
+                                    android:backgroundTint="#242731"
+                                    android:insetTop="0dp"
+                                    android:insetBottom="0dp"
+                                    android:padding="0dp"
+                                    app:cornerRadius="8dp" />
+                            </LinearLayout>
                         </LinearLayout>
 
                     </LinearLayout>
@@ -1626,7 +1900,7 @@
                                 android:id="@+id/tvBitPerfectBadge"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="● BIT-PERFECT NATIVE"
+                                android:text="● HI-RES PASSTHROUGH"
                                 android:textColor="@color/vfd_emerald"
                                 android:textStyle="bold"
                                 android:fontFamily="monospace"
@@ -1905,7 +2179,7 @@
                             android:layout_height="4dp"
                             android:indeterminate="true"
                             android:visibility="gone"
-                            android:progressTint="@color/wm2_red"
+                            android:progressTint="@color/metal81_red"
                             android:layout_marginTop="8dp" />
 
                         <Button
@@ -1916,7 +2190,7 @@
                             android:textColor="@color/white"
                             android:textSize="11.5sp"
                             android:textStyle="bold"
-                            android:backgroundTint="@color/wm2_red"
+                            android:backgroundTint="@color/metal81_red"
                             android:insetTop="0dp"
                             android:insetBottom="0dp"
                             android:padding="0dp"
@@ -2155,6 +2429,79 @@
                             android:background="#1E2026"
                             android:layout_marginVertical="14dp" />
 
+                        <!-- STUDIO COLLECTOR & FAIR OWNERSHIP SUITE -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="4dp">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="SPINDLE STUDIO COLLECTOR"
+                                android:textColor="#71717A"
+                                android:textStyle="bold"
+                                android:textSize="10sp"
+                                android:fontFamily="monospace" />
+
+                            <TextView
+                                android:id="@+id/tvStudioStatusCardBadge"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/studio_badge_free"
+                                android:textColor="#38BDF8"
+                                android:textSize="10sp"
+                                android:fontFamily="monospace"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="One-time lifetime pass ($2.99 – $3.99). Unlocks analog tape saturation DSP, custom laser callsign engraving, procedural foley and collector reel skins."
+                            android:textColor="#A1A1AA"
+                            android:textSize="12sp"
+                            android:layout_marginTop="2dp" />
+
+                        <Button
+                            android:id="@+id/btnManageStudioPass"
+                            android:layout_width="match_parent"
+                            android:layout_height="40dp"
+                            android:text="VIEW STUDIO PASS / REDEEM KEY"
+                            android:textColor="@color/white"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            android:backgroundTint="@color/metal81_red"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:padding="0dp"
+                            app:cornerRadius="8dp"
+                            android:layout_marginTop="10dp" />
+
+                        <Button
+                            android:id="@+id/btnCustomLaserEngraving"
+                            android:layout_width="match_parent"
+                            android:layout_height="38dp"
+                            android:text="ENGRAVE HARDWARE NAMEPLATE"
+                            android:textColor="@color/text_primary"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            android:backgroundTint="#242731"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:padding="0dp"
+                            app:cornerRadius="8dp"
+                            android:layout_marginTop="8dp" />
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="#1E2026"
+                            android:layout_marginVertical="14dp" />
+
                         <!-- ABOUT SPINDLE AND GITHUB LINK -->
                         <TextView
                             android:layout_width="wrap_content"
@@ -2162,7 +2509,7 @@
                             android:text="ABOUT SPINDLE LAUNCHER"
                             android:textColor="#71717A"
                             android:textStyle="bold"
-                            android:textSize="10.5sp"
+                            android:textSize="10sp"
                             android:fontFamily="monospace" />
 
                         <TextView

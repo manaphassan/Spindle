@@ -174,7 +174,7 @@ class AudioDspAndFoleyTest {
         assertTrue("Type I must have warm low-end boost", fx.isoBandsGainDb[0] > 2.0f)
         assertTrue("Type I must roll off upper treble", fx.isoBandsGainDb[9] < -2.0f)
 
-        // Switch to Type IV Metal (Sony Metal-XR): extended high-frequency response
+        // Switch to Type IV Metal (Extralloy Metal-XR): extended high-frequency response
         fx.setTapeFormulation(AudioFxController.TapeFormulation.TYPE_IV_METAL)
         assertEquals(AudioFxController.TapeFormulation.TYPE_IV_METAL, fx.currentTapeFormulation)
         assertTrue("Type IV must extend top-end air", fx.isoBandsGainDb[9] > 1.0f)
@@ -220,5 +220,47 @@ class AudioDspAndFoleyTest {
         fx.setDolbyMode(AudioFxController.DolbyMode.DOLBY_C)
         assertEquals(AudioFxController.DolbyMode.DOLBY_C, fx.currentDolbyMode)
         assertTrue("Dolby C must attenuate 16kHz hiss by >= 12dB", fx.isoBandsGainDb[9] <= -12.0f)
+    }
+
+    @Test
+    fun testTapeSaturationDspCurve() {
+        val fx = AudioFxController()
+        assertFalse("Tape saturation should default to disabled", fx.isTapeSaturationEnabled)
+
+        // Enable Tape Saturation at full drive (1.0f)
+        fx.setTapeSaturationEnabled(true)
+        assertTrue(fx.isTapeSaturationEnabled)
+
+        // 63Hz flux head bump should be boosted by +3.2dB
+        assertEquals(3.2f, fx.isoBandsGainDb[1], 0.01f)
+        // 250Hz warmth boost (+1.5dB)
+        assertEquals(1.5f, fx.isoBandsGainDb[3], 0.01f)
+        // 16kHz natural saturation compression roll-off (-2.8dB)
+        assertEquals(-2.8f, fx.isoBandsGainDb[9], 0.01f)
+
+        // Half drive (0.5f)
+        fx.setTapeSaturationDrive(0.5f)
+        assertEquals(1.6f, fx.isoBandsGainDb[1], 0.01f)
+        assertEquals(-1.4f, fx.isoBandsGainDb[9], 0.01f)
+
+        // Disable tape saturation -> back to flat
+        fx.setTapeSaturationEnabled(false)
+        assertFalse(fx.isTapeSaturationEnabled)
+        assertEquals(0.0f, fx.isoBandsGainDb[1], 0.001f)
+        assertEquals(0.0f, fx.isoBandsGainDb[9], 0.001f)
+    }
+
+    @Test
+    fun testStudioReelThemePreset() {
+        val studioReel = com.hana.spindle.theme.CassetteTheme.REEL_TO_REEL_STUDIO
+        assertNotNull(studioReel)
+        assertEquals("theme_reel_to_reel_studio", studioReel.id)
+        assertEquals("Studio Reel-to-Reel", studioReel.name)
+        assertTrue(studioReel.subtitle.contains("10.5\""))
+        assertTrue(studioReel.subtitle.contains("15 IPS"))
+        assertEquals(com.hana.spindle.theme.ShellTexture.BRUSHED_METAL, studioReel.shellTexture)
+
+        // Must be registered in ALL_PRESETS
+        assertTrue(com.hana.spindle.theme.CassetteTheme.ALL_PRESETS.contains(studioReel))
     }
 }

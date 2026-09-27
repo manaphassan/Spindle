@@ -2,6 +2,7 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="72dp"
     android:orientation="horizontal"
@@ -22,7 +23,7 @@
         android:textStyle="bold"
         android:singleLine="true"
         android:visibility="gone"
-        android:text="01" />
+        tools:text="01" />
 
     <!-- Circular Disc Button Album Art Cover -->
     <androidx.cardview.widget.CardView
@@ -31,7 +32,7 @@
         android:layout_height="46dp"
         app:cardCornerRadius="23dp"
         app:cardElevation="2dp"
-        app:cardBackgroundColor="#212226">
+        app:cardBackgroundColor="@color/surface_card">
 
         <ImageView
             android:id="@+id/ivSongThumb"
@@ -72,7 +73,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textColor="@color/text_primary"
-                android:textSize="14.5sp"
+                android:textSize="14sp"
                 android:textStyle="bold"
                 android:maxLines="1"
                 android:ellipsize="end" />
@@ -91,7 +92,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:textColor="@color/text_secondary"
-                android:textSize="12.5sp"
+                android:textSize="12sp"
                 android:maxLines="1"
                 android:ellipsize="end" />
 
@@ -100,9 +101,9 @@
                 android:id="@+id/tvFormatBadge"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="#1E293B"
+                android:background="@color/surface_card"
                 android:textColor="@color/vfd_emerald"
-                android:textSize="9.5sp"
+                android:textSize="10sp"
                 android:fontFamily="monospace"
                 android:paddingHorizontal="5dp"
                 android:paddingVertical="2dp"
@@ -131,7 +132,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="@color/vfd_amber"
-            android:textSize="10.5sp"
+            android:textSize="11sp"
             android:fontFamily="monospace"
             android:layout_marginTop="2dp" />
     </LinearLayout>
@@ -143,7 +144,7 @@
         android:layout_height="28dp"
         android:padding="4dp"
         android:src="@android:drawable/ic_menu_more"
-        app:tint="#64748B"
+        app:tint="@color/text_secondary"
         android:contentDescription="Song Options" />
 
 </LinearLayout>

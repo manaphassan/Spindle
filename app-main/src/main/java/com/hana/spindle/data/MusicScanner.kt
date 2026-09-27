@@ -8,8 +8,8 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import androidx.core.content.ContextCompat
-import com.hana.spindle.data.db.SongDao
-import com.hana.spindle.data.db.SongEntity
+import com.hana.spindle.data.db.TrackDao
+import com.hana.spindle.data.db.TrackEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,9 +20,11 @@ import java.util.Locale
 
 data class ScanProgress(
     val isScanning: Boolean = false,
-    val songsFound: Int = 0,
+    val tracksFound: Int = 0,
     val currentPath: String = ""
-)
+) {
+    val songsFound: Int get() = tracksFound
+}
 
 /**
  * High-performance, low-RAM storage crawler for offline music collections (128GB+ MicroSD cards).
@@ -33,8 +35,9 @@ data class ScanProgress(
  */
 class MusicScanner(
     private val context: Context,
-    private val songDao: SongDao
+    private val trackDao: TrackDao
 ) {
+    val songDao: TrackDao get() = trackDao
 
     companion object {
         private const val TAG = "SpindleScanner"
@@ -74,7 +77,7 @@ class MusicScanner(
 
         val customPath = getCustomMusicPath()
         Log.d(TAG, "Starting music library scan (customPath=$customPath)...")
-        _progress.value = ScanProgress(isScanning = true, songsFound = 0, currentPath = "Starting scan...")
+        _progress.value = ScanProgress(isScanning = true, tracksFound = 0, currentPath = "Starting scan...")
 
         var totalFound = 0
 
@@ -84,12 +87,12 @@ class MusicScanner(
         // Phase 1: Fast MediaStore Query (only if scanning all storage)
         if (!isCustomScan) {
             try {
-                val mediaStoreSongs = scanMediaStore()
-                if (mediaStoreSongs.isNotEmpty()) {
-                    songDao.insertSongs(mediaStoreSongs)
-                    totalFound += mediaStoreSongs.size
-                    Log.d(TAG, "Phase 1: Loaded ${mediaStoreSongs.size} tracks from MediaStore")
-                    _progress.value = ScanProgress(isScanning = true, songsFound = totalFound, currentPath = "MediaStore indexed")
+                val mediaStoreTracks = scanMediaStore()
+                if (mediaStoreTracks.isNotEmpty()) {
+                    trackDao.insertTracks(mediaStoreTracks)
+                    totalFound += mediaStoreTracks.size
+                    Log.d(TAG, "Phase 1: Loaded ${mediaStoreTracks.size} tracks from MediaStore")
+                    _progress.value = ScanProgress(isScanning = true, tracksFound = totalFound, currentPath = "MediaStore indexed")
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error in Phase 1 MediaStore scan", e)
@@ -100,7 +103,7 @@ class MusicScanner(
         val roots = if (isCustomScan) listOf(customDir!!) else findStorageRoots()
         Log.d(TAG, "Phase 2: Storage roots to crawl: ${roots.map { it.absolutePath }}")
 
-        val batch = mutableListOf<SongEntity>()
+        val batch = mutableListOf<TrackEntity>()
 
         for (root in roots) {
             if (!root.exists() || !root.canRead()) {
@@ -111,27 +114,27 @@ class MusicScanner(
                 totalFound += count
                 _progress.value = ScanProgress(
                     isScanning = true,
-                    songsFound = totalFound,
+                    tracksFound = totalFound,
                     currentPath = path
                 )
             }
         }
 
         if (batch.isNotEmpty()) {
-            songDao.insertSongs(batch)
+            trackDao.insertTracks(batch)
             totalFound += batch.size
             batch.clear()
         }
 
-        Log.d(TAG, "Music library scan completed! Total songs: $totalFound")
-        _progress.value = ScanProgress(isScanning = false, songsFound = totalFound, currentPath = "Scan complete")
+        Log.d(TAG, "Music library scan completed! Total tracks: $totalFound")
+        _progress.value = ScanProgress(isScanning = false, tracksFound = totalFound, currentPath = "Scan complete")
     }
 
     /**
      * Rapidly queries Android system MediaStore for music tracks across all storage volumes.
      */
-    private suspend fun scanMediaStore(): List<SongEntity> = withContext(Dispatchers.IO) {
-        val songs = mutableListOf<SongEntity>()
+    private suspend fun scanMediaStore(): List<TrackEntity> = withContext(Dispatchers.IO) {
+        val tracks = mutableListOf<TrackEntity>()
         val projection = arrayOf(
             MediaStore.Audio.Media._ID,
             MediaStore.Audio.Media.TITLE,
@@ -184,8 +187,8 @@ class MusicScanner(
                 val lrcFile = File(file.parentFile, "${file.nameWithoutExtension}.lrc")
                 val txtFile = File(file.parentFile, "${file.nameWithoutExtension}.txt")
 
-                songs.add(
-                    SongEntity(
+                tracks.add(
+                    TrackEntity(
                         title = title.trim(),
                         artist = artist.trim(),
                         album = album.trim(),
@@ -197,6 +200,8 @@ class MusicScanner(
                         sampleRate = 44100,
                         fileFormat = format,
                         rating = 0,
+                        isFavorite = false,
+                        dateAdded = System.currentTimeMillis(),
                         dateModified = dateModified,
                         bitrateKbps = bitrateKbps,
                         hasLyrics = lrcFile.exists() || txtFile.exists()
@@ -204,16 +209,60 @@ class MusicScanner(
                 )
             }
         }
-        return@withContext songs
+        return@withContext tracks
     }
 
     private suspend fun crawlDirectory(
         dir: File,
-        batch: MutableList<SongEntity>,
+        batch: MutableList<TrackEntity>,
         onProgress: suspend (Int, String) -> Unit
     ) {
         val files = dir.listFiles() ?: return
 
+        // 1. Discover and parse external CUE sheets for monolithic audio rips
+        val cueFiles = files.filter { it.isFile && it.extension.equals("cue", ignoreCase = true) }
+        val referencedAudioPaths = mutableSetOf<String>()
+
+        for (cueFile in cueFiles) {
+            try {
+                val cueTracks = CueSheetParser.parseCueFile(cueFile)
+                for (cueTrack in cueTracks) {
+                    val audioFile = File(cueTrack.audioFilePath)
+                    if (audioFile.exists()) {
+                        referencedAudioPaths.add(audioFile.absolutePath)
+                        val audioInfo = TagParser.parseTrack(audioFile)
+                        val entity = cueTrack.toTrackEntity(
+                            fileFormat = audioInfo?.fileFormat ?: audioFile.extension.uppercase(Locale.ROOT),
+                            bitDepth = audioInfo?.bitDepth ?: 16,
+                            sampleRate = audioInfo?.sampleRate ?: 44100
+                        ).copy(
+                            dateModified = cueFile.lastModified(),
+                            bitrateKbps = audioInfo?.bitrateKbps ?: 1411
+                        )
+                        val existing = trackDao.getTrackByPath(entity.path)
+                        if (existing == null || Math.abs(existing.dateModified - cueFile.lastModified()) > 2000L) {
+                            batch.add(entity)
+                            if (batch.size >= 50) {
+                                trackDao.insertTracks(batch)
+                                onProgress(batch.size, cueFile.name)
+                                batch.clear()
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to parse CUE file: ${cueFile.absolutePath}", e)
+            }
+        }
+
+        // Purge any monolithic single-track database entries superseded by virtual CUE sub-tracks
+        for (audioPath in referencedAudioPaths) {
+            try {
+                trackDao.deleteByPath(audioPath)
+            } catch (ignored: Exception) {}
+        }
+
+        // 2. Process subdirectories and non-CUE audio tracks
         for (file in files) {
             if (file.isDirectory) {
                 val name = file.name
@@ -228,16 +277,16 @@ class MusicScanner(
                 }
             } else {
                 val ext = file.extension.lowercase(Locale.ROOT)
-                if (ext in supportedExtensions) {
-                    val existing = songDao.getSongByPath(file.absolutePath)
+                if (ext in supportedExtensions && file.absolutePath !in referencedAudioPaths) {
+                    val existing = trackDao.getTrackByPath(file.absolutePath)
                     // Skip if already indexed with matching timestamp (+- 2000ms)
                     if (existing == null || Math.abs(existing.dateModified - file.lastModified()) > 2000L) {
-                        val parsed = TagParser.parseSong(file)
+                        val parsed = TagParser.parseTrack(file)
                         if (parsed != null) {
                             batch.add(parsed)
 
                             if (batch.size >= 50) {
-                                songDao.insertSongs(batch)
+                                trackDao.insertTracks(batch)
                                 onProgress(batch.size, file.parent ?: file.name)
                                 batch.clear()
                             }

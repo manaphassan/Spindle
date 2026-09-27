@@ -136,7 +136,7 @@ To ensure the flagship kinetic cassette deck renders flawlessly on the 3.0" disp
 
 ## 6. Physical & Capacitive Hardware Button Engine
 
-On dedicated vintage DAPs and rugged compact hardware (e.g. `satsuma` Sony Ericsson Xperia active), physical and capacitive buttons provide deterministic tactile control without requiring touch screen interaction:
+On dedicated vintage DAPs and rugged compact hardware (e.g. `satsuma` vintage compact hardware), physical and capacitive buttons provide deterministic tactile control without requiring touch screen interaction:
 
 ```
 +-----------------------------------------------------------------------------------------+

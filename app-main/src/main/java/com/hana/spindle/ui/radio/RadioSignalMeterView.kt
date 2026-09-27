@@ -11,7 +11,7 @@ import kotlin.math.sin
 
 /**
  * High-Density Vintage Analog Dual Hi-Fi Tuner Galvanometer Meter.
- * Inspired by flagship Marantz, Sony ST-JX, and Pioneer SX-series FM/AM stereo tuners.
+ * Inspired by flagship vintage Marantz, Sansui, and Pioneer SX-series FM/AM stereo tuners.
  *
  * Left Bay: RF Signal Strength Meter (0 to 5 S-Units with optimal reception zone).
  * Center Bay: Recessed machined bezel with glowing ruby-red STEREO pilot lamp.

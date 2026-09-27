@@ -6,7 +6,7 @@ import android.os.Build
 object DeviceUtils {
 
     /**
-     * Resolves the hardware device branding name (e.g., "SONY SO-02J", "FIIO M11", "IBASSO DX160").
+     * Resolves the hardware device branding name (e.g., "ASTELL&KERN SR25", "FIIO M11", "IBASSO DX160").
      * Supports user custom nameplate override if configured in SharedPreferences.
      */
     fun getDeviceName(context: Context? = null): String {

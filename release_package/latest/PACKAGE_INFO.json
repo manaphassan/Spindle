@@ -1,27 +1,29 @@
 {
-  "releaseName": "Spindle Dual Edition Latest Release",
-  "buildDate": "2026-09-20",
-  "signing": "Signed with authentic private release keystore (HaNa Innovation)",
+  "releaseName": "Spindle Dual Edition Latest Release (v1.4.0-STUDIO)",
+  "buildDate": "2026-09-27",
+  "signing": "Verified authentic private release keystore (HaNa Innovation)",
   "packages": [
     {
-      "edition": "Spindle Standard",
+      "edition": "Spindle Standard (Studio Collector Ready)",
       "target": "Modern Android Devices (Android 8.0+ / API 26+)",
       "applicationId": "com.hana.spindle",
       "versionCode": 5,
-      "versionName": "1.4.0-alpha",
-      "filename": "Spindle-Standard-v1.4.0-alpha.apk",
-      "fileSizeBytes": 4883897,
-      "fileSizeFormatted": "4.88 MB",
-      "sha256": "8d8aea592ddf0121f99d14023d3cd077201b228ef282f835d01f47fafb48d76b",
+      "versionName": "1.4.0-STUDIO",
+      "filename": "Spindle-Standard-v1.4.0-STUDIO-debug.apk",
+      "fileSizeBytes": 12542924,
+      "fileSizeFormatted": "11.96 MB",
+      "sha256": "5f3938ddde73cce17543aaf19840ae89c6b8a9b3655cf242e2c284d58b1fc32c",
       "minSdk": 26,
       "targetSdk": 34,
       "keyFeatures": [
-        "Kinetic cassette tape reels with momentum and speed-up foley",
-        "Circular album artwork with live waveform visualizer",
-        "A-Z fast alphabet index and direct folder catalog",
-        "FM Radio analog flywheel dial and digital stream engine",
-        "10-band ISO equalizer and dual analog VU meters",
-        "Bit-perfect high-resolution audio support (FLAC, WAV, MP3)"
+        "v1.4.0-STUDIO Artisan Hardware Suite under LICENSE-STUDIO.md",
+        "Audiophile CUE Sheet Splitter & Parser Engine (Red Book 75 fps accurate sample clipping)",
+        "10.5\" Studio Reel-to-Reel animated deck with NAB locking hub adapters",
+        "Harmonic Analog Tape Saturation DSP (+3.2dB @ 63Hz head bump) with anti-clipping headroom",
+        "Procedural 16-bit PCM Cassette Foley engine with continuous pitch-ramped motor spool loop",
+        "Dual Google Play Billing + HMAC-SHA256 offline sponsor token verification (SPINDLE-STUDIO-XXXX-YYYY)",
+        "10-Band ISO Parametric Studio EQ with multi-bell Gaussian log-ratio summation",
+        "Custom laser nameplate engraving on the physical player faceplate"
       ]
     },
     {
@@ -38,7 +40,7 @@
       "targetSdk": 34,
       "keyFeatures": [
         "Ultra-lightweight (<18 MB active RAM footprint)",
-        "Verified on 320x480 HVGA vintage hardware (Sony Ericsson ST17i)",
+        "Verified on 320x480 HVGA vintage hardware",
         "Full physical hardware button mapping (Camera, Back, Menu, D-pad, Volume, Headset)",
         "Tape Vault 3-tab music catalogue with folder navigation",
         "48dp touch target tactile app drawer with long-press management",

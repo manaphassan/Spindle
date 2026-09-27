@@ -10,7 +10,9 @@ enum class TrackSortOrder(val displayName: String) {
     YEAR_ASC("Year (Oldest)"),
     BITRATE_DESC("Bitrate / Hi-Res Quality"),
     DURATION_DESC("Duration (Longest)"),
-    DATE_MODIFIED_DESC("Date Added (Recent)")
+    DATE_MODIFIED_DESC("Date Added (Recent)"),
+    PLAY_COUNT_DESC("Play Count (Most Played)"),
+    LAST_PLAYED_DESC("Last Played (Recent)")
 }
 
 enum class AlbumSortOrder(val displayName: String) {
@@ -26,6 +28,7 @@ enum class AlbumSortOrder(val displayName: String) {
 enum class GroupByMode(val displayName: String) {
     NONE("None (Flat List)"),
     ARTIST("Group by Artist"),
+    COMPOSER("Group by Composer"),
     DECADE("Group by Decade / Year"),
     INITIAL_LETTER("Group by Initial (A–Z)"),
     FORMAT("Group by Audio Format (FLAC, WAV, MP3)")
@@ -33,6 +36,11 @@ enum class GroupByMode(val displayName: String) {
 
 enum class CatalogFilterChip(val displayName: String) {
     ALL("ALL"),
+    FAVORITES("FAVORITES"),
+    RECENTLY_ADDED("RECENT"),
+    MOST_PLAYED("MOST PLAYED"),
+    COMPOSER("COMPOSERS"),
+    DUPLICATES("DUPLICATES"),
     HI_RES("HI-RES"),
     LOSSLESS("LOSSLESS"),
     FLAC("FLAC"),

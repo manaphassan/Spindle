@@ -71,7 +71,7 @@ class AlbumAdapter(
             b.tvGridTrackCount.setTextColor(android.graphics.Color.parseColor("#E2E8F0"))
             b.tvGridFormat.setTextColor(holder.itemView.context.getColor(com.hana.spindle.R.color.vfd_emerald))
             b.tvGridFormat.setBackgroundColor(android.graphics.Color.parseColor("#CC1E293B"))
-            b.btnGridPlay.backgroundTintList = android.content.res.ColorStateList.valueOf(holder.itemView.context.getColor(com.hana.spindle.R.color.wm2_red))
+            b.btnGridPlay.backgroundTintList = android.content.res.ColorStateList.valueOf(holder.itemView.context.getColor(com.hana.spindle.R.color.metal81_red))
             b.btnGridPlay.imageTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE)
         }
 

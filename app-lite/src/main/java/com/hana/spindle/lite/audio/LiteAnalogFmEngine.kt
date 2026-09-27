@@ -30,7 +30,7 @@ enum class RadioRegion(
  * Synthesizes authentic inter-station thermal static hiss via circular PCM AudioTrack (< 1% CPU on ARMv7).
  * Calculates carrier proximity, RF signal strength (S-Units), 19 kHz stereo multiplex carrier locking,
  * regional band calibration (US/EU/JP), and audiophile Force Mono noise defeat.
- * Detects /dev/radio0 (ti_fmdrv on Sony Ericsson ST17i satsuma).
+ * Detects /dev/radio0 (ti_fmdrv on vintage compact hardware satsuma).
  */
 class LiteAnalogFmEngine(private val context: Context) {
 

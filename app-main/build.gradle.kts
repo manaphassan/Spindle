@@ -71,6 +71,8 @@ android {
 }
 
 dependencies {
+    implementation(project(":core"))
+
     // Core AndroidX & UI Components (Pure Views, Zero Compose overhead)
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.appcompat:appcompat:1.7.0")

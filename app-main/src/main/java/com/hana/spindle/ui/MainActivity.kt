@@ -84,14 +84,14 @@ class MainActivity : AppCompatActivity() {
             if (file.exists() && file.canRead()) {
                 val app = application as SpindleApp
                 lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-                    val song = com.hana.spindle.data.TagParser.parseSong(file)
-                    if (song != null) {
+                    val track = com.hana.spindle.data.TagParser.parseTrack(file)
+                    if (track != null) {
                         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                            app.audioEngine.playSong(song)
+                            app.audioEngine.playTrack(track)
                             binding.viewPager.setCurrentItem(1, false)
                         }
                     } else {
-                        android.util.Log.e("MainActivity", "Failed to parse song: $playPath")
+                        android.util.Log.e("MainActivity", "Failed to parse track: $playPath")
                     }
                 }
             }
@@ -449,8 +449,72 @@ class MainActivity : AppCompatActivity() {
 
     override fun onKeyDown(keyCode: Int, event: android.view.KeyEvent?): Boolean {
         val prefs = getSharedPreferences("spindle_prefs", MODE_PRIVATE)
-        val volumeSkipEnabled = prefs.getBoolean("pref_volume_skip", true)
+        val isDapMode = prefs.getBoolean("pref_dap_hardware_mode", false)
+        val engine = (application as? SpindleApp)?.audioEngine
 
+        // Dedicated Audiophile DAP Hardware Mode Interception
+        if (isDapMode) {
+            when (keyCode) {
+                android.view.KeyEvent.KEYCODE_MEDIA_NEXT,
+                android.view.KeyEvent.KEYCODE_MEDIA_FAST_FORWARD -> {
+                    engine?.playNext()
+                    return true
+                }
+                android.view.KeyEvent.KEYCODE_MEDIA_PREVIOUS,
+                android.view.KeyEvent.KEYCODE_MEDIA_REWIND -> {
+                    engine?.playPrevious()
+                    return true
+                }
+                android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
+                android.view.KeyEvent.KEYCODE_HEADSETHOOK,
+                android.view.KeyEvent.KEYCODE_DPAD_CENTER -> {
+                    engine?.togglePlayPause()
+                    return true
+                }
+                android.view.KeyEvent.KEYCODE_MEDIA_PLAY -> {
+                    engine?.play()
+                    return true
+                }
+                android.view.KeyEvent.KEYCODE_MEDIA_PAUSE,
+                android.view.KeyEvent.KEYCODE_MEDIA_STOP -> {
+                    engine?.pause()
+                    return true
+                }
+                android.view.KeyEvent.KEYCODE_FOCUS -> {
+                    // Half-shutter key advances to next track on classic hardware
+                    engine?.playNext()
+                    return true
+                }
+                android.view.KeyEvent.KEYCODE_DPAD_LEFT -> {
+                    engine?.rewind(5000L)
+                    return true
+                }
+                android.view.KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                    engine?.fastForward(5000L)
+                    return true
+                }
+                android.view.KeyEvent.KEYCODE_VOLUME_MUTE -> {
+                    val audioManager = getSystemService(AUDIO_SERVICE) as android.media.AudioManager
+                    audioManager.adjustStreamVolume(
+                        android.media.AudioManager.STREAM_MUSIC,
+                        android.media.AudioManager.ADJUST_TOGGLE_MUTE,
+                        android.media.AudioManager.FLAG_SHOW_UI
+                    )
+                    return true
+                }
+                android.view.KeyEvent.KEYCODE_SEARCH -> {
+                    navigateToCatalog(openNowPlaying = false)
+                    return true
+                }
+                android.view.KeyEvent.KEYCODE_MENU,
+                android.view.KeyEvent.KEYCODE_APP_SWITCH -> {
+                    navigateToDrawer()
+                    return true
+                }
+            }
+        }
+
+        val volumeSkipEnabled = prefs.getBoolean("pref_volume_skip", true)
         if (volumeSkipEnabled && (keyCode == android.view.KeyEvent.KEYCODE_VOLUME_UP || keyCode == android.view.KeyEvent.KEYCODE_VOLUME_DOWN)) {
             event?.startTracking()
             if (event?.repeatCount == 0) {
@@ -462,7 +526,6 @@ class MainActivity : AppCompatActivity() {
         // Dedicated Hardware Camera Button Remapped to Play/Pause
         val cameraKeyRemap = prefs.getBoolean("pref_camera_key_play_pause", true)
         if (cameraKeyRemap && (keyCode == android.view.KeyEvent.KEYCODE_CAMERA || keyCode == android.view.KeyEvent.KEYCODE_FOCUS)) {
-            val engine = (application as? SpindleApp)?.audioEngine
             if (engine?.playbackState?.value?.isPlaying == true) {
                 engine.pause()
                 Toast.makeText(this, "Audio Paused", Toast.LENGTH_SHORT).show()
@@ -531,8 +594,27 @@ class MainActivity : AppCompatActivity() {
 
     override fun onKeyUp(keyCode: Int, event: android.view.KeyEvent?): Boolean {
         val prefs = getSharedPreferences("spindle_prefs", MODE_PRIVATE)
-        val volumeSkipEnabled = prefs.getBoolean("pref_volume_skip", true)
+        val isDapMode = prefs.getBoolean("pref_dap_hardware_mode", false)
+        if (isDapMode) {
+            when (keyCode) {
+                android.view.KeyEvent.KEYCODE_CAMERA,
+                android.view.KeyEvent.KEYCODE_FOCUS,
+                android.view.KeyEvent.KEYCODE_MEDIA_NEXT,
+                android.view.KeyEvent.KEYCODE_MEDIA_PREVIOUS,
+                android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
+                android.view.KeyEvent.KEYCODE_MEDIA_PLAY,
+                android.view.KeyEvent.KEYCODE_MEDIA_PAUSE,
+                android.view.KeyEvent.KEYCODE_MEDIA_STOP,
+                android.view.KeyEvent.KEYCODE_DPAD_LEFT,
+                android.view.KeyEvent.KEYCODE_DPAD_RIGHT,
+                android.view.KeyEvent.KEYCODE_DPAD_CENTER,
+                android.view.KeyEvent.KEYCODE_SEARCH,
+                android.view.KeyEvent.KEYCODE_MENU,
+                android.view.KeyEvent.KEYCODE_APP_SWITCH -> return true
+            }
+        }
 
+        val volumeSkipEnabled = prefs.getBoolean("pref_volume_skip", true)
         if (volumeSkipEnabled && (keyCode == android.view.KeyEvent.KEYCODE_VOLUME_UP || keyCode == android.view.KeyEvent.KEYCODE_VOLUME_DOWN)) {
             if (isVolumeLongPress) {
                 isVolumeLongPress = false

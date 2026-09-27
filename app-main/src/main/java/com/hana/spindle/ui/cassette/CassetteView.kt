@@ -17,7 +17,7 @@ import kotlin.math.sin
  * Implements:
  * 1. Dual-orientation rendering:
  *    - Vertical cassette tape for Vertical Studio Deck (with ruled paper label, top/bottom spools, Side A).
- *    - Horizontal panoramic cassette tape for WM-2 Red and 80s Vaporwave.
+ *    - Horizontal panoramic cassette tape for Metal-81 Red and 80s Vaporwave.
  * 2. Differential dual-reel tape volume shift (R_supply shrinking, R_takeup growing).
  * 3. 6-tooth rotating spindle teeth with speed varying inversely to spool radius.
  * 4. Side A (Player) <-> Side B (Tracklist) 3D camera flip.
@@ -241,7 +241,7 @@ class CassetteView @JvmOverloads constructor(
         super.onSizeChanged(w, h, oldw, oldh)
         if (w == 0 || h == 0) return
 
-        val isVertical = theme.chassisStyle != ChassisStyle.WM2_RED
+        val isVertical = theme.chassisStyle != ChassisStyle.METAL_81_RED
 
         if (isVertical) {
             // Vertical Cassette Geometry (Vertical Studio Deck & 80s Vaporwave)
@@ -265,7 +265,7 @@ class CassetteView @JvmOverloads constructor(
             sideBadgePaint.textSize = w * 0.042f
             largeSideBadgePaint.textSize = w * 0.16f
         } else {
-            // Horizontal Cassette Geometry (WM-2 Red & 80s Vaporwave)
+            // Horizontal Cassette Geometry (Metal-81 Red & 80s Vaporwave)
             shellRect.set(w * 0.03f, h * 0.04f, w * 0.97f, h * 0.96f)
             labelRect.set(w * 0.08f, h * 0.08f, w * 0.92f, h * 0.46f)
             windowRect.set(w * 0.16f, h * 0.48f, w * 0.84f, h * 0.88f)
@@ -325,7 +325,7 @@ class CassetteView @JvmOverloads constructor(
             canvas.concat(flipMatrix)
         }
 
-        val isVertical = theme.chassisStyle != ChassisStyle.WM2_RED
+        val isVertical = theme.chassisStyle != ChassisStyle.METAL_81_RED
 
         // 1. Draw Outer Cassette Shell
         canvas.drawRoundRect(shellRect, 16f, 16f, shellPaint)

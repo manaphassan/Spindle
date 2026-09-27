@@ -15,7 +15,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.hana.spindle.SpindleApp
-import com.hana.spindle.data.db.SongEntity
+import com.hana.spindle.data.db.TrackEntity
 import com.hana.spindle.databinding.ItemQueueSongBinding
 import com.hana.spindle.databinding.LayoutQueueSheetBinding
 import com.hana.spindle.playback.AudioEngine
@@ -137,7 +137,7 @@ class QueueBottomSheet : BottomSheetDialogFragment() {
         }
     }
 
-    private fun updateQueueUI(queue: List<SongEntity>, activeIndex: Int) {
+    private fun updateQueueUI(queue: List<TrackEntity>, activeIndex: Int) {
         queueAdapter.submitQueue(queue, activeIndex)
 
         if (queue.isEmpty()) {
@@ -175,10 +175,10 @@ class QueueBottomSheet : BottomSheetDialogFragment() {
         private val isDark: Boolean
     ) : RecyclerView.Adapter<QueueAdapter.QueueViewHolder>() {
 
-        private var items: List<SongEntity> = emptyList()
+        private var items: List<TrackEntity> = emptyList()
         private var activeIndex: Int = -1
 
-        fun submitQueue(newItems: List<SongEntity>, newActiveIndex: Int) {
+        fun submitQueue(newItems: List<TrackEntity>, newActiveIndex: Int) {
             items = newItems
             activeIndex = newActiveIndex
             notifyDataSetChanged()

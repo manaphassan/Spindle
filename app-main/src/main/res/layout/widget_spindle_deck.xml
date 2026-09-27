@@ -48,10 +48,10 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="FLAC • 96k"
-                android:textSize="8.5sp"
+                android:textSize="9sp"
                 android:fontFamily="monospace"
                 android:textStyle="bold"
-                android:textColor="#E5A93C"
+                android:textColor="@color/brand_yellow"
                 android:background="@drawable/bg_widget_badge"
                 android:paddingStart="5dp"
                 android:paddingEnd="5dp"
@@ -68,18 +68,18 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="• 3.5mm"
-                android:textSize="8.5sp"
+                android:textSize="9sp"
                 android:fontFamily="monospace"
-                android:textColor="#80FFFFFF" />
+                android:textColor="@color/text_secondary" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="SPINDLE"
-                android:textSize="8.5sp"
+                android:textSize="9sp"
                 android:fontFamily="monospace"
                 android:textStyle="bold"
-                android:textColor="#40FFFFFF"
+                android:textColor="@color/text_secondary"
                 android:layout_marginStart="6dp" />
         </LinearLayout>
 
@@ -88,10 +88,10 @@
             android:id="@+id/widgetTvTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Spindle Tape Deck"
+            android:text="@string/spindle_deck_title"
             android:textSize="13sp"
             android:textStyle="bold"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/text_primary"
             android:singleLine="true"
             android:ellipsize="marquee"
             android:layout_marginTop="3dp" />
@@ -100,9 +100,9 @@
             android:id="@+id/widgetTvArtist"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Ready to Play"
-            android:textSize="10.5sp"
-            android:textColor="#90A0B2"
+            android:text="@string/spindle_deck_ready"
+            android:textSize="11sp"
+            android:textColor="@color/text_secondary"
             android:singleLine="true"
             android:ellipsize="end"
             android:layout_marginTop="1dp" />

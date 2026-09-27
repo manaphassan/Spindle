@@ -19,12 +19,12 @@ class RecentAppsManagerTest {
 
     @Test
     fun testRecordAppLaunch_movesToFront() {
-        manager.recordAppLaunch("com.sony.walkman")
+        manager.recordAppLaunch("com.retro.player")
         manager.recordAppLaunch("com.hiby.music")
         manager.recordAppLaunch("com.foobar2000")
 
         val recents = manager.getRecentPackageNames()
-        assertEquals(listOf("com.foobar2000", "com.hiby.music", "com.sony.walkman"), recents)
+        assertEquals(listOf("com.foobar2000", "com.hiby.music", "com.retro.player"), recents)
     }
 
     @Test

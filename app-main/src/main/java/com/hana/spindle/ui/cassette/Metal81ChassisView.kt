@@ -8,7 +8,7 @@ import android.view.View
 import com.hana.spindle.theme.CassetteTheme
 
 /**
- * Hardware-accelerated custom view rendering a Classic 1980s Retro Portable Player Red chassis.
+ * Hardware-accelerated custom view rendering a Classic 1981 Metal-81 Red chassis.
  *
  * Implements:
  * 1. Anodized crimson red chassis with bevels and radiuses.
@@ -21,14 +21,14 @@ import com.hana.spindle.theme.CassetteTheme
  *
  * Designed with zero allocations in onDraw() for maximum battery life and 60fps smoothness on low-RAM DAPs.
  */
-class Wm2ChassisView @JvmOverloads constructor(
+class Metal81ChassisView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
 
     // Theme state
-    var theme: CassetteTheme = CassetteTheme.WM2_RED_HERO
+    var theme: CassetteTheme = CassetteTheme.METAL_81_RED_HERO
         set(value) {
             field = value
             updatePaints()
@@ -126,11 +126,11 @@ class Wm2ChassisView @JvmOverloads constructor(
             strokeWidth = 2f
         }
         greenDotPaint.apply {
-            color = Color.parseColor("#00C853") // Iconic WM-2 green dot
+            color = Color.parseColor("#00C853") // Classic 1981 green dot
             style = Paint.Style.FILL
         }
         redSquarePaint.apply {
-            color = Color.parseColor("#D50000") // Iconic WM-2 red square
+            color = Color.parseColor("#D50000") // Classic 1981 red square
             style = Paint.Style.FILL
         }
         buttonPaint.apply {

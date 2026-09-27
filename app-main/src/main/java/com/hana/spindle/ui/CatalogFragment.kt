@@ -22,7 +22,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.hana.spindle.R
 import com.hana.spindle.SpindleApp
 import com.hana.spindle.data.db.AlbumItem
-import com.hana.spindle.data.db.SongEntity
+import com.hana.spindle.data.db.TrackEntity
 import com.hana.spindle.databinding.FragmentCatalogBinding
 import com.hana.spindle.playback.AudioEngine
 import com.hana.spindle.playback.RepeatMode
@@ -31,6 +31,7 @@ import com.hana.spindle.theme.CassetteTheme
 import com.hana.spindle.ui.catalog.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.io.File
 import java.util.Locale
@@ -41,16 +42,16 @@ class CatalogFragment : Fragment() {
     private val binding get() = _binding!!
 
     private lateinit var audioEngine: AudioEngine
-    private lateinit var songAdapter: SongAdapter
+    private lateinit var songAdapter: TrackAdapter
     private lateinit var albumAdapter: AlbumAdapter
     private lateinit var folderAdapter: FolderAdapter
     private lateinit var npLyricsAdapter: LyricsAdapter
-    private lateinit var albumTracksAdapter: SongAdapter
+    private lateinit var albumTracksAdapter: TrackAdapter
     private lateinit var waveformExtractor: com.hana.spindle.data.WaveformExtractor
     private lateinit var searchSuggestionAdapter: SearchSuggestionAdapter
     private var waveformExtractionJob: Job? = null
 
-    private var currentAlbumSongs: List<SongEntity> = emptyList()
+    private var currentAlbumSongs: List<TrackEntity> = emptyList()
     private var currentAlbumItem: AlbumItem? = null
     private var albumTracksJob: Job? = null
 
@@ -62,8 +63,8 @@ class CatalogFragment : Fragment() {
     // 0: Tracks, 1: Albums, 2: Artists, 3: Folders, 4: Favorites
     private var currentTab = 0
 
-    private var allSongsList: List<SongEntity> = emptyList()
-    private var currentDisplayedSongs: List<SongEntity> = emptyList()
+    private var allSongsList: List<TrackEntity> = emptyList()
+    private var currentDisplayedSongs: List<TrackEntity> = emptyList()
 
     private var allAlbumsList: List<AlbumItem> = emptyList()
     private var currentDisplayedAlbums: List<AlbumItem> = emptyList()
@@ -123,15 +124,15 @@ class CatalogFragment : Fragment() {
     }
 
     private fun setupAdapters(app: SpindleApp) {
-        songAdapter = SongAdapter(
+        songAdapter = TrackAdapter(
             imageLoader = app.imageLoader,
-            onSongClicked = { song, index ->
+            onTrackClicked = { song, index ->
                 audioEngine.playQueue(currentDisplayedSongs, index)
                 showNowPlayingSingleAudio(true)
             },
             onRatingChanged = { song, newRating ->
                 viewLifecycleOwner.lifecycleScope.launch {
-                    app.database.songDao().updateRating(song.id, newRating)
+                    app.database.trackDao().updateRating(song.id, newRating)
                 }
             }
         ).apply {
@@ -157,16 +158,16 @@ class CatalogFragment : Fragment() {
             }
         }
 
-        albumTracksAdapter = SongAdapter(
+        albumTracksAdapter = TrackAdapter(
             imageLoader = app.imageLoader,
-            onSongClicked = { song, index ->
+            onTrackClicked = { song, index ->
                 currentDisplayedSongs = currentAlbumSongs
                 audioEngine.playQueue(currentAlbumSongs, index)
                 showNowPlayingSingleAudio(true)
             },
             onRatingChanged = { song, newRating ->
                 viewLifecycleOwner.lifecycleScope.launch {
-                    app.database.songDao().updateRating(song.id, newRating)
+                    app.database.trackDao().updateRating(song.id, newRating)
                 }
             }
         ).apply {
@@ -195,6 +196,42 @@ class CatalogFragment : Fragment() {
 
         binding.rvAlbumTracks.layoutManager = LinearLayoutManager(requireContext())
         binding.rvAlbumTracks.adapter = albumTracksAdapter
+
+        val mixtapeReorderHelper = androidx.recyclerview.widget.ItemTouchHelper(
+            object : androidx.recyclerview.widget.ItemTouchHelper.SimpleCallback(
+                androidx.recyclerview.widget.ItemTouchHelper.UP or androidx.recyclerview.widget.ItemTouchHelper.DOWN, 0
+            ) {
+                override fun onMove(
+                    recyclerView: RecyclerView,
+                    viewHolder: RecyclerView.ViewHolder,
+                    target: RecyclerView.ViewHolder
+                ): Boolean {
+                    val fromPos = viewHolder.bindingAdapterPosition
+                    val toPos = target.bindingAdapterPosition
+                    if (fromPos == RecyclerView.NO_POSITION || toPos == RecyclerView.NO_POSITION || fromPos == toPos) return false
+                    if (currentAlbumItem?.format != "MIXTAPE") return false
+
+                    val mutable = currentAlbumSongs.toMutableList()
+                    val item = mutable.removeAt(fromPos)
+                    mutable.add(toPos, item)
+                    currentAlbumSongs = mutable
+                    albumTracksAdapter.submitList(mutable)
+
+                    val playlistId = currentAlbumItem?.year?.toLong() ?: return true
+                    viewLifecycleOwner.lifecycleScope.launch {
+                        app.database.playlistDao().reorderPlaylist(playlistId, mutable.map { it.id })
+                    }
+                    return true
+                }
+
+                override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {}
+
+                override fun isLongPressDragEnabled(): Boolean {
+                    return currentAlbumItem?.format == "MIXTAPE"
+                }
+            }
+        )
+        mixtapeReorderHelper.attachToRecyclerView(binding.rvAlbumTracks)
 
         albumAdapter = AlbumAdapter(
             imageLoader = app.imageLoader,
@@ -233,16 +270,45 @@ class CatalogFragment : Fragment() {
         ).apply {
             onAlbumLongClicked = { album ->
                 if (album.format == "MIXTAPE") {
+                    val options = arrayOf("Play Mixtape", "Export to .M3U", "Delete Mixtape")
                     android.app.AlertDialog.Builder(requireContext())
-                        .setTitle("Delete Mixtape")
-                        .setMessage("Are you sure you want to delete '${album.album}'? (Music files will not be deleted)")
-                        .setPositiveButton("Delete") { _, _ ->
-                            viewLifecycleOwner.lifecycleScope.launch {
-                                app.database.playlistDao().deletePlaylist(album.year.toLong())
-                                android.widget.Toast.makeText(requireContext(), "Deleted mixtape '${album.album}'", android.widget.Toast.LENGTH_SHORT).show()
+                        .setTitle(album.album)
+                        .setItems(options) { _, which ->
+                            when (which) {
+                                0 -> {
+                                    viewLifecycleOwner.lifecycleScope.launch {
+                                        val songs = app.database.playlistDao().getTracksForPlaylist(album.year.toLong()).first()
+                                        if (songs.isNotEmpty()) {
+                                            currentDisplayedSongs = songs
+                                            audioEngine.playQueue(songs, 0)
+                                            showNowPlayingSingleAudio(true)
+                                        }
+                                    }
+                                }
+                                1 -> {
+                                    MixtapeDialogs.exportMixtape(
+                                        requireContext(),
+                                        app.database,
+                                        viewLifecycleOwner.lifecycleScope,
+                                        album.year.toLong(),
+                                        album.album
+                                    )
+                                }
+                                2 -> {
+                                    android.app.AlertDialog.Builder(requireContext())
+                                        .setTitle("Delete Mixtape")
+                                        .setMessage("Are you sure you want to delete '${album.album}'? (Music files will not be deleted)")
+                                        .setPositiveButton("Delete") { _, _ ->
+                                            viewLifecycleOwner.lifecycleScope.launch {
+                                                app.database.playlistDao().deletePlaylist(album.year.toLong())
+                                                android.widget.Toast.makeText(requireContext(), "Deleted mixtape '${album.album}'", android.widget.Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                        .setNegativeButton("Cancel", null)
+                                        .show()
+                                }
                             }
                         }
-                        .setNegativeButton("Cancel", null)
                         .show()
                 }
             }
@@ -268,9 +334,9 @@ class CatalogFragment : Fragment() {
             val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
             imm?.hideSoftInputFromWindow(binding.etCatalogSearch.windowToken, 0)
 
-            if (suggestion.song != null) {
-                currentDisplayedSongs = listOf(suggestion.song)
-                audioEngine.playQueue(listOf(suggestion.song), 0)
+            if (suggestion.track != null) {
+                currentDisplayedSongs = listOf(suggestion.track)
+                audioEngine.playQueue(listOf(suggestion.track), 0)
                 showNowPlayingSingleAudio(true)
             } else if (suggestion.album != null) {
                 val album = suggestion.album
@@ -343,6 +409,13 @@ class CatalogFragment : Fragment() {
             loadFavorites(app)
         }
 
+        binding.tabMixtapes.setOnClickListener {
+            selectTab(5)
+            binding.rvCatalog.layoutManager = GridLayoutManager(requireContext(), 2)
+            binding.rvCatalog.adapter = albumAdapter
+            loadMixtapes(app)
+        }
+
         setupCatalogSwipe()
     }
 
@@ -359,7 +432,7 @@ class CatalogFragment : Fragment() {
                 val diffY = e2.y - e1.y
                 if (kotlin.math.abs(diffX) > kotlin.math.abs(diffY) && kotlin.math.abs(diffX) > 120 && kotlin.math.abs(velocityX) > 200) {
                     if (diffX < 0) {
-                        if (currentTab < 4) switchToTab(currentTab + 1)
+                        if (currentTab < 5) switchToTab(currentTab + 1)
                     } else {
                         if (currentTab > 0) switchToTab(currentTab - 1)
                     }
@@ -383,6 +456,7 @@ class CatalogFragment : Fragment() {
             2 -> binding.tabArtists.performClick()
             3 -> binding.tabFolders.performClick()
             4 -> binding.tabFavorites.performClick()
+            5 -> binding.tabMixtapes.performClick()
         }
     }
 
@@ -393,7 +467,7 @@ class CatalogFragment : Fragment() {
         val theme = app.themeManager.currentTheme.value
         val isEink = (theme.id == CassetteTheme.MONOCHROME_EINK.id)
         val isDark = theme.isDarkAppTheme
-        val activeBg = if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#F97316") else ContextCompat.getColor(requireContext(), R.color.wm2_red)
+        val activeBg = if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#F97316") else ContextCompat.getColor(requireContext(), R.color.metal81_red)
         val inactiveBg = if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#212228")
         val activeText = Color.WHITE
         val inactiveText = if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#2A2E45") else Color.parseColor("#94A3B8")
@@ -403,7 +477,8 @@ class CatalogFragment : Fragment() {
             binding.tabAlbums,
             binding.tabArtists,
             binding.tabFolders,
-            binding.tabFavorites
+            binding.tabFavorites,
+            binding.tabMixtapes
         )
 
         tabs.forEachIndexed { i, btn ->
@@ -411,9 +486,10 @@ class CatalogFragment : Fragment() {
             btn.setTextColor(if (i == index) activeText else inactiveText)
         }
 
-        binding.btnNewMixtape.visibility = View.GONE
-        binding.btnShuffle.visibility = View.VISIBLE
-        binding.btnPlayAll.visibility = View.VISIBLE
+        val isMixtapeTab = (index == 5)
+        binding.btnNewMixtape.visibility = if (isMixtapeTab) View.VISIBLE else View.GONE
+        binding.btnShuffle.visibility = if (isMixtapeTab) View.GONE else View.VISIBLE
+        binding.btnPlayAll.visibility = if (isMixtapeTab) View.GONE else View.VISIBLE
 
         updateSortLabel()
     }
@@ -539,7 +615,7 @@ class CatalogFragment : Fragment() {
 
     private fun setupSortAndGroup() {
         binding.btnSortGroup.setOnClickListener {
-            val isAlbum = (currentTab == 1 || currentTab == 2)
+            val isAlbum = (currentTab == 1 || currentTab == 2 || currentTab == 5)
             val dialog = SortGroupBottomSheet(
                 isAlbumTab = isAlbum,
                 currentTrackSort = trackSortOrder,
@@ -566,7 +642,7 @@ class CatalogFragment : Fragment() {
     }
 
     private fun updateSortLabel() {
-        val isAlbum = (currentTab == 1 || currentTab == 2)
+        val isAlbum = (currentTab == 1 || currentTab == 2 || currentTab == 5)
         val sortText = if (isAlbum) albumSortOrder.displayName else trackSortOrder.displayName
         binding.tvCurrentSortLabel.text = "Sort: $sortText"
     }
@@ -600,7 +676,7 @@ class CatalogFragment : Fragment() {
                     (lm as? LinearLayoutManager)?.scrollToPositionWithOffset(index, 0)
                 }
             }
-            1, 2 -> {
+            1, 2, 5 -> {
                 val index = currentDisplayedAlbums.indexOfFirst {
                     val firstChar = it.album.trim().firstOrNull()?.uppercaseChar() ?: '#'
                     if (targetChar == '#') !firstChar.isLetter() else firstChar == targetChar
@@ -615,9 +691,27 @@ class CatalogFragment : Fragment() {
     private fun setupQuickActions() {
         val app = requireActivity().application as SpindleApp
         binding.btnNewMixtape.setOnClickListener {
-            MixtapeDialogs.showCreateMixtapeDialog(requireContext(), app.database, viewLifecycleOwner.lifecycleScope) {
-                loadMixtapes(app)
-            }
+            val options = arrayOf(
+                getString(R.string.mixtape_cut_new),
+                "Import .M3U Playlist"
+            )
+            android.app.AlertDialog.Builder(requireContext())
+                .setTitle("Mixtapes")
+                .setItems(options) { _, which ->
+                    when (which) {
+                        0 -> {
+                            MixtapeDialogs.showCreateMixtapeDialog(requireContext(), app.database, viewLifecycleOwner.lifecycleScope) {
+                                loadMixtapes(app)
+                            }
+                        }
+                        1 -> {
+                            MixtapeDialogs.showImportM3uDialog(requireContext(), app.database, viewLifecycleOwner.lifecycleScope) {
+                                loadMixtapes(app)
+                            }
+                        }
+                    }
+                }
+                .show()
         }
 
         binding.btnShuffle.setOnClickListener {
@@ -675,7 +769,7 @@ class CatalogFragment : Fragment() {
                     title = song.title,
                     subtitle = "${song.artist} • ${song.fileFormat}",
                     type = SuggestionType.TRACK,
-                    song = song
+                    track = song
                 )
             )
         }
@@ -727,6 +821,15 @@ class CatalogFragment : Fragment() {
                 // 1. Filter Chips
                 list = when (currentFilterChip) {
                     CatalogFilterChip.ALL -> list
+                    CatalogFilterChip.FAVORITES -> list.filter { it.isFavorite }
+                    CatalogFilterChip.RECENTLY_ADDED -> list.sortedByDescending { it.dateAdded }
+                    CatalogFilterChip.MOST_PLAYED -> list.filter { it.playCount > 0 }.sortedByDescending { it.playCount }
+                    CatalogFilterChip.COMPOSER -> list.filter { !it.composer.isNullOrBlank() }
+                    CatalogFilterChip.DUPLICATES -> {
+                        val dupKeys = list.groupBy { it.title.lowercase(Locale.ROOT) to it.artist.lowercase(Locale.ROOT) }
+                            .filter { it.value.size > 1 }.keys
+                        list.filter { (it.title.lowercase(Locale.ROOT) to it.artist.lowercase(Locale.ROOT)) in dupKeys }
+                    }
                     CatalogFilterChip.HI_RES -> list.filter { it.bitDepth >= 24 || it.sampleRate > 48000 || it.fileFormat in setOf("FLAC", "WAV", "DSD", "DSF") }
                     CatalogFilterChip.LOSSLESS -> list.filter { it.fileFormat in setOf("FLAC", "WAV", "ALAC", "AIFF", "DSD", "DSF") }
                     CatalogFilterChip.FLAC -> list.filter { it.fileFormat == "FLAC" }
@@ -740,7 +843,9 @@ class CatalogFragment : Fragment() {
                     list = list.filter {
                         it.title.lowercase(Locale.ROOT).contains(query) ||
                         it.artist.lowercase(Locale.ROOT).contains(query) ||
-                        it.album.lowercase(Locale.ROOT).contains(query)
+                        it.album.lowercase(Locale.ROOT).contains(query) ||
+                        it.albumArtist?.lowercase(Locale.ROOT)?.contains(query) == true ||
+                        it.composer?.lowercase(Locale.ROOT)?.contains(query) == true
                     }
                 }
 
@@ -756,13 +861,15 @@ class CatalogFragment : Fragment() {
                     TrackSortOrder.BITRATE_DESC -> list.sortedByDescending { it.bitrateKbps }
                     TrackSortOrder.DURATION_DESC -> list.sortedByDescending { it.durationMs }
                     TrackSortOrder.DATE_MODIFIED_DESC -> list.sortedByDescending { it.dateModified }
+                    TrackSortOrder.PLAY_COUNT_DESC -> list.sortedByDescending { it.playCount }
+                    TrackSortOrder.LAST_PLAYED_DESC -> list.sortedByDescending { it.lastPlayedAt ?: 0L }
                 }
 
                 currentDisplayedSongs = list
                 songAdapter.submitList(list)
                 binding.tvCatalogCount.text = "${list.size} tracks"
             }
-            1, 2 -> {
+            1, 2, 5 -> {
                 var list = allAlbumsList
 
                 // 1. Search Query
@@ -786,7 +893,8 @@ class CatalogFragment : Fragment() {
 
                 currentDisplayedAlbums = list
                 albumAdapter.submitList(list)
-                binding.tvCatalogCount.text = "${list.size} albums"
+                val unitLabel = if (currentTab == 5) "mixtapes" else "albums"
+                binding.tvCatalogCount.text = "${list.size} $unitLabel"
             }
             3 -> {
                 var list = allFoldersList
@@ -844,7 +952,7 @@ class CatalogFragment : Fragment() {
 
                         if (song.id != currentLoadedSongId) {
                             currentLoadedSongId = song.id
-                            updateFavoriteIcon(song.rating > 0)
+                            updateFavoriteIcon(song.isFavorite)
 
                             // Load circular cover art and extract accent color
                             viewLifecycleOwner.lifecycleScope.launch {
@@ -952,13 +1060,13 @@ class CatalogFragment : Fragment() {
         }
 
         binding.btnNpFavorite.setOnClickListener {
-            val song = audioEngine.playbackState.value.currentSong
-            if (song != null) {
-                val newRating = if (song.rating > 0) 0 else 5
+            val track = audioEngine.playbackState.value.currentTrack
+            if (track != null) {
+                val newFavorite = !track.isFavorite
                 viewLifecycleOwner.lifecycleScope.launch {
-                    app.database.songDao().updateRating(song.id, newRating)
+                    app.database.trackDao().updateFavorite(track.id, newFavorite)
                 }
-                updateFavoriteIcon(newRating > 0)
+                updateFavoriteIcon(newFavorite)
             }
         }
 
@@ -1139,7 +1247,7 @@ class CatalogFragment : Fragment() {
         }
     }
 
-    fun showAlbumDetail(album: AlbumItem, songs: List<SongEntity>) {
+    fun showAlbumDetail(album: AlbumItem, songs: List<TrackEntity>) {
         currentAlbumItem = album
         currentAlbumSongs = songs
 
@@ -1221,6 +1329,21 @@ class CatalogFragment : Fragment() {
             }
         }
 
+        if (album.format == "MIXTAPE") {
+            binding.btnAlbumDetailExportM3u.visibility = View.VISIBLE
+            binding.btnAlbumDetailExportM3u.setOnClickListener {
+                MixtapeDialogs.exportMixtape(
+                    requireContext(),
+                    app.database,
+                    viewLifecycleOwner.lifecycleScope,
+                    album.year.toLong(),
+                    album.album
+                )
+            }
+        } else {
+            binding.btnAlbumDetailExportM3u.visibility = View.GONE
+        }
+
         binding.btnAlbumDetailBack.setOnClickListener {
             hideAlbumDetail()
         }
@@ -1279,7 +1402,7 @@ class CatalogFragment : Fragment() {
 
     private fun loadSongs(app: SpindleApp) {
         viewLifecycleOwner.lifecycleScope.launch {
-            app.database.songDao().getAllSongs().collectLatest { songs ->
+            app.database.trackDao().getAllTracks().collectLatest { songs ->
                 allSongsList = songs
                 applyFilterAndSort()
             }
@@ -1288,7 +1411,7 @@ class CatalogFragment : Fragment() {
 
     private fun loadAlbums(app: SpindleApp) {
         viewLifecycleOwner.lifecycleScope.launch {
-            app.database.songDao().getAlbums().collectLatest { albums ->
+            app.database.trackDao().getAlbums().collectLatest { albums ->
                 allAlbumsList = albums
                 applyFilterAndSort()
             }
@@ -1297,7 +1420,7 @@ class CatalogFragment : Fragment() {
 
     private fun loadArtists(app: SpindleApp) {
         viewLifecycleOwner.lifecycleScope.launch {
-            app.database.songDao().getAlbums().collectLatest { albums ->
+            app.database.trackDao().getAlbums().collectLatest { albums ->
                 val artists = albums.groupBy { it.artist }.map { (artist, list) ->
                     AlbumItem(
                         album = artist,
@@ -1328,7 +1451,7 @@ class CatalogFragment : Fragment() {
 
     private fun loadGenres(app: SpindleApp) {
         viewLifecycleOwner.lifecycleScope.launch {
-            app.database.songDao().getAllSongs().collectLatest { songs ->
+            app.database.trackDao().getAllTracks().collectLatest { songs ->
                 val genres = songs.filter { !it.genre.isNullOrBlank() }
                     .groupBy { it.genre!! }
                     .map { (genre, list) ->
@@ -1349,7 +1472,7 @@ class CatalogFragment : Fragment() {
 
     private fun loadHiRes(app: SpindleApp) {
         viewLifecycleOwner.lifecycleScope.launch {
-            app.database.songDao().getHiResSongs().collectLatest { hiResSongs ->
+            app.database.trackDao().getHiResTracks().collectLatest { hiResSongs ->
                 allSongsList = hiResSongs
                 applyFilterAndSort()
             }
@@ -1358,8 +1481,8 @@ class CatalogFragment : Fragment() {
 
     private fun loadFavorites(app: SpindleApp) {
         viewLifecycleOwner.lifecycleScope.launch {
-            app.database.songDao().getRatedSongs().collectLatest { ratedSongs ->
-                allSongsList = ratedSongs
+            app.database.trackDao().getFavoriteTracks().collectLatest { favTracks ->
+                allSongsList = favTracks
                 applyFilterAndSort()
             }
         }

@@ -9,7 +9,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.hana.spindle.R
 import com.hana.spindle.data.db.AlbumItem
-import com.hana.spindle.data.db.SongEntity
+import com.hana.spindle.data.db.TrackEntity
 import com.hana.spindle.databinding.ItemSearchSuggestionBinding
 
 enum class SuggestionType {
@@ -22,9 +22,12 @@ data class SearchSuggestion(
     val title: String,
     val subtitle: String,
     val type: SuggestionType,
-    val song: SongEntity? = null,
+    val track: TrackEntity? = null,
     val album: AlbumItem? = null
-)
+) {
+    @Deprecated("Use track instead", ReplaceWith("track"))
+    val song: TrackEntity? get() = track
+}
 
 class SearchSuggestionAdapter(
     private val onSuggestionClicked: (SearchSuggestion) -> Unit

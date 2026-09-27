@@ -37,7 +37,7 @@ class SortGroupBottomSheet(
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val tintList = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.wm2_red))
+        val tintList = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.metal81_red))
 
         // 1. Setup Sort Options
         if (isAlbumTab) {

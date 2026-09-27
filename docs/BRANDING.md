@@ -18,7 +18,7 @@ To breathe second life into compact smartphones and legacy Android DAPs by provi
 
 ### 1.3 Core Brand Pillars
 - **Analog Authenticity**: Every interface element behaves like real hardware with tactile inertia, detent vibrations, and physical feedback.
-- **Audiophile Fidelity**: Bit-perfect direct ALSA audio routing, FLAC/DSD native decoding, and zero lossy algorithmic processing.
+- **Audiophile Fidelity**: Hi-Res passthrough audio routing (device-dependent), 24-bit/192kHz FLAC/DSD native decoding, ReplayGain loudness normalization, and zero lossy algorithmic processing.
 - **Hardware Preservation**: Ultra-low RAM consumption ($<25\text{MB}$), zero GC hiccups, extending the lifespan of older compact devices.
 - **Absolute Privacy (NO AI)**: 100% offline, deterministic, with zero telemetry or data collection.
 
@@ -80,6 +80,7 @@ The palette follows strict audiophile industrial design ratios ensuring high leg
 | **Peachy Coral Pink** | `#FB7185` | `■` `#FB7185` | Secondary accent, favorite heart, 0dB peak meter alert LED, audio format capsule |
 | **Butter Yellow** | `#FDE68A` | `■` `#FDE68A` | Cassette tape label body, star ratings, warm VFD clock glow & radio frequency |
 | **Pale Warm Stone** | `#FAFAF9` | `■` `#FAFAF9` | 60% Light chassis base, crisp high-contrast text in Dark theme |
+| **VFD Emerald** | `#00E676` | `■` `#00E676` | Hardware telemetry status badge, RUN transport diode, active sample rate |
 
 ---
 

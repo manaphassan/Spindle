@@ -26,7 +26,7 @@ import kotlin.math.abs
 /**
  * Dedicated Full-Screen Retro Cassette Lockscreen Activity.
  * Runs directly over the Android Keyguard when music is playing,
- * turning the DAP into an authentic standalone physical Walkman.
+ * turning the DAP into an authentic standalone physical cassette player.
  */
 class LockscreenActivity : AppCompatActivity() {
 

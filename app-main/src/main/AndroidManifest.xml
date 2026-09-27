@@ -22,7 +22,7 @@
     <!-- Haptic Feedback for Mechanical Button Clicks -->
     <uses-permission android:name="android.permission.VIBRATE" />
 
-    <!-- Battery Telemetry for WM-2 Hardware LED -->
+    <!-- Battery Telemetry for Metal-81 Hardware LED -->
     <uses-permission android:name="android.permission.BATTERY_STATS"
         tools:ignore="ProtectedPermissions" />
 

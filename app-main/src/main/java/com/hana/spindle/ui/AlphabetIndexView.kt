@@ -20,7 +20,7 @@ import kotlin.math.cos
 /**
  * Audiophile "Vernier Wave" Kinetic Alphabet Quick-Scroll Rail.
  *
- * Inspired by Niagara Launcher and Braun/Sony audio vernier tuning scales.
+ * Inspired by Niagara Launcher and classic analog vernier tuning scales.
  * Features:
  * - Fluid parabolic wave deflection that bows outward towards the thumb on drag.
  * - Progressive typographic magnification from 10sp up to 20sp.

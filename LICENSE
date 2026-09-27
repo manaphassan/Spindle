@@ -4,21 +4,29 @@ PolyForm Noncommercial License 1.0.0
 Copyright (c) 2026 HaNa Innovation
 
 ================================================================================
-SUMMARY (PLAIN ENGLISH)
+SUMMARY & OPEN-CORE DUAL MODEL (PLAIN ENGLISH)
 ================================================================================
-This software is open, free to view, and free to use for personal, hobbyist,
-and non-commercial community purposes:
+This repository follows an Open-Core licensing model:
 
-  ✔ YOU CAN: Download, install, run, and enjoy Spindle for free.
-  ✔ YOU CAN: Inspect the source code, learn from it, and modify it for personal use.
-  ✔ YOU CAN: Share the software with friends and fellow retro audio enthusiasts.
-  ✔ YOU CAN: Fork the project and submit non-commercial community improvements.
+1. CORE APPLICATION (Spindle Standard Free Core & Spindle Lite):
+   Open, free to view, and free to use for personal, hobbyist, and non-commercial
+   community purposes under the PolyForm Noncommercial License 1.0.0 below:
+     ✔ YOU CAN: Download, install, run, and enjoy Spindle for free.
+     ✔ YOU CAN: Inspect the source code, learn from it, and modify it for personal use.
+     ✔ YOU CAN: Share the software with friends and fellow retro audio enthusiasts.
+     ✔ YOU CAN: Fork the project and submit non-commercial community improvements.
 
-  ✖ YOU CANNOT: Sell, resell, license, or charge any fee or money for this software,
-                its source code, its binaries, or any derivative works.
-  ✖ YOU CANNOT: Bundle or pre-install this software into commercial paid hardware,
-                services, or paid app stores without explicit written permission.
-  ✖ YOU CANNOT: Inject advertisements, paywalls, or commercial monetizations.
+     ✖ YOU CANNOT: Sell, resell, license, or charge any fee or money for this core software,
+                   its source code, its binaries, or any derivative works.
+     ✖ YOU CANNOT: Bundle or pre-install this software into commercial paid hardware,
+                   services, or paid app stores without explicit written permission.
+     ✖ YOU CANNOT: Inject third-party advertisements or unapproved paywalls.
+
+2. COMMERCIAL ADD-ON ("STUDIO COLLECTOR"):
+   Optional proprietary collector skins, extended DSP modules, foley sound packs,
+   and deck engraving are governed separately under the Spindle Studio Collector EULA
+   (see LICENSE-STUDIO.md) and distributed exclusively via authorized app stores
+   (e.g., Google Play In-App Billing).
 
 ================================================================================
 CREATOR DISCLAIMER

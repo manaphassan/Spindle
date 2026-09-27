@@ -59,7 +59,7 @@
                 android:layout_height="wrap_content"
                 android:fontFamily="monospace"
                 android:letterSpacing="0.06"
-                android:text="SONY ERICSSON ST17i"
+                android:text="VINTAGE DAP"
                 android:textColor="@color/lite_text_primary"
                 android:textSize="9.5sp"
                 android:textStyle="bold" />

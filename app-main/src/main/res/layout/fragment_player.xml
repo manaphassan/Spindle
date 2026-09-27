@@ -54,16 +54,16 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- 2. Classic 1981 WM-2 Red Layout Container -->
+    <!-- 2. Classic 1981 Metal-81 Red Layout Container -->
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/wm2Container"
+        android:id="@+id/metal81Container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/wm2_red"
+        android:background="@color/metal81_red"
         android:visibility="gone">
 
-        <com.hana.spindle.ui.cassette.Wm2ChassisView
-            android:id="@+id/wm2ChassisView"
+        <com.hana.spindle.ui.cassette.Metal81ChassisView
+            android:id="@+id/metal81ChassisView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             app:layout_constraintTop_toTopOf="parent"
@@ -72,7 +72,7 @@
             app:layout_constraintEnd_toEndOf="parent" />
 
         <com.hana.spindle.ui.cassette.CassetteView
-            android:id="@+id/wm2CassetteView"
+            android:id="@+id/metal81CassetteView"
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:layout_marginStart="16dp"
@@ -90,7 +90,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:background="#E6121214"
+            android:background="@color/surface_container"
             android:paddingHorizontal="12dp"
             android:paddingVertical="4dp"
             android:layout_marginBottom="84dp"
@@ -111,8 +111,8 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text=" / "
-                android:textColor="#6600E676"
+                android:text="@string/player_time_divider"
+                android:textColor="@color/text_secondary"
                 android:fontFamily="monospace"
                 android:textSize="18sp" />
 
@@ -143,8 +143,8 @@
                 android:layout_height="52dp"
                 android:layout_weight="1"
                 android:layout_marginEnd="6dp"
-                android:backgroundTint="@color/wm2_bezel_black"
-                android:text="|&lt;&lt;"
+                android:backgroundTint="@color/metal81_bezel_black"
+                android:text="@string/player_btn_prev_label"
                 android:textColor="@color/white"
                 android:textSize="12sp"
                 android:textStyle="bold"
@@ -159,9 +159,9 @@
                 android:layout_height="52dp"
                 android:layout_weight="1.2"
                 android:layout_marginEnd="6dp"
-                android:backgroundTint="@color/wm2_bezel_dark"
-                android:text="&gt; PLAY"
-                android:textColor="@color/wm2_play_green"
+                android:backgroundTint="@color/metal81_bezel_dark"
+                android:text="@string/player_btn_play_label"
+                android:textColor="@color/metal81_play_green"
                 android:textSize="12sp"
                 android:textStyle="bold"
                 android:padding="0dp"
@@ -175,8 +175,8 @@
                 android:layout_height="52dp"
                 android:layout_weight="1"
                 android:layout_marginEnd="6dp"
-                android:backgroundTint="@color/wm2_bezel_black"
-                android:text="&gt;&gt;|"
+                android:backgroundTint="@color/metal81_bezel_black"
+                android:text="@string/player_btn_next_label"
                 android:textColor="@color/white"
                 android:textSize="12sp"
                 android:textStyle="bold"
@@ -190,8 +190,8 @@
                 android:layout_width="0dp"
                 android:layout_height="52dp"
                 android:layout_weight="1"
-                android:backgroundTint="@color/wm2_red_dark"
-                android:text="EJECT"
+                android:backgroundTint="@color/metal81_red_dark"
+                android:text="@string/action_eject"
                 android:textColor="@color/white"
                 android:textSize="12sp"
                 android:textStyle="bold"
