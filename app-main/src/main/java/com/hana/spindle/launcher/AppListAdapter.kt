@@ -13,7 +13,8 @@ import com.hana.spindle.databinding.ItemAppGridBinding
  * Universal adapter for the Apps Drawer supporting both List and Grid presentation modes.
  */
 class AppListAdapter(
-    private val onAppClicked: (AppInfo) -> Unit
+    private val onAppClicked: (AppInfo) -> Unit,
+    private val onAppLongClicked: ((AppInfo) -> Unit)? = null
 ) : ListAdapter<AppInfo, AppListAdapter.BaseAppViewHolder>(DiffCallback) {
 
     companion object {
@@ -49,24 +50,49 @@ class AppListAdapter(
     }
 
     sealed class BaseAppViewHolder(root: View) : RecyclerView.ViewHolder(root) {
-        abstract fun bind(app: AppInfo, onAppClicked: (AppInfo) -> Unit, textColor: Int)
+        abstract fun bind(
+            app: AppInfo,
+            onAppClicked: (AppInfo) -> Unit,
+            onAppLongClicked: ((AppInfo) -> Unit)?,
+            textColor: Int
+        )
     }
 
     class ListViewHolder(private val binding: ItemAppBinding) : BaseAppViewHolder(binding.root) {
-        override fun bind(app: AppInfo, onAppClicked: (AppInfo) -> Unit, textColor: Int) {
+        override fun bind(
+            app: AppInfo,
+            onAppClicked: (AppInfo) -> Unit,
+            onAppLongClicked: ((AppInfo) -> Unit)?,
+            textColor: Int
+        ) {
             binding.tvAppLabel.text = app.label
             binding.tvAppLabel.setTextColor(textColor)
             binding.ivAppIcon.setImageDrawable(app.icon)
             itemView.setOnClickListener { onAppClicked(app) }
+            itemView.setOnLongClickListener {
+                itemView.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
+                onAppLongClicked?.invoke(app)
+                true
+            }
         }
     }
 
     class GridViewHolder(private val binding: ItemAppGridBinding) : BaseAppViewHolder(binding.root) {
-        override fun bind(app: AppInfo, onAppClicked: (AppInfo) -> Unit, textColor: Int) {
+        override fun bind(
+            app: AppInfo,
+            onAppClicked: (AppInfo) -> Unit,
+            onAppLongClicked: ((AppInfo) -> Unit)?,
+            textColor: Int
+        ) {
             binding.tvAppLabel.text = app.label
             binding.tvAppLabel.setTextColor(textColor)
             binding.ivAppIcon.setImageDrawable(app.icon)
             itemView.setOnClickListener { onAppClicked(app) }
+            itemView.setOnLongClickListener {
+                itemView.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
+                onAppLongClicked?.invoke(app)
+                true
+            }
         }
     }
 
@@ -84,6 +110,6 @@ class AppListAdapter(
     }
 
     override fun onBindViewHolder(holder: BaseAppViewHolder, position: Int) {
-        holder.bind(getItem(position), onAppClicked, textColor)
+        holder.bind(getItem(position), onAppClicked, onAppLongClicked, textColor)
     }
 }

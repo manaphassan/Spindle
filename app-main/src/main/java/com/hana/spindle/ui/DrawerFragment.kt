@@ -45,6 +45,7 @@ import com.hana.spindle.databinding.FragmentDrawerBinding
 import com.hana.spindle.launcher.AppInfo
 import com.hana.spindle.launcher.AppListAdapter
 import com.hana.spindle.launcher.AppListLoader
+import com.hana.spindle.launcher.AppPropertiesDialog
 import com.hana.spindle.launcher.RecentAppsManager
 import com.hana.spindle.core.AudioDspConstants
 import com.hana.spindle.core.CrossfadeMode
@@ -156,6 +157,7 @@ class DrawerFragment : Fragment() {
         syncVolumeSlider()
         val filter = IntentFilter("android.media.VOLUME_CHANGED_ACTION")
         requireContext().registerReceiver(volumeChangeReceiver, filter)
+        reloadApps()
     }
 
     override fun onPause() {
@@ -222,15 +224,22 @@ class DrawerFragment : Fragment() {
     // 2. MINIMALIST APP DRAWER WITH NIAGARA-STYLE VERNIER WAVE SCROLLBAR
     // =========================================================================
     private fun setupAppDrawer() {
-        appAdapter = AppListAdapter { appInfo ->
-            recentAppsManager.recordAppLaunch(appInfo.packageName)
-            val launchIntent = Intent(Intent.ACTION_MAIN).apply {
-                addCategory(Intent.CATEGORY_LAUNCHER)
-                component = ComponentName(appInfo.packageName, appInfo.activityName)
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED
+        appAdapter = AppListAdapter(
+            onAppClicked = { appInfo ->
+                recentAppsManager.recordAppLaunch(appInfo.packageName)
+                val launchIntent = Intent(Intent.ACTION_MAIN).apply {
+                    addCategory(Intent.CATEGORY_LAUNCHER)
+                    component = ComponentName(appInfo.packageName, appInfo.activityName)
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED
+                }
+                startActivity(launchIntent)
+            },
+            onAppLongClicked = { appInfo ->
+                AppPropertiesDialog.show(requireContext(), appInfo) {
+                    reloadApps()
+                }
             }
-            startActivity(launchIntent)
-        }
+        )
 
         val density = resources.displayMetrics.density
         binding.rvApps.layoutManager = LinearLayoutManager(requireContext())
@@ -239,10 +248,7 @@ class DrawerFragment : Fragment() {
         binding.rvApps.setPadding(0, 0, (32 * density).toInt(), (24 * density).toInt())
         binding.alphabetIndexView.visibility = View.VISIBLE
 
-        viewLifecycleOwner.lifecycleScope.launch {
-            allApps = appListLoader.loadInstalledApps().sortedBy { it.label.lowercase(Locale.ROOT) }
-            filterApps(binding.etSearchApps.text.toString())
-        }
+        reloadApps()
 
         binding.etSearchApps.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -278,6 +284,15 @@ class DrawerFragment : Fragment() {
             allApps.filter { it.label.contains(query, ignoreCase = true) }
         }
         appAdapter.submitList(filtered)
+    }
+
+    private fun reloadApps() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            allApps = appListLoader.loadInstalledApps().sortedBy { it.label.lowercase(Locale.ROOT) }
+            _binding?.let { b ->
+                filterApps(b.etSearchApps.text.toString())
+            }
+        }
     }
 
     // =========================================================================

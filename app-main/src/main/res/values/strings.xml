@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Spindle</string>
+    <string name="app_name">スピンドル</string>
     <string name="launcher_label">Spindle DAP Launcher</string>
 
     <!-- Transport Controls -->
