@@ -27,6 +27,9 @@ class TrackAdapter(
     private val scope = CoroutineScope(Dispatchers.Main)
     var activeTrackId: Long? = null
     var showTrackNumbers: Boolean = false
+    var isReorderable: Boolean = false
+    var onStartDrag: ((RecyclerView.ViewHolder) -> Unit)? = null
+    var onRemoveFromMixtape: ((TrackEntity, Int) -> Unit)? = null
     var onPlayNext: ((TrackEntity) -> Unit)? = null
     var onAddToQueue: ((TrackEntity) -> Unit)? = null
     var onAddToMixtape: ((TrackEntity) -> Unit)? = null
@@ -149,24 +152,53 @@ class TrackAdapter(
             }
         }
 
-        holder.itemView.setOnClickListener { onTrackClicked(track, position) }
+        // Drag Handle for Mixtape Reordering
+        if (isReorderable) {
+            b.ivDragHandle.visibility = View.VISIBLE
+            b.ivDragHandle.imageTintList = ColorStateList.valueOf(textColorSecondary)
+            b.ivDragHandle.setOnTouchListener { _, event ->
+                if (event.actionMasked == android.view.MotionEvent.ACTION_DOWN) {
+                    onStartDrag?.invoke(holder)
+                }
+                false
+            }
+        } else {
+            b.ivDragHandle.visibility = View.GONE
+            b.ivDragHandle.setOnTouchListener(null)
+        }
 
-        holder.itemView.setOnLongClickListener {
+        val showTrackOptions = {
             val context = holder.itemView.context
-            val options = arrayOf("Play Now", "Play Next", "Add to Queue", "Add to Mixtape", "Inspect & Edit Tags")
+            val optionsList = mutableListOf("Play Now", "Play Next", "Add to Queue", "Add to Mixtape", "Inspect & Edit Tags")
+            if (isReorderable && onRemoveFromMixtape != null) {
+                optionsList.add("Remove from Mixtape")
+            }
             android.app.AlertDialog.Builder(context)
                 .setTitle(track.title)
-                .setItems(options) { _, which ->
+                .setItems(optionsList.toTypedArray()) { _, which ->
                     when (which) {
                         0 -> onTrackClicked(track, holder.bindingAdapterPosition)
                         1 -> onPlayNext?.invoke(track)
                         2 -> onAddToQueue?.invoke(track)
                         3 -> onAddToMixtape?.invoke(track)
                         4 -> onInspectTags?.invoke(track)
+                        5 -> onRemoveFromMixtape?.invoke(track, holder.bindingAdapterPosition)
                     }
                 }
                 .show()
-            true
+        }
+
+        b.btnSongMenu.setOnClickListener { showTrackOptions() }
+
+        holder.itemView.setOnClickListener { onTrackClicked(track, position) }
+
+        holder.itemView.setOnLongClickListener {
+            if (!isReorderable) {
+                showTrackOptions()
+                true
+            } else {
+                false
+            }
         }
     }
 

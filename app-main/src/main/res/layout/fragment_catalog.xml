@@ -639,54 +639,57 @@
                 android:fontFamily="monospace"
                 android:gravity="center" />
 
-            <!-- Tactile Action Pill Buttons: Play All & Shuffle -->
+            <!-- Tactile Action Pill Buttons: Play All, Shuffle & Export -->
             <LinearLayout
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:gravity="center_vertical"
+                android:gravity="center"
                 android:layout_marginTop="10dp">
 
                 <Button
                     android:id="@+id/btnAlbumDetailPlayAll"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
                     android:layout_height="34dp"
                     android:text="@string/catalog_play_all"
                     android:textSize="11sp"
                     android:textStyle="bold"
                     android:textColor="@color/white"
                     android:backgroundTint="@color/metal81_red"
-                    android:paddingHorizontal="16dp"
+                    android:paddingHorizontal="4dp"
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
                     app:cornerRadius="@dimen/corner_radius_pill" />
 
                 <Button
                     android:id="@+id/btnAlbumDetailShuffle"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
                     android:layout_height="34dp"
-                    android:layout_marginStart="10dp"
+                    android:layout_marginStart="8dp"
                     android:text="@string/catalog_shuffle"
                     android:textSize="11sp"
                     android:textStyle="bold"
                     android:textColor="@color/text_primary"
                     android:backgroundTint="#202334"
-                    android:paddingHorizontal="16dp"
+                    android:paddingHorizontal="4dp"
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
                     app:cornerRadius="@dimen/corner_radius_pill" />
 
                 <Button
                     android:id="@+id/btnAlbumDetailExportM3u"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
                     android:layout_height="34dp"
-                    android:layout_marginStart="10dp"
+                    android:layout_marginStart="8dp"
                     android:text="@string/catalog_export_m3u"
                     android:textSize="11sp"
                     android:textStyle="bold"
                     android:textColor="@color/vfd_emerald"
                     android:backgroundTint="#202334"
-                    android:paddingHorizontal="14dp"
+                    android:paddingHorizontal="4dp"
                     android:visibility="gone"
                     android:insetTop="0dp"
                     android:insetBottom="0dp"

@@ -101,7 +101,7 @@ object MixtapeDialogs {
             .setPositiveButton(context.getString(R.string.mixtape_record_tape)) { _, _ ->
                 val name = input.text.toString().trim()
                 if (name.isNotBlank()) {
-                    scope.launch {
+                    scope.launch(Dispatchers.IO) {
                         val id = database.playlistDao().insertPlaylist(
                             PlaylistEntity(name = name, colorAccent = selectedColor)
                         )
@@ -123,7 +123,7 @@ object MixtapeDialogs {
         track: TrackEntity,
         onAdded: (() -> Unit)? = null
     ) {
-        scope.launch {
+        scope.launch(Dispatchers.IO) {
             val playlists = database.playlistDao().getAllPlaylists().first()
             withContext(Dispatchers.Main) {
                 if (playlists.isEmpty()) {
@@ -133,7 +133,7 @@ object MixtapeDialogs {
                         .setMessage("Would you like to record your first custom Mixtape now?")
                         .setPositiveButton("Create Mixtape") { _, _ ->
                             showCreateMixtapeDialog(context, database, scope) { newId ->
-                                scope.launch {
+                                scope.launch(Dispatchers.IO) {
                                     database.playlistDao().addSongToPlaylist(
                                         PlaylistSongCrossRef(newId, track.id, System.currentTimeMillis())
                                     )
@@ -158,7 +158,7 @@ object MixtapeDialogs {
                         .setItems(items.toTypedArray()) { _, which ->
                             if (which == 0) {
                                 showCreateMixtapeDialog(context, database, scope) { newId ->
-                                    scope.launch {
+                                    scope.launch(Dispatchers.IO) {
                                         database.playlistDao().addSongToPlaylist(
                                             PlaylistSongCrossRef(newId, track.id, System.currentTimeMillis())
                                         )
@@ -170,7 +170,7 @@ object MixtapeDialogs {
                                 }
                             } else {
                                 val playlist = playlists[which - 1]
-                                scope.launch {
+                                scope.launch(Dispatchers.IO) {
                                     database.playlistDao().addSongToPlaylist(
                                         PlaylistSongCrossRef(playlist.id, track.id, System.currentTimeMillis())
                                     )
@@ -328,6 +328,36 @@ object MixtapeDialogs {
                         }
                         .setNegativeButton("Cancel", null)
                         .show()
+                }
+            }
+        }
+    }
+
+    /**
+     * Exports a dynamically generated Smart Mixtape to a portable Extended M3U8 file.
+     */
+    fun exportSmartMixtape(
+        context: Context,
+        scope: CoroutineScope,
+        playlistName: String,
+        tracks: List<TrackEntity>,
+        onExported: ((java.io.File) -> Unit)? = null
+    ) {
+        if (tracks.isEmpty()) {
+            Toast.makeText(context, "Cannot export empty mixtape", Toast.LENGTH_SHORT).show()
+            return
+        }
+        scope.launch {
+            val dir = com.hana.spindle.data.M3uManager.getDefaultPlaylistDirectory()
+            val sanitizedName = playlistName.replace(Regex("[^a-zA-Z0-9._ -]"), "_")
+            val targetFile = java.io.File(dir, "$sanitizedName.m3u8")
+            val success = com.hana.spindle.data.M3uManager.exportMixtape(targetFile, playlistName, tracks, useRelativePaths = true)
+            withContext(Dispatchers.Main) {
+                if (success) {
+                    Toast.makeText(context, "Exported smart mixtape to:\n${targetFile.name}", Toast.LENGTH_LONG).show()
+                    onExported?.invoke(targetFile)
+                } else {
+                    Toast.makeText(context, "Failed to export smart mixtape", Toast.LENGTH_SHORT).show()
                 }
             }
         }

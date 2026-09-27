@@ -77,8 +77,9 @@ class MainActivity : AppCompatActivity() {
                 navigateToDrawer()
             }
         } else if (intent?.getStringExtra("navigate") == "catalog") {
+            val tab = intent.getIntExtra("tab", -1)
             binding.viewPager.post {
-                navigateToCatalog()
+                navigateToCatalog(tab = tab)
             }
         }
         handlePlaybackIntent(intent)
@@ -346,7 +347,7 @@ class MainActivity : AppCompatActivity() {
         navigateToCatalog(openNowPlaying = true)
     }
 
-    fun navigateToCatalog(openNowPlaying: Boolean = false) {
+    fun navigateToCatalog(openNowPlaying: Boolean = false, tab: Int = -1) {
         binding.viewPager.isUserInputEnabled = false
         binding.catalogContainer.visibility = View.VISIBLE
         binding.catalogContainer.bringToFront()
@@ -361,7 +362,7 @@ class MainActivity : AppCompatActivity() {
             .start()
 
         supportFragmentManager.beginTransaction()
-            .replace(R.id.catalogContainer, CatalogFragment.newInstance(openNowPlaying = openNowPlaying))
+            .replace(R.id.catalogContainer, CatalogFragment.newInstance(openNowPlaying = openNowPlaying, initialTab = tab))
             .commitAllowingStateLoss()
     }
 
@@ -394,6 +395,12 @@ class MainActivity : AppCompatActivity() {
 
         if (ContextCompat.checkSelfPermission(this, storagePermission) != PackageManager.PERMISSION_GRANTED) {
             permissionsToRequest.add(storagePermission)
+        }
+
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            }
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -447,6 +454,11 @@ class MainActivity : AppCompatActivity() {
         }
         if (intent.getStringExtra("navigate") == "drawer") {
             binding.viewPager.post { navigateToDrawer() }
+            return
+        }
+        if (intent.getStringExtra("navigate") == "catalog") {
+            val tab = intent.getIntExtra("tab", -1)
+            binding.viewPager.post { navigateToCatalog(tab = tab) }
             return
         }
         // Ensure pressing hardware/software Home button always brings user to Cassette Player

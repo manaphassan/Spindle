@@ -50,6 +50,7 @@ class CatalogFragment : Fragment() {
     private lateinit var waveformExtractor: com.hana.spindle.data.WaveformExtractor
     private lateinit var searchSuggestionAdapter: SearchSuggestionAdapter
     private var waveformExtractionJob: Job? = null
+    private var mixtapeReorderHelper: androidx.recyclerview.widget.ItemTouchHelper? = null
 
     private var currentAlbumSongs: List<TrackEntity> = emptyList()
     private var currentAlbumItem: AlbumItem? = null
@@ -60,7 +61,7 @@ class CatalogFragment : Fragment() {
     private var currentLoadedSongId: Long = -1L
     private var currentMiniSongId: Long = -1L
 
-    // 0: Tracks, 1: Albums, 2: Artists, 3: Folders, 4: Favorites
+    // 0: Tracks, 1: Albums, 2: Artists, 3: Folders, 4: Favorites, 5: Mixtapes
     private var currentTab = 0
 
     private var allSongsList: List<TrackEntity> = emptyList()
@@ -79,11 +80,21 @@ class CatalogFragment : Fragment() {
 
     companion object {
         private const val ARG_OPEN_NOW_PLAYING = "arg_open_now_playing"
+        private const val ARG_INITIAL_TAB = "arg_initial_tab"
 
-        fun newInstance(openNowPlaying: Boolean = false): CatalogFragment {
+        // Smart Mixtapes Auto-Curated Identifiers
+        private const val SMART_ID_RECENTLY_ADDED = -1
+        private const val SMART_ID_RECENTLY_PLAYED = -2
+        private const val SMART_ID_MOST_PLAYED = -3
+        private const val SMART_ID_NEVER_PLAYED = -4
+        private const val SMART_ID_FAVORITES = -5
+        private const val SMART_ID_HI_RES = -6
+
+        fun newInstance(openNowPlaying: Boolean = false, initialTab: Int = -1): CatalogFragment {
             return CatalogFragment().apply {
                 arguments = Bundle().apply {
                     putBoolean(ARG_OPEN_NOW_PLAYING, openNowPlaying)
+                    putInt(ARG_INITIAL_TAB, initialTab)
                 }
             }
         }
@@ -116,7 +127,13 @@ class CatalogFragment : Fragment() {
         setupNowPlayingSingleAudio(app)
         observeAudioMetrics(app)
         observeScanProgress(app)
-        loadSongs(app)
+
+        val initTab = arguments?.getInt(ARG_INITIAL_TAB, -1) ?: -1
+        if (initTab in 0..5) {
+            binding.root.post { switchToTab(initTab) }
+        } else {
+            loadSongs(app)
+        }
 
         if (arguments?.getBoolean(ARG_OPEN_NOW_PLAYING) == true) {
             showNowPlayingSingleAudio(true)
@@ -146,7 +163,7 @@ class CatalogFragment : Fragment() {
             }
             onAddToMixtape = { song ->
                 MixtapeDialogs.showAddToMixtapeDialog(requireContext(), app.database, viewLifecycleOwner.lifecycleScope, song) {
-                    if (currentTab == 7) {
+                    if (currentTab == 5) {
                         loadMixtapes(app)
                     }
                 }
@@ -157,6 +174,83 @@ class CatalogFragment : Fragment() {
                 }
             }
         }
+
+        val reorderCallback = object : androidx.recyclerview.widget.ItemTouchHelper.SimpleCallback(
+            androidx.recyclerview.widget.ItemTouchHelper.UP or androidx.recyclerview.widget.ItemTouchHelper.DOWN,
+            androidx.recyclerview.widget.ItemTouchHelper.LEFT
+        ) {
+            override fun onMove(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean {
+                val fromPos = viewHolder.bindingAdapterPosition
+                val toPos = target.bindingAdapterPosition
+                if (fromPos == RecyclerView.NO_POSITION || toPos == RecyclerView.NO_POSITION || fromPos == toPos) return false
+                if (currentAlbumItem?.format != "MIXTAPE") return false
+
+                val mutable = currentAlbumSongs.toMutableList()
+                val item = mutable.removeAt(fromPos)
+                mutable.add(toPos, item)
+                currentAlbumSongs = mutable
+                albumTracksAdapter.notifyItemMoved(fromPos, toPos)
+                return true
+            }
+
+            override fun onSelectedChanged(viewHolder: RecyclerView.ViewHolder?, actionState: Int) {
+                super.onSelectedChanged(viewHolder, actionState)
+                if (actionState == androidx.recyclerview.widget.ItemTouchHelper.ACTION_STATE_DRAG) {
+                    viewHolder?.itemView?.alpha = 0.75f
+                    viewHolder?.itemView?.scaleX = 1.02f
+                    viewHolder?.itemView?.scaleY = 1.02f
+                }
+            }
+
+            override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
+                super.clearView(recyclerView, viewHolder)
+                viewHolder.itemView.alpha = 1.0f
+                viewHolder.itemView.scaleX = 1.0f
+                viewHolder.itemView.scaleY = 1.0f
+                if (currentAlbumItem?.format == "MIXTAPE") {
+                    val playlistId = currentAlbumItem?.year?.toLong() ?: return
+                    val listToSave = currentAlbumSongs
+                    viewLifecycleOwner.lifecycleScope.launch {
+                        app.database.playlistDao().reorderPlaylist(playlistId, listToSave.map { it.id })
+                    }
+                }
+            }
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                val pos = viewHolder.bindingAdapterPosition
+                if (pos == RecyclerView.NO_POSITION || currentAlbumItem?.format != "MIXTAPE") {
+                    albumTracksAdapter.notifyItemChanged(pos)
+                    return
+                }
+                val trackToRemove = currentAlbumSongs[pos]
+                val playlistId = currentAlbumItem?.year?.toLong() ?: return
+                val mutable = currentAlbumSongs.toMutableList()
+                mutable.removeAt(pos)
+                currentAlbumSongs = mutable
+                albumTracksAdapter.submitList(mutable)
+
+                viewLifecycleOwner.lifecycleScope.launch {
+                    app.database.playlistDao().removeTrackFromPlaylist(playlistId, trackToRemove.id)
+                    app.database.playlistDao().reorderPlaylist(playlistId, mutable.map { it.id })
+                    android.widget.Toast.makeText(requireContext(), "Removed '${trackToRemove.title}' from mixtape", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun isLongPressDragEnabled(): Boolean {
+                return currentAlbumItem?.format == "MIXTAPE"
+            }
+
+            override fun isItemViewSwipeEnabled(): Boolean {
+                return currentAlbumItem?.format == "MIXTAPE"
+            }
+        }
+        val helper = androidx.recyclerview.widget.ItemTouchHelper(reorderCallback)
+        mixtapeReorderHelper = helper
+        helper.attachToRecyclerView(binding.rvAlbumTracks)
 
         albumTracksAdapter = TrackAdapter(
             imageLoader = app.imageLoader,
@@ -182,7 +276,7 @@ class CatalogFragment : Fragment() {
             }
             onAddToMixtape = { song ->
                 MixtapeDialogs.showAddToMixtapeDialog(requireContext(), app.database, viewLifecycleOwner.lifecycleScope, song) {
-                    if (currentTab == 7) {
+                    if (currentTab == 5) {
                         loadMixtapes(app)
                     }
                 }
@@ -192,59 +286,38 @@ class CatalogFragment : Fragment() {
                     loadSongs(app)
                 }
             }
+            onStartDrag = { holder ->
+                if (currentAlbumItem?.format == "MIXTAPE") {
+                    mixtapeReorderHelper?.startDrag(holder)
+                }
+            }
+            onRemoveFromMixtape = { track, _ ->
+                if (currentAlbumItem?.format == "MIXTAPE") {
+                    val playlistId = currentAlbumItem?.year?.toLong() ?: 0L
+                    if (playlistId > 0) {
+                        val mutable = currentAlbumSongs.toMutableList()
+                        mutable.remove(track)
+                        currentAlbumSongs = mutable
+                        albumTracksAdapter.submitList(mutable)
+                        viewLifecycleOwner.lifecycleScope.launch {
+                            app.database.playlistDao().removeTrackFromPlaylist(playlistId, track.id)
+                            app.database.playlistDao().reorderPlaylist(playlistId, mutable.map { it.id })
+                            android.widget.Toast.makeText(requireContext(), "Removed '${track.title}' from mixtape", android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            }
         }
 
         binding.rvAlbumTracks.layoutManager = LinearLayoutManager(requireContext())
         binding.rvAlbumTracks.adapter = albumTracksAdapter
-
-        val mixtapeReorderHelper = androidx.recyclerview.widget.ItemTouchHelper(
-            object : androidx.recyclerview.widget.ItemTouchHelper.SimpleCallback(
-                androidx.recyclerview.widget.ItemTouchHelper.UP or androidx.recyclerview.widget.ItemTouchHelper.DOWN, 0
-            ) {
-                override fun onMove(
-                    recyclerView: RecyclerView,
-                    viewHolder: RecyclerView.ViewHolder,
-                    target: RecyclerView.ViewHolder
-                ): Boolean {
-                    val fromPos = viewHolder.bindingAdapterPosition
-                    val toPos = target.bindingAdapterPosition
-                    if (fromPos == RecyclerView.NO_POSITION || toPos == RecyclerView.NO_POSITION || fromPos == toPos) return false
-                    if (currentAlbumItem?.format != "MIXTAPE") return false
-
-                    val mutable = currentAlbumSongs.toMutableList()
-                    val item = mutable.removeAt(fromPos)
-                    mutable.add(toPos, item)
-                    currentAlbumSongs = mutable
-                    albumTracksAdapter.submitList(mutable)
-
-                    val playlistId = currentAlbumItem?.year?.toLong() ?: return true
-                    viewLifecycleOwner.lifecycleScope.launch {
-                        app.database.playlistDao().reorderPlaylist(playlistId, mutable.map { it.id })
-                    }
-                    return true
-                }
-
-                override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {}
-
-                override fun isLongPressDragEnabled(): Boolean {
-                    return currentAlbumItem?.format == "MIXTAPE"
-                }
-            }
-        )
-        mixtapeReorderHelper.attachToRecyclerView(binding.rvAlbumTracks)
 
         albumAdapter = AlbumAdapter(
             imageLoader = app.imageLoader,
             onAlbumClicked = { album ->
                 albumTracksJob?.cancel()
                 albumTracksJob = viewLifecycleOwner.lifecycleScope.launch {
-                    val songsFlow = when (album.format) {
-                        "DISCOGRAPHY" -> app.database.songDao().getSongsByArtist(album.album)
-                        "GENRE" -> app.database.songDao().getSongsByGenre(album.album)
-                        "MIXTAPE" -> app.database.playlistDao().getSongsForPlaylist(album.year.toLong())
-                        else -> app.database.songDao().getSongsByAlbum(album.album)
-                    }
-                    songsFlow.collectLatest { albumSongs ->
+                    getTracksFlowForAlbum(app, album).collectLatest { albumSongs ->
                         showAlbumDetail(album, albumSongs)
                     }
                 }
@@ -252,13 +325,7 @@ class CatalogFragment : Fragment() {
             onPlayAlbumClicked = { album ->
                 albumTracksJob?.cancel()
                 albumTracksJob = viewLifecycleOwner.lifecycleScope.launch {
-                    val songsFlow = when (album.format) {
-                        "DISCOGRAPHY" -> app.database.songDao().getSongsByArtist(album.album)
-                        "GENRE" -> app.database.songDao().getSongsByGenre(album.album)
-                        "MIXTAPE" -> app.database.playlistDao().getSongsForPlaylist(album.year.toLong())
-                        else -> app.database.songDao().getSongsByAlbum(album.album)
-                    }
-                    songsFlow.collectLatest { albumSongs ->
+                    getTracksFlowForAlbum(app, album).collectLatest { albumSongs ->
                         if (albumSongs.isNotEmpty()) {
                             currentDisplayedSongs = albumSongs
                             audioEngine.playQueue(albumSongs, 0)
@@ -310,6 +377,36 @@ class CatalogFragment : Fragment() {
                             }
                         }
                         .show()
+                } else if (album.format == "SMART_MIXTAPE") {
+                    val options = arrayOf("Play Smart Tape", "Export to .M3U")
+                    android.app.AlertDialog.Builder(requireContext())
+                        .setTitle(album.album)
+                        .setItems(options) { _, which ->
+                            when (which) {
+                                0 -> {
+                                    viewLifecycleOwner.lifecycleScope.launch {
+                                        val songs = getTracksFlowForAlbum(app, album).first()
+                                        if (songs.isNotEmpty()) {
+                                            currentDisplayedSongs = songs
+                                            audioEngine.playQueue(songs, 0)
+                                            showNowPlayingSingleAudio(true)
+                                        }
+                                    }
+                                }
+                                1 -> {
+                                    viewLifecycleOwner.lifecycleScope.launch {
+                                        val songs = getTracksFlowForAlbum(app, album).first()
+                                        MixtapeDialogs.exportSmartMixtape(
+                                            requireContext(),
+                                            viewLifecycleOwner.lifecycleScope,
+                                            album.album,
+                                            songs
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        .show()
                 }
             }
         }
@@ -342,13 +439,7 @@ class CatalogFragment : Fragment() {
                 val album = suggestion.album
                 albumTracksJob?.cancel()
                 albumTracksJob = viewLifecycleOwner.lifecycleScope.launch {
-                    val songsFlow = when (album.format) {
-                        "DISCOGRAPHY" -> app.database.songDao().getSongsByArtist(album.album)
-                        "GENRE" -> app.database.songDao().getSongsByGenre(album.album)
-                        "MIXTAPE" -> app.database.playlistDao().getSongsForPlaylist(album.year.toLong())
-                        else -> app.database.songDao().getSongsByAlbum(album.album)
-                    }
-                    songsFlow.collectLatest { albumSongs ->
+                    getTracksFlowForAlbum(app, album).collectLatest { albumSongs ->
                         showAlbumDetail(album, albumSongs)
                     }
                 }
@@ -891,14 +982,29 @@ class CatalogFragment : Fragment() {
                 }
 
                 // 2. Sorting
-                list = when (albumSortOrder) {
-                    AlbumSortOrder.TITLE_ASC -> list.sortedBy { it.album.lowercase(Locale.ROOT) }
-                    AlbumSortOrder.TITLE_DESC -> list.sortedByDescending { it.album.lowercase(Locale.ROOT) }
-                    AlbumSortOrder.ARTIST_ASC -> list.sortedWith(compareBy({ it.artist.lowercase(Locale.ROOT) }, { it.album.lowercase(Locale.ROOT) }))
-                    AlbumSortOrder.YEAR_DESC -> list.sortedByDescending { it.year }
-                    AlbumSortOrder.YEAR_ASC -> list.sortedBy { it.year }
-                    AlbumSortOrder.TRACK_COUNT_DESC -> list.sortedByDescending { it.trackCount }
-                    AlbumSortOrder.TRACK_COUNT_ASC -> list.sortedBy { it.trackCount }
+                list = if (currentTab == 5 && query.isEmpty()) {
+                    val smart = list.filter { it.format == "SMART_MIXTAPE" }
+                    val custom = list.filter { it.format != "SMART_MIXTAPE" }
+                    val sortedCustom = when (albumSortOrder) {
+                        AlbumSortOrder.TITLE_ASC -> custom.sortedBy { it.album.lowercase(Locale.ROOT) }
+                        AlbumSortOrder.TITLE_DESC -> custom.sortedByDescending { it.album.lowercase(Locale.ROOT) }
+                        AlbumSortOrder.ARTIST_ASC -> custom.sortedWith(compareBy({ it.artist.lowercase(Locale.ROOT) }, { it.album.lowercase(Locale.ROOT) }))
+                        AlbumSortOrder.YEAR_DESC -> custom.sortedByDescending { it.year }
+                        AlbumSortOrder.YEAR_ASC -> custom.sortedBy { it.year }
+                        AlbumSortOrder.TRACK_COUNT_DESC -> custom.sortedByDescending { it.trackCount }
+                        AlbumSortOrder.TRACK_COUNT_ASC -> custom.sortedBy { it.trackCount }
+                    }
+                    smart + sortedCustom
+                } else {
+                    when (albumSortOrder) {
+                        AlbumSortOrder.TITLE_ASC -> list.sortedBy { it.album.lowercase(Locale.ROOT) }
+                        AlbumSortOrder.TITLE_DESC -> list.sortedByDescending { it.album.lowercase(Locale.ROOT) }
+                        AlbumSortOrder.ARTIST_ASC -> list.sortedWith(compareBy({ it.artist.lowercase(Locale.ROOT) }, { it.album.lowercase(Locale.ROOT) }))
+                        AlbumSortOrder.YEAR_DESC -> list.sortedByDescending { it.year }
+                        AlbumSortOrder.YEAR_ASC -> list.sortedBy { it.year }
+                        AlbumSortOrder.TRACK_COUNT_DESC -> list.sortedByDescending { it.trackCount }
+                        AlbumSortOrder.TRACK_COUNT_ASC -> list.sortedBy { it.trackCount }
+                    }
                 }
 
                 currentDisplayedAlbums = list
@@ -1269,6 +1375,7 @@ class CatalogFragment : Fragment() {
             "DISCOGRAPHY" -> "ARTIST"
             "GENRE" -> "GENRE"
             "MIXTAPE" -> "MIXTAPE"
+            "SMART_MIXTAPE" -> "SMART CASSETTE"
             else -> "ALBUM"
         }
         binding.tvAlbumDetailTitle.text = album.album
@@ -1276,9 +1383,42 @@ class CatalogFragment : Fragment() {
 
         val totalDurationMs = songs.sumOf { it.durationMs }
         val durationFormatted = formatTime(totalDurationMs)
-        val yearStr = if (album.year > 0 && album.format != "MIXTAPE") "${album.year} • " else ""
+        val yearStr = if (album.year > 0 && album.format != "MIXTAPE" && album.format != "SMART_MIXTAPE") "${album.year} • " else ""
         binding.tvAlbumDetailMeta.text = "$yearStr${songs.size} Tracks • $durationFormatted"
-        binding.tvAlbumDetailFormat.text = if (album.format == "MIXTAPE") "CUSTOM CASSETTE" else album.format
+
+        if (album.format == "MIXTAPE") {
+            albumTracksAdapter.isReorderable = true
+            binding.tvAlbumDetailFormat.text = "CUSTOM CASSETTE (DRAG TO REORDER)"
+            binding.tvAlbumDetailFormat.setTextColor(Color.parseColor("#F97316"))
+            binding.btnAlbumDetailExportM3u.visibility = View.VISIBLE
+            binding.btnAlbumDetailExportM3u.setOnClickListener {
+                MixtapeDialogs.exportMixtape(
+                    requireContext(),
+                    app.database,
+                    viewLifecycleOwner.lifecycleScope,
+                    album.year.toLong(),
+                    album.album
+                )
+            }
+        } else if (album.format == "SMART_MIXTAPE") {
+            albumTracksAdapter.isReorderable = false
+            binding.tvAlbumDetailFormat.text = "SMART CASSETTE • AUTO-CURATED"
+            binding.tvAlbumDetailFormat.setTextColor(Color.parseColor("#FDE68A"))
+            binding.btnAlbumDetailExportM3u.visibility = View.VISIBLE
+            binding.btnAlbumDetailExportM3u.setOnClickListener {
+                MixtapeDialogs.exportSmartMixtape(
+                    requireContext(),
+                    viewLifecycleOwner.lifecycleScope,
+                    album.album,
+                    songs
+                )
+            }
+        } else {
+            albumTracksAdapter.isReorderable = false
+            binding.tvAlbumDetailFormat.text = album.format
+            binding.tvAlbumDetailFormat.setTextColor(ContextCompat.getColor(requireContext(), R.color.vfd_emerald))
+            binding.btnAlbumDetailExportM3u.visibility = View.GONE
+        }
 
         // Load thumbnail into circular disc cover
         viewLifecycleOwner.lifecycleScope.launch {
@@ -1339,21 +1479,6 @@ class CatalogFragment : Fragment() {
             }
         }
 
-        if (album.format == "MIXTAPE") {
-            binding.btnAlbumDetailExportM3u.visibility = View.VISIBLE
-            binding.btnAlbumDetailExportM3u.setOnClickListener {
-                MixtapeDialogs.exportMixtape(
-                    requireContext(),
-                    app.database,
-                    viewLifecycleOwner.lifecycleScope,
-                    album.year.toLong(),
-                    album.album
-                )
-            }
-        } else {
-            binding.btnAlbumDetailExportM3u.visibility = View.GONE
-        }
-
         binding.btnAlbumDetailBack.setOnClickListener {
             hideAlbumDetail()
         }
@@ -1373,6 +1498,9 @@ class CatalogFragment : Fragment() {
     fun hideAlbumDetail() {
         if (_binding == null || binding.albumDetailContainer.visibility != View.VISIBLE) return
         albumTracksJob?.cancel()
+        if (::albumTracksAdapter.isInitialized) {
+            albumTracksAdapter.isReorderable = false
+        }
         binding.albumDetailContainer.animate()
             .translationX(200f)
             .alpha(0f)
@@ -1498,10 +1626,130 @@ class CatalogFragment : Fragment() {
         }
     }
 
+    private fun getTracksFlowForAlbum(app: SpindleApp, album: AlbumItem): kotlinx.coroutines.flow.Flow<List<TrackEntity>> {
+        return when (album.format) {
+            "SMART_MIXTAPE" -> {
+                when (album.year) {
+                    SMART_ID_RECENTLY_ADDED -> app.database.trackDao().getRecentlyAddedTracks(100)
+                    SMART_ID_RECENTLY_PLAYED -> app.database.trackDao().getRecentlyPlayedTracks(100)
+                    SMART_ID_MOST_PLAYED -> app.database.trackDao().getMostPlayedTracks(100)
+                    SMART_ID_NEVER_PLAYED -> app.database.trackDao().getNeverPlayedTracks(100)
+                    SMART_ID_FAVORITES -> app.database.trackDao().getFavoriteTracks()
+                    SMART_ID_HI_RES -> app.database.trackDao().getHiResTracks()
+                    else -> app.database.trackDao().getRecentlyAddedTracks(100)
+                }
+            }
+            "DISCOGRAPHY" -> app.database.trackDao().getTracksByArtist(album.album)
+            "GENRE" -> app.database.trackDao().getTracksByGenre(album.album)
+            "MIXTAPE" -> app.database.playlistDao().getTracksForPlaylist(album.year.toLong())
+            else -> app.database.trackDao().getTracksByAlbum(album.album)
+        }
+    }
+
     private fun loadMixtapes(app: SpindleApp) {
         viewLifecycleOwner.lifecycleScope.launch {
-            app.database.playlistDao().getAllPlaylists().collectLatest { playlists ->
-                val items = playlists.map { playlist ->
+            kotlinx.coroutines.flow.combine(
+                app.database.playlistDao().getAllPlaylists(),
+                app.database.trackDao().getAllTracks()
+            ) { playlists, allTracks ->
+                val smartItems = mutableListOf<AlbumItem>()
+
+                // 1. Recently Added (100 latest additions)
+                val recentlyAdded = allTracks.sortedByDescending { it.dateAdded }.take(100)
+                if (recentlyAdded.isNotEmpty()) {
+                    smartItems.add(
+                        AlbumItem(
+                            album = "Recently Added",
+                            artist = "Smart Tape • Latest Additions",
+                            trackCount = recentlyAdded.size,
+                            representativePath = recentlyAdded.firstOrNull()?.path ?: "",
+                            year = SMART_ID_RECENTLY_ADDED,
+                            format = "SMART_MIXTAPE"
+                        )
+                    )
+                }
+
+                // 2. Recently Played (Listening History)
+                val recentlyPlayed = allTracks.filter { (it.lastPlayedAt ?: 0L) > 0L }
+                    .sortedByDescending { it.lastPlayedAt ?: 0L }
+                    .take(100)
+                if (recentlyPlayed.isNotEmpty()) {
+                    smartItems.add(
+                        AlbumItem(
+                            album = "Recently Played",
+                            artist = "Smart Tape • Listening History",
+                            trackCount = recentlyPlayed.size,
+                            representativePath = recentlyPlayed.firstOrNull()?.path ?: "",
+                            year = SMART_ID_RECENTLY_PLAYED,
+                            format = "SMART_MIXTAPE"
+                        )
+                    )
+                }
+
+                // 3. Heavy Rotation (Most Played)
+                val mostPlayed = allTracks.filter { it.playCount > 0 }
+                    .sortedByDescending { it.playCount }
+                    .take(100)
+                if (mostPlayed.isNotEmpty()) {
+                    smartItems.add(
+                        AlbumItem(
+                            album = "Heavy Rotation",
+                            artist = "Smart Tape • Most Played",
+                            trackCount = mostPlayed.size,
+                            representativePath = mostPlayed.firstOrNull()?.path ?: "",
+                            year = SMART_ID_MOST_PLAYED,
+                            format = "SMART_MIXTAPE"
+                        )
+                    )
+                }
+
+                // 4. Uncut Vault (Never Played)
+                val neverPlayed = allTracks.filter { it.playCount == 0 }.take(100)
+                if (neverPlayed.isNotEmpty()) {
+                    smartItems.add(
+                        AlbumItem(
+                            album = "Uncut Vault",
+                            artist = "Smart Tape • Never Played",
+                            trackCount = neverPlayed.size,
+                            representativePath = neverPlayed.firstOrNull()?.path ?: "",
+                            year = SMART_ID_NEVER_PLAYED,
+                            format = "SMART_MIXTAPE"
+                        )
+                    )
+                }
+
+                // 5. Bookmarked Favorites
+                val favorites = allTracks.filter { it.isFavorite }
+                if (favorites.isNotEmpty()) {
+                    smartItems.add(
+                        AlbumItem(
+                            album = "Bookmarked Favorites",
+                            artist = "Smart Tape • Starred Tracks",
+                            trackCount = favorites.size,
+                            representativePath = favorites.firstOrNull()?.path ?: "",
+                            year = SMART_ID_FAVORITES,
+                            format = "SMART_MIXTAPE"
+                        )
+                    )
+                }
+
+                // 6. Studio Master Hi-Res
+                val hiRes = allTracks.filter { it.bitDepth >= 24 || it.sampleRate > 48000 || it.fileFormat in listOf("FLAC", "WAV", "DSD", "DSF", "DFF", "AIFF") }
+                if (hiRes.isNotEmpty()) {
+                    smartItems.add(
+                        AlbumItem(
+                            album = "Studio Master Hi-Res",
+                            artist = "Smart Tape • 24-bit / 96k+ / DSD",
+                            trackCount = hiRes.size,
+                            representativePath = hiRes.firstOrNull()?.path ?: "",
+                            year = SMART_ID_HI_RES,
+                            format = "SMART_MIXTAPE"
+                        )
+                    )
+                }
+
+                // Custom User Mixtapes
+                val customItems = playlists.map { playlist ->
                     AlbumItem(
                         album = playlist.name,
                         artist = "${playlist.trackCount} tracks",
@@ -1511,6 +1759,9 @@ class CatalogFragment : Fragment() {
                         format = "MIXTAPE"
                     )
                 }
+
+                smartItems + customItems
+            }.collectLatest { items ->
                 allAlbumsList = items
                 applyFilterAndSort()
             }

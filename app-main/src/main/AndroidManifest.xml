@@ -13,6 +13,10 @@
     <uses-permission
         android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="29"
+        tools:ignore="ScopedStorage" />
 
     <!-- Foreground Audio Playback (Android 14+ API 34 Compliance) -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />

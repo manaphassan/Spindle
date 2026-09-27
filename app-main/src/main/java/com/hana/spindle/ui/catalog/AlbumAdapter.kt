@@ -69,8 +69,15 @@ class AlbumAdapter(
             b.btnGridPlay.imageTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE)
         } else {
             b.tvGridTrackCount.setTextColor(android.graphics.Color.parseColor("#E2E8F0"))
-            b.tvGridFormat.setTextColor(holder.itemView.context.getColor(com.hana.spindle.R.color.vfd_emerald))
-            b.tvGridFormat.setBackgroundColor(android.graphics.Color.parseColor("#CC1E293B"))
+            if (album.format == "SMART_MIXTAPE") {
+                b.tvGridFormat.setTextColor(android.graphics.Color.parseColor("#FDE68A"))
+                b.tvGridFormat.setBackgroundColor(android.graphics.Color.parseColor("#CC1E293B"))
+                b.tvGridFormat.text = "SMART"
+            } else {
+                b.tvGridFormat.setTextColor(holder.itemView.context.getColor(com.hana.spindle.R.color.vfd_emerald))
+                b.tvGridFormat.setBackgroundColor(android.graphics.Color.parseColor("#CC1E293B"))
+                b.tvGridFormat.text = album.format
+            }
             b.btnGridPlay.backgroundTintList = android.content.res.ColorStateList.valueOf(holder.itemView.context.getColor(com.hana.spindle.R.color.metal81_red))
             b.btnGridPlay.imageTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE)
         }
@@ -89,7 +96,9 @@ class AlbumAdapter(
             b.tvGridYear.visibility = View.GONE
         }
 
-        b.tvGridFormat.text = album.format
+        if (album.format != "SMART_MIXTAPE") {
+            b.tvGridFormat.text = album.format
+        }
 
         // Asynchronously load RGB_565 downsampled cover art (200x200) with job management
         if (b.ivGridArt.tag != album.representativePath || b.ivGridArt.drawable == null) {
