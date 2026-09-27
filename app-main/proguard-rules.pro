@@ -48,3 +48,9 @@
     public static int v(...);
     public static int d(...);
 }
+
+# 8. Spindle Core, Licensing & Data Models
+-keep class com.hana.spindle.core.** { *; }
+-keep class com.hana.spindle.licensing.** { *; }
+-keep class com.hana.spindle.data.** { *; }
+

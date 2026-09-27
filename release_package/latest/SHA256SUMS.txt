@@ -1,1 +1,3 @@
+420a62841a11ed01b8a1d8a80739a8c67ceda7fe99ecb3079011b605657e4431 *Spindle-Standard-v1.4.0-STUDIO-release.apk
+3fbf6ddbd1d96d9aa94b4cbf1c9a5aaa5033825e6ef0900aa8d653fdefa2a5df *Spindle-Standard-v1.4.0-STUDIO-release.aab
 5f3938ddde73cce17543aaf19840ae89c6b8a9b3655cf242e2c284d58b1fc32c *Spindle-Standard-v1.4.0-STUDIO-debug.apk

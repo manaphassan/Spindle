@@ -18,7 +18,9 @@ This release package contains verified, production-ready APK builds for both Spi
 
 | File | Edition | Version | Size | Target OS | Minimum Android |
 | :--- | :--- | :---: | :---: | :--- | :--- |
-| **`Spindle-Standard-v1.4.0-STUDIO-debug.apk`** | Standard (Studio Suite) | `v1.4.0-STUDIO` (Code 5) | **11.96 MB** | Modern DAP & Smartphones | Android 8.0+ (API 26+) |
+| **`Spindle-Standard-v1.4.0-STUDIO-release.apk`** | Standard (Production APK) | `v1.4.0-STUDIO` (Code 5) | **4.74 MB** | Modern DAP & Smartphones | Android 8.0+ (API 26+) |
+| **`Spindle-Standard-v1.4.0-STUDIO-release.aab`** | Standard (Play App Bundle) | `v1.4.0-STUDIO` (Code 5) | **7.10 MB** | Google Play Store Upload | Android 8.0+ (API 26+) |
+| **`Spindle-Standard-v1.4.0-STUDIO-debug.apk`** | Standard (Studio Debug) | `v1.4.0-STUDIO` (Code 5) | **11.96 MB** | Developer / Testing | Android 8.0+ (API 26+) |
 | **`Spindle-Lite-v1.0.0-LITE.apk`** | Lite | `v1.0.0-LITE` (Code 3) | **1.79 MB** | Vintage DAP & Small Screens | Android 4.4+ (API 19+) |
 | **`Spindle-Lite-v1.0.0-LITE-debug.apk`** | Lite (Debug) | `v1.0.0-LITE.debug` | **6.00 MB** | Developer / Testing | Android 4.4+ (API 19+) |
 
@@ -38,10 +40,11 @@ sha256sum -c SHA256SUMS.txt
 
 ### Official Checksums:
 ```
+420a62841a11ed01b8a1d8a80739a8c67ceda7fe99ecb3079011b605657e4431  Spindle-Standard-v1.4.0-STUDIO-release.apk
+3fbf6ddbd1d96d9aa94b4cbf1c9a5aaa5033825e6ef0900aa8d653fdefa2a5df  Spindle-Standard-v1.4.0-STUDIO-release.aab
+5f3938ddde73cce17543aaf19840ae89c6b8a9b3655cf242e2c284d58b1fc32c  Spindle-Standard-v1.4.0-STUDIO-debug.apk
 677cd6e2b355a4e4502aea40cd62368d50a32afd31178ffe3f4ce45457250ad6  Spindle-Lite-v1.0.0-LITE.apk
 e4a5795e33a3777fa97f4ba3ac42f4b537dff47c9d0958c12b87d6483c31639d  Spindle-Lite-v1.0.0-LITE-debug.apk
-1b76380734fce192d504ca459085267fef27f0142eeda7349a0dacebb5bc966d  Spindle-Standard-v1.4.0-alpha.apk
-5f3938ddde73cce17543aaf19840ae89c6b8a9b3655cf242e2c284d58b1fc32c  Spindle-Standard-v1.4.0-STUDIO-debug.apk
 ```
 
 ---
