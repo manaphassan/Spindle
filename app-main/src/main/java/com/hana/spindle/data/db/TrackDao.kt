@@ -92,6 +92,58 @@ interface TrackDao {
     @Query("SELECT * FROM songs WHERE title LIKE '%' || :query || '%' OR artist LIKE '%' || :query || '%' OR album LIKE '%' || :query || '%' OR composer LIKE '%' || :query || '%' ORDER BY title ASC")
     fun searchTracks(query: String): Flow<List<TrackEntity>>
 
+    /**
+     * High-speed SQLite FTS4 full-text search across title, artist, album, composer, albumArtist, and genre.
+     * Sub-millisecond indexed queries (§6.6).
+     */
+    @Query("""
+        SELECT songs.* FROM songs
+        JOIN songs_fts ON songs.id = songs_fts.docid
+        WHERE songs_fts MATCH :ftsQuery
+        ORDER BY songs.title COLLATE NOCASE ASC
+    """)
+    fun searchTracksFts(ftsQuery: String): Flow<List<TrackEntity>>
+
+    @Query("""
+        SELECT songs.* FROM songs
+        JOIN songs_fts ON songs.id = songs_fts.docid
+        WHERE songs_fts MATCH :ftsQuery
+        LIMIT :limit
+    """)
+    suspend fun searchTracksFtsList(ftsQuery: String, limit: Int = 20): List<TrackEntity>
+
+    @Query("""
+        SELECT DISTINCT songs.album as album, COALESCE(songs.albumArtist, songs.artist) as artist, COUNT(*) as trackCount, MIN(songs.path) as representativePath, MAX(songs.year) as year, MIN(songs.fileFormat) as format
+        FROM songs
+        JOIN songs_fts ON songs.id = songs_fts.docid
+        WHERE songs_fts MATCH :ftsQuery
+        GROUP BY songs.album, COALESCE(songs.albumArtist, songs.artist)
+        ORDER BY songs.album COLLATE NOCASE ASC
+        LIMIT :limit
+    """)
+    suspend fun searchAlbumsFtsList(ftsQuery: String, limit: Int = 10): List<AlbumItem>
+
+    @Query("""
+        SELECT DISTINCT songs.artist FROM songs
+        JOIN songs_fts ON songs.id = songs_fts.docid
+        WHERE songs_fts MATCH :ftsQuery
+        ORDER BY songs.artist COLLATE NOCASE ASC
+        LIMIT :limit
+    """)
+    suspend fun searchArtistsFtsList(ftsQuery: String, limit: Int = 10): List<String>
+
+    @Query("""
+        SELECT DISTINCT songs.composer FROM songs
+        JOIN songs_fts ON songs.id = songs_fts.docid
+        WHERE songs.composer IS NOT NULL AND songs.composer != '' AND songs_fts MATCH :ftsQuery
+        ORDER BY songs.composer COLLATE NOCASE ASC
+        LIMIT :limit
+    """)
+    suspend fun searchComposersFtsList(ftsQuery: String, limit: Int = 10): List<String>
+
+    @Query("INSERT INTO songs_fts(songs_fts) VALUES('rebuild')")
+    suspend fun rebuildFtsIndex()
+
     @Query("SELECT * FROM songs WHERE path = :path LIMIT 1")
     suspend fun getTrackByPath(path: String): TrackEntity?
 

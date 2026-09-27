@@ -22,6 +22,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.hana.spindle.R
 import com.hana.spindle.SpindleApp
 import com.hana.spindle.data.db.AlbumItem
+import com.hana.spindle.data.db.FtsQueryBuilder
 import com.hana.spindle.data.db.TrackEntity
 import com.hana.spindle.databinding.FragmentCatalogBinding
 import com.hana.spindle.playback.AudioEngine
@@ -29,10 +30,12 @@ import com.hana.spindle.playback.RepeatMode
 import com.hana.spindle.playback.ShuffleMode
 import com.hana.spindle.theme.CassetteTheme
 import com.hana.spindle.ui.catalog.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.Locale
 
@@ -50,6 +53,7 @@ class CatalogFragment : Fragment() {
     private lateinit var waveformExtractor: com.hana.spindle.data.WaveformExtractor
     private lateinit var searchSuggestionAdapter: SearchSuggestionAdapter
     private var waveformExtractionJob: Job? = null
+    private var searchSuggestionJob: Job? = null
     private var mixtapeReorderHelper: androidx.recyclerview.widget.ItemTouchHelper? = null
 
     private var currentAlbumSongs: List<TrackEntity> = emptyList()
@@ -861,6 +865,20 @@ class CatalogFragment : Fragment() {
             binding.etCatalogSearch.text?.clear()
             binding.rvSearchSuggestions.visibility = View.GONE
             binding.btnSearchClear.visibility = View.GONE
+            val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
+            imm?.hideSoftInputFromWindow(binding.etCatalogSearch.windowToken, 0)
+        }
+
+        binding.etCatalogSearch.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE ||
+                actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH) {
+                binding.rvSearchSuggestions.visibility = View.GONE
+                val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
+                imm?.hideSoftInputFromWindow(binding.etCatalogSearch.windowToken, 0)
+                true
+            } else {
+                false
+            }
         }
 
         binding.etCatalogSearch.addTextChangedListener(object : TextWatcher {
@@ -869,6 +887,7 @@ class CatalogFragment : Fragment() {
                 if (query.isEmpty()) {
                     binding.btnSearchClear.visibility = View.GONE
                     binding.rvSearchSuggestions.visibility = View.GONE
+                    searchSuggestionJob?.cancel()
                 } else {
                     binding.btnSearchClear.visibility = View.VISIBLE
                     updateSearchSuggestions(query)
@@ -881,72 +900,125 @@ class CatalogFragment : Fragment() {
     }
 
     private fun updateSearchSuggestions(query: String) {
-        val q = query.lowercase(Locale.ROOT)
-        val suggestions = mutableListOf<SearchSuggestion>()
-
-        // 1. Matches in Tracks (up to 4)
-        val matchingSongs = allSongsList.filter {
-            it.title.lowercase(Locale.ROOT).contains(q) || it.artist.lowercase(Locale.ROOT).contains(q)
-        }.take(4)
-        for (song in matchingSongs) {
-            suggestions.add(
-                SearchSuggestion(
-                    title = song.title,
-                    subtitle = "${song.artist} • ${song.fileFormat}",
-                    type = SuggestionType.TRACK,
-                    track = song
-                )
-            )
-        }
-
-        // 2. Matches in Albums (up to 3)
-        val matchingAlbums = allAlbumsList.filter {
-            it.album.lowercase(Locale.ROOT).contains(q)
-        }.take(3)
-        for (album in matchingAlbums) {
-            suggestions.add(
-                SearchSuggestion(
-                    title = album.album,
-                    subtitle = "${album.artist} • ${album.trackCount} tracks",
-                    type = SuggestionType.ALBUM,
-                    album = album
-                )
-            )
-        }
-
-        // 3. Matches in Artists (up to 2)
-        val matchingArtists = allSongsList.map { it.artist }.distinct().filter {
-            it.lowercase(Locale.ROOT).contains(q)
-        }.take(2)
-        for (artist in matchingArtists) {
-            suggestions.add(
-                SearchSuggestion(
-                    title = artist,
-                    subtitle = "Artist",
-                    type = SuggestionType.ARTIST
-                )
-            )
-        }
-
-        // 4. Matches in Composers (up to 2)
-        val matchingComposers = allSongsList.mapNotNull { it.composer?.trim() }.filter { it.isNotEmpty() }.distinct().filter {
-            it.lowercase(Locale.ROOT).contains(q)
-        }.take(2)
-        for (composer in matchingComposers) {
-            suggestions.add(
-                SearchSuggestion(
-                    title = composer,
-                    subtitle = "Classical Composer",
-                    type = SuggestionType.COMPOSER
-                )
-            )
-        }
-
-        if (suggestions.isNotEmpty()) {
-            searchSuggestionAdapter.submitList(suggestions)
-            binding.rvSearchSuggestions.visibility = View.VISIBLE
-        } else {
+        val q = query.trim()
+        if (q.isEmpty()) {
             binding.rvSearchSuggestions.visibility = View.GONE
+            return
+        }
+
+        searchSuggestionJob?.cancel()
+        val ftsQuery = FtsQueryBuilder.buildPrefixQuery(q)
+
+        searchSuggestionJob = viewLifecycleOwner.lifecycleScope.launch {
+            val suggestions = mutableListOf<SearchSuggestion>()
+            val app = requireActivity().application as SpindleApp
+
+            if (ftsQuery != null) {
+                try {
+                    val matchingTracks = withContext(Dispatchers.IO) {
+                        app.database.trackDao().searchTracksFtsList(ftsQuery, limit = 4)
+                    }
+                    for (song in matchingTracks) {
+                        suggestions.add(
+                            SearchSuggestion(
+                                title = song.title,
+                                subtitle = "${song.artist} • ${song.fileFormat}",
+                                type = SuggestionType.TRACK,
+                                track = song
+                            )
+                        )
+                    }
+
+                    val matchingAlbums = withContext(Dispatchers.IO) {
+                        app.database.trackDao().searchAlbumsFtsList(ftsQuery, limit = 3)
+                    }
+                    for (album in matchingAlbums) {
+                        suggestions.add(
+                            SearchSuggestion(
+                                title = album.album,
+                                subtitle = "${album.artist} • ${album.trackCount} tracks",
+                                type = SuggestionType.ALBUM,
+                                album = album
+                            )
+                        )
+                    }
+
+                    val matchingArtists = withContext(Dispatchers.IO) {
+                        app.database.trackDao().searchArtistsFtsList(ftsQuery, limit = 2)
+                    }
+                    for (artist in matchingArtists) {
+                        suggestions.add(
+                            SearchSuggestion(
+                                title = artist,
+                                subtitle = "Artist",
+                                type = SuggestionType.ARTIST
+                            )
+                        )
+                    }
+
+                    val matchingComposers = withContext(Dispatchers.IO) {
+                        app.database.trackDao().searchComposersFtsList(ftsQuery, limit = 2)
+                    }
+                    for (composer in matchingComposers) {
+                        suggestions.add(
+                            SearchSuggestion(
+                                title = composer,
+                                subtitle = "Classical Composer",
+                                type = SuggestionType.COMPOSER
+                            )
+                        )
+                    }
+                } catch (e: Exception) {
+                    suggestions.clear()
+                }
+            }
+
+            // Fallback in-memory matching if FTS had no matches or ftsQuery was null
+            if (suggestions.isEmpty()) {
+                val tokens = q.lowercase(Locale.ROOT).split(Regex("\\s+")).filter { it.isNotEmpty() }
+                val fallbackTracks = allSongsList.filter { song ->
+                    tokens.all { t ->
+                        song.title.contains(t, ignoreCase = true) ||
+                        song.artist.contains(t, ignoreCase = true) ||
+                        song.album.contains(t, ignoreCase = true) ||
+                        song.composer?.contains(t, ignoreCase = true) == true
+                    }
+                }.take(4)
+                for (song in fallbackTracks) {
+                    suggestions.add(
+                        SearchSuggestion(
+                            title = song.title,
+                            subtitle = "${song.artist} • ${song.fileFormat}",
+                            type = SuggestionType.TRACK,
+                            track = song
+                        )
+                    )
+                }
+
+                val fallbackAlbums = allAlbumsList.filter { album ->
+                    tokens.all { t ->
+                        album.album.contains(t, ignoreCase = true) ||
+                        album.artist.contains(t, ignoreCase = true)
+                    }
+                }.take(3)
+                for (album in fallbackAlbums) {
+                    suggestions.add(
+                        SearchSuggestion(
+                            title = album.album,
+                            subtitle = "${album.artist} • ${album.trackCount} tracks",
+                            type = SuggestionType.ALBUM,
+                            album = album
+                        )
+                    )
+                }
+            }
+
+            if (suggestions.isNotEmpty()) {
+                searchSuggestionAdapter.submitList(suggestions)
+                binding.rvSearchSuggestions.visibility = View.VISIBLE
+            } else {
+                binding.rvSearchSuggestions.visibility = View.GONE
+            }
         }
     }
 
@@ -977,14 +1049,18 @@ class CatalogFragment : Fragment() {
                     CatalogFilterChip.RATED -> list.filter { it.rating > 0 }
                 }
 
-                // 2. Search Query
+                // 2. Search Query (FTS-style multi-token matching)
                 if (query.isNotEmpty()) {
-                    list = list.filter {
-                        it.title.lowercase(Locale.ROOT).contains(query) ||
-                        it.artist.lowercase(Locale.ROOT).contains(query) ||
-                        it.album.lowercase(Locale.ROOT).contains(query) ||
-                        it.albumArtist?.lowercase(Locale.ROOT)?.contains(query) == true ||
-                        it.composer?.lowercase(Locale.ROOT)?.contains(query) == true
+                    val tokens = query.split(Regex("\\s+")).filter { it.isNotEmpty() }
+                    list = list.filter { track ->
+                        tokens.all { t ->
+                            track.title.contains(t, ignoreCase = true) ||
+                            track.artist.contains(t, ignoreCase = true) ||
+                            track.album.contains(t, ignoreCase = true) ||
+                            track.albumArtist?.contains(t, ignoreCase = true) == true ||
+                            track.composer?.contains(t, ignoreCase = true) == true ||
+                            track.genre?.contains(t, ignoreCase = true) == true
+                        }
                     }
                 }
 
@@ -1023,11 +1099,14 @@ class CatalogFragment : Fragment() {
             1, 2, 3, 6 -> {
                 var list = allAlbumsList
 
-                // 1. Search Query
+                // 1. Search Query (FTS-style multi-token matching)
                 if (query.isNotEmpty()) {
-                    list = list.filter {
-                        it.album.lowercase(Locale.ROOT).contains(query) ||
-                        it.artist.lowercase(Locale.ROOT).contains(query)
+                    val tokens = query.split(Regex("\\s+")).filter { it.isNotEmpty() }
+                    list = list.filter { item ->
+                        tokens.all { t ->
+                            item.album.contains(t, ignoreCase = true) ||
+                            item.artist.contains(t, ignoreCase = true)
+                        }
                     }
                 }
 
@@ -1070,7 +1149,10 @@ class CatalogFragment : Fragment() {
             4 -> {
                 var list = allFoldersList
                 if (query.isNotEmpty()) {
-                    list = list.filter { it.name.lowercase(Locale.ROOT).contains(query) }
+                    val tokens = query.split(Regex("\\s+")).filter { it.isNotEmpty() }
+                    list = list.filter { folder ->
+                        tokens.all { t -> folder.name.contains(t, ignoreCase = true) }
+                    }
                 }
                 folderAdapter.submitList(list)
                 binding.tvCatalogCount.text = "${list.size} folders"
