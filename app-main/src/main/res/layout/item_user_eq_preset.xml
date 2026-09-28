@@ -68,6 +68,15 @@
                 tools:visibility="visible" />
 
             <ImageButton
+                android:id="@+id/btnEditPreset"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_preset_edit"
+                android:contentDescription="Edit preset"
+                app:tint="@color/text_secondary" />
+
+            <ImageButton
                 android:id="@+id/btnExportPreset"
                 android:layout_width="36dp"
                 android:layout_height="36dp"

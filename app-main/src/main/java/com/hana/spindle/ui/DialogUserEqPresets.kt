@@ -71,14 +71,18 @@ class DialogUserEqPresets(
 
         binding.btnImportPreset.setOnClickListener {
             try {
-                importFileLauncher.launch("application/json")
+                importFileLauncher.launch("*/*")
             } catch (e: Exception) {
                 try {
-                    importFileLauncher.launch("*/*")
+                    importFileLauncher.launch("application/json")
                 } catch (e2: Exception) {
                     Toast.makeText(requireContext(), "No file manager found", Toast.LENGTH_SHORT).show()
                 }
             }
+        }
+
+        binding.btnPasteClipboard.setOnClickListener {
+            importPresetFromClipboard()
         }
 
         adapter = UserEqPresetAdapter(
@@ -89,6 +93,9 @@ class DialogUserEqPresets(
                 view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                 Toast.makeText(requireContext(), "Applied: ${preset.name}", Toast.LENGTH_SHORT).show()
                 dismiss()
+            },
+            onEditClick = { preset ->
+                showEditPresetDialog(preset)
             },
             onExportClick = { preset ->
                 exportPreset(preset)
@@ -110,6 +117,111 @@ class DialogUserEqPresets(
         adapter.submitList(presets, fxController.currentPresetName)
         binding.tvEmptyPresets.visibility = if (presets.isEmpty()) View.VISIBLE else View.GONE
         binding.rvUserPresets.visibility = if (presets.isEmpty()) View.GONE else View.VISIBLE
+
+        val activePreset = app.userEqPresetManager.findPresetByName(fxController.currentPresetName)
+        if (activePreset != null && !activePreset.isBuiltIn) {
+            binding.btnUpdateActiveCurve.visibility = View.VISIBLE
+            binding.btnUpdateActiveCurve.text = "OVERWRITE \"${activePreset.name.uppercase()}\""
+            binding.btnUpdateActiveCurve.setOnClickListener {
+                confirmOverwritePreset(activePreset)
+            }
+        } else {
+            binding.btnUpdateActiveCurve.visibility = View.GONE
+        }
+    }
+
+    private fun confirmOverwritePreset(activePreset: UserEqPreset) {
+        val app = requireActivity().application as SpindleApp
+        AlertDialog.Builder(requireContext())
+            .setTitle("Overwrite Preset")
+            .setMessage("Update \"${activePreset.name}\" with current slider gains & DSP settings?")
+            .setPositiveButton("Overwrite") { _, _ ->
+                val updated = fxController.captureCurrentStateAsPreset(
+                    name = activePreset.name,
+                    description = activePreset.description
+                ).copy(id = activePreset.id, isBuiltIn = false)
+                val success = app.userEqPresetManager.saveOrUpdatePreset(updated, overwriteExistingName = true)
+                if (success) {
+                    fxController.applyUserPreset(updated)
+                    onPresetApplied?.invoke()
+                    Toast.makeText(requireContext(), "Preset \"${updated.name}\" updated!", Toast.LENGTH_SHORT).show()
+                    refreshPresetsList()
+                } else {
+                    Toast.makeText(requireContext(), "Failed to update preset", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun showEditPresetDialog(preset: UserEqPreset) {
+        val context = requireContext()
+        val app = requireActivity().application as SpindleApp
+        val dialogBinding = DialogSaveUserEqPresetBinding.inflate(LayoutInflater.from(context))
+
+        dialogBinding.etPresetName.setText(preset.name)
+        dialogBinding.etPresetDescription.setText(preset.description)
+        dialogBinding.btnConfirmSavePreset.text = "UPDATE"
+        dialogBinding.tvSaveCurrentSummary.text = "EDIT PROFILE METADATA"
+        dialogBinding.tvSaveBandsSummary.text = "Preset ID: ${preset.id.take(8)}..."
+
+        val dialog = AlertDialog.Builder(context)
+            .setView(dialogBinding.root)
+            .create()
+
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        dialogBinding.btnCancelSavePreset.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialogBinding.btnConfirmSavePreset.setOnClickListener {
+            val newName = dialogBinding.etPresetName.text?.toString()?.trim().orEmpty()
+            if (newName.isEmpty()) {
+                dialogBinding.etPresetName.error = "Name cannot be empty"
+                return@setOnClickListener
+            }
+            val newDesc = dialogBinding.etPresetDescription.text?.toString()?.trim().orEmpty()
+            val success = app.userEqPresetManager.renamePreset(preset.id, newName, newDesc)
+            if (success) {
+                if (fxController.currentPresetName.equals(preset.name, ignoreCase = true)) {
+                    fxController.updateCurrentPresetName(newName)
+                }
+                onPresetApplied?.invoke()
+                dialog.dismiss()
+                Toast.makeText(context, "Preset updated!", Toast.LENGTH_SHORT).show()
+                refreshPresetsList()
+            } else {
+                Toast.makeText(context, "Failed to update preset", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        dialog.show()
+    }
+
+    private fun importPresetFromClipboard() {
+        val app = requireActivity().application as SpindleApp
+        val clipboard = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
+        val clip = clipboard?.primaryClip?.getItemAt(0)?.text?.toString()?.trim()
+        if (clip.isNullOrBlank()) {
+            Toast.makeText(requireContext(), "Clipboard is empty. Copy AutoEq or Spindle JSON first.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val preset = app.userEqPresetManager.importPreset(clip, "AutoEq Target")
+        if (preset != null) {
+            val success = app.userEqPresetManager.savePreset(preset)
+            if (success) {
+                fxController.applyUserPreset(preset)
+                onPresetApplied?.invoke()
+                Toast.makeText(requireContext(), "Imported & Applied: ${preset.name}", Toast.LENGTH_SHORT).show()
+                refreshPresetsList()
+            } else {
+                Toast.makeText(requireContext(), "Failed to save imported preset", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Toast.makeText(requireContext(), "Unrecognized EQ format in clipboard (AutoEq GraphicEQ or Spindle JSON required)", Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun showSavePresetDialog() {
@@ -151,7 +263,7 @@ class DialogUserEqPresets(
 
             val desc = dialogBinding.etPresetDescription.text?.toString()?.trim().orEmpty()
             val newPreset = fxController.captureCurrentStateAsPreset(name = name, description = desc)
-            val success = app.userEqPresetManager.savePreset(newPreset)
+            val success = app.userEqPresetManager.saveOrUpdatePreset(newPreset, overwriteExistingName = true)
             if (success) {
                 fxController.applyUserPreset(newPreset)
                 onPresetApplied?.invoke()
@@ -204,13 +316,13 @@ class DialogUserEqPresets(
             }
 
             val app = requireActivity().application as SpindleApp
-            val preset = app.userEqPresetManager.importPresetFromJson(content)
+            val preset = app.userEqPresetManager.importPreset(content, "Imported Target")
             if (preset != null) {
                 app.userEqPresetManager.savePreset(preset)
                 Toast.makeText(requireContext(), "Imported: ${preset.name}", Toast.LENGTH_SHORT).show()
                 refreshPresetsList()
             } else {
-                Toast.makeText(requireContext(), "Invalid Spindle EQ preset file", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Invalid Spindle EQ or AutoEq preset file", Toast.LENGTH_SHORT).show()
             }
         } catch (e: Exception) {
             Toast.makeText(requireContext(), "Error importing preset: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -228,6 +340,7 @@ class DialogUserEqPresets(
     private class UserEqPresetAdapter(
         private var activePresetName: String,
         private val onPresetClick: (UserEqPreset) -> Unit,
+        private val onEditClick: (UserEqPreset) -> Unit,
         private val onExportClick: (UserEqPreset) -> Unit,
         private val onDeleteClick: (UserEqPreset) -> Unit
     ) : RecyclerView.Adapter<UserEqPresetAdapter.ViewHolder>() {
@@ -276,10 +389,15 @@ class DialogUserEqPresets(
                 }
                 b.tvPresetCurveSummary.text = sb.toString()
 
+                b.btnEditPreset.visibility = if (item.isBuiltIn) View.GONE else View.VISIBLE
                 b.btnDeletePreset.visibility = if (item.isBuiltIn) View.GONE else View.VISIBLE
 
                 b.containerPresetItem.setOnClickListener {
                     onPresetClick(item)
+                }
+
+                b.btnEditPreset.setOnClickListener {
+                    onEditClick(item)
                 }
 
                 b.btnExportPreset.setOnClickListener {

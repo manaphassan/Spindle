@@ -276,6 +276,7 @@ class VerticalDeckView @JvmOverloads constructor(
     var onSeek: ((Float) -> Unit)? = null
     var onDoubleTapChassis: (() -> Unit)? = null
     var onTitleClicked: (() -> Unit)? = null
+    var onEqBadgeLongClicked: (() -> Unit)? = null
 
     // Touch & interaction tracking
     private var isDraggingProgress = false
@@ -283,9 +284,12 @@ class VerticalDeckView @JvmOverloads constructor(
     private val gestureHandler = Handler(Looper.getMainLooper())
     private var holdSeekRunnable: Runnable? = null
     private var holdEjectRunnable: Runnable? = null
+    private var holdTapeBadgeRunnable: Runnable? = null
     private var pendingSingleTapRunnable: Runnable? = null
     private var isHoldSeeking = false
     private var isHoldEjecting = false
+    private var isHoldTapeBadge = false
+    private var isTouchingTapeBadge = false
     private var lastTapButtonIndex = -1
     private var lastTapTime = 0L
 
@@ -2780,7 +2784,7 @@ class VerticalDeckView @JvmOverloads constructor(
                     return true
                 }
 
-                // Check tape formulation selector badge touch
+                // Check tape formulation selector badge touch (tap cycles, hold opens preset manager)
                 val badgeSlop = 12f
                 val inTapeBadge = x >= tapeTypeBadgeRect.left - badgeSlop &&
                                   x <= tapeTypeBadgeRect.right + badgeSlop &&
@@ -2788,18 +2792,16 @@ class VerticalDeckView @JvmOverloads constructor(
                                   y <= tapeTypeBadgeRect.bottom + badgeSlop
 
                 if (inTapeBadge) {
-                    performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                    val nextType = when (tapeFormulation) {
-                        com.hana.spindle.playback.AudioFxController.TapeFormulation.TYPE_I_NORMAL ->
-                            com.hana.spindle.playback.AudioFxController.TapeFormulation.TYPE_II_CHROME
-                        com.hana.spindle.playback.AudioFxController.TapeFormulation.TYPE_II_CHROME ->
-                            com.hana.spindle.playback.AudioFxController.TapeFormulation.TYPE_IV_METAL
-                        com.hana.spindle.playback.AudioFxController.TapeFormulation.TYPE_IV_METAL ->
-                            com.hana.spindle.playback.AudioFxController.TapeFormulation.TYPE_I_NORMAL
+                    isTouchingTapeBadge = true
+                    isHoldTapeBadge = false
+                    holdTapeBadgeRunnable?.let { gestureHandler.removeCallbacks(it) }
+                    val tapeHoldTimeout = ViewConfiguration.getLongPressTimeout().toLong().coerceAtLeast(500L)
+                    holdTapeBadgeRunnable = Runnable {
+                        isHoldTapeBadge = true
+                        performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                        onEqBadgeLongClicked?.invoke()
                     }
-                    tapeFormulation = nextType
-                    onTapeTypeClicked?.invoke(nextType)
-                    invalidate()
+                    gestureHandler.postDelayed(holdTapeBadgeRunnable!!, tapeHoldTimeout)
                     return true
                 }
 
@@ -2916,6 +2918,19 @@ class VerticalDeckView @JvmOverloads constructor(
                     updateProgressFromTouch(x)
                     return true
                 }
+                if (isTouchingTapeBadge) {
+                    val badgeSlop = 16f
+                    val inTapeBadge = x >= tapeTypeBadgeRect.left - badgeSlop &&
+                                      x <= tapeTypeBadgeRect.right + badgeSlop &&
+                                      y >= tapeTypeBadgeRect.top - badgeSlop &&
+                                      y <= tapeTypeBadgeRect.bottom + badgeSlop
+                    if (!inTapeBadge) {
+                        holdTapeBadgeRunnable?.let { gestureHandler.removeCallbacks(it) }
+                        holdTapeBadgeRunnable = null
+                        isTouchingTapeBadge = false
+                        isHoldTapeBadge = false
+                    }
+                }
                 if (pressedButtonIndex == 3 && !btnEjectRect.contains(x, y)) {
                     holdEjectRunnable?.let { gestureHandler.removeCallbacks(it) }
                     holdEjectRunnable = null
@@ -2930,6 +2945,37 @@ class VerticalDeckView @JvmOverloads constructor(
                     isDraggingProgress = false
                     parent?.requestDisallowInterceptTouchEvent(false)
                     updateProgressFromTouch(x)
+                    return true
+                }
+
+                if (isTouchingTapeBadge) {
+                    holdTapeBadgeRunnable?.let { gestureHandler.removeCallbacks(it) }
+                    holdTapeBadgeRunnable = null
+                    val wasLongPress = isHoldTapeBadge
+                    isTouchingTapeBadge = false
+                    isHoldTapeBadge = false
+
+                    if (!wasLongPress) {
+                        val badgeSlop = 12f
+                        val inTapeBadge = x >= tapeTypeBadgeRect.left - badgeSlop &&
+                                          x <= tapeTypeBadgeRect.right + badgeSlop &&
+                                          y >= tapeTypeBadgeRect.top - badgeSlop &&
+                                          y <= tapeTypeBadgeRect.bottom + badgeSlop
+                        if (inTapeBadge) {
+                            performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                            val nextType = when (tapeFormulation) {
+                                com.hana.spindle.playback.AudioFxController.TapeFormulation.TYPE_I_NORMAL ->
+                                    com.hana.spindle.playback.AudioFxController.TapeFormulation.TYPE_II_CHROME
+                                com.hana.spindle.playback.AudioFxController.TapeFormulation.TYPE_II_CHROME ->
+                                    com.hana.spindle.playback.AudioFxController.TapeFormulation.TYPE_IV_METAL
+                                com.hana.spindle.playback.AudioFxController.TapeFormulation.TYPE_IV_METAL ->
+                                    com.hana.spindle.playback.AudioFxController.TapeFormulation.TYPE_I_NORMAL
+                            }
+                            tapeFormulation = nextType
+                            onTapeTypeClicked?.invoke(nextType)
+                            invalidate()
+                        }
+                    }
                     return true
                 }
 
@@ -3008,6 +3054,10 @@ class VerticalDeckView @JvmOverloads constructor(
                 holdSeekRunnable = null
                 holdEjectRunnable?.let { gestureHandler.removeCallbacks(it) }
                 holdEjectRunnable = null
+                holdTapeBadgeRunnable?.let { gestureHandler.removeCallbacks(it) }
+                holdTapeBadgeRunnable = null
+                isHoldTapeBadge = false
+                isTouchingTapeBadge = false
                 isHoldEjecting = false
                 if (isHoldSeeking) {
                     isHoldSeeking = false

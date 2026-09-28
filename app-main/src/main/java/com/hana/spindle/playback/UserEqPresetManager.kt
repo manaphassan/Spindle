@@ -10,10 +10,13 @@ import java.io.File
  * Storage manager for custom User EQ Presets and Headphone Acoustic Profiles.
  * Persists presets as a local JSON file in internal app storage.
  */
-class UserEqPresetManager(private val context: Context) {
+class UserEqPresetManager(
+    private val context: Context? = null,
+    private val baseDir: File? = null
+) {
 
     private val presetFile: File
-        get() = File(context.filesDir, "user_eq_presets.json")
+        get() = File(baseDir ?: context?.filesDir ?: File("."), "user_eq_presets.json")
 
     @Volatile
     private var cachedPresets: MutableList<UserEqPreset>? = null
@@ -39,17 +42,59 @@ class UserEqPresetManager(private val context: Context) {
     }
 
     /**
+     * Finds a preset by name (case-insensitive).
+     */
+    @Synchronized
+    fun findPresetByName(name: String): UserEqPreset? {
+        return getPresets().firstOrNull { it.name.equals(name.trim(), ignoreCase = true) }
+    }
+
+    /**
      * Saves or updates a user EQ preset.
      */
     @Synchronized
     fun savePreset(preset: UserEqPreset): Boolean {
+        return saveOrUpdatePreset(preset, overwriteExistingName = false)
+    }
+
+    /**
+     * Saves or updates a user EQ preset with optional overwrite of same-named preset.
+     */
+    @Synchronized
+    fun saveOrUpdatePreset(preset: UserEqPreset, overwriteExistingName: Boolean = false): Boolean {
         val current = getPresets().toMutableList()
-        val existingIndex = current.indexOfFirst { it.id == preset.id }
-        if (existingIndex >= 0) {
-            current[existingIndex] = preset
+        val existingIndexById = current.indexOfFirst { it.id == preset.id }
+        val targetIndex = if (existingIndexById >= 0) {
+            existingIndexById
+        } else if (overwriteExistingName) {
+            current.indexOfFirst { it.name.equals(preset.name.trim(), ignoreCase = true) }
+        } else {
+            -1
+        }
+
+        if (targetIndex >= 0) {
+            val old = current[targetIndex]
+            current[targetIndex] = preset.copy(id = old.id, isBuiltIn = old.isBuiltIn)
         } else {
             current.add(0, preset)
         }
+        val success = saveToDisk(current)
+        if (success) {
+            cachedPresets = current
+        }
+        return success
+    }
+
+    /**
+     * Renames a preset and updates its acoustic description.
+     */
+    @Synchronized
+    fun renamePreset(id: String, newName: String, newDesc: String): Boolean {
+        val current = getPresets().toMutableList()
+        val index = current.indexOfFirst { it.id == id }
+        if (index < 0) return false
+        val old = current[index]
+        current[index] = old.copy(name = newName.trim(), description = newDesc.trim())
         val success = saveToDisk(current)
         if (success) {
             cachedPresets = current
@@ -63,7 +108,7 @@ class UserEqPresetManager(private val context: Context) {
     @Synchronized
     fun deletePreset(id: String): Boolean {
         val current = getPresets().toMutableList()
-        val removed = current.removeAll { it.id == id }
+        val removed = current.removeAll { it.id == id && !it.isBuiltIn }
         if (removed) {
             val success = saveToDisk(current)
             if (success) {
@@ -82,6 +127,19 @@ class UserEqPresetManager(private val context: Context) {
     }
 
     /**
+     * Imports a preset from a raw string, supporting both Spindle JSON and
+     * standard AutoEq / Squiglink GraphicEQ formats.
+     */
+    fun importPreset(content: String, fallbackName: String = "Imported EQ"): UserEqPreset? {
+        val trimmed = content.trim()
+        if (trimmed.startsWith("{")) {
+            val fromJson = importPresetFromJson(trimmed)
+            if (fromJson != null) return fromJson
+        }
+        return parseAutoEqGraphicEq(trimmed, fallbackName)
+    }
+
+    /**
      * Imports a preset from a raw JSON string.
      */
     fun importPresetFromJson(jsonString: String): UserEqPreset? {
@@ -92,6 +150,93 @@ class UserEqPresetManager(private val context: Context) {
             Log.e(TAG, "Failed to parse imported preset JSON", e)
             null
         }
+    }
+
+    /**
+     * Parses standard AutoEq / Squiglink GraphicEQ string format:
+     * e.g. "GraphicEQ: 20 0.0; 25 0.5; 31.5 1.2; 63 2.5; ... 16000 -2.0"
+     * Interpolates to the 10 standard ISO center frequencies (31Hz..16kHz) and clamps to [-12, +12] dB.
+     */
+    fun parseAutoEqGraphicEq(rawText: String, presetName: String): UserEqPreset? {
+        try {
+            var text = rawText.trim()
+            if (text.startsWith("GraphicEQ:", ignoreCase = true)) {
+                text = text.substring(10).trim()
+            }
+
+            // Split by semicolon, comma (if pairs are semicolon-separated), or newlines
+            val tokens = text.split(Regex("[;\\r\\n]+"))
+            val rawPoints = mutableListOf<Pair<Float, Float>>()
+
+            for (token in tokens) {
+                val cleaned = token.trim()
+                if (cleaned.isEmpty()) continue
+                val parts = cleaned.split(Regex("[\\s,]+")).filter { it.isNotEmpty() }
+                if (parts.size >= 2) {
+                    val freq = parts[0].toFloatOrNull()
+                    val gain = parts[1].toFloatOrNull()
+                    if (freq != null && gain != null && freq > 0f) {
+                        rawPoints.add(Pair(freq, gain))
+                    }
+                }
+            }
+
+            if (rawPoints.size < 3) {
+                Log.w(TAG, "AutoEq text contained insufficient frequency points: ${rawPoints.size}")
+                return null
+            }
+
+            // Sort points by frequency ascending
+            rawPoints.sortBy { it.first }
+
+            val isoCenterFreqs = floatArrayOf(
+                31.25f, 62.5f, 125f, 250f, 500f, 1000f, 2000f, 4000f, 8000f, 16000f
+            )
+
+            val calculatedGains = mutableListOf<Float>()
+
+            for (targetFreq in isoCenterFreqs) {
+                val gain = interpolateGainAtFrequency(rawPoints, targetFreq)
+                val clamped = gain.coerceIn(-12.0f, 12.0f)
+                val rounded = Math.round(clamped * 10f) / 10f
+                calculatedGains.add(rounded)
+            }
+
+            return UserEqPreset(
+                name = presetName.ifBlank { "AutoEq Target" },
+                description = "Imported AutoEq / Squiglink GraphicEQ curve (${rawPoints.size} measurement points)",
+                gainsDb = calculatedGains,
+                qFactors = List(10) { 1.414f },
+                isParametric = false,
+                bassBoost = 0,
+                crossfeedStrength = 0,
+                isBuiltIn = false
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Error parsing AutoEq GraphicEQ text", e)
+            return null
+        }
+    }
+
+    private fun interpolateGainAtFrequency(points: List<Pair<Float, Float>>, targetFreq: Float): Float {
+        if (targetFreq <= points.first().first) return points.first().second
+        if (targetFreq >= points.last().first) return points.last().second
+
+        for (i in 0 until points.size - 1) {
+            val (f1, g1) = points[i]
+            val (f2, g2) = points[i + 1]
+
+            if (targetFreq in f1..f2) {
+                if (f1 == f2) return g1
+                // Logarithmic frequency interpolation
+                val log1 = kotlin.math.ln(f1)
+                val log2 = kotlin.math.ln(f2)
+                val logT = kotlin.math.ln(targetFreq)
+                val factor = (logT - log1) / (log2 - log1)
+                return g1 + (factor * (g2 - g1)).toFloat()
+            }
+        }
+        return 0f
     }
 
     private fun loadFromDisk(): List<UserEqPreset> {

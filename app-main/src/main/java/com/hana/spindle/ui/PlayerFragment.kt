@@ -358,6 +358,13 @@ class PlayerFragment : Fragment() {
             audioEngine.foleyEngine.playSwitchSnap()
             android.widget.Toast.makeText(requireContext(), "TAPE: ${type.label}", android.widget.Toast.LENGTH_SHORT).show()
         }
+        binding.verticalDeckView.onEqBadgeLongClicked = {
+            val fxController = (requireActivity().application as SpindleApp).audioEngine.audioFxController
+            val dialog = DialogUserEqPresets(fxController, openSaveDirectly = false) {
+                syncState()
+            }
+            dialog.show(parentFragmentManager, "DialogUserEqPresets")
+        }
         binding.verticalDeckView.onDolbyClicked = { mode ->
             audioEngine.setDolbyMode(mode)
             audioEngine.foleyEngine.playSwitchSnap()

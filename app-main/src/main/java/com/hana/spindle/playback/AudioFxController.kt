@@ -164,7 +164,11 @@ class AudioFxController {
         private set
 
     var currentPresetName: String = "FLAT"
-        private set
+        internal set
+
+    fun updateCurrentPresetName(name: String) {
+        currentPresetName = name
+    }
 
     // Parametric Mode & Q-Factors (0.5 to 6.0, default 1.414 = 1-octave bandwidth)
     var isParametricMode: Boolean = false

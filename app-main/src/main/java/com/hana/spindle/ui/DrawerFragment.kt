@@ -21,6 +21,7 @@ import android.text.TextWatcher
 import android.view.Gravity
 import android.view.HapticFeedbackConstants
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
@@ -84,6 +85,7 @@ class DrawerFragment : Fragment() {
     private var currentPresetIndex = 0
     private var currentTabIndex = 0
 
+    private var syncAllEqControlsAction: (() -> Unit)? = null
     private var audioManager: AudioManager? = null
 
     // System Volume Broadcast Receiver for real-time hardware key sync
@@ -159,6 +161,7 @@ class DrawerFragment : Fragment() {
         val filter = IntentFilter("android.media.VOLUME_CHANGED_ACTION")
         requireContext().registerReceiver(volumeChangeReceiver, filter)
         reloadApps()
+        syncAllEqControlsAction?.invoke()
     }
 
     override fun onPause() {
@@ -479,7 +482,43 @@ class DrawerFragment : Fragment() {
             Toast.makeText(requireContext(), "$bandLabel Q set to ${String.format(Locale.US, "%.1f", q)}", Toast.LENGTH_SHORT).show()
         }
 
-        // 3. AutoEq Target Profile Buttons
+        // 2d. Target Curves Quick Buttons (Settings card)
+        val curveButtons = mapOf(
+            binding.btnCurveHarman to "HARMAN",
+            binding.btnCurveDiffuse to "DIFFUSE",
+            binding.btnCurveTube to "TUBE",
+            binding.btnCurveAir to "AIR",
+            binding.btnCurveFlat to "FLAT"
+        )
+        fun highlightCurve(selected: String) {
+            val activeColor = ColorStateList.valueOf(Color.parseColor("#F97316"))
+            val inactiveColor = ColorStateList.valueOf(Color.parseColor("#202334"))
+            curveButtons.forEach { (btn, name) ->
+                val isSel = name.equals(selected, ignoreCase = true)
+                btn.backgroundTintList = if (isSel) activeColor else inactiveColor
+                btn.setTextColor(if (isSel) Color.WHITE else Color.parseColor("#A1A1AA"))
+            }
+        }
+
+        // Custom User EQ Presets & Acoustic Targets Count
+        fun updateCustomPresetsBadge() {
+            val count = app.userEqPresetManager.getPresets().size
+            binding.btnManageUserPresets.text = "PROFILES ($count)"
+        }
+
+        // 3. AutoEq Target Profile Buttons (DJ Console Strip)
+        (binding.layoutAutoEqPills.parent as? ViewGroup)?.setOnTouchListener { v, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
+                    v.parent?.requestDisallowInterceptTouchEvent(true)
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    v.parent?.requestDisallowInterceptTouchEvent(false)
+                }
+            }
+            false
+        }
+
         val autoEqButtons = listOf(
             binding.btnEqHarman to "HARMAN",
             binding.btnEqCrinacle to "CRINACLE",
@@ -490,15 +529,87 @@ class DrawerFragment : Fragment() {
             binding.btnEqFlat to "FLAT"
         )
 
-        fun highlightAutoEq(selectedName: String) {
+        fun refreshAutoEqPills() {
+            val currentName = fxController.currentPresetName
+            // 1. Highlight built-in static pills
             autoEqButtons.forEach { (btn, name) ->
-                val isSelected = name.equals(selectedName, ignoreCase = true)
+                val isSelected = name.equals(currentName, ignoreCase = true) ||
+                        (name.equals("HARMAN", ignoreCase = true) && currentName.contains("Harman", ignoreCase = true)) ||
+                        (name.equals("CRINACLE", ignoreCase = true) && currentName.contains("Crinacle", ignoreCase = true)) ||
+                        (name.equals("MOONDROP", ignoreCase = true) && currentName.contains("Moondrop", ignoreCase = true)) ||
+                        (name.equals("HD600", ignoreCase = true) && currentName.contains("HD600", ignoreCase = true)) ||
+                        (name.equals("WARM_TUBE", ignoreCase = true) && currentName.contains("Warm", ignoreCase = true)) ||
+                        (name.equals("V_SHAPE", ignoreCase = true) && currentName.contains("V-Shape", ignoreCase = true)) ||
+                        (name.equals("FLAT", ignoreCase = true) && currentName.equals("Flat", ignoreCase = true))
                 btn.setTextColor(if (isSelected) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
                 btn.backgroundTintList = ColorStateList.valueOf(
                     if (isSelected) Color.parseColor("#16261B") else Color.parseColor("#181A20")
                 )
             }
+
+            // 2. Remove previously added dynamic pills (keep the 7 initial built-ins)
+            while (binding.layoutAutoEqPills.childCount > 7) {
+                binding.layoutAutoEqPills.removeViewAt(7)
+            }
+
+            // 3. Append custom user EQ presets
+            val customPresets = app.userEqPresetManager.getPresets().filter { !it.isBuiltIn }
+            customPresets.forEach { preset ->
+                val pill = layoutInflater.inflate(R.layout.item_autoeq_pill, binding.layoutAutoEqPills, false) as Button
+                val isSelected = preset.name.equals(currentName, ignoreCase = true)
+                val displayName = if (preset.name.length > 18) preset.name.take(16) + "…" else preset.name
+                pill.text = displayName.uppercase()
+                pill.tag = preset.name
+                pill.setTextColor(if (isSelected) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+                pill.backgroundTintList = ColorStateList.valueOf(
+                    if (isSelected) Color.parseColor("#16261B") else Color.parseColor("#181A20")
+                )
+                pill.setOnClickListener {
+                    if (fxController.isLocked) {
+                        Toast.makeText(requireContext(), "EQ & DSP is locked. Tap UNLOCKED to adjust.", Toast.LENGTH_SHORT).show()
+                        return@setOnClickListener
+                    }
+                    fxController.applyUserPreset(preset)
+                    syncAllEqControlsAction?.invoke()
+                    pill.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                    Toast.makeText(requireContext(), "PRESET: ${preset.name}", Toast.LENGTH_SHORT).show()
+                }
+                binding.layoutAutoEqPills.addView(pill)
+            }
+
+            // 4. Append "+ PRESETS" quick access manager pill
+            val btnAdd = layoutInflater.inflate(R.layout.item_autoeq_pill, binding.layoutAutoEqPills, false) as Button
+            btnAdd.text = "+ PRESETS"
+            btnAdd.tag = "__ADD_PRESETS__"
+            btnAdd.setTextColor(Color.parseColor("#F97316"))
+            btnAdd.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#2A1B14"))
+            btnAdd.setOnClickListener {
+                btnAdd.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                val dialog = DialogUserEqPresets(fxController, openSaveDirectly = false) {
+                    syncAllEqControlsAction?.invoke()
+                }
+                dialog.show(parentFragmentManager, "DialogUserEqPresets")
+            }
+            binding.layoutAutoEqPills.addView(btnAdd)
         }
+
+        fun syncAllEqControls() {
+            binding.iso10BandEqView.setBands(fxController.isoBandsGainDb)
+            binding.knobLow.currentValue = fxController.lowGainDb
+            binding.knobMid.currentValue = fxController.midGainDb
+            binding.knobHi.currentValue = fxController.highGainDb
+            binding.knobFilter.currentValue = fxController.bassBoostStrength.toFloat()
+            binding.seekCrossfeed.progress = fxController.crossfeedStrength / 10
+            updateCrossfeedLabel(binding.seekCrossfeed.progress)
+            updateEqModeVisual(fxController.isParametricMode)
+            updateEqHeadroomLabel(fxController)
+            updateBiquadVisualizer()
+            binding.btnFx.text = "FX: ${fxController.currentPresetName.replace("_", " ")}"
+            highlightCurve(fxController.currentPresetName)
+            updateCustomPresetsBadge()
+            refreshAutoEqPills()
+        }
+        syncAllEqControlsAction = { syncAllEqControls() }
 
         autoEqButtons.forEach { (btn, name) ->
             btn.setOnClickListener {
@@ -507,15 +618,7 @@ class DrawerFragment : Fragment() {
                     return@setOnClickListener
                 }
                 fxController.applyPreset(name)
-                binding.btnFx.text = "FX: ${name.replace("_", " ")}"
-                binding.iso10BandEqView.setBands(fxController.isoBandsGainDb)
-                binding.knobLow.currentValue = fxController.lowGainDb
-                binding.knobMid.currentValue = fxController.midGainDb
-                binding.knobHi.currentValue = fxController.highGainDb
-                binding.knobFilter.currentValue = fxController.bassBoostStrength.toFloat()
-                updateEqHeadroomLabel(fxController)
-                updateBiquadVisualizer()
-                highlightAutoEq(name)
+                syncAllEqControls()
                 btn.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
             }
         }
@@ -529,16 +632,7 @@ class DrawerFragment : Fragment() {
             currentPresetIndex = (currentPresetIndex + 1) % dspPresets.size
             val preset = dspPresets[currentPresetIndex]
             fxController.applyPreset(preset)
-            binding.btnFx.text = "FX: ${preset.replace("_", " ")}"
-
-            binding.iso10BandEqView.setBands(fxController.isoBandsGainDb)
-            binding.knobLow.currentValue = fxController.lowGainDb
-            binding.knobMid.currentValue = fxController.midGainDb
-            binding.knobHi.currentValue = fxController.highGainDb
-            binding.knobFilter.currentValue = fxController.bassBoostStrength.toFloat()
-            updateEqHeadroomLabel(fxController)
-            updateBiquadVisualizer()
-            highlightAutoEq(preset)
+            syncAllEqControls()
         }
 
         // 5. Deck Master RESET Button: Flat EQ, 0 gain, 80% volume
@@ -559,15 +653,11 @@ class DrawerFragment : Fragment() {
             binding.knobMid.currentValue = 0f
             binding.knobHi.currentValue = 0f
             binding.knobFilter.currentValue = 0f
-            binding.btnFx.text = "FX: FLAT"
-            updateEqHeadroomLabel(fxController)
-            updateBiquadVisualizer()
-            highlightAutoEq("FLAT")
-
-            // Reset master output volume to reference 80%
             setMasterOutputVolume(80)
             binding.seekMasterVolume.progress = 80
             updateVolumeLabel(80)
+
+            syncAllEqControls()
 
             it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
             Toast.makeText(requireContext(), "Hardware EQ & Master Output Reset to Flat Reference", Toast.LENGTH_SHORT).show()
@@ -651,62 +741,17 @@ class DrawerFragment : Fragment() {
         binding.tvCrossfeedTitle.setOnClickListener(crossfeedCycleListener)
         binding.tvCrossfeedLevel.setOnClickListener(crossfeedCycleListener)
 
-        // 7. Target Curves Quick Buttons
-        val curveButtons = mapOf(
-            binding.btnCurveHarman to "HARMAN",
-            binding.btnCurveDiffuse to "DIFFUSE",
-            binding.btnCurveTube to "TUBE",
-            binding.btnCurveAir to "AIR",
-            binding.btnCurveFlat to "FLAT"
-        )
-        fun highlightCurve(selected: String) {
-            val activeColor = ColorStateList.valueOf(Color.parseColor("#F97316"))
-            val inactiveColor = ColorStateList.valueOf(Color.parseColor("#202334"))
-            curveButtons.forEach { (btn, name) ->
-                val isSel = name.equals(selected, ignoreCase = true)
-                btn.backgroundTintList = if (isSel) activeColor else inactiveColor
-                btn.setTextColor(if (isSel) Color.WHITE else Color.parseColor("#A1A1AA"))
-            }
-        }
-        highlightCurve("FLAT")
-
+        // 7. Target Curves Quick Buttons (Settings card)
         curveButtons.forEach { (btn, curveName) ->
             btn.setOnClickListener {
+                if (fxController.isLocked) {
+                    Toast.makeText(requireContext(), "EQ & DSP is locked. Tap UNLOCKED to adjust.", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
                 fxController.applyPreset(curveName)
-                binding.knobLow.currentValue = fxController.lowGainDb
-                binding.knobMid.currentValue = fxController.midGainDb
-                binding.knobHi.currentValue = fxController.highGainDb
-                binding.knobFilter.currentValue = fxController.bassBoostStrength.toFloat()
-                binding.seekCrossfeed.progress = fxController.crossfeedStrength / 10
-                updateCrossfeedLabel(binding.seekCrossfeed.progress)
-                binding.btnFx.text = "FX: $curveName"
-                highlightCurve(curveName)
-                updateBiquadVisualizer()
+                syncAllEqControls()
                 it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
             }
-        }
-
-        // Custom User EQ Presets & Acoustic Targets
-        fun updateCustomPresetsBadge() {
-            val count = app.userEqPresetManager.getPresets().size
-            binding.btnManageUserPresets.text = "PROFILES ($count)"
-        }
-        updateCustomPresetsBadge()
-
-        fun syncAllEqControls() {
-            binding.iso10BandEqView.setBands(fxController.isoBandsGainDb)
-            binding.knobLow.currentValue = fxController.lowGainDb
-            binding.knobMid.currentValue = fxController.midGainDb
-            binding.knobHi.currentValue = fxController.highGainDb
-            binding.knobFilter.currentValue = fxController.bassBoostStrength.toFloat()
-            binding.seekCrossfeed.progress = fxController.crossfeedStrength / 10
-            updateCrossfeedLabel(binding.seekCrossfeed.progress)
-            updateEqModeVisual(fxController.isParametricMode)
-            updateEqHeadroomLabel(fxController)
-            updateBiquadVisualizer()
-            binding.btnFx.text = "FX: ${fxController.currentPresetName}"
-            highlightCurve(fxController.currentPresetName)
-            updateCustomPresetsBadge()
         }
 
         binding.btnSaveUserPreset.setOnClickListener {
@@ -722,6 +767,9 @@ class DrawerFragment : Fragment() {
             }
             dialog.show(parentFragmentManager, "DialogUserEqPresets")
         }
+
+        // Initial sync of all EQ and DSP controls
+        syncAllEqControls()
 
         binding.tvVuBacklightHint.setOnClickListener {
             binding.dualAnalogVuMeter.cycleBacklight()

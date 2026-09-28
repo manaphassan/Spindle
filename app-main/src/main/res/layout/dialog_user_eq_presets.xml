@@ -55,23 +55,23 @@
             app:cornerRadius="16dp" />
     </LinearLayout>
 
-    <!-- Action Bar: Save Current & Import -->
+    <!-- Action Bar: Save Current & Overwrite -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:layout_marginTop="14dp"
-        android:layout_marginBottom="12dp">
+        android:layout_marginBottom="8dp">
 
         <Button
             android:id="@+id/btnSaveCurrentCurve"
             android:layout_width="0dp"
             android:layout_height="36dp"
             android:layout_weight="1"
-            android:layout_marginEnd="6dp"
-            android:text="+ SAVE CURRENT"
+            android:layout_marginEnd="4dp"
+            android:text="+ SAVE AS NEW"
             android:textColor="@color/white"
-            android:textSize="11sp"
+            android:textSize="10.5sp"
             android:textStyle="bold"
             android:backgroundTint="@color/brand_orange"
             android:insetTop="0dp"
@@ -79,14 +79,54 @@
             app:cornerRadius="8dp" />
 
         <Button
-            android:id="@+id/btnImportPreset"
+            android:id="@+id/btnUpdateActiveCurve"
             android:layout_width="0dp"
             android:layout_height="36dp"
             android:layout_weight="1"
-            android:layout_marginStart="6dp"
-            android:text="IMPORT (.JSON)"
+            android:layout_marginStart="4dp"
+            android:text="OVERWRITE ACTIVE"
+            android:textColor="@color/brand_orange"
+            android:textSize="10.5sp"
+            android:textStyle="bold"
+            android:backgroundTint="@color/surface_elevated"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            app:cornerRadius="8dp"
+            android:visibility="gone"
+            tools:visibility="visible" />
+    </LinearLayout>
+
+    <!-- Import Row: File & Clipboard -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="12dp">
+
+        <Button
+            android:id="@+id/btnImportPreset"
+            android:layout_width="0dp"
+            android:layout_height="34dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:text="IMPORT FILE (JSON/TXT)"
             android:textColor="@color/text_primary"
-            android:textSize="11sp"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:backgroundTint="@color/surface_elevated"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            app:cornerRadius="8dp" />
+
+        <Button
+            android:id="@+id/btnPasteClipboard"
+            android:layout_width="0dp"
+            android:layout_height="34dp"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:text="PASTE AUTOEQ TEXT"
+            android:textColor="@color/text_primary"
+            android:textSize="10sp"
             android:textStyle="bold"
             android:backgroundTint="@color/surface_elevated"
             android:insetTop="0dp"
