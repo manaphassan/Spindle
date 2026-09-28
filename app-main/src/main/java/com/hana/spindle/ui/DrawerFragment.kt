@@ -1789,6 +1789,11 @@ class DrawerFragment : Fragment() {
     }
 
     private fun setupAboutGithub() {
+        try {
+            binding.tvAboutVersion.text = "Spindle OS v${com.hana.spindle.BuildConfig.VERSION_NAME} (Audiophile Edition)"
+        } catch (e: Exception) {
+            // fallback to layout default
+        }
         binding.btnGithubLink.setOnClickListener {
             try {
                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/manaphassan/Spindle")).apply {

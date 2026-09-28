@@ -1,4 +1,4 @@
-d75cc32b53006ff57ffc2dd2646ae2c9ec3650ca90db1d2b941e2ed8411a6527  Spindle-Standard-v1.6.0-STUDIO-release.apk
+62be4d545b6e3bb7adc5bfb47c79008af95b5c1db2d38fd01920d4e6191b822b  Spindle-Standard-v1.6.0-STUDIO-release.apk
 b44da01ac6316809cd60de67a8f0b470c73e7f8561f514983773586b131d8382  Spindle-Lite-v1.0.1-LITE.apk
 420a62841a11ed01b8a1d8a80739a8c67ceda7fe99ecb3079011b605657e4431  Spindle-Standard-v1.4.0-STUDIO-release.apk
 677cd6e2b355a4e4502aea40cd62368d50a32afd31178ffe3f4ce45457250ad6  Spindle-Lite-v1.0.0-LITE.apk

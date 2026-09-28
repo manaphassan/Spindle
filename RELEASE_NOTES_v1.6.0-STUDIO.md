@@ -37,9 +37,9 @@
 
 | File | Target | Size | SHA-256 Checksum |
 | :--- | :--- | :---: | :--- |
-| **`Spindle-Standard-v1.6.0-STUDIO-release.apk`** | Production APK (Android 8.0+) | **4.88 MB** | `d75cc32b53006ff57ffc2dd2646ae2c9ec3650ca90db1d2b941e2ed8411a6527` |
-| **`Spindle-Standard-v1.6.0-STUDIO-release.aab`** | Google Play App Bundle | **7.37 MB** | `c84a3b82d1afa71e737785bb4bb121cfbf68d1f66c8e58a487f5c52db67e6ac7` |
-| **`Spindle-Standard-v1.6.0-STUDIO-debug.apk`** | Studio Debug Build | **11.10 MB** | `2c2e71fb626607530acd6ecc6931ad87a9da649492c6aab1eb409fa793fd934d` |
+| **`Spindle-Standard-v1.6.0-STUDIO-release.apk`** | Production APK (Android 8.0+) | **4.88 MB** | `62be4d545b6e3bb7adc5bfb47c79008af95b5c1db2d38fd01920d4e6191b822b` |
+| **`Spindle-Standard-v1.6.0-STUDIO-release.aab`** | Google Play App Bundle | **7.37 MB** | `f4812c0bffd9ce8ad02949177205409226eca539ad031e912fa97ffbc5c6e25f` |
+| **`Spindle-Standard-v1.6.0-STUDIO-debug.apk`** | Studio Debug Build | **12.34 MB** | `1d58d3f53cebd5dd9b9fea46584dd6bb5992cd89b425fc164589991105bed8e4` |
 | **`Spindle-Lite-v1.0.1-LITE.apk`** | Vintage Hardware (Android 4.4+) | **1.71 MB** | `b44da01ac6316809cd60de67a8f0b470c73e7f8561f514983773586b131d8382` |
 
 ---
