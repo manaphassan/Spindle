@@ -132,10 +132,10 @@ object TagParser {
 
         val channels = flacInfo?.channels ?: wavInfo?.channels ?: 2
 
-        // Check if lyrics exist (.lrc sidecar or .txt)
+        // Check if lyrics exist (.lrc sidecar, .txt, or embedded ID3/Vorbis tags)
         val lrcFile = File(file.parentFile, "${file.nameWithoutExtension}.lrc")
         val txtFile = File(file.parentFile, "${file.nameWithoutExtension}.txt")
-        val hasLyrics = lrcFile.exists() || txtFile.exists()
+        val hasLyrics = lrcFile.exists() || txtFile.exists() || EmbeddedLyricsExtractor.hasLyrics(file)
 
         return TrackEntity(
             title = title.trim(),

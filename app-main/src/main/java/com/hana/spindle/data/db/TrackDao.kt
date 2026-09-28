@@ -165,6 +165,12 @@ interface TrackDao {
     @Query("UPDATE songs SET title = :title, artist = :artist, album = :album, year = :year, trackNumber = :trackNumber, genre = :genre, composer = :composer WHERE id = :id")
     suspend fun updateTrackMetadata(id: Long, title: String, artist: String, album: String, year: Int, trackNumber: Int, genre: String?, composer: String? = null)
 
+    @Query("UPDATE songs SET hasLyrics = :hasLyrics WHERE id = :trackId")
+    suspend fun updateLyricsStatus(trackId: Long, hasLyrics: Boolean)
+
+    @Query("SELECT * FROM songs WHERE hasLyrics = 0 ORDER BY title ASC")
+    suspend fun getTracksWithoutLyrics(): List<TrackEntity>
+
     @Query("DELETE FROM songs WHERE path = :path")
     suspend fun deleteByPath(path: String)
 

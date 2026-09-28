@@ -822,17 +822,50 @@
                         android:paddingHorizontal="16dp"
                         android:clipToPadding="false" />
 
-                    <TextView
-                        android:id="@+id/tvNpNoLyrics"
+                    <LinearLayout
+                        android:id="@+id/layoutNpEmptyLyrics"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_centerInParent="true"
+                        android:orientation="vertical"
                         android:gravity="center"
-                        android:text="@string/catalog_no_lyrics"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="13sp"
-                        android:fontFamily="sans-serif-medium"
-                        android:visibility="gone" />
+                        android:visibility="gone">
+
+                        <TextView
+                            android:id="@+id/tvNpNoLyrics"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:text="@string/catalog_no_lyrics"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="13sp"
+                            android:fontFamily="sans-serif-medium" />
+
+                        <Button
+                            android:id="@+id/btnNpDownloadLyrics"
+                            android:layout_width="wrap_content"
+                            android:layout_height="36dp"
+                            android:layout_marginTop="12dp"
+                            android:text="FETCH FROM LRCLIB"
+                            android:textColor="#38BDF8"
+                            android:textSize="10sp"
+                            android:textStyle="bold"
+                            android:fontFamily="monospace"
+                            android:backgroundTint="#1E293B"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:paddingHorizontal="14dp"
+                            android:paddingVertical="0dp"
+                            app:cornerRadius="8dp" />
+
+                        <ProgressBar
+                            android:id="@+id/progressNpLyrics"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_marginTop="8dp"
+                            android:visibility="gone"
+                            android:indeterminateTint="#38BDF8" />
+                    </LinearLayout>
                 </RelativeLayout>
             </androidx.cardview.widget.CardView>
 

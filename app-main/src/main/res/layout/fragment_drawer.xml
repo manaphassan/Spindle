@@ -2471,6 +2471,21 @@
                             android:padding="0dp"
                             app:cornerRadius="8dp" />
 
+                        <Button
+                            android:id="@+id/btnFetchMissingLyrics"
+                            android:layout_width="match_parent"
+                            android:layout_height="38dp"
+                            android:layout_marginTop="8dp"
+                            android:text="FETCH MISSING LYRICS (LRCLIB)"
+                            android:textColor="#00E676"
+                            android:textSize="10.5sp"
+                            android:textStyle="bold"
+                            android:backgroundTint="#122B1E"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:padding="0dp"
+                            app:cornerRadius="8dp" />
+
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
 

@@ -1242,11 +1242,11 @@ class CatalogFragment : Fragment() {
                         val lyrics = state.currentLyrics
                         if (lyrics != null && lyrics.lines.isNotEmpty()) {
                             npLyricsAdapter.lines = lyrics.lines
-                            b.tvNpNoLyrics.visibility = View.GONE
+                            b.layoutNpEmptyLyrics.visibility = View.GONE
                             b.rvNpLyrics.visibility = View.VISIBLE
                         } else {
                             npLyricsAdapter.lines = emptyList()
-                            b.tvNpNoLyrics.visibility = View.VISIBLE
+                            b.layoutNpEmptyLyrics.visibility = View.VISIBLE
                             b.rvNpLyrics.visibility = View.GONE
                         }
 
@@ -1403,6 +1403,23 @@ class CatalogFragment : Fragment() {
         binding.cardNpLyrics.setOnClickListener(toggleLyrics)
         binding.circularCoverArcView.onCoverClicked = {
             toggleLyrics.onClick(binding.circularCoverArcView)
+        }
+
+        binding.btnNpDownloadLyrics.setOnClickListener {
+            val song = audioEngine.playbackState.value.currentSong ?: return@setOnClickListener
+            binding.progressNpLyrics.visibility = View.VISIBLE
+            binding.btnNpDownloadLyrics.isEnabled = false
+            viewLifecycleOwner.lifecycleScope.launch {
+                val downloaded = app.lyricsFetcher.fetchLyricsForTrack(song, forceRefresh = true)
+                binding.progressNpLyrics.visibility = View.GONE
+                binding.btnNpDownloadLyrics.isEnabled = true
+                if (downloaded != null && downloaded.lines.isNotEmpty()) {
+                    audioEngine.reloadLyricsForCurrentTrack(forceDownload = false)
+                    Toast.makeText(requireContext(), "Synchronized lyrics downloaded from LRCLIB!", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(requireContext(), "No lyrics found on LRCLIB for this track.", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 

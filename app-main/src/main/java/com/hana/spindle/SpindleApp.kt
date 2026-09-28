@@ -47,6 +47,10 @@ class SpindleApp : Application() {
         com.hana.spindle.data.CoverArtFetcher(this, database.trackDao(), imageLoader)
     }
 
+    val lyricsFetcher: com.hana.spindle.data.LyricsFetcher by lazy {
+        com.hana.spindle.data.LyricsFetcher(this, database.trackDao())
+    }
+
     companion object {
         const val PLAYBACK_CHANNEL_ID = "spindle_playback_channel"
         lateinit var instance: SpindleApp

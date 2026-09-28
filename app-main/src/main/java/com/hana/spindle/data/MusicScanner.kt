@@ -270,7 +270,7 @@ class MusicScanner(
                         dateAdded = System.currentTimeMillis(),
                         dateModified = dateModified,
                         bitrateKbps = bitrateKbps,
-                        hasLyrics = lrcFile.exists() || txtFile.exists()
+                        hasLyrics = lrcFile.exists() || txtFile.exists() || EmbeddedLyricsExtractor.hasLyrics(file)
                     )
                 )
             }

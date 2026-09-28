@@ -326,10 +326,7 @@ class AudioEngine(
                                     currentPositionMs = 0L,
                                     progress = 0f
                                 )
-                                scope.launch(Dispatchers.IO) {
-                                    val lyrics = LyricsParser.loadLyrics(physicalPath)
-                                    _playbackState.value = _playbackState.value.copy(currentLyrics = lyrics)
-                                }
+                                loadLyricsForTrack(newSong, physicalPath)
                                 metricsTracker.updateSourceSpecs(
                                     format = newSong.fileFormat,
                                     bitDepth = newSong.bitDepth,
@@ -701,11 +698,8 @@ class AudioEngine(
             } catch (ignored: Exception) {}
         }
 
-        // Load lyrics asynchronously
-        scope.launch(Dispatchers.IO) {
-            val lyrics = LyricsParser.loadLyrics(physicalPath)
-            _playbackState.value = _playbackState.value.copy(currentLyrics = lyrics)
-        }
+        // Load lyrics asynchronously (with automatic LRCLIB fallback)
+        loadLyricsForTrack(track, physicalPath)
 
         // Update telemetry
         metricsTracker.updateSourceSpecs(
@@ -829,10 +823,7 @@ class AudioEngine(
             activeLyricIndex = -1
         )
 
-        scope.launch(Dispatchers.IO) {
-            val lyrics = LyricsParser.loadLyrics(physicalPath)
-            _playbackState.value = _playbackState.value.copy(currentLyrics = lyrics)
-        }
+        loadLyricsForTrack(track, physicalPath)
 
         metricsTracker.updateSourceSpecs(
             format = track.fileFormat,
@@ -1164,6 +1155,40 @@ class AudioEngine(
         val leftMult = (2f * (1f - audioBalance)).coerceIn(0f, 1f)
         val rightMult = (2f * audioBalance).coerceIn(0f, 1f)
         return Pair(baseLevel * leftMult, baseLevel * rightMult)
+    }
+
+    private fun loadLyricsForTrack(track: TrackEntity, physicalPath: String) {
+        scope.launch(Dispatchers.IO) {
+            val app = context.applicationContext as? com.hana.spindle.SpindleApp
+            var lyrics = LyricsParser.loadLyrics(physicalPath, context)
+            if (lyrics == null && app != null && app.lyricsFetcher.isAutoDownloadEnabled()) {
+                lyrics = app.lyricsFetcher.fetchLyricsForTrack(track)
+            }
+            if (_playbackState.value.currentTrack?.id == track.id) {
+                _playbackState.value = _playbackState.value.copy(currentLyrics = lyrics)
+            }
+        }
+    }
+
+    fun setLyricsOffset(offsetMs: Long) {
+        val currentTrack = _playbackState.value.currentTrack ?: return
+        val lyrics = _playbackState.value.currentLyrics ?: return
+        lyrics.offsetMs = offsetMs
+        _playbackState.value = _playbackState.value.copy(currentLyrics = lyrics)
+        LyricsParser.saveLyricOffset(context, currentTrack.path, offsetMs)
+    }
+
+    suspend fun reloadLyricsForCurrentTrack(forceDownload: Boolean = false): LyricsData? {
+        val currentTrack = _playbackState.value.currentTrack ?: return null
+        val physicalPath = CueSheetParser.getAudioFilePath(currentTrack.path)
+        val app = context.applicationContext as? com.hana.spindle.SpindleApp
+        val lyrics = if (forceDownload && app != null) {
+            app.lyricsFetcher.fetchLyricsForTrack(currentTrack, forceRefresh = true)
+        } else {
+            LyricsParser.loadLyrics(physicalPath, context)
+        }
+        _playbackState.value = _playbackState.value.copy(currentLyrics = lyrics)
+        return lyrics
     }
 
     fun release() {

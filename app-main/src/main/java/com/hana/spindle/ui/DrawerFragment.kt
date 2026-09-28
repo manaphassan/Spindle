@@ -1464,6 +1464,13 @@ class DrawerFragment : Fragment() {
             }
             dialog.show(parentFragmentManager, "DialogCoverArtFetcher")
         }
+
+        binding.btnFetchMissingLyrics.setOnClickListener {
+            val dialog = DialogLyricsBulkFetcher {
+                Toast.makeText(requireContext(), "Synchronized lyrics library check complete", Toast.LENGTH_SHORT).show()
+            }
+            dialog.show(parentFragmentManager, "DialogLyricsBulkFetcher")
+        }
     }
 
     private fun updateMusicPathDisplay(app: SpindleApp) {

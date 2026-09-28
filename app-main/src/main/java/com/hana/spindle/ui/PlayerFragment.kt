@@ -353,6 +353,9 @@ class PlayerFragment : Fragment() {
         binding.verticalDeckView.onTitleClicked = {
             (activity as? MainActivity)?.navigateToCatalog(openNowPlaying = true)
         }
+        binding.verticalDeckView.onLyricsClicked = {
+            DialogLyricsSheet().show(parentFragmentManager, "DialogLyricsSheet")
+        }
         binding.verticalDeckView.onTapeTypeClicked = { type ->
             audioEngine.setTapeFormulation(type)
             audioEngine.foleyEngine.playSwitchSnap()

@@ -276,6 +276,7 @@ class VerticalDeckView @JvmOverloads constructor(
     var onSeek: ((Float) -> Unit)? = null
     var onDoubleTapChassis: (() -> Unit)? = null
     var onTitleClicked: (() -> Unit)? = null
+    var onLyricsClicked: (() -> Unit)? = null
     var onEqBadgeLongClicked: (() -> Unit)? = null
 
     // Touch & interaction tracking
@@ -307,16 +308,23 @@ class VerticalDeckView @JvmOverloads constructor(
                     return false
                 }
                 if (isSongPresent() || isSongLoaded) {
-                    val isSpineArea = (e.x <= centerWindowRect.left && e.y >= centerWindowRect.top && e.y <= centerWindowRect.bottom)
+                    val isSpineArea = labelRect.contains(e.x, e.y) || (e.x <= centerWindowRect.left && e.y >= cassetteRect.top && e.y <= cassetteRect.bottom)
+                    if (isSpineArea) {
+                        performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                        // Upper half of spine is title/artwork; lower half is lyric ticker/specs
+                        if (e.y >= labelRect.centerY() && onLyricsClicked != null) {
+                            onLyricsClicked?.invoke()
+                        } else if (onTitleClicked != null) {
+                            onTitleClicked?.invoke()
+                        } else {
+                            onLyricsClicked?.invoke()
+                        }
+                        return true
+                    }
                     val isCassetteArea = centerWindowRect.contains(e.x, e.y) || cassetteRect.contains(e.x, e.y)
                     if (isCassetteArea) {
                         performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                         onJCardClicked?.invoke()
-                        return true
-                    }
-                    if (isSpineArea) {
-                        performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                        onTitleClicked?.invoke()
                         return true
                     }
                 }
@@ -330,6 +338,12 @@ class VerticalDeckView @JvmOverloads constructor(
             }
             override fun onLongPress(e: MotionEvent) {
                 if (pressedButtonIndex == -1 && !isDraggingProgress) {
+                    val inSpine = (e.x <= centerWindowRect.left && e.y >= centerWindowRect.top && e.y <= centerWindowRect.bottom)
+                    if (inSpine && onLyricsClicked != null) {
+                        performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                        onLyricsClicked?.invoke()
+                        return
+                    }
                     val slop = 15f
                     val inJCard = e.x >= jCardBadgeRect.left - slop && e.x <= jCardBadgeRect.right + slop &&
                                   e.y >= jCardBadgeRect.top - slop && e.y <= jCardBadgeRect.bottom + slop
