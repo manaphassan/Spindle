@@ -35,8 +35,6 @@
 
 ## 📦 Verified Binaries & Checksums
 
-*(Checksums and file sizes will be populated upon build completion)*
-
 | File | Target | Size | SHA-256 Checksum |
 | :--- | :--- | :---: | :--- |
 | **`Spindle-Standard-v1.6.0-STUDIO-release.apk`** | Production APK (Android 8.0+) | **4.88 MB** | `d75cc32b53006ff57ffc2dd2646ae2c9ec3650ca90db1d2b941e2ed8411a6527` |
