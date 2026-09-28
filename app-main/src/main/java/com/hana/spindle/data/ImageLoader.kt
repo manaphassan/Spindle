@@ -9,6 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
+import java.io.InputStream
 import java.util.Locale
 
 /**
@@ -119,6 +120,114 @@ class ImageLoader(private val context: Context) {
         val hasEmbedded = extractPictureBytes(audioPath) != null
         coverPresenceCache.put(audioPath, hasEmbedded)
         return hasEmbedded
+    }
+
+    /**
+     * Safely saves or copies a cover image file to the parent folder of the audio track as "cover.jpg".
+     * Returns true if successfully written.
+     */
+    fun saveCoverToAlbumFolder(sourceFile: File, audioPath: String): Boolean {
+        if (!sourceFile.exists() || audioPath.isBlank()) return false
+        return try {
+            val parent = File(audioPath).parentFile
+            if (parent != null && parent.exists() && parent.canWrite()) {
+                val target = File(parent, "cover.jpg")
+                sourceFile.copyTo(target, overwrite = true)
+                coverPresenceCache.put(audioPath, true)
+                true
+            } else {
+                false
+            }
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    /**
+     * Saves a user-selected or custom bitmap cover into the internal downloads cache and
+     * optionally into the album folder as "cover.jpg".
+     * Automatically purges stale in-memory and disk caches to force an immediate refresh.
+     */
+    fun saveCustomCover(
+        bitmap: Bitmap,
+        audioPath: String,
+        album: String,
+        artist: String,
+        saveToFolder: Boolean = true
+    ): Boolean {
+        val targetFile = getCoverFileForAlbum(album, artist)
+        var success = false
+        try {
+            FileOutputStream(targetFile).use { out ->
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 88, out)
+            }
+            success = true
+        } catch (_: Exception) {
+            return false
+        }
+
+        if (saveToFolder && audioPath.isNotBlank()) {
+            saveCoverToAlbumFolder(targetFile, audioPath)
+        }
+
+        invalidateCoverCache(audioPath, album, artist)
+        return success
+    }
+
+    /**
+     * Purges cached artwork entries across L1 Memory, L2 WebP disk, and presence caches
+     * so that newly assigned or downloaded artwork renders immediately.
+     */
+    fun invalidateCoverCache(audioPath: String, album: String? = null, artist: String? = null) {
+        if (audioPath.isNotBlank()) {
+            coverPresenceCache.remove(audioPath)
+            try {
+                val diskFile = File(cacheDir, "${hashKey(audioPath)}.webp")
+                if (diskFile.exists()) diskFile.delete()
+            } catch (_: Exception) {}
+        }
+
+        val sizes = listOf("80x80", "120x120", "200x200", "300x300", "500x500", "600x600")
+        for (sz in sizes) {
+            if (audioPath.isNotBlank()) {
+                memoryCache.remove("$audioPath:$sz")
+            }
+            if (!album.isNullOrBlank() && !artist.isNullOrBlank()) {
+                val normArtist = artist.trim().lowercase(Locale.ROOT)
+                val normAlbum = album.trim().lowercase(Locale.ROOT)
+                memoryCache.remove("album:${normArtist}_${normAlbum}:$sz")
+            }
+        }
+    }
+
+    /**
+     * Decodes an input stream into an in-memory sampled Bitmap.
+     */
+    fun decodeStreamToBitmap(inputStream: InputStream, reqWidth: Int = 600, reqHeight: Int = 600): Bitmap? {
+        return try {
+            val bytes = inputStream.readBytes()
+            if (bytes.size < 100) return null
+
+            val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
+
+            var inSampleSize = 1
+            if (options.outHeight > reqHeight || options.outWidth > reqWidth) {
+                val halfHeight = options.outHeight / 2
+                val halfWidth = options.outWidth / 2
+                while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
+                    inSampleSize *= 2
+                }
+            }
+
+            val decodeOptions = BitmapFactory.Options().apply {
+                this.inSampleSize = inSampleSize
+                inPreferredConfig = Bitmap.Config.RGB_565
+            }
+            BitmapFactory.decodeByteArray(bytes, 0, bytes.size, decodeOptions)
+        } catch (_: Exception) {
+            null
+        }
     }
 
     /**

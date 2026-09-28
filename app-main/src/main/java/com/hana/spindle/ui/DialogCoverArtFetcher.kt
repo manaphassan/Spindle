@@ -58,6 +58,7 @@ class DialogCoverArtFetcher(
                 fetchJob?.cancel()
                 isFetching = false
                 binding.tvCurrentFetchStatus.text = "Download cancelled by user."
+                binding.swSaveToFolder.isEnabled = true
                 binding.btnStartFetch.isEnabled = true
                 binding.btnStartFetch.text = "RESUME DOWNLOAD"
                 binding.btnCancelOrDismiss.text = "CLOSE"
@@ -97,6 +98,8 @@ class DialogCoverArtFetcher(
 
     private fun startCoverDownload(app: SpindleApp) {
         isFetching = true
+        val saveToFolder = binding.swSaveToFolder.isChecked
+        binding.swSaveToFolder.isEnabled = false
         binding.layoutProgressSection.visibility = View.VISIBLE
         binding.btnStartFetch.isEnabled = false
         binding.btnCancelOrDismiss.text = "CANCEL"
@@ -104,7 +107,7 @@ class DialogCoverArtFetcher(
         binding.tvCurrentFetchStatus.text = "Querying music library index..."
 
         fetchJob = lifecycleScope.launch {
-            val result = app.coverArtFetcher.scanAndFetchMissingCovers { status ->
+            val result = app.coverArtFetcher.scanAndFetchMissingCovers(saveToFolder = saveToFolder) { status ->
                 lifecycleScope.launch(Dispatchers.Main) {
                     _binding?.let { b ->
                         when (status) {
@@ -127,6 +130,7 @@ class DialogCoverArtFetcher(
                                 b.progressBarFetch.progress = b.progressBarFetch.max
                                 b.tvCurrentFetchStatus.text = "Done! Downloaded: ${status.downloadedSuccess} new covers, ${status.failedCount} not found."
                                 b.tvMissingCoversCount.text = "${status.missingFound - status.downloadedSuccess} missing"
+                                b.swSaveToFolder.isEnabled = true
                                 b.btnStartFetch.isEnabled = true
                                 b.btnStartFetch.text = "RE-SCAN LIBRARY"
                                 b.btnCancelOrDismiss.text = "CLOSE"

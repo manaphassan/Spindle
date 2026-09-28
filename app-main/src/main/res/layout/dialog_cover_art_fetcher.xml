@@ -148,6 +148,45 @@
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
+    <!-- Save to local folder toggle -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="16dp"
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Export cover.jpg to Album Folders"
+                android:textColor="#F4F4F5"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Allows external DAPs, car stereos &amp; players to read art"
+                android:textColor="#71717A"
+                android:textSize="10.5sp" />
+        </LinearLayout>
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/swSaveToFolder"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true" />
+    </LinearLayout>
+
     <!-- Progress Telemetry & Live Log -->
     <LinearLayout
         android:id="@+id/layoutProgressSection"

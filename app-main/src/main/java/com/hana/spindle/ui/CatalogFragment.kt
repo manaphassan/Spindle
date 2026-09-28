@@ -9,9 +9,11 @@ import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.net.Uri
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
@@ -60,6 +62,15 @@ class CatalogFragment : Fragment() {
     private var currentAlbumSongs: List<TrackEntity> = emptyList()
     private var currentAlbumItem: AlbumItem? = null
     private var albumTracksJob: Job? = null
+    private var pendingPickAlbum: AlbumItem? = null
+
+    private val pickCoverArtLauncher = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            handlePickedCoverArt(uri)
+        }
+    }
 
     private var isNowPlayingSingleVisible = false
     private var isShowingNpLyrics = false
@@ -1578,6 +1589,7 @@ class CatalogFragment : Fragment() {
                 binding.ivAlbumDetailCover.setPadding(32, 32, 32, 32)
                 binding.ivAlbumDetailCover.setImageResource(com.hana.spindle.R.drawable.ic_mixtape_tape)
                 binding.ivAlbumDetailCover.imageTintList = null
+                binding.ivAlbumDetailCover.setOnClickListener(null)
             } else {
                 val cover = app.imageLoader.loadAlbumCover(album.album, album.artist, album.representativePath, 300, 300)
                 if (cover != null) {
@@ -1590,25 +1602,11 @@ class CatalogFragment : Fragment() {
                     binding.ivAlbumDetailCover.imageTintList = ColorStateList.valueOf(
                         if (isEink) Color.BLACK else Color.parseColor("#94A3B8")
                     )
+                }
 
-                    // Allow tapping placeholder to fetch missing art directly
-                    binding.ivAlbumDetailCover.setOnClickListener {
-                        viewLifecycleOwner.lifecycleScope.launch {
-                            Toast.makeText(requireContext(), "Searching online artwork for \"${album.album}\"...", Toast.LENGTH_SHORT).show()
-                            val downloaded = app.coverArtFetcher.fetchCoverForAlbum(album.album, album.artist)
-                            if (downloaded != null) {
-                                val newCover = app.imageLoader.loadAlbumCover(album.album, album.artist, album.representativePath, 300, 300)
-                                if (newCover != null) {
-                                    binding.ivAlbumDetailCover.imageTintList = null
-                                    binding.ivAlbumDetailCover.setPadding(0, 0, 0, 0)
-                                    binding.ivAlbumDetailCover.setImageBitmap(newCover)
-                                    Toast.makeText(requireContext(), "Cover artwork updated!", Toast.LENGTH_SHORT).show()
-                                }
-                            } else {
-                                Toast.makeText(requireContext(), "Artwork not found in online catalogs.", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                    }
+                // Tapping cover opens options dialog (Gallery, Online Fetch, Export cover.jpg)
+                binding.ivAlbumDetailCover.setOnClickListener {
+                    showCoverArtOptionsDialog(album)
                 }
             }
         }
@@ -1635,11 +1633,8 @@ class CatalogFragment : Fragment() {
         }
 
         binding.cardAlbumDetailCover.setOnClickListener {
-            if (songs.isNotEmpty()) {
-                currentDisplayedSongs = songs
-                audioEngine.playQueue(songs, 0)
-                showNowPlayingSingleAudio(true)
-            }
+            val album = currentAlbumItem ?: return@setOnClickListener
+            showCoverArtOptionsDialog(album)
         }
 
         binding.btnAlbumDetailCoverPlay.setOnClickListener {
@@ -1664,6 +1659,132 @@ class CatalogFragment : Fragment() {
             .setDuration(220)
             .setInterpolator(android.view.animation.DecelerateInterpolator())
             .start()
+    }
+
+    private fun showCoverArtOptionsDialog(album: AlbumItem) {
+        val app = requireActivity().application as SpindleApp
+        val hasExistingCover = app.imageLoader.hasCover(album.representativePath, album.album, album.artist)
+
+        val options = mutableListOf<String>()
+        options.add("Choose from Gallery / Storage")
+        options.add("Search Online Artwork (iTunes / Deezer)")
+        if (hasExistingCover && album.representativePath.isNotBlank()) {
+            options.add("Export cover.jpg to Album Folder")
+        }
+
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle(album.album)
+            .setItems(options.toTypedArray()) { _, which ->
+                when (options[which]) {
+                    "Choose from Gallery / Storage" -> {
+                        pendingPickAlbum = album
+                        try {
+                            pickCoverArtLauncher.launch("image/*")
+                        } catch (e: Exception) {
+                            Toast.makeText(requireContext(), "Could not launch photo picker: ${e.message}", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                    "Search Online Artwork (iTunes / Deezer)" -> {
+                        fetchCoverOnlineForDetail(album)
+                    }
+                    "Export cover.jpg to Album Folder" -> {
+                        exportCoverToFolderForDetail(album)
+                    }
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun handlePickedCoverArt(uri: Uri) {
+        val album = pendingPickAlbum ?: return
+        val app = requireActivity().application as SpindleApp
+        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val stream = requireContext().contentResolver.openInputStream(uri)
+                if (stream != null) {
+                    val bitmap = app.imageLoader.decodeStreamToBitmap(stream, 600, 600)
+                    stream.close()
+                    if (bitmap != null) {
+                        val saved = app.imageLoader.saveCustomCover(
+                            bitmap = bitmap,
+                            audioPath = album.representativePath,
+                            album = album.album,
+                            artist = album.artist,
+                            saveToFolder = true
+                        )
+                        withContext(Dispatchers.Main) {
+                            if (saved) {
+                                binding.ivAlbumDetailCover.imageTintList = null
+                                binding.ivAlbumDetailCover.setPadding(0, 0, 0, 0)
+                                binding.ivAlbumDetailCover.setImageBitmap(bitmap)
+                                albumAdapter.notifyDataSetChanged()
+                                Toast.makeText(requireContext(), "Cover artwork updated & saved to folder!", Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(requireContext(), "Failed to save cover image.", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    } else {
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(requireContext(), "Unsupported or corrupt image file.", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(requireContext(), "Failed to load image: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    private fun fetchCoverOnlineForDetail(album: AlbumItem) {
+        val app = requireActivity().application as SpindleApp
+        viewLifecycleOwner.lifecycleScope.launch {
+            Toast.makeText(requireContext(), "Searching online artwork for \"${album.album}\"...", Toast.LENGTH_SHORT).show()
+            val downloaded = app.coverArtFetcher.fetchCoverForAlbum(
+                album = album.album,
+                artist = album.artist,
+                representativePath = album.representativePath,
+                saveToFolder = true
+            )
+            if (downloaded != null) {
+                val newCover = app.imageLoader.loadAlbumCover(album.album, album.artist, album.representativePath, 300, 300)
+                if (newCover != null) {
+                    binding.ivAlbumDetailCover.imageTintList = null
+                    binding.ivAlbumDetailCover.setPadding(0, 0, 0, 0)
+                    binding.ivAlbumDetailCover.setImageBitmap(newCover)
+                    albumAdapter.notifyDataSetChanged()
+                    Toast.makeText(requireContext(), "Cover updated & saved to folder (cover.jpg)!", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(requireContext(), "Artwork not found in online catalogs.", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun exportCoverToFolderForDetail(album: AlbumItem) {
+        val app = requireActivity().application as SpindleApp
+        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+            val downloaded = app.imageLoader.getCoverFileForAlbum(album.album, album.artist)
+            val success = if (downloaded.exists() && downloaded.length() > 0) {
+                app.imageLoader.saveCoverToAlbumFolder(downloaded, album.representativePath)
+            } else {
+                val bmp = app.imageLoader.loadAlbumCover(album.album, album.artist, album.representativePath, 600, 600)
+                if (bmp != null) {
+                    app.imageLoader.saveCustomCover(bmp, album.representativePath, album.album, album.artist, saveToFolder = true)
+                } else {
+                    false
+                }
+            }
+            withContext(Dispatchers.Main) {
+                if (success) {
+                    Toast.makeText(requireContext(), "Exported cover.jpg to album folder!", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(requireContext(), "Could not export cover.jpg (read-only folder or storage restriction).", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
     }
 
     fun hideAlbumDetail() {

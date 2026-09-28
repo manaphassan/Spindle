@@ -84,11 +84,20 @@ class CoverArtFetcher(
 
     /**
      * Fetches missing album art online and caches it to the local covers directory.
+     * Optionally exports a copy to the album folder as "cover.jpg" if representativePath is provided.
      * Returns the local File if successfully downloaded, or null if not found.
      */
-    suspend fun fetchCoverForAlbum(album: String, artist: String): File? = withContext(Dispatchers.IO) {
+    suspend fun fetchCoverForAlbum(
+        album: String,
+        artist: String,
+        representativePath: String? = null,
+        saveToFolder: Boolean = true
+    ): File? = withContext(Dispatchers.IO) {
         val targetFile = imageLoader.getCoverFileForAlbum(album, artist)
         if (targetFile.exists() && targetFile.length() > 1024L) {
+            if (saveToFolder && !representativePath.isNullOrBlank()) {
+                imageLoader.saveCoverToAlbumFolder(targetFile, representativePath)
+            }
             return@withContext targetFile
         }
 
@@ -99,14 +108,30 @@ class CoverArtFetcher(
         val itunesUrl = queryItunes(searchTerm)
         if (!itunesUrl.isNullOrBlank()) {
             val downloaded = downloadAndCacheImage(itunesUrl, targetFile)
-            if (downloaded != null) return@withContext downloaded
+            if (downloaded != null) {
+                if (saveToFolder && !representativePath.isNullOrBlank()) {
+                    imageLoader.saveCoverToAlbumFolder(downloaded, representativePath)
+                }
+                if (!representativePath.isNullOrBlank()) {
+                    imageLoader.invalidateCoverCache(representativePath, album, artist)
+                }
+                return@withContext downloaded
+            }
         }
 
         // 2. Try Deezer Search API (Fallback)
         val deezerUrl = queryDeezer(searchTerm)
         if (!deezerUrl.isNullOrBlank()) {
             val downloaded = downloadAndCacheImage(deezerUrl, targetFile)
-            if (downloaded != null) return@withContext downloaded
+            if (downloaded != null) {
+                if (saveToFolder && !representativePath.isNullOrBlank()) {
+                    imageLoader.saveCoverToAlbumFolder(downloaded, representativePath)
+                }
+                if (!representativePath.isNullOrBlank()) {
+                    imageLoader.invalidateCoverCache(representativePath, album, artist)
+                }
+                return@withContext downloaded
+            }
         }
 
         return@withContext null
@@ -246,6 +271,7 @@ class CoverArtFetcher(
      * Scans Room database for albums that are missing artwork and automatically fetches them.
      */
     suspend fun scanAndFetchMissingCovers(
+        saveToFolder: Boolean = true,
         onStatusUpdate: ((FetchStatus) -> Unit)? = null
     ): FetchStatus.Finished = withContext(Dispatchers.IO) {
         val albums = trackDao.getAlbums().firstOrNull() ?: emptyList()
@@ -270,7 +296,12 @@ class CoverArtFetcher(
                 )
             )
 
-            val file = fetchCoverForAlbum(album.album, album.artist)
+            val file = fetchCoverForAlbum(
+                album = album.album,
+                artist = album.artist,
+                representativePath = album.representativePath,
+                saveToFolder = saveToFolder
+            )
             if (file != null && file.exists()) {
                 downloadedCount++
             } else {
