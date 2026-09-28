@@ -368,4 +368,117 @@ class AudioDspAndFoleyTest {
         assertEquals("theme_denon_hd8_100", denonHd.id)
         assertTrue(allPresets.contains(denonHd))
     }
+
+    @Test
+    fun testUserEqPresetJsonSerialization() {
+        val original = UserEqPreset(
+            id = "test-preset-uuid-1234",
+            name = "Audio-Technica ATH-M50x",
+            description = "Studio monitor calibration curve",
+            gainsDb = listOf(-1.5f, 0.0f, 1.2f, 2.5f, -0.5f, 0.0f, 1.8f, 2.0f, -1.0f, 0.5f),
+            qFactors = listOf(1.414f, 1.414f, 2.0f, 2.5f, 1.0f, 1.414f, 1.8f, 2.2f, 1.414f, 1.414f),
+            isParametric = true,
+            bassBoost = 350,
+            crossfeedStrength = 500,
+            isBuiltIn = false,
+            createdAt = 1700000000000L
+        )
+
+        val json = original.toJson()
+        val deserialized = UserEqPreset.fromJson(json)
+
+        assertEquals(original.id, deserialized.id)
+        assertEquals(original.name, deserialized.name)
+        assertEquals(original.description, deserialized.description)
+        assertEquals(10, deserialized.gainsDb.size)
+        for (i in 0 until 10) {
+            assertEquals(original.gainsDb[i], deserialized.gainsDb[i], 0.001f)
+            assertEquals(original.qFactors[i], deserialized.qFactors[i], 0.001f)
+        }
+        assertEquals(original.isParametric, deserialized.isParametric)
+        assertEquals(original.bassBoost, deserialized.bassBoost)
+        assertEquals(original.crossfeedStrength, deserialized.crossfeedStrength)
+        assertEquals(original.isBuiltIn, deserialized.isBuiltIn)
+        assertEquals(original.createdAt, deserialized.createdAt)
+    }
+
+    @Test
+    fun testUserEqPresetJsonPaddingAndDefaults() {
+        // Test parsing JSON with missing/short gains and q factors
+        val partialJson = org.json.JSONObject().apply {
+            put("name", "Minimal Preset")
+            val shortGains = org.json.JSONArray().apply {
+                put(3.0)
+                put(-2.5)
+            }
+            put("gainsDb", shortGains)
+        }
+
+        val preset = UserEqPreset.fromJson(partialJson)
+        assertEquals("Minimal Preset", preset.name)
+        assertEquals(10, preset.gainsDb.size)
+        assertEquals(3.0f, preset.gainsDb[0], 0.001f)
+        assertEquals(-2.5f, preset.gainsDb[1], 0.001f)
+        for (i in 2 until 10) {
+            assertEquals(0.0f, preset.gainsDb[i], 0.001f)
+        }
+        // Q factors should default to 1.414f for all 10 bands
+        assertEquals(10, preset.qFactors.size)
+        for (i in 0 until 10) {
+            assertEquals(1.414f, preset.qFactors[i], 0.001f)
+        }
+        assertFalse(preset.isParametric)
+        assertEquals(0, preset.bassBoost)
+        assertEquals(0, preset.crossfeedStrength)
+    }
+
+    @Test
+    fun testUserEqPresetApplyAndCapture() {
+        val fx = AudioFxController()
+
+        // 1. Manually configure controller to custom curve
+        val customGains = floatArrayOf(2.0f, 1.5f, 0.0f, -1.0f, 0.5f, 1.0f, 2.5f, 3.0f, -0.5f, 1.2f)
+        fx.setAllIsoBands(customGains, force = true)
+        fx.setBandQ(2, 2.5f, force = true)
+        fx.setBandQ(6, 3.0f, force = true)
+        fx.setParametricMode(true, force = true)
+        fx.setFilterStrength(400, force = true) // Bass boost
+        fx.setCrossfeedStrength(650, force = true)
+
+        // 2. Capture current state
+        val captured = fx.captureCurrentStateAsPreset(
+            name = "Campfire Andromeda",
+            description = "Holographic soundstage IEM"
+        )
+
+        assertEquals("Campfire Andromeda", captured.name)
+        assertEquals("Holographic soundstage IEM", captured.description)
+        assertTrue(captured.isParametric)
+        assertEquals(400, captured.bassBoost)
+        assertEquals(650, captured.crossfeedStrength)
+        assertEquals(2.5f, captured.qFactors[2], 0.001f)
+        assertEquals(3.0f, captured.qFactors[6], 0.001f)
+
+        // 3. Reset controller to FLAT
+        fx.applyPreset("FLAT")
+        fx.setParametricMode(false, force = true)
+        fx.setFilterStrength(0, force = true)
+        fx.setCrossfeedStrength(0, force = true)
+        assertEquals("FLAT", fx.currentPresetName)
+        assertFalse(fx.isParametricMode)
+        assertEquals(0, fx.bassBoostStrength)
+
+        // 4. Re-apply captured preset
+        fx.applyUserPreset(captured, force = true)
+
+        assertEquals("Campfire Andromeda", fx.currentPresetName)
+        assertTrue(fx.isParametricMode)
+        assertEquals(400, fx.bassBoostStrength)
+        assertEquals(650, fx.crossfeedStrength)
+        for (i in 0 until 10) {
+            assertEquals(customGains[i], fx.baseIsoBandsGainDb[i], 0.01f)
+        }
+        assertEquals(2.5f, fx.isoBandsQ[2], 0.001f)
+        assertEquals(3.0f, fx.isoBandsQ[6], 0.001f)
+    }
 }

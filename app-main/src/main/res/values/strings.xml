@@ -144,4 +144,22 @@
     <string name="studio_nameplate_hint">Enter callsign (e.g. SPINDLE // ALEX)</string>
     <string name="studio_nameplate_saved">Custom nameplate engraved successfully!</string>
     <string name="studio_nameplate_locked_prompt">Personalized laser nameplate engraving is an exclusive Spindle Studio Collector feature.</string>
+
+    <string name="action_cancel">CANCEL</string>
+    <string name="cancel">Cancel</string>
+
+    <!-- Custom User EQ & Headphone Profiles -->
+    <string name="user_eq_title">CUSTOM USER EQ PROFILES</string>
+    <string name="user_eq_subtitle">IEM &amp; Headphone Acoustic Targets</string>
+    <string name="user_eq_btn_save">SAVE PRESET</string>
+    <string name="user_eq_btn_profiles">USER PROFILES</string>
+    <string name="user_eq_btn_import">IMPORT</string>
+    <string name="user_eq_save_title">SAVE USER EQ PROFILE</string>
+    <string name="user_eq_name_hint">Profile / Headphone Name (e.g. Sennheiser HD 600)</string>
+    <string name="user_eq_desc_hint">Notes / Target (e.g. Harman Target with sub-bass)</string>
+    <string name="user_eq_btn_save_profile">SAVE PROFILE</string>
+    <string name="user_eq_empty">No custom EQ profiles saved yet.\nTap \"+ SAVE CURRENT\" to capture your active curve.</string>
+    <string name="user_eq_export_success">Preset exported successfully</string>
+    <string name="user_eq_import_success">Imported preset: %1$s</string>
+    <string name="user_eq_delete_confirm">Delete profile \"%1$s\"?</string>
 </resources>

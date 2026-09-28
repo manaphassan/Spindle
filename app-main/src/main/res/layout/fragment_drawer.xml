@@ -847,6 +847,47 @@
                                 app:cornerRadius="6dp" />
                         </LinearLayout>
 
+                        <!-- 4. Custom User EQ & Headphone Profiles -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="32dp"
+                            android:orientation="horizontal"
+                            android:layout_marginTop="8dp">
+
+                            <Button
+                                android:id="@+id/btnSaveUserPreset"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:layout_weight="1"
+                                android:text="@string/user_eq_btn_save"
+                                android:textColor="@color/brand_orange"
+                                android:textSize="9.5sp"
+                                android:textStyle="bold"
+                                android:fontFamily="monospace"
+                                android:backgroundTint="#202228"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                android:layout_marginEnd="6dp"
+                                app:cornerRadius="6dp" />
+
+                            <Button
+                                android:id="@+id/btnManageUserPresets"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:layout_weight="1"
+                                android:text="@string/user_eq_btn_profiles"
+                                android:textColor="@color/white"
+                                android:textSize="9.5sp"
+                                android:textStyle="bold"
+                                android:fontFamily="monospace"
+                                android:backgroundTint="#202228"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="6dp" />
+                        </LinearLayout>
+
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
             </LinearLayout>

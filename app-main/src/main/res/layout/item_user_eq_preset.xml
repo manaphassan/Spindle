@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="8dp"
+    app:cardBackgroundColor="@color/surface_card"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="0dp"
+    app:strokeColor="@color/border_subtle"
+    app:strokeWidth="1dp">
+
+    <LinearLayout
+        android:id="@+id/containerPresetItem"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="12dp"
+        android:background="?attr/selectableItemBackground">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvPresetName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    tools:text="Sennheiser HD 600" />
+
+                <TextView
+                    android:id="@+id/tvPresetDescription"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/brand_orange"
+                    android:textSize="11sp"
+                    android:layout_marginTop="2dp"
+                    tools:text="Harman Target with sub-bass extension &amp; smooth treble" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvActiveBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ACTIVE"
+                android:textColor="@color/brand_orange"
+                android:textSize="9.5sp"
+                android:fontFamily="monospace"
+                android:textStyle="bold"
+                android:background="@color/surface_elevated"
+                android:paddingHorizontal="6dp"
+                android:paddingVertical="2dp"
+                android:layout_marginEnd="6dp"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+            <ImageButton
+                android:id="@+id/btnExportPreset"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_np_share"
+                android:contentDescription="Export preset JSON"
+                app:tint="@color/text_secondary" />
+
+            <ImageButton
+                android:id="@+id/btnDeletePreset"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_queue_remove"
+                android:contentDescription="Delete preset"
+                app:tint="@color/text_secondary" />
+        </LinearLayout>
+
+        <!-- Technical Telemetry & Curve Summary -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/tvPresetModeBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="PARAMETRIC"
+                android:textColor="@color/text_secondary"
+                android:textSize="9sp"
+                android:fontFamily="monospace"
+                android:background="@color/surface_recessed"
+                android:paddingHorizontal="6dp"
+                android:paddingVertical="2dp"
+                android:layout_marginEnd="6dp" />
+
+            <TextView
+                android:id="@+id/tvPresetBassBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="BASS: +20%"
+                android:textColor="@color/text_secondary"
+                android:textSize="9sp"
+                android:fontFamily="monospace"
+                android:background="@color/surface_recessed"
+                android:paddingHorizontal="6dp"
+                android:paddingVertical="2dp"
+                android:layout_marginEnd="6dp" />
+
+            <TextView
+                android:id="@+id/tvPresetCrossfeedBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="CROSSFEED: 30%"
+                android:textColor="@color/text_secondary"
+                android:textSize="9sp"
+                android:fontFamily="monospace"
+                android:background="@color/surface_recessed"
+                android:paddingHorizontal="6dp"
+                android:paddingVertical="2dp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvPresetCurveSummary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/text_muted"
+            android:textSize="10sp"
+            android:fontFamily="monospace"
+            android:layout_marginTop="6dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            tools:text="ISO 31Hz..16kHz: +3.5, +2.8, +1.2, 0.0, -0.5, 0.0, +1.0, -1.5, -0.8, +1.2 dB" />
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

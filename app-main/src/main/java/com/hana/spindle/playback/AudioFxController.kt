@@ -482,6 +482,38 @@ class AudioFxController {
     }
 
     /**
+     * Applies a custom user EQ preset with complete 10-band ISO gains,
+     * parametric Q-factors, bass boost, and binaural crossfeed.
+     */
+    fun applyUserPreset(preset: UserEqPreset, force: Boolean = false) {
+        if (isLocked && !force) return
+        currentPresetName = preset.name
+        setAllIsoBands(preset.gainsDb.toFloatArray(), force = true)
+        for (i in 0 until 10) {
+            val q = if (i < preset.qFactors.size) preset.qFactors[i] else 1.414f
+            setBandQ(i, q, force = true)
+        }
+        setParametricMode(preset.isParametric, force = true)
+        setFilterStrength(preset.bassBoost, force = true)
+        setCrossfeedStrength(preset.crossfeedStrength, force = true)
+    }
+
+    /**
+     * Captures current active acoustic EQ and DSP state as a new UserEqPreset.
+     */
+    fun captureCurrentStateAsPreset(name: String, description: String = ""): UserEqPreset {
+        return UserEqPreset(
+            name = name,
+            description = description,
+            gainsDb = baseIsoBandsGainDb.toList(),
+            qFactors = isoBandsQ.toList(),
+            isParametric = isParametricMode,
+            bassBoost = bassBoostStrength,
+            crossfeedStrength = crossfeedStrength
+        )
+    }
+
+    /**
      * Maps the 10 ISO frequency points onto the device's hardware Equalizer bands.
      * Applies logarithmic frequency interpolation and dynamic anti-clipping pre-amp headroom.
      */

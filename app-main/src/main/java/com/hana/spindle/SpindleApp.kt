@@ -39,6 +39,10 @@ class SpindleApp : Application() {
         com.hana.spindle.remote.RemoteTransportManager(this)
     }
 
+    val userEqPresetManager: com.hana.spindle.playback.UserEqPresetManager by lazy {
+        com.hana.spindle.playback.UserEqPresetManager(this)
+    }
+
     companion object {
         const val PLAYBACK_CHANNEL_ID = "spindle_playback_channel"
         lateinit var instance: SpindleApp

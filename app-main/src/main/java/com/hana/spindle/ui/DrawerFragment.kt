@@ -657,6 +657,42 @@ class DrawerFragment : Fragment() {
             }
         }
 
+        // Custom User EQ Presets & Acoustic Targets
+        fun updateCustomPresetsBadge() {
+            val count = app.userEqPresetManager.getPresets().size
+            binding.btnManageUserPresets.text = "PROFILES ($count)"
+        }
+        updateCustomPresetsBadge()
+
+        fun syncAllEqControls() {
+            binding.iso10BandEqView.setBands(fxController.isoBandsGainDb)
+            binding.knobLow.currentValue = fxController.lowGainDb
+            binding.knobMid.currentValue = fxController.midGainDb
+            binding.knobHi.currentValue = fxController.highGainDb
+            binding.knobFilter.currentValue = fxController.bassBoostStrength.toFloat()
+            binding.seekCrossfeed.progress = fxController.crossfeedStrength / 10
+            updateCrossfeedLabel(binding.seekCrossfeed.progress)
+            updateEqModeVisual(fxController.isParametricMode)
+            updateEqHeadroomLabel(fxController)
+            binding.btnFx.text = "FX: ${fxController.currentPresetName}"
+            highlightCurve(fxController.currentPresetName)
+            updateCustomPresetsBadge()
+        }
+
+        binding.btnSaveUserPreset.setOnClickListener {
+            val dialog = DialogUserEqPresets(fxController, openSaveDirectly = true) {
+                syncAllEqControls()
+            }
+            dialog.show(parentFragmentManager, "DialogUserEqPresets")
+        }
+
+        binding.btnManageUserPresets.setOnClickListener {
+            val dialog = DialogUserEqPresets(fxController, openSaveDirectly = false) {
+                syncAllEqControls()
+            }
+            dialog.show(parentFragmentManager, "DialogUserEqPresets")
+        }
+
         binding.tvVuBacklightHint.setOnClickListener {
             binding.dualAnalogVuMeter.cycleBacklight()
         }
