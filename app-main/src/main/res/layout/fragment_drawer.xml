@@ -715,6 +715,7 @@
                             android:layout_marginBottom="4dp">
 
                             <TextView
+                                android:id="@+id/tvCrossfeedTitle"
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
@@ -1084,6 +1085,36 @@
                                     android:textSize="9.5sp"
                                     android:textStyle="bold"
                                     android:backgroundTint="#241B14"
+                                    android:insetTop="0dp"
+                                    android:insetBottom="0dp"
+                                    android:paddingHorizontal="10dp"
+                                    android:layout_marginStart="5dp"
+                                    app:cornerRadius="8dp" />
+
+                                <Button
+                                    android:id="@+id/btnThemeSonyHf"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="38dp"
+                                    android:text="SONY HF"
+                                    android:textColor="#EF4444"
+                                    android:textSize="9.5sp"
+                                    android:textStyle="bold"
+                                    android:backgroundTint="#181A20"
+                                    android:insetTop="0dp"
+                                    android:insetBottom="0dp"
+                                    android:paddingHorizontal="10dp"
+                                    android:layout_marginStart="5dp"
+                                    app:cornerRadius="8dp" />
+
+                                <Button
+                                    android:id="@+id/btnThemeDenonHd"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="38dp"
+                                    android:text="DENON HD8"
+                                    android:textColor="#FBBF24"
+                                    android:textSize="9.5sp"
+                                    android:textStyle="bold"
+                                    android:backgroundTint="#141318"
                                     android:insetTop="0dp"
                                     android:insetBottom="0dp"
                                     android:paddingHorizontal="10dp"

@@ -73,6 +73,14 @@ class AudioFxController {
         DOLBY_C("DOLBY C", "DOLBY C")
     }
 
+    enum class CrossfeedMode(val label: String, val strength: Int, val description: String) {
+        OFF("OFF", 0, "Direct Stereo (No Crossfeed)"),
+        CHU_MOY("CHU MOY", 200, "Chu Moy Acoustic Low-Pass Filter (~700Hz, ~300µs ITD)"),
+        BAUER("BAUER", 400, "Bauer Binaural Stereophonic Filter (30° Natural Monitor)"),
+        STUDIO("STUDIO", 700, "Wide Studio Acoustic Crossfeed"),
+        BINAURAL("BINAURAL", 950, "Full 3D Binaural Soundstage Immersion")
+    }
+
     private var equalizer: Equalizer? = null
     private var bassBoost: BassBoost? = null
     private var virtualizer: Virtualizer? = null
@@ -151,6 +159,8 @@ class AudioFxController {
     var bassBoostStrength: Int = 0 // 0 to 1000
         private set
     var crossfeedStrength: Int = 0 // 0 to 1000 (Binaural Crossfeed)
+        private set
+    var currentCrossfeedMode: CrossfeedMode = CrossfeedMode.OFF
         private set
 
     var currentPresetName: String = "FLAT"
@@ -375,6 +385,13 @@ class AudioFxController {
     fun setCrossfeedStrength(strength: Int, force: Boolean = false) {
         if (isLocked && !force) return
         crossfeedStrength = strength.coerceIn(0, 1000)
+        currentCrossfeedMode = when {
+            crossfeedStrength <= 50 -> CrossfeedMode.OFF
+            crossfeedStrength in 51..300 -> CrossfeedMode.CHU_MOY
+            crossfeedStrength in 301..550 -> CrossfeedMode.BAUER
+            crossfeedStrength in 551..850 -> CrossfeedMode.STUDIO
+            else -> CrossfeedMode.BINAURAL
+        }
         if (!isBypassEnabled) {
             try {
                 virtualizer?.setStrength(crossfeedStrength.toShort())
@@ -382,6 +399,21 @@ class AudioFxController {
                 e.printStackTrace()
             }
         }
+    }
+
+    fun setCrossfeedMode(mode: CrossfeedMode, force: Boolean = false) {
+        if (isLocked && !force) return
+        currentCrossfeedMode = mode
+        setCrossfeedStrength(mode.strength, force)
+    }
+
+    fun cycleCrossfeedMode(force: Boolean = false): CrossfeedMode {
+        if (isLocked && !force) return currentCrossfeedMode
+        val values = CrossfeedMode.values()
+        val nextIndex = (currentCrossfeedMode.ordinal + 1) % values.size
+        val nextMode = values[nextIndex]
+        setCrossfeedMode(nextMode, force)
+        return nextMode
     }
 
     /**

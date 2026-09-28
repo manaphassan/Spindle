@@ -27,6 +27,7 @@ import com.hana.spindle.databinding.FragmentPlayerBinding
 import com.hana.spindle.playback.AudioEngine
 import com.hana.spindle.playback.RepeatMode
 import com.hana.spindle.playback.ShuffleMode
+import com.hana.spindle.ui.catalog.QueueBottomSheet
 import com.hana.spindle.theme.CassetteTheme
 import com.hana.spindle.theme.ChassisStyle
 import com.hana.spindle.theme.ThemeManager
@@ -306,8 +307,14 @@ class PlayerFragment : Fragment() {
         binding.verticalDeckView.onJCardClicked = {
             openJCardLiner(animate = true)
         }
+        binding.verticalDeckView.onQueueClicked = {
+            openQueueBottomSheet()
+        }
         binding.jCardLinerView.onFlipBackClicked = {
             closeJCardLiner(animate = true)
+        }
+        binding.jCardLinerView.onManageQueueClicked = {
+            openQueueBottomSheet()
         }
         binding.jCardLinerView.onTrackSelected = { trackIndex ->
             audioEngine.playQueueIndex(trackIndex)
@@ -534,6 +541,10 @@ class PlayerFragment : Fragment() {
         val minutes = TimeUnit.MILLISECONDS.toMinutes(millis)
         val seconds = TimeUnit.MILLISECONDS.toSeconds(millis) - TimeUnit.MINUTES.toSeconds(minutes)
         return String.format(Locale.US, "%02d:%02d", minutes, seconds)
+    }
+
+    fun openQueueBottomSheet() {
+        QueueBottomSheet().show(childFragmentManager, "QueueBottomSheet")
     }
 
     override fun onDestroyView() {

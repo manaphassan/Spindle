@@ -282,6 +282,58 @@ data class CassetteTheme(
             isDarkAppTheme = true
         )
 
+        // 10. Sony HF 90 (Quintessential 1980s Normal Bias Type I)
+        val SONY_HF_90 = CassetteTheme(
+            id = "theme_sony_hf_90",
+            name = "Sony HF 90",
+            subtitle = "Normal Bias Type I • 120µs Classic Red",
+            chassisStyle = ChassisStyle.VERTICAL_DECK,
+            chassisColor = Color.parseColor("#181A20"),
+            diagonalBezelColor = Color.parseColor("#13151A"),
+            dialColor = Color.parseColor("#FAFAF9"),
+            surfaceColor = Color.parseColor("#1F222A"),
+            cardBorderColor = Color.parseColor("#2E333F"),
+            textPrimaryColor = Color.parseColor("#FAFAF9"),
+            textSecondaryColor = Color.parseColor("#9CA3AF"),
+            accentColor = Color.parseColor("#EF4444"), // Sony Racing Red
+            shellColor = Color.parseColor("#16181F"),
+            shellTexture = ShellTexture.CLEAR_ACRYLIC,
+            labelBackgroundColor = Color.parseColor("#E5E7EB"), // Cool light gray label paper
+            labelTextColor = Color.parseColor("#111827"),      // Crisp black type
+            labelAccentColor = Color.parseColor("#DC2626"),    // Bold red stripe
+            windowTint = Color.argb(25, 239, 68, 68),
+            reelHubColor = Color.parseColor("#F9FAFB"),        // Clean white spools
+            tapeRibbonColor = Color.parseColor("#451A03"),     // Ferric oxide warm brown
+            vfdGlowColor = Color.parseColor("#EF4444"),
+            isDarkAppTheme = true
+        )
+
+        // 11. Denon HD8 100 (High-End Audiophile Metal-in-High Position)
+        val DENON_HD8_100 = CassetteTheme(
+            id = "theme_denon_hd8_100",
+            name = "Denon HD8 100",
+            subtitle = "High-Position Metal • 70µs Gold Foil",
+            chassisStyle = ChassisStyle.VERTICAL_DECK,
+            chassisColor = Color.parseColor("#141318"),
+            diagonalBezelColor = Color.parseColor("#0F0E13"),
+            dialColor = Color.parseColor("#FAFAF9"),
+            surfaceColor = Color.parseColor("#1A1822"),
+            cardBorderColor = Color.parseColor("#312B40"),
+            textPrimaryColor = Color.parseColor("#FAFAF9"),
+            textSecondaryColor = Color.parseColor("#A78BFA"),
+            accentColor = Color.parseColor("#FBBF24"), // Gold foil accent
+            shellColor = Color.parseColor("#111016"),
+            shellTexture = ShellTexture.CERAMIC_COMPOSITE,
+            labelBackgroundColor = Color.parseColor("#181622"),
+            labelTextColor = Color.parseColor("#FDE68A"),      // Golden typography
+            labelAccentColor = Color.parseColor("#A855F7"),    // Deep purple border
+            windowTint = Color.argb(30, 251, 191, 36),
+            reelHubColor = Color.parseColor("#FBBF24"),        // Dual gold spools
+            tapeRibbonColor = Color.parseColor("#0B090F"),     // Pure black magnetic tape
+            vfdGlowColor = Color.parseColor("#F59E0B"),
+            isDarkAppTheme = true
+        )
+
         // All Curated Theme Presets
         val ALL_PRESETS = listOf(
             METAL_XR_TYPE4,
@@ -292,7 +344,9 @@ data class CassetteTheme(
             MAXELL_XLII,
             BASF_CHROME,
             SKELETON_REEL,
-            REEL_TO_REEL_STUDIO
+            REEL_TO_REEL_STUDIO,
+            SONY_HF_90,
+            DENON_HD8_100
         )
 
         // Backward compatibility aliases for legacy references

@@ -37,6 +37,7 @@ class JCardLinerView @JvmOverloads constructor(
 
     private val btnFlipToDeck: Button
     private val btnFlipBackBottom: Button
+    private val btnManageQueue: Button
     private val tvSpineTitle: TextView
     private val tvSpineTapeModel: TextView
     private val tvSpineDuration: TextView
@@ -53,6 +54,7 @@ class JCardLinerView @JvmOverloads constructor(
 
     var onTrackSelected: ((index: Int) -> Unit)? = null
     var onFlipBackClicked: (() -> Unit)? = null
+    var onManageQueueClicked: (() -> Unit)? = null
 
     private var fullQueue: List<TrackEntity> = emptyList()
     private var activeQueueIndex: Int = -1
@@ -63,6 +65,7 @@ class JCardLinerView @JvmOverloads constructor(
 
         btnFlipToDeck = findViewById(R.id.btnFlipToDeck)
         btnFlipBackBottom = findViewById(R.id.btnFlipBackBottom)
+        btnManageQueue = findViewById(R.id.btnManageQueue)
         tvSpineTitle = findViewById(R.id.tvSpineTitle)
         tvSpineTapeModel = findViewById(R.id.tvSpineTapeModel)
         tvSpineDuration = findViewById(R.id.tvSpineDuration)
@@ -87,6 +90,9 @@ class JCardLinerView @JvmOverloads constructor(
         }
         btnFlipToDeck.setOnClickListener(flipListener)
         btnFlipBackBottom.setOnClickListener(flipListener)
+        btnManageQueue.setOnClickListener {
+            onManageQueueClicked?.invoke()
+        }
 
         btnSideA.setOnClickListener {
             if (showingSideB) {
@@ -112,6 +118,7 @@ class JCardLinerView @JvmOverloads constructor(
     ) {
         fullQueue = queue
         activeQueueIndex = activeIndex
+        activeTheme = theme
 
         val currentSong = if (activeIndex in queue.indices) queue[activeIndex] else queue.firstOrNull()
 
@@ -128,9 +135,18 @@ class JCardLinerView @JvmOverloads constructor(
         tvSpineTitle.text = "${artistName.uppercase()} — ${albumName.uppercase()}"
         tvJCardAlbum.text = albumName
         tvJCardArtist.text = artistName
+        tvJCardArtist.setTextColor(theme.accentColor)
+        btnManageQueue.setTextColor(theme.accentColor)
 
         val isMetalXr = (theme.id == CassetteTheme.METAL_XR_TYPE4.id || theme.name.contains("Metal-XR", ignoreCase = true))
-        val tapeModelName = if (isMetalXr) "EXTRALLOY METAL-XR 90 • TYPE IV" else "${theme.name.uppercase()} • C-90"
+        val isSonyHf = (theme.id == CassetteTheme.SONY_HF_90.id || theme.name.contains("Sony HF", ignoreCase = true))
+        val isDenon = (theme.id == CassetteTheme.DENON_HD8_100.id || theme.name.contains("Denon", ignoreCase = true))
+        val tapeModelName = when {
+            isMetalXr -> "EXTRALLOY METAL-XR 90 • TYPE IV"
+            isSonyHf -> "SONY HF 90 • TYPE I NORMAL BIAS 120µs"
+            isDenon -> "DENON HD8 100 • TYPE II HIGH POSITION 70µs"
+            else -> "${theme.name.uppercase()} • C-90"
+        }
         tvSpineTapeModel.text = tapeModelName
 
         val fmt = if (audioFormat.isNotBlank()) audioFormat else "FLAC 24-bit / 96kHz"
@@ -145,6 +161,7 @@ class JCardLinerView @JvmOverloads constructor(
         val totalRuntimeStr = formatTime(sideADurationMs + sideBDurationMs)
 
         tvSpineDuration.text = "A: $sideAStr | B: $sideBStr"
+        tvSpineDuration.setTextColor(theme.accentColor)
         tvJCardTapeNotes.text = "Mastered for Spindle DAP • ${queue.size} Tracks • $totalRuntimeStr Total"
 
         // Auto-switch to Side B if currently playing song is on Side B
@@ -160,30 +177,36 @@ class JCardLinerView @JvmOverloads constructor(
         return ceil(total / 2.0).toInt()
     }
 
+    private var activeTheme: CassetteTheme = CassetteTheme.DARK
+
     private fun updateSideSelection() {
         val splitIndex = getSplitIndex(fullQueue.size)
         val sideTracks: List<Pair<Int, TrackEntity>>
         val sidePrefix: String
+        val accent = activeTheme.accentColor
+        val inactive = Color.parseColor("#94A3B8")
+        val activeBg = Color.parseColor("#242635")
+        val inactiveBg = Color.parseColor("#1C1D26")
 
         if (!showingSideB) {
             // Side A
-            btnSideA.setTextColor(Color.parseColor("#EF4444"))
-            btnSideA.setBackgroundColor(Color.parseColor("#242635"))
-            btnSideB.setTextColor(Color.parseColor("#94A3B8"))
-            btnSideB.setBackgroundColor(Color.parseColor("#1C1D26"))
+            btnSideA.setTextColor(accent)
+            btnSideA.setBackgroundColor(activeBg)
+            btnSideB.setTextColor(inactive)
+            btnSideB.setBackgroundColor(inactiveBg)
             sidePrefix = "A"
             sideTracks = fullQueue.take(splitIndex).mapIndexed { idx, s -> idx to s }
         } else {
             // Side B
-            btnSideA.setTextColor(Color.parseColor("#94A3B8"))
-            btnSideA.setBackgroundColor(Color.parseColor("#1C1D26"))
-            btnSideB.setTextColor(Color.parseColor("#EF4444"))
-            btnSideB.setBackgroundColor(Color.parseColor("#242635"))
+            btnSideA.setTextColor(inactive)
+            btnSideA.setBackgroundColor(inactiveBg)
+            btnSideB.setTextColor(accent)
+            btnSideB.setBackgroundColor(activeBg)
             sidePrefix = "B"
             sideTracks = fullQueue.drop(splitIndex).mapIndexed { idx, s -> (splitIndex + idx) to s }
         }
 
-        trackAdapter.submitTracks(sideTracks, activeQueueIndex, sidePrefix)
+        trackAdapter.submitTracks(sideTracks, activeQueueIndex, sidePrefix, activeTheme)
     }
 
     private fun formatTime(ms: Long): String {
@@ -199,13 +222,15 @@ class JCardLinerView @JvmOverloads constructor(
         private val items = mutableListOf<Pair<Int, TrackEntity>>()
         private var activeIdx = -1
         private var prefix = "A"
+        private var theme: CassetteTheme = CassetteTheme.DARK
         var onItemClicked: ((Int) -> Unit)? = null
 
-        fun submitTracks(tracks: List<Pair<Int, TrackEntity>>, active: Int, sidePrefix: String) {
+        fun submitTracks(tracks: List<Pair<Int, TrackEntity>>, active: Int, sidePrefix: String, currentTheme: CassetteTheme) {
             items.clear()
             items.addAll(tracks)
             activeIdx = active
             prefix = sidePrefix
+            theme = currentTheme
             notifyDataSetChanged()
         }
 
@@ -227,12 +252,12 @@ class JCardLinerView @JvmOverloads constructor(
             val isCurrent = (originalIndex == activeIdx)
             if (isCurrent) {
                 holder.tvActiveDot.visibility = View.VISIBLE
-                holder.tvTitle.setTextColor(Color.parseColor("#EF4444"))
-                holder.tvIndex.setTextColor(Color.parseColor("#EF4444"))
+                holder.tvTitle.setTextColor(theme.accentColor)
+                holder.tvIndex.setTextColor(theme.accentColor)
             } else {
                 holder.tvActiveDot.visibility = View.GONE
-                holder.tvTitle.setTextColor(Color.parseColor("#FAFAF9"))
-                holder.tvIndex.setTextColor(Color.parseColor("#E59825"))
+                holder.tvTitle.setTextColor(theme.textPrimaryColor)
+                holder.tvIndex.setTextColor(theme.labelAccentColor)
             }
 
             holder.itemView.setOnClickListener {

@@ -324,6 +324,18 @@ class VerticalDeckView @JvmOverloads constructor(
                 }
                 return false
             }
+            override fun onLongPress(e: MotionEvent) {
+                if (pressedButtonIndex == -1 && !isDraggingProgress) {
+                    val slop = 15f
+                    val inJCard = e.x >= jCardBadgeRect.left - slop && e.x <= jCardBadgeRect.right + slop &&
+                                  e.y >= jCardBadgeRect.top - slop && e.y <= jCardBadgeRect.bottom + slop
+                    val isCassetteArea = centerWindowRect.contains(e.x, e.y) || cassetteRect.contains(e.x, e.y)
+                    if (inJCard || isCassetteArea) {
+                        performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                        onQueueClicked?.invoke()
+                    }
+                }
+            }
             override fun onDown(e: MotionEvent): Boolean = true
         })
     }
@@ -553,6 +565,7 @@ class VerticalDeckView @JvmOverloads constructor(
 
     var onTapeTypeClicked: ((com.hana.spindle.playback.AudioFxController.TapeFormulation) -> Unit)? = null
     var onDolbyClicked: ((com.hana.spindle.playback.AudioFxController.DolbyMode) -> Unit)? = null
+    var onQueueClicked: (() -> Unit)? = null
 
     // Pre-allocated Geometries
     private val chassisRect = RectF()

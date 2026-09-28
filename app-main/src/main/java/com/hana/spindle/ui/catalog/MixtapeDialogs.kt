@@ -116,6 +116,115 @@ object MixtapeDialogs {
             .show()
     }
 
+    fun showSaveQueueAsMixtapeDialog(
+        context: Context,
+        database: SpindleDatabase,
+        scope: CoroutineScope,
+        queue: List<TrackEntity>,
+        onSaved: ((Long) -> Unit)? = null
+    ) {
+        if (queue.isEmpty()) {
+            Toast.makeText(context, "Active playback queue is empty", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val view = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            val pad = (16 * context.resources.displayMetrics.density).toInt()
+            setPadding(pad, pad, pad, pad)
+            setBackgroundColor(Color.parseColor("#1C1D22"))
+        }
+
+        val titleView = TextView(context).apply {
+            text = "RECORD QUEUE AS MIXTAPE"
+            textSize = 15f
+            setTextColor(Color.WHITE)
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            setPadding(0, 0, 0, (6 * context.resources.displayMetrics.density).toInt())
+        }
+        view.addView(titleView)
+
+        val subView = TextView(context).apply {
+            text = "${queue.size} tracks currently in queue will be saved."
+            textSize = 12f
+            setTextColor(Color.parseColor("#94A3B8"))
+            setPadding(0, 0, 0, (12 * context.resources.displayMetrics.density).toInt())
+        }
+        view.addView(subView)
+
+        val input = EditText(context).apply {
+            hint = "Mixtape Title (e.g. Session Queue)"
+            setHintTextColor(Color.parseColor("#64748B"))
+            setTextColor(Color.WHITE)
+            setBackgroundColor(Color.parseColor("#272932"))
+            val inputPad = (10 * context.resources.displayMetrics.density).toInt()
+            setPadding(inputPad, inputPad, inputPad, inputPad)
+        }
+        view.addView(input)
+
+        val colorLabel = TextView(context).apply {
+            text = context.getString(R.string.mixtape_select_accent)
+            textSize = 12f
+            setTextColor(Color.parseColor("#94A3B8"))
+            val padTop = (12 * context.resources.displayMetrics.density).toInt()
+            setPadding(0, padTop, 0, (6 * context.resources.displayMetrics.density).toInt())
+        }
+        view.addView(colorLabel)
+
+        var selectedColor = TAPE_ACCENTS[0]
+        val colorContainer = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+        }
+
+        val chipViews = mutableListOf<Button>()
+        for (color in TAPE_ACCENTS) {
+            val chip = Button(context).apply {
+                val size = (32 * context.resources.displayMetrics.density).toInt()
+                layoutParams = LinearLayout.LayoutParams(size, size).apply {
+                    marginEnd = (8 * context.resources.displayMetrics.density).toInt()
+                }
+                backgroundTintList = ColorStateList.valueOf(color)
+                text = if (color == selectedColor) "✓" else ""
+                setTextColor(Color.BLACK)
+                setPadding(0, 0, 0, 0)
+                setOnClickListener {
+                    selectedColor = color
+                    chipViews.forEach { it.text = "" }
+                    text = "✓"
+                }
+            }
+            chipViews.add(chip)
+            colorContainer.addView(chip)
+        }
+        view.addView(colorContainer)
+
+        AlertDialog.Builder(context)
+            .setView(view)
+            .setPositiveButton(context.getString(R.string.mixtape_record_tape)) { _, _ ->
+                val name = input.text.toString().trim().ifBlank { "Deck Mixtape" }
+                scope.launch(Dispatchers.IO) {
+                    val playlistId = database.playlistDao().insertPlaylist(
+                        PlaylistEntity(name = name, colorAccent = selectedColor)
+                    )
+                    queue.forEachIndexed { index, track ->
+                        database.playlistDao().addSongToPlaylist(
+                            PlaylistSongCrossRef(
+                                playlistId = playlistId,
+                                songId = track.id,
+                                orderIndex = index.toLong()
+                            )
+                        )
+                    }
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(context, "Saved ${queue.size} tracks to '$name'!", Toast.LENGTH_SHORT).show()
+                        onSaved?.invoke(playlistId)
+                    }
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
     fun showAddToMixtapeDialog(
         context: Context,
         database: SpindleDatabase,

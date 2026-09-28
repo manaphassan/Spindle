@@ -202,4 +202,31 @@ class AudioEngineQueueAndSleepTest {
         assertEquals(55L, crossRef.songId)
         assertEquals(1L, crossRef.orderIndex)
     }
+
+    @Test
+    fun testSaveQueueAsMixtapeMapping() {
+        val queue = listOf(
+            createDummySong(10, "Acoustic Intro"),
+            createDummySong(20, "Tape Loop Interlude"),
+            createDummySong(30, "Analog Outro")
+        )
+
+        val targetPlaylistId = 42L
+        val crossRefs = queue.mapIndexed { index, track ->
+            com.hana.spindle.data.db.PlaylistSongCrossRef(
+                playlistId = targetPlaylistId,
+                songId = track.id,
+                orderIndex = index.toLong()
+            )
+        }
+
+        assertEquals(3, crossRefs.size)
+        assertEquals(0L, crossRefs[0].orderIndex)
+        assertEquals(10L, crossRefs[0].songId)
+        assertEquals(1L, crossRefs[1].orderIndex)
+        assertEquals(20L, crossRefs[1].songId)
+        assertEquals(2L, crossRefs[2].orderIndex)
+        assertEquals(30L, crossRefs[2].songId)
+        crossRefs.forEach { assertEquals(42L, it.playlistId) }
+    }
 }

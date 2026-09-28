@@ -83,6 +83,16 @@ class QueueBottomSheet : BottomSheetDialogFragment() {
             audioEngine.clearUpcomingQueue()
         }
 
+        binding.btnSaveQueueMixtape.setOnClickListener {
+            val queue = audioEngine.currentQueueFlow.value
+            MixtapeDialogs.showSaveQueueAsMixtapeDialog(
+                context = requireContext(),
+                database = app.database,
+                scope = viewLifecycleOwner.lifecycleScope,
+                queue = queue
+            )
+        }
+
         observeQueue()
     }
 

@@ -315,4 +315,57 @@ class AudioDspAndFoleyTest {
         assertEquals(2000, sampleBand.maxFreqHz)
         assertEquals(2.5f, sampleBand.currentGainDb, 0.001f)
     }
+
+    @Test
+    fun testCrossfeedModesAndPresets() {
+        val fx = AudioFxController()
+        assertEquals(AudioFxController.CrossfeedMode.OFF, fx.currentCrossfeedMode)
+        assertEquals(0, fx.crossfeedStrength)
+
+        // Set Chu Moy
+        fx.setCrossfeedMode(AudioFxController.CrossfeedMode.CHU_MOY)
+        assertEquals(AudioFxController.CrossfeedMode.CHU_MOY, fx.currentCrossfeedMode)
+        assertEquals(200, fx.crossfeedStrength)
+
+        // Set Bauer
+        fx.setCrossfeedMode(AudioFxController.CrossfeedMode.BAUER)
+        assertEquals(AudioFxController.CrossfeedMode.BAUER, fx.currentCrossfeedMode)
+        assertEquals(400, fx.crossfeedStrength)
+
+        // Mapping from arbitrary slider strength
+        fx.setCrossfeedStrength(150)
+        assertEquals(AudioFxController.CrossfeedMode.CHU_MOY, fx.currentCrossfeedMode)
+
+        fx.setCrossfeedStrength(700)
+        assertEquals(AudioFxController.CrossfeedMode.STUDIO, fx.currentCrossfeedMode)
+
+        fx.setCrossfeedStrength(950)
+        assertEquals(AudioFxController.CrossfeedMode.BINAURAL, fx.currentCrossfeedMode)
+
+        fx.setCrossfeedStrength(0)
+        assertEquals(AudioFxController.CrossfeedMode.OFF, fx.currentCrossfeedMode)
+
+        // Cycle modes in sequence
+        assertEquals(AudioFxController.CrossfeedMode.CHU_MOY, fx.cycleCrossfeedMode())
+        assertEquals(AudioFxController.CrossfeedMode.BAUER, fx.cycleCrossfeedMode())
+        assertEquals(AudioFxController.CrossfeedMode.STUDIO, fx.cycleCrossfeedMode())
+        assertEquals(AudioFxController.CrossfeedMode.BINAURAL, fx.cycleCrossfeedMode())
+        assertEquals(AudioFxController.CrossfeedMode.OFF, fx.cycleCrossfeedMode())
+    }
+
+    @Test
+    fun testVintageCassetteThemesCalibration() {
+        val allPresets = com.hana.spindle.theme.CassetteTheme.ALL_PRESETS
+        assertTrue(allPresets.size >= 11)
+
+        val sonyHf = com.hana.spindle.theme.CassetteTheme.SONY_HF_90
+        assertEquals("Sony HF 90", sonyHf.name)
+        assertEquals("theme_sony_hf_90", sonyHf.id)
+        assertTrue(allPresets.contains(sonyHf))
+
+        val denonHd = com.hana.spindle.theme.CassetteTheme.DENON_HD8_100
+        assertEquals("Denon HD8 100", denonHd.name)
+        assertEquals("theme_denon_hd8_100", denonHd.id)
+        assertTrue(allPresets.contains(denonHd))
+    }
 }

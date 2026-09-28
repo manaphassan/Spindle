@@ -602,7 +602,7 @@ class DrawerFragment : Fragment() {
         binding.seekCrossfeed.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 if (fromUser) {
-                    fxController.setCrossfeedStrength(progress * 10)
+                    audioEngine.setCrossfeedStrength(progress * 10)
                 }
                 updateCrossfeedLabel(progress)
             }
@@ -611,6 +611,17 @@ class DrawerFragment : Fragment() {
                 seekBar?.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
             }
         })
+
+        val crossfeedCycleListener = View.OnClickListener {
+            val mode = fxController.cycleCrossfeedMode()
+            audioEngine.setCrossfeedMode(mode)
+            binding.seekCrossfeed.progress = fxController.crossfeedStrength / 10
+            updateCrossfeedLabel(binding.seekCrossfeed.progress)
+            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            Toast.makeText(requireContext(), "Crossfeed: ${mode.description}", Toast.LENGTH_SHORT).show()
+        }
+        binding.tvCrossfeedTitle.setOnClickListener(crossfeedCycleListener)
+        binding.tvCrossfeedLevel.setOnClickListener(crossfeedCycleListener)
 
         // 7. Target Curves Quick Buttons
         val curveButtons = mapOf(
@@ -768,7 +779,8 @@ class DrawerFragment : Fragment() {
 
     private fun updateCrossfeedLabel(progress: Int) {
         _binding?.let { b ->
-            b.tvCrossfeedLevel.text = if (progress <= 0) "OFF (0%)" else "$progress% • ${progress * 10}ms"
+            val mode = audioFxController.currentCrossfeedMode
+            b.tvCrossfeedLevel.text = if (progress <= 0) "OFF (0%)" else "${mode.label} ($progress%)"
         }
     }
 
@@ -819,6 +831,8 @@ class DrawerFragment : Fragment() {
             }
             switchTheme(CassetteTheme.REEL_TO_REEL_STUDIO)
         }
+        binding.btnThemeSonyHf.setOnClickListener { switchTheme(CassetteTheme.SONY_HF_90) }
+        binding.btnThemeDenonHd.setOnClickListener { switchTheme(CassetteTheme.DENON_HD8_100) }
     }
 
     private fun updateThemeButtonsVisual() {
@@ -836,6 +850,8 @@ class DrawerFragment : Fragment() {
         binding.btnThemeBasf.backgroundTintList = if (curId == CassetteTheme.BASF_CHROME.id) activeColor else ColorStateList.valueOf(Color.parseColor("#1F2421"))
         binding.btnThemeSkeleton.backgroundTintList = if (curId == CassetteTheme.SKELETON_REEL.id) activeColor else ColorStateList.valueOf(Color.parseColor("#261418"))
         binding.btnThemeStudioReel.backgroundTintList = if (curId == CassetteTheme.REEL_TO_REEL_STUDIO.id) activeColor else ColorStateList.valueOf(Color.parseColor("#241B14"))
+        binding.btnThemeSonyHf.backgroundTintList = if (curId == CassetteTheme.SONY_HF_90.id) activeColor else ColorStateList.valueOf(Color.parseColor("#181A20"))
+        binding.btnThemeDenonHd.backgroundTintList = if (curId == CassetteTheme.DENON_HD8_100.id) activeColor else ColorStateList.valueOf(Color.parseColor("#141318"))
 
         binding.tvActiveThemeName.text = themeManager.currentTheme.value.name
     }

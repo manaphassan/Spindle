@@ -225,6 +225,9 @@ class AudioEngine(
             audioFxController.setTapeSaturationEnabled(true)
         }
 
+        val savedCrossfeed = prefs.getInt("pref_dsp_crossfeed_strength", 0)
+        audioFxController.setCrossfeedStrength(savedCrossfeed)
+
         try {
             context.registerReceiver(
                 becomingNoisyReceiver,
@@ -577,6 +580,22 @@ class AudioEngine(
         context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
             .edit()
             .putString("pref_dolby_mode", mode.name)
+            .apply()
+    }
+
+    fun setCrossfeedMode(mode: AudioFxController.CrossfeedMode) {
+        audioFxController.setCrossfeedMode(mode)
+        context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+            .edit()
+            .putInt("pref_dsp_crossfeed_strength", audioFxController.crossfeedStrength)
+            .apply()
+    }
+
+    fun setCrossfeedStrength(strength: Int) {
+        audioFxController.setCrossfeedStrength(strength)
+        context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+            .edit()
+            .putInt("pref_dsp_crossfeed_strength", audioFxController.crossfeedStrength)
             .apply()
     }
 

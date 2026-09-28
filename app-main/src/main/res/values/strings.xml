@@ -40,8 +40,10 @@
 
     <!-- Playback Queue Sheet -->
     <string name="queue_header_title">UP NEXT • PLAYBACK QUEUE</string>
+    <string name="queue_save_mixtape">SAVE AS MIXTAPE</string>
     <string name="queue_clear_upcoming">CLEAR UPCOMING</string>
     <string name="queue_empty_message">No tracks in playback queue\nSelect tracks from the vault to build your queue.</string>
+    <string name="jcard_btn_manage_queue">QUEUE &amp; MIXTAPE</string>
 
     <!-- Mixtape Dialogs -->
     <string name="mixtape_cut_new">CUT NEW MIXTAPE</string>
