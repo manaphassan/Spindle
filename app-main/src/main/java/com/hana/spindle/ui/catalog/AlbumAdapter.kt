@@ -115,7 +115,7 @@ class AlbumAdapter(
             } else {
                 b.ivGridArt.setPadding(0, 0, 0, 0)
                 holder.loadJob = scope.launch {
-                    val thumb = imageLoader.loadCover(album.representativePath, 200, 200)
+                    val thumb = imageLoader.loadAlbumCover(album.album, album.artist, album.representativePath, 200, 200)
                     if (b.ivGridArt.tag == album.representativePath) {
                         withContext(Dispatchers.Main) {
                             if (b.ivGridArt.tag == album.representativePath) {

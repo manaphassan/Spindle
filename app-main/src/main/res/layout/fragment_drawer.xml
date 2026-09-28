@@ -347,6 +347,13 @@
                                     android:layout_marginStart="4dp" />
                             </LinearLayout>
 
+                            <com.hana.spindle.ui.eq.BiquadFrequencyVisualizerView
+                                android:id="@+id/biquadVisualizerView"
+                                android:layout_width="match_parent"
+                                android:layout_height="105dp"
+                                android:layout_marginBottom="6dp"
+                                android:background="#0A0B0E" />
+
                             <com.hana.spindle.ui.eq.Iso10BandEqView
                                 android:id="@+id/iso10BandEqView"
                                 android:layout_width="match_parent"
@@ -2448,6 +2455,21 @@
                                 android:padding="0dp"
                                 app:cornerRadius="8dp" />
                         </LinearLayout>
+
+                        <Button
+                            android:id="@+id/btnFetchMissingArt"
+                            android:layout_width="match_parent"
+                            android:layout_height="38dp"
+                            android:layout_marginTop="8dp"
+                            android:text="FETCH MISSING ALBUM ART"
+                            android:textColor="#38BDF8"
+                            android:textSize="10.5sp"
+                            android:textStyle="bold"
+                            android:backgroundTint="#16222F"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:padding="0dp"
+                            app:cornerRadius="8dp" />
 
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>

@@ -43,6 +43,10 @@ class SpindleApp : Application() {
         com.hana.spindle.playback.UserEqPresetManager(this)
     }
 
+    val coverArtFetcher: com.hana.spindle.data.CoverArtFetcher by lazy {
+        com.hana.spindle.data.CoverArtFetcher(this, database.trackDao(), imageLoader)
+    }
+
     companion object {
         const val PLAYBACK_CHANNEL_ID = "spindle_playback_channel"
         lateinit var instance: SpindleApp

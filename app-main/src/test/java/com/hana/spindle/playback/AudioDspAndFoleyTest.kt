@@ -481,4 +481,104 @@ class AudioDspAndFoleyTest {
         assertEquals(2.5f, fx.isoBandsQ[2], 0.001f)
         assertEquals(3.0f, fx.isoBandsQ[6], 0.001f)
     }
+
+    @Test
+    fun testBiquadFilterFlatResponseZeroDb() {
+        val gains = FloatArray(10) { 0.0f }
+        val qFactors = FloatArray(10) { 1.414f }
+        val response = FloatArray(BiquadFilterCalculator.NUM_POINTS)
+
+        BiquadFilterCalculator.calculateCascadedResponse(
+            isoGainsDb = gains,
+            isoQFactors = qFactors,
+            isTapeSatEnabled = false,
+            tapeSatDrive = 0.0f,
+            outCurveDb = response
+        )
+
+        for (i in response.indices) {
+            assertEquals("Point $i at ${BiquadFilterCalculator.LOG_FREQUENCIES[i]}Hz must be 0dB", 0.0f, response[i], 0.001f)
+        }
+    }
+
+    @Test
+    fun testBiquadFilterMagnitudeResponseAtCenterFreq() {
+        val gains = FloatArray(10)
+        val qFactors = FloatArray(10) { 1.414f }
+        gains[5] = 6.0f // 1000 Hz band set to +6.0 dB
+
+        val responseAt1k = BiquadFilterCalculator.calculateResponseAt(
+            freqHz = 1000.0f,
+            isoGainsDb = gains,
+            isoQFactors = qFactors
+        )
+        // Center frequency must peak close to +6.0 dB
+        assertEquals(6.0f, responseAt1k, 0.2f)
+
+        // Far away frequencies should be close to 0 dB
+        val responseAt50Hz = BiquadFilterCalculator.calculateResponseAt(
+            freqHz = 50.0f,
+            isoGainsDb = gains,
+            isoQFactors = qFactors
+        )
+        assertTrue(abs(responseAt50Hz) < 0.2f)
+    }
+
+    @Test
+    fun testBiquadFilterQFactorBandwidth() {
+        val gains = FloatArray(10)
+        gains[5] = 6.0f // 1000 Hz band set to +6.0 dB
+
+        // Wide Q = 0.707
+        val qWide = FloatArray(10) { 0.707f }
+        val respAt800Wide = BiquadFilterCalculator.calculateResponseAt(800f, gains, qWide)
+
+        // Narrow surgical Q = 5.0
+        val qNarrow = FloatArray(10) { 5.0f }
+        val respAt800Narrow = BiquadFilterCalculator.calculateResponseAt(800f, gains, qNarrow)
+
+        // Narrow filter must drop off faster at 800 Hz than wide filter
+        assertTrue("Wide Q response ($respAt800Wide) must be higher than Narrow Q ($respAt800Narrow)", respAt800Wide > respAt800Narrow)
+    }
+
+    @Test
+    fun testBiquadFilterAnalogTapeHeadBump() {
+        val gains = FloatArray(10) { 0.0f }
+        val qFactors = FloatArray(10) { 1.414f }
+
+        val respWithoutTape = BiquadFilterCalculator.calculateResponseAt(63f, gains, qFactors, isTapeSatEnabled = false)
+        val respWithTape = BiquadFilterCalculator.calculateResponseAt(63f, gains, qFactors, isTapeSatEnabled = true, tapeSatDrive = 1.0f)
+
+        assertEquals(0.0f, respWithoutTape, 0.01f)
+        // Tape head bump adds +3.2 dB centered at 63 Hz
+        assertEquals(3.2f, respWithTape, 0.2f)
+    }
+
+    @Test
+    fun testBiquadFilterLogFrequencyMapping() {
+        val minFreq = BiquadFilterCalculator.ratioToFreq(0.0f)
+        val maxFreq = BiquadFilterCalculator.ratioToFreq(1.0f)
+
+        assertEquals(20.0f, minFreq, 0.01f)
+        assertEquals(20000.0f, maxFreq, 1.0f)
+
+        val ratio1k = BiquadFilterCalculator.freqToRatio(1000.0f)
+        val freqRecovered = BiquadFilterCalculator.ratioToFreq(ratio1k)
+        assertEquals(1000.0f, freqRecovered, 1.0f)
+    }
+
+    @Test
+    fun testCoverArtFetcherCleanSearchTerm() {
+        val clean1 = com.hana.spindle.data.CoverArtFetcher.cleanSearchTerm(
+            album = "Discovery [2001] (24-bit Remaster) [FLAC]",
+            artist = "Daft Punk"
+        )
+        assertEquals("Daft Punk Discovery", clean1)
+
+        val clean2 = com.hana.spindle.data.CoverArtFetcher.cleanSearchTerm(
+            album = "The Dark Side of the Moon (Deluxe Edition)",
+            artist = "Pink Floyd"
+        )
+        assertEquals("Pink Floyd The Dark Side of the Moon", clean2)
+    }
 }

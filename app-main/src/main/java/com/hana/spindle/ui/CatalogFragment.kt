@@ -11,6 +11,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
@@ -1578,7 +1579,7 @@ class CatalogFragment : Fragment() {
                 binding.ivAlbumDetailCover.setImageResource(com.hana.spindle.R.drawable.ic_mixtape_tape)
                 binding.ivAlbumDetailCover.imageTintList = null
             } else {
-                val cover = app.imageLoader.loadCover(album.representativePath, 300, 300)
+                val cover = app.imageLoader.loadAlbumCover(album.album, album.artist, album.representativePath, 300, 300)
                 if (cover != null) {
                     binding.ivAlbumDetailCover.imageTintList = null
                     binding.ivAlbumDetailCover.setPadding(0, 0, 0, 0)
@@ -1589,6 +1590,25 @@ class CatalogFragment : Fragment() {
                     binding.ivAlbumDetailCover.imageTintList = ColorStateList.valueOf(
                         if (isEink) Color.BLACK else Color.parseColor("#94A3B8")
                     )
+
+                    // Allow tapping placeholder to fetch missing art directly
+                    binding.ivAlbumDetailCover.setOnClickListener {
+                        viewLifecycleOwner.lifecycleScope.launch {
+                            Toast.makeText(requireContext(), "Searching online artwork for \"${album.album}\"...", Toast.LENGTH_SHORT).show()
+                            val downloaded = app.coverArtFetcher.fetchCoverForAlbum(album.album, album.artist)
+                            if (downloaded != null) {
+                                val newCover = app.imageLoader.loadAlbumCover(album.album, album.artist, album.representativePath, 300, 300)
+                                if (newCover != null) {
+                                    binding.ivAlbumDetailCover.imageTintList = null
+                                    binding.ivAlbumDetailCover.setPadding(0, 0, 0, 0)
+                                    binding.ivAlbumDetailCover.setImageBitmap(newCover)
+                                    Toast.makeText(requireContext(), "Cover artwork updated!", Toast.LENGTH_SHORT).show()
+                                }
+                            } else {
+                                Toast.makeText(requireContext(), "Artwork not found in online catalogs.", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
                 }
             }
         }

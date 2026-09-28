@@ -303,6 +303,15 @@ class DrawerFragment : Fragment() {
         val audioEngine = app.audioEngine
         val fxController = audioEngine.audioFxController
 
+        fun updateBiquadVisualizer() {
+            _binding?.biquadVisualizerView?.updateDspState(
+                isoGainsDb = fxController.isoBandsGainDb,
+                isoQFactors = fxController.isoBandsQ,
+                isTapeSatEnabled = fxController.isTapeSaturationEnabled,
+                tapeSatDrive = fxController.tapeSaturationDrive
+            )
+        }
+
         // 1. Calibrated Rotary Potentiometers: LOW, MID, HI, FILTER
         binding.knobLow.label = "LOW"
         binding.knobLow.minValue = -12f
@@ -312,6 +321,7 @@ class DrawerFragment : Fragment() {
             fxController.setLowGain(gainDb)
             binding.iso10BandEqView.setBands(fxController.isoBandsGainDb)
             updateEqHeadroomLabel(fxController)
+            updateBiquadVisualizer()
         }
 
         binding.knobMid.label = "MID"
@@ -322,6 +332,7 @@ class DrawerFragment : Fragment() {
             fxController.setMidGain(gainDb)
             binding.iso10BandEqView.setBands(fxController.isoBandsGainDb)
             updateEqHeadroomLabel(fxController)
+            updateBiquadVisualizer()
         }
 
         binding.knobHi.label = "HI"
@@ -332,6 +343,7 @@ class DrawerFragment : Fragment() {
             fxController.setHighGain(gainDb)
             binding.iso10BandEqView.setBands(fxController.isoBandsGainDb)
             updateEqHeadroomLabel(fxController)
+            updateBiquadVisualizer()
         }
 
         binding.knobFilter.label = "FILTER"
@@ -358,12 +370,24 @@ class DrawerFragment : Fragment() {
         binding.tvEqHardwareBadge.setOnClickListener(openHwSpecs)
 
         binding.iso10BandEqView.setBands(fxController.isoBandsGainDb)
+        updateBiquadVisualizer()
+
+        // Sync live audio visualizer waveform pulse with playback engine
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                audioEngine.playbackState.collect { state ->
+                    _binding?.biquadVisualizerView?.isPlaying = state.isPlaying
+                }
+            }
+        }
+
         binding.iso10BandEqView.onBandsChanged = { gains ->
             fxController.setAllIsoBands(gains)
             binding.knobLow.currentValue = fxController.lowGainDb
             binding.knobMid.currentValue = fxController.midGainDb
             binding.knobHi.currentValue = fxController.highGainDb
             updateEqHeadroomLabel(fxController)
+            updateBiquadVisualizer()
         }
         binding.iso10BandEqView.onBandDragFinished = {
             binding.iso10BandEqView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
@@ -450,6 +474,7 @@ class DrawerFragment : Fragment() {
 
         binding.iso10BandEqView.onQChanged = { band, q ->
             fxController.setBandQ(band, q)
+            updateBiquadVisualizer()
             val bandLabel = if (band in AudioDspConstants.ISO_LABELS.indices) AudioDspConstants.ISO_LABELS[band] else "Band $band"
             Toast.makeText(requireContext(), "$bandLabel Q set to ${String.format(Locale.US, "%.1f", q)}", Toast.LENGTH_SHORT).show()
         }
@@ -489,6 +514,7 @@ class DrawerFragment : Fragment() {
                 binding.knobHi.currentValue = fxController.highGainDb
                 binding.knobFilter.currentValue = fxController.bassBoostStrength.toFloat()
                 updateEqHeadroomLabel(fxController)
+                updateBiquadVisualizer()
                 highlightAutoEq(name)
                 btn.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
             }
@@ -511,6 +537,7 @@ class DrawerFragment : Fragment() {
             binding.knobHi.currentValue = fxController.highGainDb
             binding.knobFilter.currentValue = fxController.bassBoostStrength.toFloat()
             updateEqHeadroomLabel(fxController)
+            updateBiquadVisualizer()
             highlightAutoEq(preset)
         }
 
@@ -534,6 +561,7 @@ class DrawerFragment : Fragment() {
             binding.knobFilter.currentValue = 0f
             binding.btnFx.text = "FX: FLAT"
             updateEqHeadroomLabel(fxController)
+            updateBiquadVisualizer()
             highlightAutoEq("FLAT")
 
             // Reset master output volume to reference 80%
@@ -653,6 +681,7 @@ class DrawerFragment : Fragment() {
                 updateCrossfeedLabel(binding.seekCrossfeed.progress)
                 binding.btnFx.text = "FX: $curveName"
                 highlightCurve(curveName)
+                updateBiquadVisualizer()
                 it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
             }
         }
@@ -674,6 +703,7 @@ class DrawerFragment : Fragment() {
             updateCrossfeedLabel(binding.seekCrossfeed.progress)
             updateEqModeVisual(fxController.isParametricMode)
             updateEqHeadroomLabel(fxController)
+            updateBiquadVisualizer()
             binding.btnFx.text = "FX: ${fxController.currentPresetName}"
             highlightCurve(fxController.currentPresetName)
             updateCustomPresetsBadge()
@@ -779,6 +809,7 @@ class DrawerFragment : Fragment() {
                 b.seekCrossfeed.alpha = 0.35f
                 b.btnFx.alpha = 0.35f
                 b.iso10BandEqView.alpha = 0.35f
+                b.biquadVisualizerView.alpha = 0.35f
                 b.layoutAutoEqPills.alpha = 0.35f
             } else {
                 b.tvBypassTitle.setTextColor(Color.WHITE)
@@ -791,6 +822,7 @@ class DrawerFragment : Fragment() {
                 b.seekCrossfeed.alpha = 1.0f
                 b.btnFx.alpha = 1.0f
                 b.iso10BandEqView.alpha = 1.0f
+                b.biquadVisualizerView.alpha = 1.0f
                 b.layoutAutoEqPills.alpha = 1.0f
             }
         }
@@ -1131,6 +1163,7 @@ class DrawerFragment : Fragment() {
 
         // Propagate isEink to hardware EQ and meter components
         binding.iso10BandEqView.isEink = isEink
+        binding.biquadVisualizerView.isEink = isEink
         binding.knobLow.isEink = isEink
         binding.knobMid.isEink = isEink
         binding.knobHi.isEink = isEink
@@ -1375,6 +1408,13 @@ class DrawerFragment : Fragment() {
                 binding.progressScan.visibility = View.GONE
                 Toast.makeText(requireContext(), "Fast index cache (.spindle_catalog.bin) updated!", Toast.LENGTH_LONG).show()
             }
+        }
+
+        binding.btnFetchMissingArt.setOnClickListener {
+            val dialog = DialogCoverArtFetcher {
+                Toast.makeText(requireContext(), "Album artwork cache refreshed", Toast.LENGTH_SHORT).show()
+            }
+            dialog.show(parentFragmentManager, "DialogCoverArtFetcher")
         }
     }
 
