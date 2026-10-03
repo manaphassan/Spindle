@@ -183,11 +183,11 @@
                     android:background="?attr/selectableItemBackgroundBorderless" />
 
                 <TextView
-                    android:id="@+id/tabComposers"
+                    android:id="@+id/tabMixtapes"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="18dp"
-                    android:text="@string/tab_composers"
+                    android:text="@string/tab_mixtapes"
                     android:textSize="18sp"
                     android:alpha="0.45"
                     android:fontFamily="sans-serif-light"
@@ -225,11 +225,11 @@
                     android:background="?attr/selectableItemBackgroundBorderless" />
 
                 <TextView
-                    android:id="@+id/tabMixtapes"
+                    android:id="@+id/tabComposers"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="18dp"
-                    android:text="@string/tab_mixtapes"
+                    android:text="@string/tab_composers"
                     android:textSize="18sp"
                     android:alpha="0.45"
                     android:fontFamily="sans-serif-light"
@@ -392,6 +392,16 @@
             android:elevation="12dp"
             android:visibility="gone" />
     </RelativeLayout>
+
+    <!-- Zune Metro Catalogue Collection Panorama -->
+    <include
+        android:id="@+id/layoutCatalogCollectionPanorama"
+        layout="@layout/layout_catalog_collection_panorama"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/catalogHeaderContainer"
+        android:layout_above="@+id/cardMiniPlayer"
+        android:visibility="gone" />
 
     <!-- Zune Metro Music Hub Panorama -->
     <include

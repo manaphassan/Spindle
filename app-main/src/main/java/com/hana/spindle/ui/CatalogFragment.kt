@@ -8,10 +8,13 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.net.Uri
 import android.widget.Button
+import android.widget.HorizontalScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -56,6 +59,14 @@ class CatalogFragment : Fragment() {
     private lateinit var albumTracksAdapter: TrackAdapter
     private lateinit var waveformExtractor: com.hana.spindle.data.WaveformExtractor
     private lateinit var searchSuggestionAdapter: SearchSuggestionAdapter
+    private lateinit var tracksAdapter: TrackAdapter
+    private lateinit var albumsAdapter: AlbumAdapter
+    private lateinit var artistsAdapter: AlbumAdapter
+    private lateinit var mixtapesAdapter: AlbumAdapter
+    private lateinit var foldersAdapter: FolderAdapter
+    private lateinit var favoritesAdapter: TrackAdapter
+    private lateinit var composersAdapter: AlbumAdapter
+    private var currentCatalogPanelIndex = 0
     private var waveformExtractionJob: Job? = null
     private var searchSuggestionJob: Job? = null
     private var mixtapeReorderHelper: androidx.recyclerview.widget.ItemTouchHelper? = null
@@ -79,7 +90,7 @@ class CatalogFragment : Fragment() {
     private var currentLoadedSongId: Long = -1L
     private var currentMiniSongId: Long = -1L
 
-    // 0: Tracks, 1: Albums, 2: Artists, 3: Folders, 4: Favorites, 5: Mixtapes
+    // 0: Tracks, 1: Albums, 2: Artists, 3: Mixtapes, 4: Folders, 5: Favorites, 6: Composers
     private var currentTab = 0
 
     private var allSongsList: List<TrackEntity> = emptyList()
@@ -88,7 +99,11 @@ class CatalogFragment : Fragment() {
     private var allAlbumsList: List<AlbumItem> = emptyList()
     private var currentDisplayedAlbums: List<AlbumItem> = emptyList()
 
+    private var allArtistsList: List<AlbumItem> = emptyList()
+    private var allMixtapesList: List<AlbumItem> = emptyList()
     private var allFoldersList: List<FolderItem> = emptyList()
+    private var allFavoritesList: List<TrackEntity> = emptyList()
+    private var allComposersList: List<AlbumItem> = emptyList()
     private var currentFilterChip = CatalogFilterChip.ALL
 
     // Poweramp-style Sorting & Grouping
@@ -144,13 +159,14 @@ class CatalogFragment : Fragment() {
         setupMiniPlayer(app)
         setupNowPlayingSingleAudio(app)
         setupPanorama(app)
+        setupCollectionPanorama(app)
         observeAudioMetrics(app)
         observeScanProgress(app)
 
         val initTab = arguments?.getInt(ARG_INITIAL_TAB, -1) ?: -1
         if (initTab in 0..6) {
             showPanorama(false)
-            binding.root.post { switchToTab(initTab) }
+            binding.root.post { scrollToCatalogPanel(initTab) }
         } else {
             showPanorama(true)
         }
@@ -448,6 +464,123 @@ class CatalogFragment : Fragment() {
             }
         }
 
+        // Initialize 7 Panorama Collection Adapters
+        tracksAdapter = TrackAdapter(
+            imageLoader = app.imageLoader,
+            onTrackClicked = { song, index ->
+                currentDisplayedSongs = allSongsList
+                audioEngine.playQueue(allSongsList, index)
+                showNowPlayingSingleAudio(true)
+            },
+            onRatingChanged = { song, newRating ->
+                viewLifecycleOwner.lifecycleScope.launch {
+                    app.database.trackDao().updateRating(song.id, newRating)
+                }
+            }
+        ).apply {
+            onPlayNext = { song ->
+                audioEngine.playNextInQueue(song)
+                android.widget.Toast.makeText(requireContext(), "Will play next: ${song.title}", android.widget.Toast.LENGTH_SHORT).show()
+            }
+            onAddToQueue = { song ->
+                audioEngine.addToQueue(song)
+                android.widget.Toast.makeText(requireContext(), "Added to queue: ${song.title}", android.widget.Toast.LENGTH_SHORT).show()
+            }
+            onAddToMixtape = { song ->
+                MixtapeDialogs.showAddToMixtapeDialog(requireContext(), app.database, viewLifecycleOwner.lifecycleScope, song) {
+                    loadMixtapes(app)
+                }
+            }
+            onInspectTags = { song ->
+                TagInspectorDialog.show(requireContext(), song) {
+                    loadSongs(app)
+                }
+            }
+            onViewAudioSpecs = { song ->
+                DialogFileSpecs(song).show(parentFragmentManager, "DialogFileSpecs")
+            }
+        }
+
+        val onAlbumClickAction: (AlbumItem) -> Unit = { album ->
+            albumTracksJob?.cancel()
+            albumTracksJob = viewLifecycleOwner.lifecycleScope.launch {
+                getTracksFlowForAlbum(app, album).collectLatest { albumSongs ->
+                    showAlbumDetail(album, albumSongs)
+                }
+            }
+        }
+
+        val onAlbumPlayAction: (AlbumItem) -> Unit = { album ->
+            albumTracksJob?.cancel()
+            albumTracksJob = viewLifecycleOwner.lifecycleScope.launch {
+                getTracksFlowForAlbum(app, album).collectLatest { albumSongs ->
+                    if (albumSongs.isNotEmpty()) {
+                        currentDisplayedSongs = albumSongs
+                        audioEngine.playQueue(albumSongs, 0)
+                        showNowPlayingSingleAudio(true)
+                    }
+                }
+            }
+        }
+
+        albumsAdapter = AlbumAdapter(
+            imageLoader = app.imageLoader,
+            onAlbumClicked = onAlbumClickAction,
+            onPlayAlbumClicked = onAlbumPlayAction
+        )
+
+        artistsAdapter = AlbumAdapter(
+            imageLoader = app.imageLoader,
+            onAlbumClicked = onAlbumClickAction,
+            onPlayAlbumClicked = onAlbumPlayAction
+        )
+
+        mixtapesAdapter = AlbumAdapter(
+            imageLoader = app.imageLoader,
+            onAlbumClicked = onAlbumClickAction,
+            onPlayAlbumClicked = onAlbumPlayAction
+        ).apply {
+            onAlbumLongClicked = albumAdapter.onAlbumLongClicked
+        }
+
+        foldersAdapter = FolderAdapter { folder ->
+            viewLifecycleOwner.lifecycleScope.launch {
+                val folderSongs = allSongsList.filter { File(it.path).parent == folder.path }
+                if (folderSongs.isNotEmpty()) {
+                    val albumItem = AlbumItem(
+                        album = folder.name,
+                        artist = folder.path,
+                        trackCount = folderSongs.size,
+                        representativePath = folderSongs.firstOrNull()?.path ?: "",
+                        year = 0,
+                        format = "FOLDER"
+                    )
+                    showAlbumDetail(albumItem, folderSongs)
+                }
+            }
+        }
+
+        favoritesAdapter = TrackAdapter(
+            imageLoader = app.imageLoader,
+            onTrackClicked = { song, index ->
+                val favs = allSongsList.filter { it.isFavorite }
+                currentDisplayedSongs = favs
+                audioEngine.playQueue(favs, index)
+                showNowPlayingSingleAudio(true)
+            },
+            onRatingChanged = { song, newRating ->
+                viewLifecycleOwner.lifecycleScope.launch {
+                    app.database.trackDao().updateRating(song.id, newRating)
+                }
+            }
+        )
+
+        composersAdapter = AlbumAdapter(
+            imageLoader = app.imageLoader,
+            onAlbumClicked = onAlbumClickAction,
+            onPlayAlbumClicked = onAlbumPlayAction
+        )
+
         binding.rvCatalog.layoutManager = LinearLayoutManager(requireContext())
         binding.rvCatalog.adapter = songAdapter
 
@@ -499,120 +632,42 @@ class CatalogFragment : Fragment() {
             }
         }
 
-        binding.tabSongs.setOnClickListener {
-            selectTab(0)
-            binding.rvCatalog.layoutManager = LinearLayoutManager(requireContext())
-            binding.rvCatalog.adapter = songAdapter
-            loadSongs(app)
-        }
-
-        binding.tabAlbums.setOnClickListener {
-            selectTab(1)
-            binding.rvCatalog.layoutManager = GridLayoutManager(requireContext(), 2)
-            binding.rvCatalog.adapter = albumAdapter
-            loadAlbums(app)
-        }
-
-        binding.tabArtists.setOnClickListener {
-            selectTab(2)
-            binding.rvCatalog.layoutManager = GridLayoutManager(requireContext(), 2)
-            binding.rvCatalog.adapter = albumAdapter
-            loadArtists(app)
-        }
-
-        binding.tabComposers.setOnClickListener {
-            selectTab(3)
-            binding.rvCatalog.layoutManager = GridLayoutManager(requireContext(), 2)
-            binding.rvCatalog.adapter = albumAdapter
-            loadComposers(app)
-        }
-
-        binding.tabFolders.setOnClickListener {
-            selectTab(4)
-            binding.rvCatalog.layoutManager = LinearLayoutManager(requireContext())
-            binding.rvCatalog.adapter = folderAdapter
-            loadFolders()
-        }
-
-        binding.tabFavorites.setOnClickListener {
-            selectTab(5)
-            binding.rvCatalog.layoutManager = LinearLayoutManager(requireContext())
-            binding.rvCatalog.adapter = songAdapter
-            loadFavorites(app)
-        }
-
-        binding.tabMixtapes.setOnClickListener {
-            selectTab(6)
-            binding.rvCatalog.layoutManager = GridLayoutManager(requireContext(), 2)
-            binding.rvCatalog.adapter = albumAdapter
-            loadMixtapes(app)
-        }
-
-        setupCatalogSwipe()
+        binding.tabSongs.setOnClickListener { scrollToCatalogPanel(0) }
+        binding.tabAlbums.setOnClickListener { scrollToCatalogPanel(1) }
+        binding.tabArtists.setOnClickListener { scrollToCatalogPanel(2) }
+        binding.tabMixtapes.setOnClickListener { scrollToCatalogPanel(3) }
+        binding.tabFolders.setOnClickListener { scrollToCatalogPanel(4) }
+        binding.tabFavorites.setOnClickListener { scrollToCatalogPanel(5) }
+        binding.tabComposers.setOnClickListener { scrollToCatalogPanel(6) }
     }
 
-    private fun setupCatalogSwipe() {
-        val gestureDetector = android.view.GestureDetector(requireContext(), object : android.view.GestureDetector.SimpleOnGestureListener() {
-            override fun onFling(
-                e1: android.view.MotionEvent?,
-                e2: android.view.MotionEvent,
-                velocityX: Float,
-                velocityY: Float
-            ): Boolean {
-                if (e1 == null) return false
-                val diffX = e2.x - e1.x
-                val diffY = e2.y - e1.y
-                if (kotlin.math.abs(diffX) > kotlin.math.abs(diffY) && kotlin.math.abs(diffX) > 120 && kotlin.math.abs(velocityX) > 200) {
-                    if (diffX < 0) {
-                        if (currentTab < 6) switchToTab(currentTab + 1)
-                    } else {
-                        if (currentTab > 0) switchToTab(currentTab - 1)
-                    }
-                    return true
-                }
-                return false
-            }
-        })
-        binding.rvCatalog.addOnItemTouchListener(object : RecyclerView.SimpleOnItemTouchListener() {
-            override fun onInterceptTouchEvent(rv: RecyclerView, e: android.view.MotionEvent): Boolean {
-                gestureDetector.onTouchEvent(e)
-                return false
-            }
-        })
-    }
-
-    private fun switchToTab(index: Int) {
-        when (index) {
-            0 -> binding.tabSongs.performClick()
-            1 -> binding.tabAlbums.performClick()
-            2 -> binding.tabArtists.performClick()
-            3 -> binding.tabComposers.performClick()
-            4 -> binding.tabFolders.performClick()
-            5 -> binding.tabFavorites.performClick()
-            6 -> binding.tabMixtapes.performClick()
+    fun scrollToCatalogPanel(index: Int) {
+        currentCatalogPanelIndex = index.coerceIn(0, 6)
+        val cBinding = _binding?.layoutCatalogCollectionPanorama ?: return
+        val dm = resources.displayMetrics
+        val panelWidth = dm.widthPixels - (52 * dm.density).toInt()
+        val targetX = currentCatalogPanelIndex * panelWidth
+        cBinding.catalogPanoramaScrollView.post {
+            cBinding.catalogPanoramaScrollView.smoothScrollTo(targetX, 0)
         }
+        highlightCatalogTab(currentCatalogPanelIndex)
     }
 
-    private fun selectTab(index: Int) {
+    private fun highlightCatalogTab(index: Int) {
         currentTab = index
         hideAlbumDetail()
-        val app = requireActivity().application as SpindleApp
-        val theme = app.themeManager.currentTheme.value
-        val isEink = (theme.id == CassetteTheme.MONOCHROME_EINK.id)
-        val isDark = theme.isDarkAppTheme
-        val activeBg = if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#F97316") else ContextCompat.getColor(requireContext(), R.color.metal81_red)
-        val inactiveBg = if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#212228")
-        val activeText = Color.WHITE
-        val inactiveText = if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#2A2E45") else Color.parseColor("#94A3B8")
+        val app = requireActivity().application as? SpindleApp
+        val theme = app?.themeManager?.currentTheme?.value
+        val isEink = (theme?.id == CassetteTheme.MONOCHROME_EINK.id)
 
         val tabs = listOf(
             binding.tabSongs,
             binding.tabAlbums,
             binding.tabArtists,
-            binding.tabComposers,
+            binding.tabMixtapes,
             binding.tabFolders,
             binding.tabFavorites,
-            binding.tabMixtapes
+            binding.tabComposers
         )
 
         tabs.forEachIndexed { i, tv ->
@@ -620,15 +675,193 @@ class CatalogFragment : Fragment() {
             tv.alpha = if (isActive) 1.0f else 0.40f
             tv.setTextColor(if (isActive) (if (isEink) Color.BLACK else Color.WHITE) else (if (isEink) Color.GRAY else Color.WHITE))
             tv.setTypeface(null, if (isActive) Typeface.BOLD else Typeface.NORMAL)
-            tv.textSize = if (isActive) 22f else 18f
+            tv.textSize = if (isActive) 20f else 18f
         }
 
-        val isMixtapeTab = (index == 6)
-        binding.btnNewMixtape.visibility = if (isMixtapeTab) View.VISIBLE else View.GONE
-        binding.btnShuffle.visibility = if (isMixtapeTab) View.GONE else View.VISIBLE
-        binding.btnPlayAll.visibility = if (isMixtapeTab) View.GONE else View.VISIBLE
+        val targetTab = tabs.getOrNull(index) ?: return
+        binding.tabScrollView.post {
+            val scrollX = targetTab.left - (binding.tabScrollView.width - targetTab.width) / 2
+            binding.tabScrollView.smoothScrollTo(scrollX.coerceAtLeast(0), 0)
+        }
+    }
 
-        updateSortLabel()
+    private fun switchToTab(index: Int) {
+        scrollToCatalogPanel(index)
+    }
+
+    private fun selectTab(index: Int) {
+        scrollToCatalogPanel(index)
+    }
+
+    private fun setupTouchDisambiguation(rv: RecyclerView, hsv: HorizontalScrollView) {
+        var downX = 0f
+        var downY = 0f
+        val touchSlop = ViewConfiguration.get(rv.context).scaledTouchSlop
+
+        rv.addOnItemTouchListener(object : RecyclerView.SimpleOnItemTouchListener() {
+            override fun onInterceptTouchEvent(targetRv: RecyclerView, e: MotionEvent): Boolean {
+                when (e.actionMasked) {
+                    MotionEvent.ACTION_DOWN -> {
+                        downX = e.x
+                        downY = e.y
+                        hsv.requestDisallowInterceptTouchEvent(false)
+                    }
+                    MotionEvent.ACTION_MOVE -> {
+                        val dx = kotlin.math.abs(e.x - downX)
+                        val dy = kotlin.math.abs(e.y - downY)
+                        if (dy > touchSlop && dy > dx) {
+                            targetRv.parent?.requestDisallowInterceptTouchEvent(true)
+                        } else if (dx > touchSlop && dx > dy) {
+                            targetRv.parent?.requestDisallowInterceptTouchEvent(false)
+                        }
+                    }
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                        targetRv.parent?.requestDisallowInterceptTouchEvent(false)
+                    }
+                }
+                return false
+            }
+        })
+    }
+
+    private fun setupCollectionPanorama(app: SpindleApp) {
+        val cBinding = _binding?.layoutCatalogCollectionPanorama ?: return
+        val dm = resources.displayMetrics
+        val panelWidth = dm.widthPixels - (52 * dm.density).toInt()
+
+        val panels = listOf(
+            cBinding.panelTracks,
+            cBinding.panelAlbums,
+            cBinding.panelArtists,
+            cBinding.panelMixtapes,
+            cBinding.panelFolders,
+            cBinding.panelFavorites,
+            cBinding.panelComposers
+        )
+        panels.forEach { panel ->
+            val lp = panel.layoutParams
+            lp.width = panelWidth
+            panel.layoutParams = lp
+        }
+
+        // Layout managers
+        cBinding.rvPanoramaTracks.layoutManager = LinearLayoutManager(requireContext())
+        cBinding.rvPanoramaAlbums.layoutManager = GridLayoutManager(requireContext(), 2)
+        cBinding.rvPanoramaArtists.layoutManager = GridLayoutManager(requireContext(), 2)
+        cBinding.rvPanoramaMixtapes.layoutManager = GridLayoutManager(requireContext(), 2)
+        cBinding.rvPanoramaFolders.layoutManager = LinearLayoutManager(requireContext())
+        cBinding.rvPanoramaFavorites.layoutManager = LinearLayoutManager(requireContext())
+        cBinding.rvPanoramaComposers.layoutManager = GridLayoutManager(requireContext(), 2)
+
+        // Adapters
+        cBinding.rvPanoramaTracks.adapter = tracksAdapter
+        cBinding.rvPanoramaAlbums.adapter = albumsAdapter
+        cBinding.rvPanoramaArtists.adapter = artistsAdapter
+        cBinding.rvPanoramaMixtapes.adapter = mixtapesAdapter
+        cBinding.rvPanoramaFolders.adapter = foldersAdapter
+        cBinding.rvPanoramaFavorites.adapter = favoritesAdapter
+        cBinding.rvPanoramaComposers.adapter = composersAdapter
+
+        // Touch disambiguation
+        val listRecyclers = listOf(
+            cBinding.rvPanoramaTracks,
+            cBinding.rvPanoramaAlbums,
+            cBinding.rvPanoramaArtists,
+            cBinding.rvPanoramaMixtapes,
+            cBinding.rvPanoramaFolders,
+            cBinding.rvPanoramaFavorites,
+            cBinding.rvPanoramaComposers
+        )
+        listRecyclers.forEach { rv ->
+            setupTouchDisambiguation(rv, cBinding.catalogPanoramaScrollView)
+        }
+
+        // Parallax and active panel tracking
+        cBinding.catalogPanoramaScrollView.setOnScrollChangeListener { _, scrollX, _, _, _ ->
+            cBinding.tvCatalogParallaxTitle.translationX = -scrollX * 0.22f
+            val activeIdx = ((scrollX + panelWidth / 2) / panelWidth).coerceIn(0, 6)
+            if (activeIdx != currentCatalogPanelIndex) {
+                currentCatalogPanelIndex = activeIdx
+                highlightCatalogTab(activeIdx)
+            }
+        }
+
+        // Action buttons
+        cBinding.btnShuffleTracks.setOnClickListener {
+            if (allSongsList.isNotEmpty()) {
+                val shuffled = allSongsList.shuffled()
+                currentDisplayedSongs = shuffled
+                audioEngine.playQueue(shuffled, 0)
+                showNowPlayingSingleAudio(true)
+            }
+        }
+        cBinding.btnPlayTracks.setOnClickListener {
+            if (allSongsList.isNotEmpty()) {
+                currentDisplayedSongs = allSongsList
+                audioEngine.playQueue(allSongsList, 0)
+                showNowPlayingSingleAudio(true)
+            }
+        }
+        cBinding.btnSortTracks.setOnClickListener {
+            val dialog = SortGroupBottomSheet(
+                isAlbumTab = false,
+                currentTrackSort = trackSortOrder,
+                currentAlbumSort = albumSortOrder,
+                currentGroupBy = groupByMode,
+                onTrackSortSelected = { newSort ->
+                    trackSortOrder = newSort
+                    applyFilterAndSort()
+                },
+                onAlbumSortSelected = { newSort ->
+                    albumSortOrder = newSort
+                    applyFilterAndSort()
+                },
+                onGroupBySelected = { newGroup ->
+                    groupByMode = newGroup
+                    applyFilterAndSort()
+                }
+            )
+            dialog.show(parentFragmentManager, "SortTracksDialog")
+        }
+        cBinding.btnSortAlbums.setOnClickListener {
+            val dialog = SortGroupBottomSheet(
+                isAlbumTab = true,
+                currentTrackSort = trackSortOrder,
+                currentAlbumSort = albumSortOrder,
+                currentGroupBy = groupByMode,
+                onTrackSortSelected = { newSort ->
+                    trackSortOrder = newSort
+                    applyFilterAndSort()
+                },
+                onAlbumSortSelected = { newSort ->
+                    albumSortOrder = newSort
+                    applyFilterAndSort()
+                },
+                onGroupBySelected = { newGroup ->
+                    groupByMode = newGroup
+                    applyFilterAndSort()
+                }
+            )
+            dialog.show(parentFragmentManager, "SortAlbumsDialog")
+        }
+        cBinding.btnNewMixtape.setOnClickListener {
+            MixtapeDialogs.showCreateMixtapeDialog(requireContext(), app.database, viewLifecycleOwner.lifecycleScope) {
+                loadMixtapes(app)
+            }
+        }
+
+        // Alphabet index on tracks panel
+        cBinding.alphabetIndexTracks.onLetterSelected = { letter ->
+            cBinding.tvLetterPreviewTracks.text = letter
+            cBinding.tvLetterPreviewTracks.visibility = View.VISIBLE
+            cBinding.tvLetterPreviewTracks.removeCallbacks(hideLetterPreviewRunnable)
+            cBinding.tvLetterPreviewTracks.postDelayed(hideLetterPreviewRunnable, 800L)
+            val lm = cBinding.rvPanoramaTracks.layoutManager as? LinearLayoutManager
+            val pos = allSongsList.indexOfFirst {
+                (it.title.firstOrNull()?.uppercaseChar() ?: ' ') >= (letter.firstOrNull()?.uppercaseChar() ?: 'A')
+            }
+            if (pos >= 0) lm?.scrollToPositionWithOffset(pos, 0)
+        }
     }
 
     private fun observeTheme(app: SpindleApp) {
@@ -753,9 +986,18 @@ class CatalogFragment : Fragment() {
         if (::searchSuggestionAdapter.isInitialized) {
             searchSuggestionAdapter.updateThemeColors(primary, secondary, accent, isEink)
         }
+        if (::tracksAdapter.isInitialized) tracksAdapter.updateThemeColors(primary, secondary, isDark, isEink)
+        if (::albumsAdapter.isInitialized) albumsAdapter.updateThemeColors(primary, secondary, isDark, isEink)
+        if (::artistsAdapter.isInitialized) artistsAdapter.updateThemeColors(primary, secondary, isDark, isEink)
+        if (::mixtapesAdapter.isInitialized) mixtapesAdapter.updateThemeColors(primary, secondary, isDark, isEink)
+        if (::foldersAdapter.isInitialized) foldersAdapter.updateThemeColors(primary, secondary)
+        if (::favoritesAdapter.isInitialized) favoritesAdapter.updateThemeColors(primary, secondary, isDark, isEink)
+        if (::composersAdapter.isInitialized) composersAdapter.updateThemeColors(primary, secondary, isDark, isEink)
+        _binding?.layoutCatalogCollectionPanorama?.alphabetIndexTracks?.updateTheme(secondary, accent)
+        _binding?.layoutCatalogCollectionPanorama?.tvCatalogParallaxTitle?.setTextColor(primary)
 
         // Update active tab buttons visual
-        selectTab(currentTab)
+        highlightCatalogTab(currentCatalogPanelIndex)
     }
 
     private fun setupSortAndGroup() {
@@ -1069,7 +1311,7 @@ class CatalogFragment : Fragment() {
 
         when (currentTab) {
             0, 5 -> {
-                var list = allSongsList
+                var list = if (currentTab == 5) allFavoritesList else allSongsList
 
                 // 1. Filter Chips
                 list = when (currentFilterChip) {
@@ -1136,10 +1378,23 @@ class CatalogFragment : Fragment() {
 
                 currentDisplayedSongs = list
                 songAdapter.submitList(list)
+                if (currentTab == 0 && ::tracksAdapter.isInitialized) {
+                    tracksAdapter.submitList(list)
+                    _binding?.layoutCatalogCollectionPanorama?.tvTracksCount?.text = "${list.size} tracks"
+                } else if (currentTab == 5 && ::favoritesAdapter.isInitialized) {
+                    favoritesAdapter.submitList(list)
+                    _binding?.layoutCatalogCollectionPanorama?.tvFavoritesCount?.text = "${list.size} starred tracks"
+                }
                 binding.tvCatalogCount.text = "${list.size} tracks"
             }
             1, 2, 3, 6 -> {
-                var list = allAlbumsList
+                var list = when (currentTab) {
+                    1 -> allAlbumsList
+                    2 -> allArtistsList
+                    3 -> allMixtapesList
+                    6 -> allComposersList
+                    else -> allAlbumsList
+                }
 
                 // 1. Search Query (FTS-style multi-token matching)
                 if (query.isNotEmpty()) {
@@ -1153,7 +1408,7 @@ class CatalogFragment : Fragment() {
                 }
 
                 // 2. Sorting
-                list = if (currentTab == 6 && query.isEmpty()) {
+                list = if (currentTab == 3 && query.isEmpty()) {
                     val smart = list.filter { it.format == "SMART_MIXTAPE" }
                     val custom = list.filter { it.format != "SMART_MIXTAPE" }
                     val sortedCustom = when (albumSortOrder) {
@@ -1180,9 +1435,27 @@ class CatalogFragment : Fragment() {
 
                 currentDisplayedAlbums = list
                 albumAdapter.submitList(list)
+                when (currentTab) {
+                    1 -> {
+                        if (::albumsAdapter.isInitialized) albumsAdapter.submitList(list)
+                        _binding?.layoutCatalogCollectionPanorama?.tvAlbumsCount?.text = "${list.size} albums"
+                    }
+                    2 -> {
+                        if (::artistsAdapter.isInitialized) artistsAdapter.submitList(list)
+                        _binding?.layoutCatalogCollectionPanorama?.tvArtistsCount?.text = "${list.size} artists"
+                    }
+                    3 -> {
+                        if (::mixtapesAdapter.isInitialized) mixtapesAdapter.submitList(list)
+                        _binding?.layoutCatalogCollectionPanorama?.tvMixtapesCount?.text = "${list.size} mixtapes"
+                    }
+                    6 -> {
+                        if (::composersAdapter.isInitialized) composersAdapter.submitList(list)
+                        _binding?.layoutCatalogCollectionPanorama?.tvComposersCount?.text = "${list.size} composers"
+                    }
+                }
                 val unitLabel = when (currentTab) {
-                    6 -> "mixtapes"
-                    3 -> "composers"
+                    3 -> "mixtapes"
+                    6 -> "composers"
                     2 -> "artists"
                     else -> "albums"
                 }
@@ -1197,8 +1470,161 @@ class CatalogFragment : Fragment() {
                     }
                 }
                 folderAdapter.submitList(list)
+                if (::foldersAdapter.isInitialized) {
+                    foldersAdapter.submitList(list)
+                    _binding?.layoutCatalogCollectionPanorama?.tvFoldersCount?.text = "${list.size} storage folders"
+                }
                 binding.tvCatalogCount.text = "${list.size} folders"
             }
+        }
+
+        updateAllPanoramaPanels(query)
+    }
+
+    private fun updateAllPanoramaPanels(query: String) {
+        val cBinding = _binding?.layoutCatalogCollectionPanorama ?: return
+        val tokens = if (query.isNotEmpty()) query.split(Regex("\\s+")).filter { it.isNotEmpty() } else emptyList()
+
+        // Panel 0: Tracks
+        if (::tracksAdapter.isInitialized) {
+            var tList = allSongsList
+            if (tokens.isNotEmpty()) {
+                tList = tList.filter { track ->
+                    tokens.all { t ->
+                        track.title.contains(t, ignoreCase = true) ||
+                        track.artist.contains(t, ignoreCase = true) ||
+                        track.album.contains(t, ignoreCase = true) ||
+                        track.composer?.contains(t, ignoreCase = true) == true
+                    }
+                }
+            }
+            tList = when (trackSortOrder) {
+                TrackSortOrder.TITLE_ASC -> tList.sortedBy { it.title.lowercase(Locale.ROOT) }
+                TrackSortOrder.TITLE_DESC -> tList.sortedByDescending { it.title.lowercase(Locale.ROOT) }
+                TrackSortOrder.ARTIST_ASC -> tList.sortedWith(compareBy({ it.artist.lowercase(Locale.ROOT) }, { it.title.lowercase(Locale.ROOT) }))
+                TrackSortOrder.ALBUM_ASC -> tList.sortedWith(compareBy({ it.album.lowercase(Locale.ROOT) }, { it.trackNumber }))
+                TrackSortOrder.TRACK_NUMBER -> tList.sortedWith(compareBy({ it.discNumber }, { it.trackNumber }))
+                TrackSortOrder.YEAR_DESC -> tList.sortedByDescending { it.year }
+                TrackSortOrder.YEAR_ASC -> tList.sortedBy { it.year }
+                TrackSortOrder.BITRATE_DESC -> tList.sortedByDescending { it.bitrateKbps }
+                TrackSortOrder.DURATION_DESC -> tList.sortedByDescending { it.durationMs }
+                TrackSortOrder.DATE_MODIFIED_DESC -> tList.sortedByDescending { it.dateModified }
+                TrackSortOrder.PLAY_COUNT_DESC -> tList.sortedByDescending { it.playCount }
+                TrackSortOrder.LAST_PLAYED_DESC -> tList.sortedByDescending { it.lastPlayedAt ?: 0L }
+            }
+            tracksAdapter.submitList(tList)
+            cBinding.tvTracksCount.text = "${tList.size} tracks"
+        }
+
+        fun filterAndSortAlbumItems(source: List<AlbumItem>): List<AlbumItem> {
+            var items = source
+            if (tokens.isNotEmpty()) {
+                items = items.filter { item ->
+                    tokens.all { t ->
+                        item.album.contains(t, ignoreCase = true) ||
+                        item.artist.contains(t, ignoreCase = true)
+                    }
+                }
+            }
+            return when (albumSortOrder) {
+                AlbumSortOrder.TITLE_ASC -> items.sortedBy { it.album.lowercase(Locale.ROOT) }
+                AlbumSortOrder.TITLE_DESC -> items.sortedByDescending { it.album.lowercase(Locale.ROOT) }
+                AlbumSortOrder.ARTIST_ASC -> items.sortedWith(compareBy({ it.artist.lowercase(Locale.ROOT) }, { it.album.lowercase(Locale.ROOT) }))
+                AlbumSortOrder.YEAR_DESC -> items.sortedByDescending { it.year }
+                AlbumSortOrder.YEAR_ASC -> items.sortedBy { it.year }
+                AlbumSortOrder.TRACK_COUNT_DESC -> items.sortedByDescending { it.trackCount }
+                AlbumSortOrder.TRACK_COUNT_ASC -> items.sortedBy { it.trackCount }
+            }
+        }
+
+        // Panel 1: Albums
+        if (::albumsAdapter.isInitialized) {
+            val aList = filterAndSortAlbumItems(allAlbumsList)
+            albumsAdapter.submitList(aList)
+            cBinding.tvAlbumsCount.text = "${aList.size} albums"
+        }
+
+        // Panel 2: Artists
+        if (::artistsAdapter.isInitialized) {
+            val artList = filterAndSortAlbumItems(allArtistsList)
+            artistsAdapter.submitList(artList)
+            cBinding.tvArtistsCount.text = "${artList.size} artists"
+        }
+
+        // Panel 3: Mixtapes
+        if (::mixtapesAdapter.isInitialized) {
+            var mList = allMixtapesList
+            if (tokens.isNotEmpty()) {
+                mList = mList.filter { item ->
+                    tokens.all { t ->
+                        item.album.contains(t, ignoreCase = true) ||
+                        item.artist.contains(t, ignoreCase = true)
+                    }
+                }
+            }
+            val smart = mList.filter { it.format == "SMART_MIXTAPE" }
+            val custom = mList.filter { it.format != "SMART_MIXTAPE" }
+            val sortedCustom = when (albumSortOrder) {
+                AlbumSortOrder.TITLE_ASC -> custom.sortedBy { it.album.lowercase(Locale.ROOT) }
+                AlbumSortOrder.TITLE_DESC -> custom.sortedByDescending { it.album.lowercase(Locale.ROOT) }
+                AlbumSortOrder.ARTIST_ASC -> custom.sortedWith(compareBy({ it.artist.lowercase(Locale.ROOT) }, { it.album.lowercase(Locale.ROOT) }))
+                AlbumSortOrder.YEAR_DESC -> custom.sortedByDescending { it.year }
+                AlbumSortOrder.YEAR_ASC -> custom.sortedBy { it.year }
+                AlbumSortOrder.TRACK_COUNT_DESC -> custom.sortedByDescending { it.trackCount }
+                AlbumSortOrder.TRACK_COUNT_ASC -> custom.sortedBy { it.trackCount }
+            }
+            val finalMList = smart + sortedCustom
+            mixtapesAdapter.submitList(finalMList)
+            cBinding.tvMixtapesCount.text = "${finalMList.size} mixtapes"
+        }
+
+        // Panel 4: Folders
+        if (::foldersAdapter.isInitialized) {
+            var fList = allFoldersList
+            if (tokens.isNotEmpty()) {
+                fList = fList.filter { folder ->
+                    tokens.all { t -> folder.name.contains(t, ignoreCase = true) }
+                }
+            }
+            foldersAdapter.submitList(fList)
+            cBinding.tvFoldersCount.text = "${fList.size} storage folders"
+        }
+
+        // Panel 5: Favorites
+        if (::favoritesAdapter.isInitialized) {
+            var favList = allFavoritesList
+            if (tokens.isNotEmpty()) {
+                favList = favList.filter { track ->
+                    tokens.all { t ->
+                        track.title.contains(t, ignoreCase = true) ||
+                        track.artist.contains(t, ignoreCase = true) ||
+                        track.album.contains(t, ignoreCase = true)
+                    }
+                }
+            }
+            favList = when (trackSortOrder) {
+                TrackSortOrder.TITLE_ASC -> favList.sortedBy { it.title.lowercase(Locale.ROOT) }
+                TrackSortOrder.TITLE_DESC -> favList.sortedByDescending { it.title.lowercase(Locale.ROOT) }
+                TrackSortOrder.ARTIST_ASC -> favList.sortedWith(compareBy({ it.artist.lowercase(Locale.ROOT) }, { it.title.lowercase(Locale.ROOT) }))
+                TrackSortOrder.ALBUM_ASC -> favList.sortedWith(compareBy({ it.album.lowercase(Locale.ROOT) }, { it.trackNumber }))
+                TrackSortOrder.TRACK_NUMBER -> favList.sortedWith(compareBy({ it.discNumber }, { it.trackNumber }))
+                TrackSortOrder.YEAR_DESC -> favList.sortedByDescending { it.year }
+                TrackSortOrder.YEAR_ASC -> favList.sortedBy { it.year }
+                TrackSortOrder.BITRATE_DESC -> favList.sortedByDescending { it.bitrateKbps }
+                TrackSortOrder.DURATION_DESC -> favList.sortedByDescending { it.durationMs }
+                TrackSortOrder.DATE_MODIFIED_DESC -> favList.sortedByDescending { it.dateModified }
+                TrackSortOrder.PLAY_COUNT_DESC -> favList.sortedByDescending { it.playCount }
+                TrackSortOrder.LAST_PLAYED_DESC -> favList.sortedByDescending { it.lastPlayedAt ?: 0L }
+            }
+            favoritesAdapter.submitList(favList)
+            cBinding.tvFavoritesCount.text = "${favList.size} starred tracks"
+        }
+
+        // Panel 6: Composers
+        if (::composersAdapter.isInitialized) {
+            val cList = filterAndSortAlbumItems(allComposersList)
+            composersAdapter.submitList(cList)
+            cBinding.tvComposersCount.text = "${cList.size} composers"
         }
     }
 
@@ -1996,31 +2422,31 @@ class CatalogFragment : Fragment() {
         // Panel 2: Explore Typographic Menu
         pBinding.menuRowTracks.setOnClickListener {
             showPanorama(false)
-            switchToTab(0)
+            scrollToCatalogPanel(0)
         }
         pBinding.menuRowAlbums.setOnClickListener {
             showPanorama(false)
-            switchToTab(1)
+            scrollToCatalogPanel(1)
         }
         pBinding.menuRowArtists.setOnClickListener {
             showPanorama(false)
-            switchToTab(2)
+            scrollToCatalogPanel(2)
         }
         pBinding.menuRowMixtapes.setOnClickListener {
             showPanorama(false)
-            switchToTab(6)
+            scrollToCatalogPanel(3)
         }
         pBinding.menuRowFolders.setOnClickListener {
             showPanorama(false)
-            switchToTab(4)
+            scrollToCatalogPanel(4)
         }
         pBinding.menuRowFavorites.setOnClickListener {
             showPanorama(false)
-            switchToTab(5)
+            scrollToCatalogPanel(5)
         }
         pBinding.menuRowComposers.setOnClickListener {
             showPanorama(false)
-            switchToTab(3)
+            scrollToCatalogPanel(6)
         }
 
         // Panel 4: Sound & Tools Shortcuts
@@ -2037,8 +2463,10 @@ class CatalogFragment : Fragment() {
 
     private fun showPanorama(show: Boolean) {
         isPanoramaVisible = show
+        val app = requireActivity().application as? SpindleApp
         if (show) {
             binding.layoutPanorama.root.visibility = View.VISIBLE
+            binding.layoutCatalogCollectionPanorama.root.visibility = View.GONE
             binding.catalogContentContainer.visibility = View.GONE
             binding.tabScrollView.visibility = View.GONE
             binding.actionBarContainer.visibility = View.GONE
@@ -2049,17 +2477,32 @@ class CatalogFragment : Fragment() {
                 binding.layoutPanorama.panoramaScrollView.scrollTo(0, 0)
                 binding.layoutPanorama.tvPanoramaParallaxTitle.translationX = 0f
             }
-            val app = requireActivity().application as SpindleApp
-            updatePanoramaData(app)
+            if (app != null) {
+                updatePanoramaData(app)
+            }
         } else {
             binding.layoutPanorama.root.visibility = View.GONE
-            binding.catalogContentContainer.visibility = View.VISIBLE
+            binding.layoutCatalogCollectionPanorama.root.visibility = View.VISIBLE
+            binding.catalogContentContainer.visibility = View.GONE
             binding.tabScrollView.visibility = View.VISIBLE
-            binding.actionBarContainer.visibility = View.VISIBLE
-            binding.tvMetroHeroTitle.visibility = View.VISIBLE
+            binding.actionBarContainer.visibility = View.GONE
+            binding.tvMetroHeroTitle.visibility = View.GONE
             binding.cardMiniPlayer.visibility = View.VISIBLE
-            binding.tvCatalogHeaderTitle.text = getString(R.string.nav_vault)
+            binding.tvCatalogHeaderTitle.text = "MUSIC HUB"
+            if (app != null) {
+                loadAllCatalogData(app)
+            }
         }
+    }
+
+    private fun loadAllCatalogData(app: SpindleApp) {
+        loadSongs(app)
+        loadAlbums(app)
+        loadArtists(app)
+        loadMixtapes(app)
+        loadFolders()
+        loadFavorites(app)
+        loadComposers(app)
     }
 
     private fun updatePanoramaData(app: SpindleApp) {
@@ -2228,6 +2671,13 @@ class CatalogFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             app.database.trackDao().getAllTracks().collectLatest { songs ->
                 allSongsList = songs
+                if (::tracksAdapter.isInitialized) {
+                    tracksAdapter.submitList(songs)
+                }
+                _binding?.layoutCatalogCollectionPanorama?.tvTracksCount?.text = "${songs.size} tracks"
+                if (allFoldersList.isEmpty()) {
+                    loadFolders()
+                }
                 applyFilterAndSort()
             }
         }
@@ -2237,6 +2687,10 @@ class CatalogFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             app.database.trackDao().getAlbums().collectLatest { albums ->
                 allAlbumsList = albums
+                if (::albumsAdapter.isInitialized) {
+                    albumsAdapter.submitList(albums)
+                }
+                _binding?.layoutCatalogCollectionPanorama?.tvAlbumsCount?.text = "${albums.size} albums"
                 applyFilterAndSort()
             }
         }
@@ -2255,7 +2709,11 @@ class CatalogFragment : Fragment() {
                         format = "DISCOGRAPHY"
                     )
                 }
-                allAlbumsList = artists
+                allArtistsList = artists
+                if (::artistsAdapter.isInitialized) {
+                    artistsAdapter.submitList(artists)
+                }
+                _binding?.layoutCatalogCollectionPanorama?.tvArtistsCount?.text = "${artists.size} artists"
                 applyFilterAndSort()
             }
         }
@@ -2276,7 +2734,11 @@ class CatalogFragment : Fragment() {
                             format = "COMPOSER"
                         )
                     }
-                allAlbumsList = composers
+                allComposersList = composers
+                if (::composersAdapter.isInitialized) {
+                    composersAdapter.submitList(composers)
+                }
+                _binding?.layoutCatalogCollectionPanorama?.tvComposersCount?.text = "${composers.size} composers"
                 applyFilterAndSort()
             }
         }
@@ -2291,6 +2753,10 @@ class CatalogFragment : Fragment() {
             )
         }
         allFoldersList = folders
+        if (::foldersAdapter.isInitialized) {
+            foldersAdapter.submitList(folders)
+        }
+        _binding?.layoutCatalogCollectionPanorama?.tvFoldersCount?.text = "${folders.size} storage folders"
         applyFilterAndSort()
     }
 
@@ -2327,7 +2793,11 @@ class CatalogFragment : Fragment() {
     private fun loadFavorites(app: SpindleApp) {
         viewLifecycleOwner.lifecycleScope.launch {
             app.database.trackDao().getFavoriteTracks().collectLatest { favTracks ->
-                allSongsList = favTracks
+                allFavoritesList = favTracks
+                if (::favoritesAdapter.isInitialized) {
+                    favoritesAdapter.submitList(favTracks)
+                }
+                _binding?.layoutCatalogCollectionPanorama?.tvFavoritesCount?.text = "${favTracks.size} starred tracks"
                 applyFilterAndSort()
             }
         }
@@ -2470,7 +2940,11 @@ class CatalogFragment : Fragment() {
 
                 smartItems + customItems
             }.collectLatest { items ->
-                allAlbumsList = items
+                allMixtapesList = items
+                if (::mixtapesAdapter.isInitialized) {
+                    mixtapesAdapter.submitList(items)
+                }
+                _binding?.layoutCatalogCollectionPanorama?.tvMixtapesCount?.text = "${items.size} mixtapes"
                 applyFilterAndSort()
             }
         }
