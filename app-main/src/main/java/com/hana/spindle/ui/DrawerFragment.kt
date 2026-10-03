@@ -207,21 +207,17 @@ class DrawerFragment : Fragment() {
         }
 
         val theme = themeManager.currentTheme.value
-        val isDark = theme.isDarkAppTheme
         val isEink = theme.id == CassetteTheme.MONOCHROME_EINK.id
-        val activeColor = ColorStateList.valueOf(if (isEink) Color.BLACK else theme.accentColor)
-        val inactiveColor = ColorStateList.valueOf(if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#202334"))
-        val activeText = Color.WHITE
-        val inactiveText = if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#2A2E45") else Color.parseColor("#FAFAF9")
+        val inactiveText = if (isEink) Color.GRAY else Color.WHITE
 
-        binding.btnTabEq.backgroundTintList = if (index == 0) activeColor else inactiveColor
-        binding.btnTabEq.setTextColor(if (index == 0) activeText else inactiveText)
-
-        binding.btnTabApps.backgroundTintList = if (index == 1) activeColor else inactiveColor
-        binding.btnTabApps.setTextColor(if (index == 1) activeText else inactiveText)
-
-        binding.btnTabSettings.backgroundTintList = if (index == 2) activeColor else inactiveColor
-        binding.btnTabSettings.setTextColor(if (index == 2) activeText else inactiveText)
+        val tabs = listOf(binding.btnTabEq, binding.btnTabApps, binding.btnTabSettings)
+        tabs.forEachIndexed { i, tv ->
+            val isActive = (i == index)
+            tv.alpha = if (isActive) 1.0f else 0.40f
+            tv.setTextColor(if (isActive) (if (isEink) Color.BLACK else theme.accentColor) else inactiveText)
+            tv.setTypeface(null, if (isActive) Typeface.BOLD else Typeface.NORMAL)
+            tv.textSize = if (isActive) 20f else 18f
+        }
     }
 
     // =========================================================================
@@ -1189,10 +1185,6 @@ class DrawerFragment : Fragment() {
 
         binding.root.setBackgroundColor(theme.chassisColor)
         binding.tvMetroHubTitle.setTextColor(primary)
-        val barBg = ColorStateList.valueOf(
-            if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#171926")
-        )
-        binding.tabBar.backgroundTintList = barBg
 
         // Search Bar adaptation
         binding.etSearchApps.setTextColor(primary)

@@ -18,69 +18,56 @@
         android:layout_marginBottom="4dp"
         android:text="hub" />
 
-    <!-- TOP 3-TAB MINIMALIST SEGMENTED BAR -->
+    <!-- TOP 3-TAB MINIMALIST ZUNE PIVOT -->
     <LinearLayout
         android:id="@+id/tabBar"
         android:layout_width="match_parent"
-        android:layout_height="40dp"
+        android:layout_height="38dp"
         android:orientation="horizontal"
-        android:background="#101114"
-        android:padding="2dp"
+        android:gravity="center_vertical"
         android:layout_marginHorizontal="16dp"
         android:layout_marginBottom="12dp">
 
-        <Button
+        <TextView
             android:id="@+id/btnTabEq"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1.15"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="20dp"
             android:text="@string/drawer_tab_sound_deck"
             android:textColor="@color/white"
-            android:textSize="12sp"
+            android:textSize="20sp"
             android:textStyle="bold"
-            android:textAllCaps="false"
-            android:fontFamily="sans-serif-medium"
-            android:backgroundTint="#E53935"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:padding="0dp"
-            app:cornerRadius="@dimen/corner_radius_metro" />
+            android:fontFamily="sans-serif-light"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackgroundBorderless" />
 
-        <Button
+        <TextView
             android:id="@+id/btnTabApps"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="0.85"
-            android:layout_marginStart="4dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="20dp"
             android:text="@string/drawer_tab_apps"
-            android:textColor="#A1A1AA"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:textAllCaps="false"
-            android:fontFamily="sans-serif-medium"
-            android:backgroundTint="#1A1C22"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:padding="0dp"
-            app:cornerRadius="@dimen/corner_radius_metro" />
+            android:textColor="@color/white"
+            android:textSize="18sp"
+            android:alpha="0.45"
+            android:fontFamily="sans-serif-light"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackgroundBorderless" />
 
-        <Button
+        <TextView
             android:id="@+id/btnTabSettings"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1.0"
-            android:layout_marginStart="4dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:text="@string/drawer_tab_settings"
-            android:textColor="#A1A1AA"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:textAllCaps="false"
-            android:fontFamily="sans-serif-medium"
-            android:backgroundTint="#1A1C22"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:padding="0dp"
-            app:cornerRadius="@dimen/corner_radius_metro" />
+            android:textColor="@color/white"
+            android:textSize="18sp"
+            android:alpha="0.45"
+            android:fontFamily="sans-serif-light"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackgroundBorderless" />
     </LinearLayout>
 
     <!-- CONTENT FRAME FOR 3 TABS -->

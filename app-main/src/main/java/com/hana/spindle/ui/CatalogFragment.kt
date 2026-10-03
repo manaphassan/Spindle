@@ -3,6 +3,7 @@ package com.hana.spindle.ui
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Color
+import android.graphics.Typeface
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -603,9 +604,12 @@ class CatalogFragment : Fragment() {
             binding.tabMixtapes
         )
 
-        tabs.forEachIndexed { i, btn ->
-            btn.backgroundTintList = ColorStateList.valueOf(if (i == index) activeBg else inactiveBg)
-            btn.setTextColor(if (i == index) activeText else inactiveText)
+        tabs.forEachIndexed { i, tv ->
+            val isActive = (i == index)
+            tv.alpha = if (isActive) 1.0f else 0.40f
+            tv.setTextColor(if (isActive) (if (isEink) Color.BLACK else Color.WHITE) else (if (isEink) Color.GRAY else Color.WHITE))
+            tv.setTypeface(null, if (isActive) Typeface.BOLD else Typeface.NORMAL)
+            tv.textSize = if (isActive) 22f else 18f
         }
 
         val isMixtapeTab = (index == 6)
@@ -712,6 +716,10 @@ class CatalogFragment : Fragment() {
         binding.btnNpRepeat.imageTintList = ColorStateList.valueOf(secondary)
         binding.btnNpShuffle.imageTintList = ColorStateList.valueOf(secondary)
         binding.btnNpQueue.imageTintList = ColorStateList.valueOf(secondary)
+        binding.tvNpLyricsLabel.setTextColor(secondary)
+        binding.tvNpRepeatLabel.setTextColor(secondary)
+        binding.tvNpShuffleLabel.setTextColor(secondary)
+        binding.tvNpQueueLabel.setTextColor(secondary)
 
         binding.circularCoverArcView.isDarkMode = isDark
         binding.circularCoverArcView.isEink = isEink
@@ -1219,6 +1227,7 @@ class CatalogFragment : Fragment() {
                         b.tvNpArtist.text = song.artist
                         b.tvNpArtistHeader.text = song.artist.lowercase(Locale.ROOT)
                         b.tvNpAlbumHeader.text = if (song.year > 0) "${song.album.uppercase(Locale.ROOT)} (${song.year})" else song.album.uppercase(Locale.ROOT)
+                        updateNowPlayingUpNextPreview()
 
                         if (song.id != currentLoadedSongId) {
                             currentLoadedSongId = song.id
@@ -1314,6 +1323,25 @@ class CatalogFragment : Fragment() {
         binding.btnNpQueue.setOnClickListener {
             QueueBottomSheet().show(childFragmentManager, "QueueBottomSheet")
         }
+        binding.layoutNpQueue.setOnClickListener { binding.btnNpQueue.performClick() }
+        binding.layoutNpRepeat.setOnClickListener { binding.btnNpRepeat.performClick() }
+        binding.layoutNpShuffle.setOnClickListener { binding.btnNpShuffle.performClick() }
+        binding.layoutNpLyrics.setOnClickListener { binding.btnNpLyrics.performClick() }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    audioEngine.currentQueueFlow.collectLatest {
+                        updateNowPlayingUpNextPreview()
+                    }
+                }
+                launch {
+                    audioEngine.currentQueueIndexFlow.collectLatest {
+                        updateNowPlayingUpNextPreview()
+                    }
+                }
+            }
+        }
 
         binding.btnNpPlayPause.setOnClickListener { audioEngine.togglePlayPause() }
         binding.btnNpPrev.setOnClickListener { audioEngine.playPrevious(forcePreviousSong = true) }
@@ -1400,9 +1428,15 @@ class CatalogFragment : Fragment() {
             isShowingNpLyrics = !isShowingNpLyrics
             binding.cardNpLyrics.visibility = if (isShowingNpLyrics) View.VISIBLE else View.GONE
             val accent = app.themeManager.currentTheme.value.accentColor
-            binding.btnNpLyrics.imageTintList = ColorStateList.valueOf(
-                if (isShowingNpLyrics) accent else Color.parseColor("#94A3B8")
-            )
+            if (isShowingNpLyrics) {
+                binding.btnNpLyrics.setBackgroundResource(R.drawable.bg_metro_circle_button_active)
+                binding.btnNpLyrics.imageTintList = ColorStateList.valueOf(accent)
+                binding.tvNpLyricsLabel.setTextColor(accent)
+            } else {
+                binding.btnNpLyrics.setBackgroundResource(R.drawable.bg_metro_circle_button)
+                binding.btnNpLyrics.imageTintList = ColorStateList.valueOf(Color.parseColor("#94A3B8"))
+                binding.tvNpLyricsLabel.setTextColor(Color.parseColor("#94A3B8"))
+            }
         }
         binding.btnNpLyrics.setOnClickListener(toggleLyrics)
         binding.cardNpLyrics.setOnClickListener(toggleLyrics)
@@ -1447,16 +1481,19 @@ class CatalogFragment : Fragment() {
         val accent = if (isEink) Color.BLACK else app.themeManager.currentTheme.value.accentColor
         when (mode) {
             ShuffleMode.OFF -> {
-                binding.btnNpShuffle.alpha = 0.4f
+                binding.btnNpShuffle.setBackgroundResource(R.drawable.bg_metro_circle_button)
                 binding.btnNpShuffle.imageTintList = ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#94A3B8"))
+                binding.tvNpShuffleLabel.setTextColor(if (isEink) Color.BLACK else Color.parseColor("#94A3B8"))
             }
             ShuffleMode.ALL -> {
-                binding.btnNpShuffle.alpha = 1.0f
+                binding.btnNpShuffle.setBackgroundResource(R.drawable.bg_metro_circle_button_active)
                 binding.btnNpShuffle.imageTintList = ColorStateList.valueOf(accent)
+                binding.tvNpShuffleLabel.setTextColor(accent)
             }
             ShuffleMode.ALBUM -> {
-                binding.btnNpShuffle.alpha = 1.0f
+                binding.btnNpShuffle.setBackgroundResource(R.drawable.bg_metro_circle_button_active)
                 binding.btnNpShuffle.imageTintList = ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#FDE68A"))
+                binding.tvNpShuffleLabel.setTextColor(if (isEink) Color.BLACK else Color.parseColor("#FDE68A"))
             }
         }
     }
@@ -1467,16 +1504,19 @@ class CatalogFragment : Fragment() {
         val accent = if (isEink) Color.BLACK else app.themeManager.currentTheme.value.accentColor
         when (mode) {
             RepeatMode.OFF -> {
-                binding.btnNpRepeat.alpha = 0.4f
+                binding.btnNpRepeat.setBackgroundResource(R.drawable.bg_metro_circle_button)
                 binding.btnNpRepeat.imageTintList = ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#94A3B8"))
+                binding.tvNpRepeatLabel.setTextColor(if (isEink) Color.BLACK else Color.parseColor("#94A3B8"))
             }
             RepeatMode.ALL -> {
-                binding.btnNpRepeat.alpha = 1.0f
+                binding.btnNpRepeat.setBackgroundResource(R.drawable.bg_metro_circle_button_active)
                 binding.btnNpRepeat.imageTintList = ColorStateList.valueOf(accent)
+                binding.tvNpRepeatLabel.setTextColor(accent)
             }
             RepeatMode.ONE -> {
-                binding.btnNpRepeat.alpha = 1.0f
+                binding.btnNpRepeat.setBackgroundResource(R.drawable.bg_metro_circle_button_active)
                 binding.btnNpRepeat.imageTintList = ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#FB7185"))
+                binding.tvNpRepeatLabel.setTextColor(if (isEink) Color.BLACK else Color.parseColor("#FB7185"))
             }
         }
     }
@@ -1515,6 +1555,7 @@ class CatalogFragment : Fragment() {
                 binding.tvNpArtistHeader.text = track.artist.lowercase(Locale.ROOT)
                 binding.tvNpAlbumHeader.text = if (track.year > 0) "${track.album.uppercase(Locale.ROOT)} (${track.year})" else track.album.uppercase(Locale.ROOT)
             }
+            updateNowPlayingUpNextPreview()
             binding.circularCoverArcView.isPlaying = playback.isPlaying
             binding.circularCoverArcView.progress = playback.progress
             binding.nowPlayingSingleContainer.visibility = View.VISIBLE
@@ -1536,9 +1577,42 @@ class CatalogFragment : Fragment() {
                     binding.nowPlayingSingleContainer.visibility = View.GONE
                     binding.cardNpLyrics.visibility = View.GONE
                     isShowingNpLyrics = false
+                    binding.btnNpLyrics.setBackgroundResource(R.drawable.bg_metro_circle_button)
                     binding.btnNpLyrics.imageTintList = ColorStateList.valueOf(Color.parseColor("#94A3B8"))
+                    binding.tvNpLyricsLabel.setTextColor(Color.parseColor("#94A3B8"))
                 }.start()
         }
+    }
+
+    private fun updateNowPlayingUpNextPreview() {
+        val b = _binding ?: return
+        val queue = audioEngine.currentQueueFlow.value
+        val currentIndex = audioEngine.currentQueueIndexFlow.value
+        if (queue.isEmpty() || currentIndex < 0 || currentIndex >= queue.size) {
+            b.layoutNpUpNext.visibility = View.GONE
+            return
+        }
+
+        val upNextViews = listOf(b.tvNpNextTrack1, b.tvNpNextTrack2, b.tvNpNextTrack3)
+        var visibleCount = 0
+
+        for (i in 0 until 3) {
+            val nextIdx = currentIndex + 1 + i
+            val tv = upNextViews[i]
+            if (nextIdx < queue.size) {
+                val nextTrack = queue[nextIdx]
+                val trackNumStr = if (nextTrack.trackNumber > 0) String.format(Locale.US, "%02d ", nextTrack.trackNumber) else ""
+                tv.text = "$trackNumStr${nextTrack.title}"
+                tv.visibility = View.VISIBLE
+                tv.setOnClickListener {
+                    audioEngine.playQueueIndex(nextIdx)
+                }
+                visibleCount++
+            } else {
+                tv.visibility = View.GONE
+            }
+        }
+        b.layoutNpUpNext.visibility = if (visibleCount > 0) View.VISIBLE else View.GONE
     }
 
     fun showAlbumDetail(album: AlbumItem, songs: List<TrackEntity>) {

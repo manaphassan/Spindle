@@ -26,13 +26,13 @@
     <string name="nav_vault">VAULT</string>
     <string name="tab_vault">Vault</string>
     <string name="hint_search_vault">Search vault…</string>
-    <string name="tab_tracks">Tracks</string>
-    <string name="tab_albums">Albums</string>
-    <string name="tab_artists">Artists</string>
-    <string name="tab_folders">Folders</string>
-    <string name="tab_mixtapes">Mixtapes</string>
-    <string name="tab_favorites">Favorites</string>
-    <string name="tab_composers">Composers</string>
+    <string name="tab_tracks">tracks</string>
+    <string name="tab_albums">albums</string>
+    <string name="tab_artists">artists</string>
+    <string name="tab_folders">folders</string>
+    <string name="tab_mixtapes">mixtapes</string>
+    <string name="tab_favorites">favorites</string>
+    <string name="tab_composers">composers</string>
 
     <!-- Backward Compatibility Aliases -->
     <string name="tab_songs">Tracks</string>
