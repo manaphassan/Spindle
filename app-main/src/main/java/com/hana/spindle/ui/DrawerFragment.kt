@@ -1188,6 +1188,7 @@ class DrawerFragment : Fragment() {
         val cardBg = if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#FAFAF9") else Color.parseColor("#171926")
 
         binding.root.setBackgroundColor(theme.chassisColor)
+        binding.tvMetroHubTitle.setTextColor(primary)
         val barBg = ColorStateList.valueOf(
             if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#171926")
         )

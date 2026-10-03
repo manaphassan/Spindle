@@ -115,12 +115,22 @@
             android:maxHeight="200dp"
             android:visibility="gone" />
 
-        <!-- Minimalist 5-Tab Core Navigation -->
+        <!-- Oversized Zune Kinetic Typography Header -->
+        <TextView
+            android:id="@+id/tvMetroHeroTitle"
+            style="@style/TextAppearance.Spindle.Metro.Hero"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="14dp"
+            android:layout_marginTop="2dp"
+            android:text="music" />
+
+        <!-- Minimalist Zune Pivot Core Navigation -->
         <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:scrollbars="none"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="4dp"
             android:paddingHorizontal="10dp">
 
             <LinearLayout
@@ -133,106 +143,113 @@
                     android:id="@+id/tabSongs"
                     android:layout_width="wrap_content"
                     android:layout_height="32dp"
-                    android:layout_marginHorizontal="3dp"
+                    android:layout_marginHorizontal="2dp"
                     android:text="@string/tab_tracks"
-                    android:textSize="11sp"
+                    android:textSize="12sp"
                     android:textStyle="bold"
+                    android:textAllCaps="false"
                     android:textColor="@color/white"
                     android:backgroundTint="@color/metal81_red"
-                    android:paddingHorizontal="14dp"
+                    android:paddingHorizontal="12dp"
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
-                    app:cornerRadius="16dp" />
+                    app:cornerRadius="@dimen/corner_radius_metro" />
 
                 <Button
                     android:id="@+id/tabAlbums"
                     android:layout_width="wrap_content"
                     android:layout_height="32dp"
-                    android:layout_marginHorizontal="3dp"
+                    android:layout_marginHorizontal="2dp"
                     android:text="@string/tab_albums"
-                    android:textSize="11sp"
+                    android:textSize="12sp"
                     android:textStyle="bold"
+                    android:textAllCaps="false"
                     android:textColor="@color/text_secondary"
                     android:backgroundTint="#212228"
-                    android:paddingHorizontal="14dp"
+                    android:paddingHorizontal="12dp"
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
-                    app:cornerRadius="16dp" />
+                    app:cornerRadius="@dimen/corner_radius_metro" />
 
                 <Button
                     android:id="@+id/tabArtists"
                     android:layout_width="wrap_content"
                     android:layout_height="32dp"
-                    android:layout_marginHorizontal="3dp"
+                    android:layout_marginHorizontal="2dp"
                     android:text="@string/tab_artists"
-                    android:textSize="11sp"
+                    android:textSize="12sp"
                     android:textStyle="bold"
+                    android:textAllCaps="false"
                     android:textColor="@color/text_secondary"
                     android:backgroundTint="#212228"
-                    android:paddingHorizontal="14dp"
+                    android:paddingHorizontal="12dp"
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
-                    app:cornerRadius="16dp" />
+                    app:cornerRadius="@dimen/corner_radius_metro" />
 
                 <Button
                     android:id="@+id/tabComposers"
                     android:layout_width="wrap_content"
                     android:layout_height="32dp"
-                    android:layout_marginHorizontal="3dp"
+                    android:layout_marginHorizontal="2dp"
                     android:text="@string/tab_composers"
-                    android:textSize="11sp"
+                    android:textSize="12sp"
                     android:textStyle="bold"
+                    android:textAllCaps="false"
                     android:textColor="@color/text_secondary"
                     android:backgroundTint="#212228"
-                    android:paddingHorizontal="14dp"
+                    android:paddingHorizontal="12dp"
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
-                    app:cornerRadius="16dp" />
+                    app:cornerRadius="@dimen/corner_radius_metro" />
 
                 <Button
                     android:id="@+id/tabFolders"
                     android:layout_width="wrap_content"
                     android:layout_height="32dp"
-                    android:layout_marginHorizontal="3dp"
+                    android:layout_marginHorizontal="2dp"
                     android:text="@string/tab_folders"
-                    android:textSize="11sp"
+                    android:textSize="12sp"
                     android:textStyle="bold"
+                    android:textAllCaps="false"
                     android:textColor="@color/text_secondary"
                     android:backgroundTint="#212228"
-                    android:paddingHorizontal="14dp"
+                    android:paddingHorizontal="12dp"
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
-                    app:cornerRadius="16dp" />
+                    app:cornerRadius="@dimen/corner_radius_metro" />
 
                 <Button
                     android:id="@+id/tabFavorites"
                     android:layout_width="wrap_content"
                     android:layout_height="32dp"
-                    android:layout_marginHorizontal="3dp"
+                    android:layout_marginHorizontal="2dp"
                     android:text="@string/tab_favorites"
-                    android:textSize="11sp"
+                    android:textSize="12sp"
                     android:textStyle="bold"
+                    android:textAllCaps="false"
                     android:textColor="@color/text_secondary"
                     android:backgroundTint="#212228"
-                    android:paddingHorizontal="14dp"
+                    android:paddingHorizontal="12dp"
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
-                    app:cornerRadius="16dp" />
+                    app:cornerRadius="@dimen/corner_radius_metro" />
 
                 <Button
                     android:id="@+id/tabMixtapes"
                     android:layout_width="wrap_content"
                     android:layout_height="32dp"
-                    android:layout_marginHorizontal="3dp"
+                    android:layout_marginHorizontal="2dp"
                     android:text="@string/tab_mixtapes"
-                    android:textSize="11sp"
+                    android:textSize="12sp"
                     android:textStyle="bold"
+                    android:textAllCaps="false"
                     android:textColor="@color/text_secondary"
                     android:backgroundTint="#212228"
-                    android:paddingHorizontal="14dp"
+                    android:paddingHorizontal="12dp"
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
-                    app:cornerRadius="16dp" />
+                    app:cornerRadius="@dimen/corner_radius_metro" />
 
             </LinearLayout>
         </HorizontalScrollView>
@@ -395,9 +412,9 @@
         android:layout_alignParentBottom="true"
         android:layout_marginHorizontal="10dp"
         android:layout_marginBottom="10dp"
-        app:cardCornerRadius="14dp"
-        app:cardElevation="6dp"
-        app:cardBackgroundColor="#1A1B20">
+        app:cardCornerRadius="@dimen/corner_radius_metro"
+        app:cardElevation="4dp"
+        app:cardBackgroundColor="@color/surface_card">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -785,6 +802,37 @@
                 android:src="@drawable/ic_np_more"
                 app:tint="@color/text_primary"
                 android:contentDescription="Options" />
+        </LinearLayout>
+
+        <!-- Zune Metro Typographic Artist & Album Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="2dp"
+            android:layout_marginBottom="4dp">
+
+            <TextView
+                android:id="@+id/tvNpArtistHeader"
+                style="@style/TextAppearance.Spindle.Metro.Artist"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:singleLine="true"
+                android:ellipsize="marquee"
+                android:marqueeRepeatLimit="marquee_forever"
+                tools:text="daft punk" />
+
+            <TextView
+                android:id="@+id/tvNpAlbumHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/brand_orange"
+                android:textSize="11sp"
+                android:fontFamily="monospace"
+                android:textStyle="bold"
+                android:singleLine="true"
+                android:ellipsize="end"
+                tools:text="RANDOM ACCESS MEMORIES (2013)" />
         </LinearLayout>
 
         <!-- Center Stage: Hero Circular Vinyl Disc Artwork & Synced Lyrics Drawer -->

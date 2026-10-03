@@ -33,4 +33,13 @@
     <dimen name="text_size_title">16sp</dimen>
     <dimen name="text_size_header">18sp</dimen>
     <dimen name="text_size_headline">24sp</dimen>
+
+    <!-- Zune Metro Design Scale Tokens -->
+    <dimen name="text_size_metro_hero">42sp</dimen>
+    <dimen name="text_size_metro_artist">28sp</dimen>
+    <dimen name="text_size_metro_pivot">16sp</dimen>
+    <dimen name="text_size_metro_section">11sp</dimen>
+    <dimen name="corner_radius_metro">8dp</dimen>
+    <dimen name="corner_radius_metro_tile">6dp</dimen>
+    <dimen name="metro_tile_min_height">96dp</dimen>
 </resources>

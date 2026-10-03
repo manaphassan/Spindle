@@ -52,6 +52,7 @@ class QueueBottomSheet : BottomSheetDialogFragment() {
         val theme = app.themeManager.currentTheme.value
         val isEink = (theme.id == CassetteTheme.MONOCHROME_EINK.id)
         val isDark = theme.isDarkAppTheme
+        binding.tvMetroQueueTitle.setTextColor(theme.textPrimaryColor)
         if (isEink) {
             binding.root.setBackgroundColor(Color.WHITE)
             binding.tvQueueSummary.setTextColor(Color.BLACK)

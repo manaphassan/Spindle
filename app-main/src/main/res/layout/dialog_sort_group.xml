@@ -37,7 +37,7 @@
             android:paddingHorizontal="14dp"
             android:insetTop="0dp"
             android:insetBottom="0dp"
-            app:cornerRadius="16dp" />
+            app:cornerRadius="@dimen/corner_radius_metro" />
     </LinearLayout>
 
     <View

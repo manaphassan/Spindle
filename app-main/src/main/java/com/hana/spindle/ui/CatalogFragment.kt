@@ -636,6 +636,7 @@ class CatalogFragment : Fragment() {
         binding.root.setBackgroundColor(theme.chassisColor)
         binding.catalogHeaderContainer.setBackgroundColor(if (isEink) Color.WHITE else theme.surfaceColor)
         binding.tvCatalogHeaderTitle.setTextColor(primary)
+        binding.tvMetroHeroTitle.setTextColor(primary)
         binding.btnBackToPlayer.imageTintList = ColorStateList.valueOf(primary)
         binding.tvScanStatus.setTextColor(if (isEink) Color.BLACK else ContextCompat.getColor(requireContext(), R.color.vfd_emerald))
 
@@ -699,6 +700,8 @@ class CatalogFragment : Fragment() {
         binding.btnNpMenu.imageTintList = ColorStateList.valueOf(primary)
         binding.tvNpTitle.setTextColor(primary)
         binding.tvNpArtist.setTextColor(secondary)
+        binding.tvNpArtistHeader.setTextColor(primary)
+        binding.tvNpAlbumHeader.setTextColor(if (isEink) primary else ContextCompat.getColor(requireContext(), R.color.brand_orange))
         binding.tvNpCurrentTime.setTextColor(primary)
         binding.tvNpTotalDuration.setTextColor(secondary)
         binding.btnNpPrev.imageTintList = ColorStateList.valueOf(primary)
@@ -1214,6 +1217,8 @@ class CatalogFragment : Fragment() {
                         // Update Now Playing Single Audio metadata
                         b.tvNpTitle.text = song.title
                         b.tvNpArtist.text = song.artist
+                        b.tvNpArtistHeader.text = song.artist.lowercase(Locale.ROOT)
+                        b.tvNpAlbumHeader.text = if (song.year > 0) "${song.album.uppercase(Locale.ROOT)} (${song.year})" else song.album.uppercase(Locale.ROOT)
 
                         if (song.id != currentLoadedSongId) {
                             currentLoadedSongId = song.id
@@ -1503,6 +1508,13 @@ class CatalogFragment : Fragment() {
         isNowPlayingSingleVisible = show
         if (show) {
             val playback = audioEngine.playbackState.value
+            val track = playback.currentTrack
+            if (track != null) {
+                binding.tvNpTitle.text = track.title
+                binding.tvNpArtist.text = track.artist
+                binding.tvNpArtistHeader.text = track.artist.lowercase(Locale.ROOT)
+                binding.tvNpAlbumHeader.text = if (track.year > 0) "${track.album.uppercase(Locale.ROOT)} (${track.year})" else track.album.uppercase(Locale.ROOT)
+            }
             binding.circularCoverArcView.isPlaying = playback.isPlaying
             binding.circularCoverArcView.progress = playback.progress
             binding.nowPlayingSingleContainer.visibility = View.VISIBLE

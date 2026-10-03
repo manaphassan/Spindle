@@ -18,6 +18,16 @@
         android:background="@color/divider"
         android:layout_marginBottom="14dp" />
 
+    <!-- Metro Kinetic Title -->
+    <TextView
+        android:id="@+id/tvMetroQueueTitle"
+        style="@style/TextAppearance.Spindle.Metro.Hero"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginBottom="4dp"
+        android:text="queue" />
+
     <!-- Header Row: Title, Meta Info, and Clear Upcoming Button -->
     <LinearLayout
         android:layout_width="match_parent"
@@ -66,7 +76,7 @@
             android:paddingHorizontal="10dp"
             android:paddingVertical="0dp"
             android:layout_marginEnd="6dp"
-            app:cornerRadius="6dp" />
+            app:cornerRadius="@dimen/corner_radius_metro" />
 
         <Button
             android:id="@+id/btnClearUpcoming"
@@ -81,7 +91,7 @@
             android:insetBottom="0dp"
             android:paddingHorizontal="10dp"
             android:paddingVertical="0dp"
-            app:cornerRadius="6dp" />
+            app:cornerRadius="@dimen/corner_radius_metro" />
     </LinearLayout>
 
     <View

@@ -8,14 +8,24 @@
     android:background="@color/surface_dark"
     android:paddingTop="8dp">
 
+    <!-- Oversized Zune Kinetic Typography Header -->
+    <TextView
+        android:id="@+id/tvMetroHubTitle"
+        style="@style/TextAppearance.Spindle.Metro.Hero"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginBottom="4dp"
+        android:text="hub" />
+
     <!-- TOP 3-TAB MINIMALIST SEGMENTED BAR -->
     <LinearLayout
         android:id="@+id/tabBar"
         android:layout_width="match_parent"
-        android:layout_height="42dp"
+        android:layout_height="40dp"
         android:orientation="horizontal"
         android:background="#101114"
-        android:padding="3dp"
+        android:padding="2dp"
         android:layout_marginHorizontal="16dp"
         android:layout_marginBottom="12dp">
 
@@ -26,14 +36,15 @@
             android:layout_weight="1.15"
             android:text="@string/drawer_tab_sound_deck"
             android:textColor="@color/white"
-            android:textSize="11sp"
+            android:textSize="12sp"
             android:textStyle="bold"
+            android:textAllCaps="false"
             android:fontFamily="sans-serif-medium"
             android:backgroundTint="#E53935"
             android:insetTop="0dp"
             android:insetBottom="0dp"
             android:padding="0dp"
-            app:cornerRadius="6dp" />
+            app:cornerRadius="@dimen/corner_radius_metro" />
 
         <Button
             android:id="@+id/btnTabApps"
@@ -43,14 +54,15 @@
             android:layout_marginStart="4dp"
             android:text="@string/drawer_tab_apps"
             android:textColor="#A1A1AA"
-            android:textSize="11sp"
+            android:textSize="12sp"
             android:textStyle="bold"
+            android:textAllCaps="false"
             android:fontFamily="sans-serif-medium"
             android:backgroundTint="#1A1C22"
             android:insetTop="0dp"
             android:insetBottom="0dp"
             android:padding="0dp"
-            app:cornerRadius="6dp" />
+            app:cornerRadius="@dimen/corner_radius_metro" />
 
         <Button
             android:id="@+id/btnTabSettings"
@@ -60,14 +72,15 @@
             android:layout_marginStart="4dp"
             android:text="@string/drawer_tab_settings"
             android:textColor="#A1A1AA"
-            android:textSize="11sp"
+            android:textSize="12sp"
             android:textStyle="bold"
+            android:textAllCaps="false"
             android:fontFamily="sans-serif-medium"
             android:backgroundTint="#1A1C22"
             android:insetTop="0dp"
             android:insetBottom="0dp"
             android:padding="0dp"
-            app:cornerRadius="6dp" />
+            app:cornerRadius="@dimen/corner_radius_metro" />
     </LinearLayout>
 
     <!-- CONTENT FRAME FOR 3 TABS -->

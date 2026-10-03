@@ -25,13 +25,13 @@
         android:visibility="gone"
         tools:text="01" />
 
-    <!-- Circular Disc Button Album Art Cover -->
+    <!-- Metro Square Album Art Cover -->
     <androidx.cardview.widget.CardView
         android:id="@+id/cardSongThumb"
         android:layout_width="46dp"
         android:layout_height="46dp"
-        app:cardCornerRadius="23dp"
-        app:cardElevation="2dp"
+        app:cardCornerRadius="@dimen/corner_radius_metro_tile"
+        app:cardElevation="1dp"
         app:cardBackgroundColor="@color/surface_card">
 
         <ImageView
