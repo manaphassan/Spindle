@@ -1,0 +1,781 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/transparent"
+    android:clipChildren="false"
+    android:focusable="true"
+    android:focusableInTouchMode="true"
+    android:descendantFocusability="beforeDescendants">
+
+    <!-- Horizontal Continuous Panorama Viewport -->
+    <HorizontalScrollView
+        android:id="@+id/panoramaScrollView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scrollbars="none"
+        android:fillViewport="true"
+        android:overScrollMode="never"
+        android:clipToPadding="false"
+        android:focusable="false"
+        android:focusableInTouchMode="false">
+
+        <LinearLayout
+            android:id="@+id/panoramaCanvas"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:paddingTop="74dp"
+            android:paddingBottom="12dp">
+
+            <!-- ============================================== -->
+            <!-- PANEL 1: NOW PLAYING & QUEUE PEEK              -->
+            <!-- ============================================== -->
+            <LinearLayout
+                android:id="@+id/panelNowPlaying"
+                android:layout_width="300dp"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:paddingStart="16dp"
+                android:paddingEnd="12dp">
+
+                <TextView
+                    android:id="@+id/tvHeaderNowPlaying"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="now playing"
+                    android:textColor="@color/white"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-light"
+                    android:layout_marginBottom="12dp" />
+
+                <!-- Now Playing Card -->
+                <LinearLayout
+                    android:id="@+id/cardPanoramaNowPlaying"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="#161822"
+                    android:padding="12dp"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="140dp"
+                        android:background="#0F1018"
+                        android:layout_marginBottom="10dp">
+
+                        <ImageView
+                            android:id="@+id/ivPanoramaArt"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:scaleType="centerCrop"
+                            android:contentDescription="Album Art" />
+
+                        <!-- Center Vinyl Disc Visualizer Effect -->
+                        <View
+                            android:layout_width="100dp"
+                            android:layout_height="100dp"
+                            android:layout_gravity="center"
+                            android:background="@drawable/bg_circle_play"
+                            android:backgroundTint="#80000000" />
+
+                        <ImageView
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_np_play"
+                            app:tint="@color/brand_orange"
+                            android:contentDescription="Vinyl Center" />
+                    </FrameLayout>
+
+                    <TextView
+                        android:id="@+id/tvPanoramaNpTitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        tools:text="Track Title"
+                        android:textColor="@color/text_primary"
+                        android:textSize="17sp"
+                        android:textStyle="bold"
+                        android:singleLine="true"
+                        android:ellipsize="marquee" />
+
+                    <TextView
+                        android:id="@+id/tvPanoramaNpArtist"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        tools:text="Artist Name • Album"
+                        android:textColor="@color/brand_orange"
+                        android:textSize="12sp"
+                        android:singleLine="true"
+                        android:ellipsize="end" />
+                </LinearLayout>
+
+                <!-- Up Next Queue Stack -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:layout_marginBottom="4dp"
+                    android:text="UP NEXT"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:fontFamily="monospace"
+                    android:letterSpacing="0.08" />
+
+                <LinearLayout
+                    android:id="@+id/layoutPanoramaUpNext"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvPanoramaNext1"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingVertical="3dp"
+                        android:textColor="@color/text_secondary"
+                        android:alpha="0.75"
+                        android:textSize="13sp"
+                        android:singleLine="true"
+                        android:ellipsize="end"
+                        tools:text="1-08 Laying Plans" />
+
+                    <TextView
+                        android:id="@+id/tvPanoramaNext2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingVertical="3dp"
+                        android:textColor="@color/text_secondary"
+                        android:alpha="0.50"
+                        android:textSize="13sp"
+                        android:singleLine="true"
+                        android:ellipsize="end"
+                        tools:text="1-09 1/2のしあわせ" />
+
+                    <TextView
+                        android:id="@+id/tvPanoramaNext3"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingVertical="3dp"
+                        android:textColor="@color/text_secondary"
+                        android:alpha="0.35"
+                        android:textSize="13sp"
+                        android:singleLine="true"
+                        android:ellipsize="end"
+                        tools:text="1-10 The Nine Situations" />
+                </LinearLayout>
+
+                <!-- Quick Action Buttons -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="14dp">
+
+                    <ImageButton
+                        android:id="@+id/btnPanoramaPlayPause"
+                        android:layout_width="38dp"
+                        android:layout_height="38dp"
+                        android:background="@drawable/bg_metro_circle_button"
+                        android:src="@drawable/ic_np_play"
+                        android:padding="8dp"
+                        android:scaleType="fitCenter"
+                        app:tint="@color/text_primary"
+                        android:contentDescription="Play/Pause" />
+
+                    <ImageButton
+                        android:id="@+id/btnPanoramaQueue"
+                        android:layout_width="38dp"
+                        android:layout_height="38dp"
+                        android:layout_marginStart="14dp"
+                        android:background="@drawable/bg_metro_circle_button"
+                        android:src="@drawable/ic_np_queue"
+                        android:padding="8dp"
+                        android:scaleType="fitCenter"
+                        app:tint="@color/text_primary"
+                        android:contentDescription="Open Queue" />
+
+                    <ImageButton
+                        android:id="@+id/btnPanoramaExpandPlayer"
+                        android:layout_width="38dp"
+                        android:layout_height="38dp"
+                        android:layout_marginStart="14dp"
+                        android:background="@drawable/bg_metro_circle_button"
+                        android:src="@drawable/ic_np_lyrics"
+                        android:padding="8dp"
+                        android:scaleType="fitCenter"
+                        app:tint="@color/text_primary"
+                        android:contentDescription="Full Player" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- ============================================== -->
+            <!-- PANEL 2: EXPLORE / LIBRARY MENU                -->
+            <!-- ============================================== -->
+            <LinearLayout
+                android:id="@+id/panelExplore"
+                android:layout_width="300dp"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:paddingStart="16dp"
+                android:paddingEnd="12dp">
+
+                <TextView
+                    android:id="@+id/tvHeaderExplore"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="explore"
+                    android:textColor="@color/white"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-light"
+                    android:layout_marginBottom="12dp" />
+
+                <!-- Typographic Navigation Items -->
+                <LinearLayout
+                    android:id="@+id/menuRowTracks"
+                    android:layout_width="match_parent"
+                    android:layout_height="46dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackground">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="tracks"
+                        android:textColor="@color/white"
+                        android:textSize="20sp"
+                        android:fontFamily="sans-serif-light" />
+
+                    <TextView
+                        android:id="@+id/tvMenuTracksCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        tools:text="2,237"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:fontFamily="monospace" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/menuRowAlbums"
+                    android:layout_width="match_parent"
+                    android:layout_height="46dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackground">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="albums"
+                        android:textColor="@color/white"
+                        android:textSize="20sp"
+                        android:fontFamily="sans-serif-light" />
+
+                    <TextView
+                        android:id="@+id/tvMenuAlbumsCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        tools:text="184"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:fontFamily="monospace" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/menuRowArtists"
+                    android:layout_width="match_parent"
+                    android:layout_height="46dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackground">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="artists"
+                        android:textColor="@color/white"
+                        android:textSize="20sp"
+                        android:fontFamily="sans-serif-light" />
+
+                    <TextView
+                        android:id="@+id/tvMenuArtistsCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        tools:text="92"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:fontFamily="monospace" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/menuRowMixtapes"
+                    android:layout_width="match_parent"
+                    android:layout_height="46dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackground">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="cassette mixtapes"
+                        android:textColor="@color/white"
+                        android:textSize="20sp"
+                        android:fontFamily="sans-serif-light" />
+
+                    <TextView
+                        android:id="@+id/tvMenuMixtapesCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        tools:text="12"
+                        android:textColor="@color/vfd_amber"
+                        android:textSize="12sp"
+                        android:fontFamily="monospace" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/menuRowFolders"
+                    android:layout_width="match_parent"
+                    android:layout_height="46dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackground">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="folders &amp; sd card"
+                        android:textColor="@color/white"
+                        android:textSize="20sp"
+                        android:fontFamily="sans-serif-light" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="DAP"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="11sp"
+                        android:fontFamily="monospace" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/menuRowFavorites"
+                    android:layout_width="match_parent"
+                    android:layout_height="46dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackground">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="favorites"
+                        android:textColor="@color/white"
+                        android:textSize="20sp"
+                        android:fontFamily="sans-serif-light" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="★"
+                        android:textColor="@color/brand_pink"
+                        android:textSize="14sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/menuRowComposers"
+                    android:layout_width="match_parent"
+                    android:layout_height="46dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackground">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="composers"
+                        android:textColor="@color/white"
+                        android:textSize="20sp"
+                        android:fontFamily="sans-serif-light" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- ============================================== -->
+            <!-- PANEL 3: RECENT & NEW TILES                    -->
+            <!-- ============================================== -->
+            <LinearLayout
+                android:id="@+id/panelRecent"
+                android:layout_width="300dp"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:paddingStart="16dp"
+                android:paddingEnd="12dp">
+
+                <TextView
+                    android:id="@+id/tvHeaderRecent"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="recent &amp; new"
+                    android:textColor="@color/white"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-light"
+                    android:layout_marginBottom="12dp" />
+
+                <!-- 2x2 Metro Grid of Album Art Tiles -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <!-- Tile 1 -->
+                    <LinearLayout
+                        android:id="@+id/tileRecent1"
+                        android:layout_width="0dp"
+                        android:layout_height="136dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:background="#161822"
+                        android:padding="8dp"
+                        android:layout_marginEnd="6dp"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <ImageView
+                            android:id="@+id/ivTileArt1"
+                            android:layout_width="match_parent"
+                            android:layout_height="80dp"
+                            android:scaleType="centerCrop"
+                            android:background="#202334"
+                            android:contentDescription="Tile 1" />
+
+                        <TextView
+                            android:id="@+id/tvTileTitle1"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            tools:text="Album Title"
+                            android:textColor="@color/white"
+                            android:textSize="12sp"
+                            android:textStyle="bold"
+                            android:singleLine="true"
+                            android:ellipsize="end" />
+
+                        <TextView
+                            android:id="@+id/tvTileArtist1"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            tools:text="Artist"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="10sp"
+                            android:singleLine="true"
+                            android:ellipsize="end" />
+                    </LinearLayout>
+
+                    <!-- Tile 2 -->
+                    <LinearLayout
+                        android:id="@+id/tileRecent2"
+                        android:layout_width="0dp"
+                        android:layout_height="136dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:background="#161822"
+                        android:padding="8dp"
+                        android:layout_marginStart="6dp"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <ImageView
+                            android:id="@+id/ivTileArt2"
+                            android:layout_width="match_parent"
+                            android:layout_height="80dp"
+                            android:scaleType="centerCrop"
+                            android:background="#202334"
+                            android:contentDescription="Tile 2" />
+
+                        <TextView
+                            android:id="@+id/tvTileTitle2"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            tools:text="Album Title"
+                            android:textColor="@color/white"
+                            android:textSize="12sp"
+                            android:textStyle="bold"
+                            android:singleLine="true"
+                            android:ellipsize="end" />
+
+                        <TextView
+                            android:id="@+id/tvTileArtist2"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            tools:text="Artist"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="10sp"
+                            android:singleLine="true"
+                            android:ellipsize="end" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="10dp">
+
+                    <!-- Tile 3 -->
+                    <LinearLayout
+                        android:id="@+id/tileRecent3"
+                        android:layout_width="0dp"
+                        android:layout_height="136dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:background="#161822"
+                        android:padding="8dp"
+                        android:layout_marginEnd="6dp"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <ImageView
+                            android:id="@+id/ivTileArt3"
+                            android:layout_width="match_parent"
+                            android:layout_height="80dp"
+                            android:scaleType="centerCrop"
+                            android:background="#202334"
+                            android:contentDescription="Tile 3" />
+
+                        <TextView
+                            android:id="@+id/tvTileTitle3"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            tools:text="Album Title"
+                            android:textColor="@color/white"
+                            android:textSize="12sp"
+                            android:textStyle="bold"
+                            android:singleLine="true"
+                            android:ellipsize="end" />
+
+                        <TextView
+                            android:id="@+id/tvTileArtist3"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            tools:text="Artist"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="10sp"
+                            android:singleLine="true"
+                            android:ellipsize="end" />
+                    </LinearLayout>
+
+                    <!-- Tile 4 -->
+                    <LinearLayout
+                        android:id="@+id/tileRecent4"
+                        android:layout_width="0dp"
+                        android:layout_height="136dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:background="#161822"
+                        android:padding="8dp"
+                        android:layout_marginStart="6dp"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <ImageView
+                            android:id="@+id/ivTileArt4"
+                            android:layout_width="match_parent"
+                            android:layout_height="80dp"
+                            android:scaleType="centerCrop"
+                            android:background="#202334"
+                            android:contentDescription="Tile 4" />
+
+                        <TextView
+                            android:id="@+id/tvTileTitle4"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            tools:text="Album Title"
+                            android:textColor="@color/white"
+                            android:textSize="12sp"
+                            android:textStyle="bold"
+                            android:singleLine="true"
+                            android:ellipsize="end" />
+
+                        <TextView
+                            android:id="@+id/tvTileArtist4"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            tools:text="Artist"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="10sp"
+                            android:singleLine="true"
+                            android:ellipsize="end" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- ============================================== -->
+            <!-- PANEL 4: SOUND DECK & TOOLS                   -->
+            <!-- ============================================== -->
+            <LinearLayout
+                android:id="@+id/panelTools"
+                android:layout_width="300dp"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp">
+
+                <TextView
+                    android:id="@+id/tvHeaderTools"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="sound &amp; tools"
+                    android:textColor="@color/white"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-light"
+                    android:layout_marginBottom="12dp" />
+
+                <!-- Card 1: 10-Band EQ & Sound Deck -->
+                <LinearLayout
+                    android:id="@+id/cardToolSoundDeck"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="#161822"
+                    android:padding="14dp"
+                    android:layout_marginBottom="10dp"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="10-Band Parametric EQ"
+                        android:textColor="@color/brand_orange"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="3dp"
+                        android:text="DSP acoustic calibration, bass boost, and studio master curves."
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:lineSpacingMultiplier="1.2" />
+                </LinearLayout>
+
+                <!-- Card 2: Bauhaus FM Radio -->
+                <LinearLayout
+                    android:id="@+id/cardToolRadio"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="#161822"
+                    android:padding="14dp"
+                    android:layout_marginBottom="10dp"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Bauhaus FM Radio"
+                        android:textColor="@color/vfd_amber"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="3dp"
+                        android:text="Analog dial tuner with real RF noise synthesis and live streaming."
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:lineSpacingMultiplier="1.2" />
+                </LinearLayout>
+
+                <!-- Card 3: Apps & Launcher -->
+                <LinearLayout
+                    android:id="@+id/cardToolApps"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="#161822"
+                    android:padding="14dp"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Applications &amp; Settings"
+                        android:textColor="@color/white"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="3dp"
+                        android:text="System app launcher, Spindle preferences, and theme styling."
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:lineSpacingMultiplier="1.2" />
+                </LinearLayout>
+            </LinearLayout>
+
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <!-- Parallax Big Kinetic Header (Drawn on top layer with elevation, moves at ~0.22x parallax speed) -->
+    <TextView
+        android:id="@+id/tvPanoramaParallaxTitle"
+        style="@style/TextAppearance.Spindle.Metro.Hero"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="4dp"
+        android:text="music + audio"
+        android:textSize="56sp"
+        android:textColor="@color/white"
+        android:alpha="0.90"
+        android:singleLine="true"
+        android:letterSpacing="-0.04"
+        android:elevation="8dp" />
+
+</RelativeLayout>

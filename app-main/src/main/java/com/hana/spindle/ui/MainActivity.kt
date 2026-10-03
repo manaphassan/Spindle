@@ -398,6 +398,7 @@ class MainActivity : AppCompatActivity() {
         if (frag != null) {
             supportFragmentManager.beginTransaction().remove(frag).commitAllowingStateLoss()
         }
+        binding.viewPager.isUserInputEnabled = true
         binding.viewPager.setCurrentItem(2, false)
     }
 
@@ -407,7 +408,8 @@ class MainActivity : AppCompatActivity() {
         if (frag != null) {
             supportFragmentManager.beginTransaction().remove(frag).commitAllowingStateLoss()
         }
-        binding.viewPager.setCurrentItem(0, true)
+        binding.viewPager.isUserInputEnabled = true
+        binding.viewPager.setCurrentItem(0, false)
     }
 
     private fun checkAndRequestStoragePermissions(app: SpindleApp) {

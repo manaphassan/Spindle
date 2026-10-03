@@ -127,6 +127,7 @@
 
         <!-- Authentic Zune Typographic Pivot Navigation -->
         <HorizontalScrollView
+            android:id="@+id/tabScrollView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:scrollbars="none"
@@ -350,10 +351,12 @@
 
     <!-- Main Content Area with Recycler & Alphabet Rail -->
     <RelativeLayout
+        android:id="@+id/catalogContentContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@+id/catalogHeaderContainer"
-        android:layout_above="@+id/cardMiniPlayer">
+        android:layout_above="@+id/cardMiniPlayer"
+        android:visibility="gone">
 
         <!-- Recycler View with padding on right for alphabet index -->
         <androidx.recyclerview.widget.RecyclerView
@@ -389,6 +392,16 @@
             android:elevation="12dp"
             android:visibility="gone" />
     </RelativeLayout>
+
+    <!-- Zune Metro Music Hub Panorama -->
+    <include
+        android:id="@+id/layoutPanorama"
+        layout="@layout/layout_catalog_panorama"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/catalogHeaderContainer"
+        android:layout_above="@+id/cardMiniPlayer"
+        android:visibility="visible" />
 
     <!-- Persistent Bottom Mini-Player Bar -->
     <androidx.cardview.widget.CardView

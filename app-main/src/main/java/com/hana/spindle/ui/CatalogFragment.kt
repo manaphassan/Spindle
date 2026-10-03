@@ -75,6 +75,7 @@ class CatalogFragment : Fragment() {
 
     private var isNowPlayingSingleVisible = false
     private var isShowingNpLyrics = false
+    private var isPanoramaVisible = true
     private var currentLoadedSongId: Long = -1L
     private var currentMiniSongId: Long = -1L
 
@@ -142,14 +143,16 @@ class CatalogFragment : Fragment() {
         setupSearch()
         setupMiniPlayer(app)
         setupNowPlayingSingleAudio(app)
+        setupPanorama(app)
         observeAudioMetrics(app)
         observeScanProgress(app)
 
         val initTab = arguments?.getInt(ARG_INITIAL_TAB, -1) ?: -1
         if (initTab in 0..6) {
+            showPanorama(false)
             binding.root.post { switchToTab(initTab) }
         } else {
-            loadSongs(app)
+            showPanorama(true)
         }
 
         if (arguments?.getBoolean(ARG_OPEN_NOW_PLAYING) == true) {
@@ -485,7 +488,15 @@ class CatalogFragment : Fragment() {
         val app = requireActivity().application as SpindleApp
 
         binding.btnBackToPlayer.setOnClickListener {
-            (activity as? MainActivity)?.navigateToPlayer()
+            if (binding.nowPlayingSingleContainer.visibility == View.VISIBLE) {
+                showNowPlayingSingleAudio(false)
+            } else if (binding.albumDetailContainer.visibility == View.VISIBLE) {
+                hideAlbumDetail()
+            } else if (!isPanoramaVisible) {
+                showPanorama(true)
+            } else {
+                (activity as? MainActivity)?.navigateToPlayer()
+            }
         }
 
         binding.tabSongs.setOnClickListener {
@@ -641,6 +652,7 @@ class CatalogFragment : Fragment() {
         binding.catalogHeaderContainer.setBackgroundColor(if (isEink) Color.WHITE else theme.surfaceColor)
         binding.tvCatalogHeaderTitle.setTextColor(primary)
         binding.tvMetroHeroTitle.setTextColor(primary)
+        binding.layoutPanorama.tvPanoramaParallaxTitle.setTextColor(primary)
         binding.btnBackToPlayer.imageTintList = ColorStateList.valueOf(primary)
         binding.tvScanStatus.setTextColor(if (isEink) Color.BLACK else ContextCompat.getColor(requireContext(), R.color.vfd_emerald))
 
@@ -884,6 +896,13 @@ class CatalogFragment : Fragment() {
     }
 
     private fun setupSearch() {
+        binding.etCatalogSearch.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus && isPanoramaVisible) {
+                showPanorama(false)
+                switchToTab(0)
+            }
+        }
+
         binding.btnSearchClear.setOnClickListener {
             binding.etCatalogSearch.text?.clear()
             binding.rvSearchSuggestions.visibility = View.GONE
@@ -1302,6 +1321,10 @@ class CatalogFragment : Fragment() {
                     updateShuffleIcon(state.shuffleMode)
                     updateRepeatIcon(state.repeatMode)
 
+                    if (isPanoramaVisible) {
+                        updatePanoramaPlayback(app, state)
+                    }
+
                     // Auto-scroll lyrics
                     if (state.activeLyricIndex >= 0 && isShowingNpLyrics) {
                         npLyricsAdapter.activeIndex = state.activeLyricIndex
@@ -1333,11 +1356,13 @@ class CatalogFragment : Fragment() {
                 launch {
                     audioEngine.currentQueueFlow.collectLatest {
                         updateNowPlayingUpNextPreview()
+                        updatePanoramaUpNextPreview()
                     }
                 }
                 launch {
                     audioEngine.currentQueueIndexFlow.collectLatest {
                         updateNowPlayingUpNextPreview()
+                        updatePanoramaUpNextPreview()
                     }
                 }
             }
@@ -1923,7 +1948,273 @@ class CatalogFragment : Fragment() {
             hideAlbumDetail()
             return true
         }
+        if (!isPanoramaVisible) {
+            showPanorama(true)
+            return true
+        }
         return false
+    }
+
+    private fun setupPanorama(app: SpindleApp) {
+        val dm = resources.displayMetrics
+        val peekPx = (52 * dm.density).toInt()
+        val panelWidth = dm.widthPixels - peekPx
+        val pBinding = binding.layoutPanorama
+
+        pBinding.panelNowPlaying.layoutParams = pBinding.panelNowPlaying.layoutParams.apply { width = panelWidth }
+        pBinding.panelExplore.layoutParams = pBinding.panelExplore.layoutParams.apply { width = panelWidth }
+        pBinding.panelRecent.layoutParams = pBinding.panelRecent.layoutParams.apply { width = panelWidth }
+        pBinding.panelTools.layoutParams = pBinding.panelTools.layoutParams.apply { width = panelWidth }
+
+        pBinding.panoramaScrollView.isFocusable = false
+        pBinding.panoramaScrollView.descendantFocusability = ViewGroup.FOCUS_BEFORE_DESCENDANTS
+        pBinding.panoramaScrollView.post {
+            pBinding.panoramaScrollView.scrollTo(0, 0)
+        }
+
+        pBinding.panoramaScrollView.setOnScrollChangeListener { _, scrollX, _, _, _ ->
+            pBinding.tvPanoramaParallaxTitle.translationX = -scrollX * 0.22f
+        }
+
+        // Panel 1: Now Playing & Queue Peek
+        pBinding.cardPanoramaNowPlaying.setOnClickListener {
+            showNowPlayingSingleAudio(true)
+        }
+        pBinding.btnPanoramaExpandPlayer.setOnClickListener {
+            showNowPlayingSingleAudio(true)
+        }
+        pBinding.btnPanoramaPlayPause.setOnClickListener {
+            audioEngine.togglePlayPause()
+        }
+        pBinding.btnPanoramaQueue.setOnClickListener {
+            QueueBottomSheet().show(childFragmentManager, "QueueBottomSheet")
+        }
+        pBinding.layoutPanoramaUpNext.setOnClickListener {
+            QueueBottomSheet().show(childFragmentManager, "QueueBottomSheet")
+        }
+
+        // Panel 2: Explore Typographic Menu
+        pBinding.menuRowTracks.setOnClickListener {
+            showPanorama(false)
+            switchToTab(0)
+        }
+        pBinding.menuRowAlbums.setOnClickListener {
+            showPanorama(false)
+            switchToTab(1)
+        }
+        pBinding.menuRowArtists.setOnClickListener {
+            showPanorama(false)
+            switchToTab(2)
+        }
+        pBinding.menuRowMixtapes.setOnClickListener {
+            showPanorama(false)
+            switchToTab(6)
+        }
+        pBinding.menuRowFolders.setOnClickListener {
+            showPanorama(false)
+            switchToTab(4)
+        }
+        pBinding.menuRowFavorites.setOnClickListener {
+            showPanorama(false)
+            switchToTab(5)
+        }
+        pBinding.menuRowComposers.setOnClickListener {
+            showPanorama(false)
+            switchToTab(3)
+        }
+
+        // Panel 4: Sound & Tools Shortcuts
+        pBinding.cardToolSoundDeck.setOnClickListener {
+            (activity as? MainActivity)?.navigateToDrawer()
+        }
+        pBinding.cardToolRadio.setOnClickListener {
+            (activity as? MainActivity)?.navigateToRadio()
+        }
+        pBinding.cardToolApps.setOnClickListener {
+            (activity as? MainActivity)?.navigateToDrawer()
+        }
+    }
+
+    private fun showPanorama(show: Boolean) {
+        isPanoramaVisible = show
+        if (show) {
+            binding.layoutPanorama.root.visibility = View.VISIBLE
+            binding.catalogContentContainer.visibility = View.GONE
+            binding.tabScrollView.visibility = View.GONE
+            binding.actionBarContainer.visibility = View.GONE
+            binding.tvMetroHeroTitle.visibility = View.GONE
+            binding.cardMiniPlayer.visibility = View.GONE
+            binding.tvCatalogHeaderTitle.text = "MUSIC HUB"
+            binding.layoutPanorama.panoramaScrollView.post {
+                binding.layoutPanorama.panoramaScrollView.scrollTo(0, 0)
+                binding.layoutPanorama.tvPanoramaParallaxTitle.translationX = 0f
+            }
+            val app = requireActivity().application as SpindleApp
+            updatePanoramaData(app)
+        } else {
+            binding.layoutPanorama.root.visibility = View.GONE
+            binding.catalogContentContainer.visibility = View.VISIBLE
+            binding.tabScrollView.visibility = View.VISIBLE
+            binding.actionBarContainer.visibility = View.VISIBLE
+            binding.tvMetroHeroTitle.visibility = View.VISIBLE
+            binding.cardMiniPlayer.visibility = View.VISIBLE
+            binding.tvCatalogHeaderTitle.text = getString(R.string.nav_vault)
+        }
+    }
+
+    private fun updatePanoramaData(app: SpindleApp) {
+        val state = audioEngine.playbackState.value
+        updatePanoramaPlayback(app, state)
+        updatePanoramaExploreCounts(app)
+        updatePanoramaRecentTiles(app)
+    }
+
+    private fun updatePanoramaPlayback(app: SpindleApp, state: com.hana.spindle.playback.PlaybackState) {
+        val pBinding = _binding?.layoutPanorama ?: return
+        val song = state.currentSong
+        if (song != null) {
+            pBinding.tvPanoramaNpTitle.text = song.title
+            val artistAlbum = if (song.album.isNotBlank()) "${song.artist} • ${song.album}" else song.artist
+            pBinding.tvPanoramaNpArtist.text = artistAlbum
+            viewLifecycleOwner.lifecycleScope.launch {
+                val cover = app.imageLoader.loadCover(song.path, 400, 400)
+                if (cover != null) {
+                    pBinding.ivPanoramaArt.setImageBitmap(cover)
+                } else {
+                    pBinding.ivPanoramaArt.setImageResource(R.drawable.bg_circle_play)
+                }
+            }
+        } else {
+            pBinding.tvPanoramaNpTitle.text = "No track playing"
+            pBinding.tvPanoramaNpArtist.text = "Tap to choose a track"
+            pBinding.ivPanoramaArt.setImageResource(R.drawable.bg_circle_play)
+        }
+        pBinding.btnPanoramaPlayPause.setImageResource(
+            if (state.isPlaying) R.drawable.ic_np_pause else R.drawable.ic_np_play
+        )
+        updatePanoramaUpNextPreview()
+    }
+
+    private fun updatePanoramaUpNextPreview() {
+        val pBinding = _binding?.layoutPanorama ?: return
+        val queue = audioEngine.currentQueueFlow.value
+        val currentIndex = audioEngine.currentQueueIndexFlow.value
+        val upNextViews = listOf(pBinding.tvPanoramaNext1, pBinding.tvPanoramaNext2, pBinding.tvPanoramaNext3)
+        if (queue.isEmpty() || currentIndex < 0 || currentIndex >= queue.size) {
+            upNextViews.forEach { it.visibility = View.GONE }
+            return
+        }
+        for (i in 0 until 3) {
+            val nextIdx = currentIndex + 1 + i
+            val tv = upNextViews[i]
+            if (nextIdx < queue.size) {
+                val nextTrack = queue[nextIdx]
+                val trackNumStr = if (nextTrack.trackNumber > 0) String.format(Locale.US, "%02d ", nextTrack.trackNumber) else ""
+                tv.text = "$trackNumStr${nextTrack.title}"
+                tv.visibility = View.VISIBLE
+                tv.setOnClickListener {
+                    audioEngine.playQueueIndex(nextIdx)
+                }
+            } else {
+                tv.visibility = View.GONE
+            }
+        }
+    }
+
+    private fun updatePanoramaExploreCounts(app: SpindleApp) {
+        val pBinding = _binding?.layoutPanorama ?: return
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val trackCount = withContext(Dispatchers.IO) { app.database.trackDao().getTrackCount() }
+                pBinding.tvMenuTracksCount.text = java.text.NumberFormat.getNumberInstance(Locale.US).format(trackCount)
+            } catch (_: Exception) {}
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val albums = withContext(Dispatchers.IO) { app.database.trackDao().getAlbums().first() }
+                pBinding.tvMenuAlbumsCount.text = albums.size.toString()
+            } catch (_: Exception) {}
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val artists = withContext(Dispatchers.IO) { app.database.trackDao().getArtists().first() }
+                pBinding.tvMenuArtistsCount.text = artists.size.toString()
+            } catch (_: Exception) {}
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val mixtapes = withContext(Dispatchers.IO) { app.database.playlistDao().getAllPlaylists().first() }
+                pBinding.tvMenuMixtapesCount.text = (mixtapes.size + 6).toString()
+            } catch (_: Exception) {}
+        }
+    }
+
+    private fun updatePanoramaRecentTiles(app: SpindleApp) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val recentTracks = withContext(Dispatchers.IO) { app.database.trackDao().getRecentlyAddedTracks(50).first() }
+                val recentAlbums = mutableListOf<AlbumItem>()
+                val seen = mutableSetOf<String>()
+                for (t in recentTracks) {
+                    if (t.album.isNotBlank() && seen.add(t.album)) {
+                        recentAlbums.add(AlbumItem(
+                            album = t.album,
+                            artist = t.artist,
+                            trackCount = 1,
+                            representativePath = t.path,
+                            year = t.year,
+                            format = t.fileFormat
+                        ))
+                        if (recentAlbums.size == 4) break
+                    }
+                }
+                if (recentAlbums.size < 4) {
+                    val allAlbums = withContext(Dispatchers.IO) { app.database.trackDao().getAlbums().first() }
+                    for (a in allAlbums) {
+                        if (seen.add(a.album)) {
+                            recentAlbums.add(a)
+                            if (recentAlbums.size == 4) break
+                        }
+                    }
+                }
+                bindRecentAlbumTiles(app, recentAlbums)
+            } catch (_: Exception) {}
+        }
+    }
+
+    private fun bindRecentAlbumTiles(app: SpindleApp, albums: List<AlbumItem>) {
+        val pBinding = _binding?.layoutPanorama ?: return
+        val tiles = listOf(pBinding.tileRecent1, pBinding.tileRecent2, pBinding.tileRecent3, pBinding.tileRecent4)
+        val arts = listOf(pBinding.ivTileArt1, pBinding.ivTileArt2, pBinding.ivTileArt3, pBinding.ivTileArt4)
+        val titles = listOf(pBinding.tvTileTitle1, pBinding.tvTileTitle2, pBinding.tvTileTitle3, pBinding.tvTileTitle4)
+        val artists = listOf(pBinding.tvTileArtist1, pBinding.tvTileArtist2, pBinding.tvTileArtist3, pBinding.tvTileArtist4)
+
+        for (i in 0 until 4) {
+            if (i < albums.size) {
+                val album = albums[i]
+                tiles[i].visibility = View.VISIBLE
+                titles[i].text = album.album
+                artists[i].text = album.artist
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val bmp = app.imageLoader.loadAlbumCover(album.album, album.artist, album.representativePath, 200, 200)
+                    if (bmp != null) {
+                        arts[i].setImageBitmap(bmp)
+                    } else {
+                        arts[i].setImageResource(R.drawable.bg_circle_play)
+                    }
+                }
+                tiles[i].setOnClickListener {
+                    albumTracksJob?.cancel()
+                    albumTracksJob = viewLifecycleOwner.lifecycleScope.launch {
+                        getTracksFlowForAlbum(app, album).collectLatest { albumSongs ->
+                            showAlbumDetail(album, albumSongs)
+                        }
+                    }
+                }
+            } else {
+                tiles[i].visibility = View.INVISIBLE
+            }
+        }
     }
 
     private fun formatTime(millis: Long): String {
