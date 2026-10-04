@@ -85,8 +85,9 @@ class MainActivity : AppCompatActivity() {
             }
         } else if (intent?.getStringExtra("navigate") == "catalog") {
             val tab = intent.getIntExtra("tab", -1)
+            val openNp = intent.getBooleanExtra("open_now_playing", false)
             binding.viewPager.post {
-                navigateToCatalog(tab = tab)
+                navigateToCatalog(openNowPlaying = openNp, tab = tab)
             }
         }
         handlePlaybackIntent(intent)
@@ -486,7 +487,8 @@ class MainActivity : AppCompatActivity() {
         }
         if (intent.getStringExtra("navigate") == "catalog") {
             val tab = intent.getIntExtra("tab", -1)
-            binding.viewPager.post { navigateToCatalog(tab = tab) }
+            val openNp = intent.getBooleanExtra("open_now_playing", false)
+            binding.viewPager.post { navigateToCatalog(openNowPlaying = openNp, tab = tab) }
             return
         }
         // Ensure pressing hardware/software Home button always brings user to Cassette Player

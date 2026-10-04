@@ -1678,10 +1678,14 @@ class CatalogFragment : Fragment() {
                             currentLoadedSongId = song.id
                             updateFavoriteIcon(song.isFavorite)
 
-                            // Load circular cover art and extract accent color
+                            // Load circular cover art, ambient backdrop, and extract accent color
                             viewLifecycleOwner.lifecycleScope.launch {
                                 val cover = app.imageLoader.loadCover(song.path, 500, 500)
                                 b.circularCoverArcView.coverBitmap = cover
+                                b.ivNpAmbientArt.setImageBitmap(cover)
+                                if (b.nowPlayingSingleContainer.visibility == View.VISIBLE) {
+                                    startAmbientKenBurns()
+                                }
                                 val accent = app.imageLoader.extractAccentColor(song.path)
                                 npLyricsAdapter.accentColor = accent
                                 b.circularCoverArcView.accentColor = accent
@@ -1995,6 +1999,38 @@ class CatalogFragment : Fragment() {
         }
     }
 
+    private fun startAmbientKenBurns() {
+        val iv = _binding?.ivNpAmbientArt ?: return
+        iv.clearAnimation()
+        iv.scaleX = 1.0f
+        iv.scaleY = 1.0f
+        iv.translationX = 0f
+        iv.translationY = 0f
+        iv.animate()
+            .scaleX(1.15f)
+            .scaleY(1.15f)
+            .translationX(-16f)
+            .translationY(-10f)
+            .setDuration(20000L)
+            .setInterpolator(android.view.animation.LinearInterpolator())
+            .withEndAction {
+                val b = _binding?.ivNpAmbientArt ?: return@withEndAction
+                b.animate()
+                    .scaleX(1.0f)
+                    .scaleY(1.0f)
+                    .translationX(12f)
+                    .translationY(8f)
+                    .setDuration(20000L)
+                    .setInterpolator(android.view.animation.LinearInterpolator())
+                    .start()
+            }
+            .start()
+    }
+
+    private fun stopAmbientKenBurns() {
+        _binding?.ivNpAmbientArt?.animate()?.cancel()
+    }
+
     fun showNowPlayingSingleAudio(show: Boolean) {
         isNowPlayingSingleVisible = show
         if (show) {
@@ -2005,7 +2041,13 @@ class CatalogFragment : Fragment() {
                 binding.tvNpArtist.text = track.artist
                 binding.tvNpArtistHeader.text = track.artist.lowercase(Locale.ROOT)
                 binding.tvNpAlbumHeader.text = if (track.year > 0) "${track.album.uppercase(Locale.ROOT)} (${track.year})" else track.album.uppercase(Locale.ROOT)
+                val app = requireActivity().application as SpindleApp
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val cover = app.imageLoader.loadCover(track.path, 500, 500)
+                    _binding?.ivNpAmbientArt?.setImageBitmap(cover)
+                }
             }
+            startAmbientKenBurns()
             updateNowPlayingUpNextPreview()
             binding.circularCoverArcView.isPlaying = playback.isPlaying
             binding.circularCoverArcView.progress = playback.progress
@@ -2019,6 +2061,7 @@ class CatalogFragment : Fragment() {
                 .setInterpolator(android.view.animation.DecelerateInterpolator())
                 .start()
         } else {
+            stopAmbientKenBurns()
             binding.nowPlayingSingleContainer.animate()
                 .translationY(320f)
                 .alpha(0f)

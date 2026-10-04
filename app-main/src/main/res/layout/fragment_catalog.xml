@@ -757,97 +757,117 @@
 
     </LinearLayout>
 
-    <!-- 4. Now Playing Fullscreen Single Audio Container (Reference Image UI) -->
-    <LinearLayout
+    <!-- 4. Now Playing Fullscreen Single Audio Container (Authentic Zune Metro Artist Experience) -->
+    <FrameLayout
         android:id="@+id/nowPlayingSingleContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:background="#0F1016"
-        android:paddingTop="8dp"
-        android:paddingBottom="24dp"
-        android:paddingHorizontal="24dp"
+        android:background="#0A0B0E"
         android:clickable="true"
         android:focusable="true"
         android:elevation="20dp"
         android:visibility="gone">
 
-        <!-- Top Navigation Bar (< Back, Interactive Format Badge Pill, Spacer, ♡ Favorite, ⋮ Menu) -->
+        <!-- Ambient Artist Stage Background with subtle pan/drift -->
+        <ImageView
+            android:id="@+id/ivNpAmbientArt"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:alpha="0.25" />
+
+        <!-- Gradient Vignette Scrim over ambient artwork -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/bg_zune_ambient_scrim" />
+
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
-
-            <ImageButton
-                android:id="@+id/btnNpBack"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_np_back"
-                app:tint="@color/text_primary"
-                android:contentDescription="Back to Catalog" />
-
-            <View
-                android:layout_width="0dp"
-                android:layout_height="1dp"
-                android:layout_weight="1" />
-
-            <ImageButton
-                android:id="@+id/btnNpFavorite"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_np_heart"
-                app:tint="#94A3B8"
-                android:contentDescription="Favorite" />
-
-            <ImageButton
-                android:id="@+id/btnNpMenu"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_marginStart="4dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_np_more"
-                app:tint="@color/text_primary"
-                android:contentDescription="Options" />
-        </LinearLayout>
-
-        <!-- Zune Metro Typographic Artist & Album Header -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:orientation="vertical"
-            android:layout_marginTop="2dp"
-            android:layout_marginBottom="4dp">
+            android:paddingTop="8dp"
+            android:paddingBottom="24dp"
+            android:paddingHorizontal="24dp">
 
-            <TextView
-                android:id="@+id/tvNpArtistHeader"
-                style="@style/TextAppearance.Spindle.Metro.Artist"
+            <!-- Top Navigation Bar (< Back, Interactive Format Badge Pill, Spacer, ♡ Favorite, ⋮ Menu) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageButton
+                    android:id="@+id/btnNpBack"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_np_back"
+                    app:tint="@color/text_primary"
+                    android:contentDescription="Back to Catalog" />
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1" />
+
+                <ImageButton
+                    android:id="@+id/btnNpFavorite"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_np_heart"
+                    app:tint="#94A3B8"
+                    android:contentDescription="Favorite" />
+
+                <ImageButton
+                    android:id="@+id/btnNpMenu"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_marginStart="4dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_np_more"
+                    app:tint="@color/text_primary"
+                    android:contentDescription="Options" />
+            </LinearLayout>
+
+            <!-- Zune Metro Typographic Artist & Album Header -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:singleLine="true"
-                android:ellipsize="marquee"
-                android:marqueeRepeatLimit="marquee_forever"
-                tools:text="daft punk" />
+                android:orientation="vertical"
+                android:layout_marginTop="2dp"
+                android:layout_marginBottom="4dp">
 
-            <TextView
-                android:id="@+id/tvNpAlbumHeader"
+                <TextView
+                    android:id="@+id/tvNpArtistHeader"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-light"
+                    android:textSize="32sp"
+                    android:textColor="@color/white"
+                    android:singleLine="true"
+                    android:ellipsize="marquee"
+                    android:marqueeRepeatLimit="marquee_forever"
+                    tools:text="daft punk" />
+
+                <TextView
+                    android:id="@+id/tvNpAlbumHeader"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/brand_orange"
+                    android:textSize="12sp"
+                    android:fontFamily="sans-serif-medium"
+                    android:letterSpacing="0.08"
+                    android:singleLine="true"
+                    android:ellipsize="end"
+                    tools:text="RANDOM ACCESS MEMORIES (2013)" />
+            </LinearLayout>
+
+            <!-- Center Stage: Hero Circular Vinyl Disc Artwork & Synced Lyrics Drawer -->
+            <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="@color/brand_orange"
-                android:textSize="11sp"
-                android:fontFamily="monospace"
-                android:textStyle="bold"
-                android:singleLine="true"
-                android:ellipsize="end"
-                tools:text="RANDOM ACCESS MEMORIES (2013)" />
-        </LinearLayout>
-
-        <!-- Center Stage: Hero Circular Vinyl Disc Artwork & Synced Lyrics Drawer -->
-        <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
+                android:layout_height="0dp"
             android:layout_weight="1"
             android:layout_marginVertical="12dp">
 
@@ -942,9 +962,10 @@
                 android:layout_height="wrap_content"
                 android:gravity="start"
                 android:text="Track Title"
-                android:textColor="@color/text_primary"
-                android:textSize="20sp"
+                android:textColor="@color/white"
+                android:textSize="24sp"
                 android:textStyle="bold"
+                android:fontFamily="sans-serif-bold"
                 android:singleLine="true"
                 android:ellipsize="marquee"
                 android:marqueeRepeatLimit="marquee_forever" />
@@ -957,7 +978,8 @@
                 android:gravity="start"
                 android:text="Artist Name"
                 android:textColor="@color/text_secondary"
-                android:textSize="13sp"
+                android:textSize="14sp"
+                android:fontFamily="sans-serif"
                 android:singleLine="true"
                 android:ellipsize="end" />
 
@@ -1221,7 +1243,8 @@
                     android:fontFamily="sans-serif" />
             </LinearLayout>
         </LinearLayout>
-
     </LinearLayout>
+
+    </FrameLayout>
 
 </RelativeLayout>
