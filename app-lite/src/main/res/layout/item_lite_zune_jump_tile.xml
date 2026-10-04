@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/layoutJumpTile"
+    android:layout_width="match_parent"
+    android:layout_height="48dp"
+    android:layout_margin="3dp">
+
+    <TextView
+        android:id="@+id/tvJumpLetter"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:textColor="@color/lite_metro_text_primary"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:fontFamily="sans-serif-medium"
+        android:background="@drawable/bg_metro_jump_tile" />
+
+</FrameLayout>

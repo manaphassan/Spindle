@@ -209,6 +209,21 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
         binding.viewPager.adapter = pagerAdapter
         binding.viewPager.offscreenPageLimit = 2
         binding.viewPager.currentItem = 1 // Start on Center Page (Cassette Player)
+        binding.viewPager.addOnPageChangeListener(object : androidx.viewpager.widget.ViewPager.SimpleOnPageChangeListener() {
+            override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
+                val parallaxDisplacement = positionOffsetPixels * 0.2f
+                if (position == 0) {
+                    drawerBinding.tvHubHeroTitle.translationX = -parallaxDisplacement
+                } else if (position == 1) {
+                    radioBinding.tvRadioHeroTitle.translationX = (binding.viewPager.width - positionOffsetPixels) * 0.2f
+                }
+            }
+
+            override fun onPageSelected(position: Int) {
+                drawerBinding.tvHubHeroTitle.translationX = 0f
+                radioBinding.tvRadioHeroTitle.translationX = 0f
+            }
+        })
     }
 
     // --- Page 0: Application Drawer & Audio Console ---
@@ -234,10 +249,10 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
         drawerBinding.containerSettings.visibility = if (tabIndex == 2) View.VISIBLE else View.GONE
 
         val activeColor = ContextCompat.getColor(this, R.color.brand_orange)
-        val inactiveColor = ContextCompat.getColor(this, R.color.lite_text_primary)
+        val inactiveColor = ContextCompat.getColor(this, R.color.lite_metro_text_muted)
 
-        drawerBinding.btnTabEq.setTextColor(if (tabIndex == 0) activeColor else inactiveColor)
         drawerBinding.btnTabApps.setTextColor(if (tabIndex == 1) activeColor else inactiveColor)
+        drawerBinding.btnTabEq.setTextColor(if (tabIndex == 0) activeColor else inactiveColor)
         drawerBinding.btnTabSettings.setTextColor(if (tabIndex == 2) activeColor else inactiveColor)
     }
 
@@ -527,6 +542,29 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
         })
 
         loadInstalledApps()
+
+        // Zune Metro 26-Letter Quick-Jump Grid for Installed Applications
+        drawerBinding.btnAppJump.setOnClickListener {
+            val letters = installedApps.mapNotNull { it.label.firstOrNull()?.uppercaseChar() }.toSet()
+            LiteZuneJumpListDialog.show(
+                supportFragmentManager,
+                availableLetters = letters,
+                title = "apps",
+                subtitle = "tap a letter to jump immediately"
+            ) { letter ->
+                if (letter == "↑") {
+                    drawerBinding.rvApps.scrollToPosition(0)
+                } else {
+                    val targetIdx = installedApps.indexOfFirst {
+                        val ch = it.label.firstOrNull()?.uppercaseChar() ?: '#'
+                        if (letter == "#") !ch.isLetter() else ch == letter[0]
+                    }
+                    if (targetIdx >= 0) {
+                        (drawerBinding.rvApps.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(targetIdx, 0)
+                    }
+                }
+            }
+        }
     }
 
     private fun setupSettingsPage() {
@@ -1463,6 +1501,31 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
         binding.btnScan.setOnClickListener {
             performMediaScan()
         }
+
+        // Zune Metro 26-Letter Quick-Jump Grid for Music Tracks
+        binding.btnVaultJump.setOnClickListener {
+            val letters = trackAdapter.getTracks()
+                .mapNotNull { it.artist.firstOrNull()?.uppercaseChar() ?: it.title.firstOrNull()?.uppercaseChar() }
+                .toSet()
+            LiteZuneJumpListDialog.show(
+                supportFragmentManager,
+                availableLetters = letters,
+                title = "music",
+                subtitle = "tap a letter to jump immediately"
+            ) { letter ->
+                if (letter == "↑") {
+                    binding.rvTrackList.scrollToPosition(0)
+                } else {
+                    val targetIdx = trackAdapter.getTracks().indexOfFirst {
+                        val ch = it.artist.firstOrNull()?.uppercaseChar() ?: it.title.firstOrNull()?.uppercaseChar() ?: '#'
+                        if (letter == "#") !ch.isLetter() else ch == letter[0]
+                    }
+                    if (targetIdx >= 0) {
+                        (binding.rvTrackList.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(targetIdx, 0)
+                    }
+                }
+            }
+        }
     }
 
     private fun getInitialMusicDirectory(): File {
@@ -1562,18 +1625,20 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
     private fun selectVaultTab(tabIndex: Int) {
         currentVaultTab = tabIndex
         val activeColor = ContextCompat.getColor(this, R.color.brand_orange)
-        val inactiveColor = ContextCompat.getColor(this, R.color.lite_text_primary)
+        val inactiveColor = ContextCompat.getColor(this, R.color.lite_metro_text_muted)
 
         binding.btnVaultTracks.setTextColor(if (tabIndex == 0) activeColor else inactiveColor)
         binding.btnVaultFolders.setTextColor(if (tabIndex == 1) activeColor else inactiveColor)
         binding.btnVaultQueue.setTextColor(if (tabIndex == 2) activeColor else inactiveColor)
 
+        binding.btnVaultJump.visibility = if (tabIndex == 0) View.VISIBLE else View.GONE
+
         when (tabIndex) {
-            0 -> { // TRACKS
+            0 -> { // TRACKS / SONGS
                 binding.containerFolderPath.visibility = View.GONE
                 binding.vaultFilterShelf.visibility = View.VISIBLE
                 binding.etSearchVault.visibility = View.VISIBLE
-                binding.etSearchVault.hint = "Filter tape vault..."
+                binding.etSearchVault.hint = "filter songs, artists, albums..."
                 binding.rvTrackList.adapter = trackAdapter
                 binding.tvVaultStatus.text = "Vault: ${trackAdapter.itemCount} tracks"
             }
@@ -1592,7 +1657,7 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
                 binding.containerFolderPath.visibility = View.GONE
                 binding.vaultFilterShelf.visibility = View.GONE
                 binding.etSearchVault.visibility = View.VISIBLE
-                binding.etSearchVault.hint = "Filter playback queue..."
+                binding.etSearchVault.hint = "filter playback queue..."
                 queueAdapter.updateTracks(audioEngine.playlist)
                 queueAdapter.setActivePath(audioEngine.currentTrack?.filePath)
                 binding.rvTrackList.adapter = queueAdapter
@@ -2091,18 +2156,32 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
             }
             KeyEvent.KEYCODE_DPAD_LEFT -> {
                 if (currentFocus !is android.widget.EditText) {
-                    if (isDown && binding.viewPager.currentItem > 0) {
-                        binding.viewPager.currentItem -= 1
-                        hapticEngine.microTick()
+                    if (isDown) {
+                        if (binding.drawerLayout.visibility == View.VISIBLE) {
+                            if (currentVaultTab > 0) {
+                                selectVaultTab(currentVaultTab - 1)
+                                hapticEngine.microTick()
+                            }
+                        } else if (binding.viewPager.currentItem > 0) {
+                            binding.viewPager.currentItem -= 1
+                            hapticEngine.microTick()
+                        }
                     }
                     return true
                 }
             }
             KeyEvent.KEYCODE_DPAD_RIGHT -> {
                 if (currentFocus !is android.widget.EditText) {
-                    if (isDown && binding.viewPager.currentItem < 2) {
-                        binding.viewPager.currentItem += 1
-                        hapticEngine.microTick()
+                    if (isDown) {
+                        if (binding.drawerLayout.visibility == View.VISIBLE) {
+                            if (currentVaultTab < 2) {
+                                selectVaultTab(currentVaultTab + 1)
+                                hapticEngine.microTick()
+                            }
+                        } else if (binding.viewPager.currentItem < 2) {
+                            binding.viewPager.currentItem += 1
+                            hapticEngine.microTick()
+                        }
                     }
                     return true
                 }

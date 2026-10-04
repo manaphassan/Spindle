@@ -4,7 +4,7 @@
     android:id="@+id/rootContainer"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/lite_bg_chassis">
+    android:background="@color/lite_metro_bg">
 
     <!-- 3-Screen Horizontal Launcher ViewPager -->
     <androidx.viewpager.widget.ViewPager
@@ -12,124 +12,131 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <!-- Sliding Music Tape Vault Drawer Overlay (Opened via EJECT button) -->
+    <!-- Zune Metro Music Vault Overlay (Opened via EJECT button) -->
     <LinearLayout
         android:id="@+id/drawerLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@drawable/bg_drawer"
+        android:background="@color/lite_metro_bg"
         android:orientation="vertical"
-        android:paddingLeft="8dp"
-        android:paddingTop="6dp"
-        android:paddingRight="8dp"
-        android:paddingBottom="4dp"
+        android:paddingLeft="12dp"
+        android:paddingTop="8dp"
+        android:paddingRight="12dp"
+        android:paddingBottom="6dp"
         android:visibility="gone"
         tools:visibility="visible">
 
-        <!-- Streamlined Vault Header (38dp) -->
+        <!-- Zune Metro Kinetic Header (music + actions) -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="38dp"
+            android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingBottom="2dp">
 
             <TextView
+                android:id="@+id/tvVaultHeroTitle"
+                style="@style/TextAppearance.SpindleLite.Metro.Hero"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:fontFamily="monospace"
-                android:letterSpacing="0.06"
-                android:text="TAPE VAULT"
-                android:textColor="@color/lite_text_primary"
-                android:textSize="12sp"
+                android:text="music" />
+
+            <Button
+                android:id="@+id/btnVaultJump"
+                style="?android:attr/borderlessButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:layout_marginRight="6dp"
+                android:background="@drawable/bg_metro_pill"
+                android:fontFamily="sans-serif-medium"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:text="A–Z"
+                android:textColor="@color/brand_orange"
+                android:textSize="10.5sp"
                 android:textStyle="bold" />
 
             <Button
                 android:id="@+id/btnScan"
                 style="?android:attr/borderlessButtonStyle"
                 android:layout_width="wrap_content"
-                android:layout_height="34dp"
-                android:background="@drawable/bg_format_pill"
+                android:layout_height="32dp"
+                android:layout_marginRight="6dp"
+                android:background="@drawable/bg_metro_pill"
+                android:fontFamily="sans-serif-medium"
                 android:paddingLeft="10dp"
                 android:paddingRight="10dp"
-                android:layout_marginRight="6dp"
                 android:text="@string/scan_library"
-                android:textColor="@color/brand_orange"
+                android:textColor="@color/lite_metro_text_secondary"
                 android:textSize="10sp"
                 android:textStyle="bold" />
 
             <ImageButton
                 android:id="@+id/btnCloseDrawer"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
-                android:padding="8dp"
-                android:background="@drawable/bg_button_tactile"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
+                android:background="?android:attr/selectableItemBackground"
                 android:contentDescription="Close Drawer"
-                android:src="@drawable/ic_eject" />
+                android:src="@drawable/ic_close"
+                android:tint="@color/lite_metro_text_secondary" />
         </LinearLayout>
 
-        <!-- Tape Vault 3-Tab Selector (TRACKS / FOLDERS / QUEUE) -->
+        <!-- Zune Typographic Pivot Bar (songs / folders / queue) -->
         <LinearLayout
             android:id="@+id/vaultTabBar"
             android:layout_width="match_parent"
             android:layout_height="38dp"
-            android:background="@drawable/bg_search_bar"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:padding="2dp"
             android:layout_marginBottom="4dp">
 
             <Button
                 android:id="@+id/btnVaultTracks"
                 style="?android:attr/borderlessButtonStyle"
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="@drawable/bg_preset_button"
-                android:fontFamily="monospace"
-                android:text="TRACKS"
+                android:fontFamily="sans-serif"
+                android:text="songs"
                 android:textColor="@color/brand_orange"
-                android:textSize="10.5sp"
-                android:textStyle="bold" />
+                android:textSize="17sp"
+                android:textStyle="bold"
+                android:paddingLeft="2dp"
+                android:paddingRight="12dp" />
 
             <Button
                 android:id="@+id/btnVaultFolders"
                 style="?android:attr/borderlessButtonStyle"
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:layout_marginLeft="2dp"
-                android:layout_marginRight="2dp"
-                android:background="@drawable/bg_preset_button"
-                android:fontFamily="monospace"
-                android:text="FOLDERS"
-                android:textColor="@color/lite_text_primary"
-                android:textSize="10.5sp"
-                android:textStyle="bold" />
+                android:fontFamily="sans-serif"
+                android:text="folders"
+                android:textColor="@color/lite_metro_text_muted"
+                android:textSize="17sp"
+                android:paddingLeft="6dp"
+                android:paddingRight="12dp" />
 
             <Button
                 android:id="@+id/btnVaultQueue"
                 style="?android:attr/borderlessButtonStyle"
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="@drawable/bg_preset_button"
-                android:fontFamily="monospace"
-                android:text="QUEUE"
-                android:textColor="@color/lite_text_primary"
-                android:textSize="10.5sp"
-                android:textStyle="bold" />
+                android:fontFamily="sans-serif"
+                android:text="queue"
+                android:textColor="@color/lite_metro_text_muted"
+                android:textSize="17sp"
+                android:paddingLeft="6dp"
+                android:paddingRight="12dp" />
         </LinearLayout>
 
         <!-- Audiophile 1-Tap Quick Filter Shelf (32dp) -->
         <LinearLayout
             android:id="@+id/vaultFilterShelf"
             android:layout_width="match_parent"
-            android:layout_height="32dp"
+            android:layout_height="30dp"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:layout_marginBottom="4dp">
+            android:layout_marginBottom="6dp">
 
             <Button
                 android:id="@+id/btnFilterAll"
@@ -137,7 +144,7 @@
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:background="@drawable/bg_preset_button"
+                android:background="@drawable/bg_metro_pill"
                 android:fontFamily="monospace"
                 android:text="ALL"
                 android:textColor="@color/brand_orange"
@@ -150,11 +157,11 @@
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1.2"
-                android:layout_marginLeft="2dp"
-                android:background="@drawable/bg_preset_button"
+                android:layout_marginLeft="4dp"
+                android:background="@drawable/bg_metro_pill"
                 android:fontFamily="monospace"
                 android:text="HI-RES 24b"
-                android:textColor="@color/lite_text_secondary"
+                android:textColor="@color/lite_metro_text_secondary"
                 android:textSize="9sp"
                 android:textStyle="bold" />
 
@@ -164,11 +171,11 @@
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1.2"
-                android:layout_marginLeft="2dp"
-                android:background="@drawable/bg_preset_button"
+                android:layout_marginLeft="4dp"
+                android:background="@drawable/bg_metro_pill"
                 android:fontFamily="monospace"
                 android:text="LOSSLESS"
-                android:textColor="@color/lite_text_secondary"
+                android:textColor="@color/lite_metro_text_secondary"
                 android:textSize="9sp"
                 android:textStyle="bold" />
 
@@ -178,11 +185,11 @@
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:layout_marginLeft="2dp"
-                android:background="@drawable/bg_preset_button"
+                android:layout_marginLeft="4dp"
+                android:background="@drawable/bg_metro_pill"
                 android:fontFamily="monospace"
                 android:text="NORMAL"
-                android:textColor="@color/lite_text_secondary"
+                android:textColor="@color/lite_metro_text_secondary"
                 android:textSize="9sp"
                 android:textStyle="bold" />
         </LinearLayout>
@@ -192,13 +199,13 @@
             android:id="@+id/etSearchVault"
             android:layout_width="match_parent"
             android:layout_height="36dp"
-            android:background="@drawable/bg_search_bar"
-            android:hint="Filter tape vault..."
-            android:textColorHint="@color/lite_text_muted"
-            android:textColor="@color/lite_text_primary"
+            android:background="@drawable/bg_metro_search"
+            android:hint="filter songs, artists, albums..."
+            android:textColorHint="@color/lite_metro_text_muted"
+            android:textColor="@color/lite_metro_text_primary"
             android:textSize="11.5sp"
-            android:paddingLeft="8dp"
-            android:paddingRight="8dp"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
             android:singleLine="true"
             android:layout_marginBottom="4dp" />
 
@@ -209,16 +216,16 @@
             android:layout_height="32dp"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:layout_marginBottom="3dp"
+            android:layout_marginBottom="4dp"
             android:visibility="gone">
 
             <Button
                 android:id="@+id/btnFolderUp"
                 style="?android:attr/borderlessButtonStyle"
                 android:layout_width="wrap_content"
-                android:layout_height="30dp"
-                android:background="@drawable/bg_format_pill"
-                android:fontFamily="monospace"
+                android:layout_height="28dp"
+                android:background="@drawable/bg_metro_pill"
+                android:fontFamily="sans-serif-medium"
                 android:paddingLeft="8dp"
                 android:paddingRight="8dp"
                 android:text="[.. UP]"
@@ -231,22 +238,22 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_marginLeft="6dp"
+                android:layout_marginLeft="8dp"
                 android:ellipsize="end"
                 android:singleLine="true"
                 android:fontFamily="monospace"
                 android:maxLines="1"
                 android:text="/storage/sdcard1/Music"
-                android:textColor="@color/lite_amber_glow"
-                android:textSize="9sp" />
+                android:textColor="@color/lite_metro_text_primary"
+                android:textSize="9.5sp" />
 
             <Button
                 android:id="@+id/btnPlayFolder"
                 style="?android:attr/borderlessButtonStyle"
                 android:layout_width="wrap_content"
-                android:layout_height="30dp"
-                android:background="@drawable/bg_format_pill"
-                android:fontFamily="monospace"
+                android:layout_height="28dp"
+                android:background="@drawable/bg_metro_pill"
+                android:fontFamily="sans-serif-medium"
                 android:paddingLeft="8dp"
                 android:paddingRight="8dp"
                 android:text="PLAY ALL"
@@ -258,13 +265,11 @@
         <!-- Track Count & Status -->
         <TextView
             android:id="@+id/tvVaultStatus"
+            style="@style/TextAppearance.SpindleLite.Metro.SectionHeader"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:fontFamily="monospace"
-            android:paddingBottom="3dp"
-            android:text="@string/ready"
-            android:textColor="@color/lite_text_muted"
-            android:textSize="9.5sp" />
+            android:paddingBottom="4dp"
+            android:text="@string/ready" />
 
         <!-- Library Recycler View -->
         <androidx.recyclerview.widget.RecyclerView

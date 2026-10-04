@@ -1,10 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="Theme.SpindleLite" parent="Theme.AppCompat.NoActionBar">
-        <item name="android:windowBackground">@color/lite_bg_chassis</item>
-        <item name="android:statusBarColor">@color/lite_bg_chassis</item>
-        <item name="android:navigationBarColor">@color/lite_bg_chassis</item>
+        <item name="android:windowBackground">@color/lite_metro_bg</item>
+        <item name="android:statusBarColor">@color/lite_metro_bg</item>
+        <item name="android:navigationBarColor">@color/lite_metro_bg</item>
         <item name="colorPrimary">@color/brand_orange</item>
         <item name="colorAccent">@color/brand_orange</item>
+    </style>
+
+    <!-- Zune Metro Typographic Hierarchy for App-Lite (KitKat Compatible) -->
+    <style name="TextAppearance.SpindleLite.Metro" parent="TextAppearance.AppCompat" />
+
+    <style name="TextAppearance.SpindleLite.Metro.Hero" parent="TextAppearance.AppCompat.Large">
+        <item name="android:textSize">@dimen/text_size_metro_hero</item>
+        <item name="android:textColor">@color/lite_metro_text_primary</item>
+        <item name="android:fontFamily">sans-serif-light</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <style name="TextAppearance.SpindleLite.Metro.Artist" parent="TextAppearance.AppCompat.Medium">
+        <item name="android:textSize">@dimen/text_size_metro_artist</item>
+        <item name="android:textColor">@color/lite_metro_text_primary</item>
+        <item name="android:fontFamily">sans-serif-light</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <style name="TextAppearance.SpindleLite.Metro.Pivot" parent="TextAppearance.AppCompat.Subhead">
+        <item name="android:textSize">@dimen/text_size_metro_pivot</item>
+        <item name="android:fontFamily">sans-serif</item>
+    </style>
+
+    <style name="TextAppearance.SpindleLite.Metro.Pivot.Active" parent="TextAppearance.SpindleLite.Metro.Pivot">
+        <item name="android:textColor">@color/brand_orange</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextAppearance.SpindleLite.Metro.Pivot.Inactive" parent="TextAppearance.SpindleLite.Metro.Pivot">
+        <item name="android:textColor">@color/lite_metro_text_muted</item>
+        <item name="android:textStyle">normal</item>
+    </style>
+
+    <style name="TextAppearance.SpindleLite.Metro.SectionHeader" parent="TextAppearance.AppCompat.Caption">
+        <item name="android:textSize">@dimen/text_size_metro_section</item>
+        <item name="android:textColor">@color/lite_metro_text_secondary</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:fontFamily">monospace</item>
     </style>
 </resources>

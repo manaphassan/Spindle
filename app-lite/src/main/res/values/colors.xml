@@ -74,4 +74,20 @@
     <color name="lite_meter_needle_shadow">#33000000</color>
     <color name="lite_stereo_led_on">#EF4444</color>
     <color name="lite_stereo_led_off">#3B1313</color>
+
+    <!-- Zune Metro Design Tokens -->
+    <color name="lite_metro_bg">#0D0E15</color>
+    <color name="lite_metro_surface">#161924</color>
+    <color name="lite_metro_surface_elevated">#202433</color>
+    <color name="lite_metro_border">#2D3346</color>
+    <color name="lite_metro_border_subtle">#1E2333</color>
+    <color name="lite_metro_accent">#F97316</color>
+    <color name="lite_metro_accent_muted">#40F97316</color>
+    <color name="lite_metro_text_primary">#FAFAF9</color>
+    <color name="lite_metro_text_secondary">#9499BD</color>
+    <color name="lite_metro_text_muted">#60668A</color>
+    <color name="lite_metro_tile_inactive">#12141F</color>
+    <color name="lite_metro_tile_inactive_text">#3D435C</color>
+    <color name="lite_metro_tile_active">#F97316</color>
+    <color name="lite_metro_tile_active_text">#FAFAF9</color>
 </resources>

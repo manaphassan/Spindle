@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="48dp"
+    android:layout_height="50dp"
     android:background="?android:attr/selectableItemBackground"
     android:gravity="center_vertical"
     android:orientation="horizontal"
-    android:paddingLeft="4dp"
-    android:paddingRight="8dp">
+    android:paddingLeft="6dp"
+    android:paddingRight="12dp">
 
-    <!-- J-Card Cassette Formulation Spine (Type IV Gold, Type II Blue, Type I Grey) -->
+    <!-- Cassette Formulation Spine Pill (Type IV Gold, Type II Blue, Type I Grey) -->
     <View
         android:id="@+id/vTapeSpine"
-        android:layout_width="3.5dp"
+        android:layout_width="3dp"
         android:layout_height="match_parent"
-        android:layout_marginTop="5dp"
-        android:layout_marginBottom="5dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
         android:background="@color/brand_orange" />
 
-    <!-- Track Index / Number -->
+    <!-- Track Index / Metro Counter -->
     <TextView
         android:id="@+id/tvTrackIndex"
         android:layout_width="28dp"
@@ -25,16 +25,16 @@
         android:fontFamily="monospace"
         android:gravity="center"
         android:text="01"
-        android:textColor="@color/lite_text_muted"
-        android:textSize="11sp" />
+        android:textColor="@color/lite_metro_text_muted"
+        android:textSize="11.5sp" />
 
-    <!-- Title & Artist -->
+    <!-- Title & Artist (Metro Typographic Hierarchy) -->
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:orientation="vertical"
-        android:paddingLeft="8dp"
+        android:paddingLeft="6dp"
         android:paddingRight="8dp">
 
         <TextView
@@ -42,9 +42,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:ellipsize="end"
+            android:fontFamily="sans-serif-medium"
             android:maxLines="1"
             android:text="Song Title"
-            android:textColor="@color/lite_text_primary"
+            android:textColor="@color/lite_metro_text_primary"
             android:textSize="13sp"
             android:textStyle="bold" />
 
@@ -52,14 +53,16 @@
             android:id="@+id/tvItemArtist"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="1dp"
             android:ellipsize="end"
+            android:fontFamily="sans-serif"
             android:maxLines="1"
             android:text="Artist Name • Album"
-            android:textColor="@color/lite_text_secondary"
-            android:textSize="10sp" />
+            android:textColor="@color/lite_metro_text_secondary"
+            android:textSize="10.5sp" />
     </LinearLayout>
 
-    <!-- Format & Duration -->
+    <!-- Format Pill & Duration -->
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -71,7 +74,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:fontFamily="monospace"
-            android:text="FLAC"
+            android:text="FLAC 24b"
             android:textColor="@color/brand_orange"
             android:textSize="9sp"
             android:textStyle="bold" />
@@ -80,10 +83,11 @@
             android:id="@+id/tvItemDuration"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
             android:fontFamily="monospace"
             android:text="03:45"
-            android:textColor="@color/lite_text_muted"
-            android:textSize="10sp" />
+            android:textColor="@color/lite_metro_text_muted"
+            android:textSize="9.5sp" />
     </LinearLayout>
 
 </LinearLayout>

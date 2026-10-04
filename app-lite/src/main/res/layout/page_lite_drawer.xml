@@ -4,64 +4,67 @@
     android:id="@+id/drawerPageRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/lite_bg_chassis"
+    android:background="@color/lite_metro_bg"
     android:orientation="vertical"
-    android:paddingLeft="8dp"
-    android:paddingTop="6dp"
-    android:paddingRight="8dp"
-    android:paddingBottom="4dp">
+    android:paddingLeft="12dp"
+    android:paddingTop="8dp"
+    android:paddingRight="12dp"
+    android:paddingBottom="6dp">
 
-    <!-- Top 3-Segment Tactile Hi-Fi Navigation Bar -->
+    <!-- Oversized Zune Kinetic Typography Header -->
+    <TextView
+        android:id="@+id/tvHubHeroTitle"
+        style="@style/TextAppearance.SpindleLite.Metro.Hero"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="hub"
+        android:layout_marginBottom="2dp" />
+
+    <!-- Top Zune Typographic Pivot Bar -->
     <LinearLayout
         android:id="@+id/topTabBar"
         android:layout_width="match_parent"
-        android:layout_height="38dp"
-        android:background="@drawable/bg_search_bar"
+        android:layout_height="36dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:padding="2dp"
         android:layout_marginBottom="6dp">
-
-        <Button
-            android:id="@+id/btnTabEq"
-            style="?android:attr/borderlessButtonStyle"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="@drawable/bg_preset_button"
-            android:fontFamily="monospace"
-            android:text="EQ / DSP"
-            android:textColor="@color/lite_text_primary"
-            android:textSize="10.5sp"
-            android:textStyle="bold" />
 
         <Button
             android:id="@+id/btnTabApps"
             style="?android:attr/borderlessButtonStyle"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:layout_marginLeft="2dp"
-            android:layout_marginRight="2dp"
-            android:background="@drawable/bg_preset_button"
-            android:fontFamily="monospace"
-            android:text="APPS"
+            android:fontFamily="sans-serif"
+            android:text="apps"
             android:textColor="@color/brand_orange"
-            android:textSize="10.5sp"
-            android:textStyle="bold" />
+            android:textSize="16.5sp"
+            android:textStyle="bold"
+            android:paddingLeft="2dp"
+            android:paddingRight="12dp" />
+
+        <Button
+            android:id="@+id/btnTabEq"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:fontFamily="sans-serif"
+            android:text="sound / eq"
+            android:textColor="@color/lite_metro_text_muted"
+            android:textSize="16.5sp"
+            android:paddingLeft="6dp"
+            android:paddingRight="12dp" />
 
         <Button
             android:id="@+id/btnTabSettings"
             style="?android:attr/borderlessButtonStyle"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="@drawable/bg_preset_button"
-            android:fontFamily="monospace"
-            android:text="SETTINGS"
-            android:textColor="@color/lite_text_primary"
-            android:textSize="10.5sp"
-            android:textStyle="bold" />
+            android:fontFamily="sans-serif"
+            android:text="settings"
+            android:textColor="@color/lite_metro_text_muted"
+            android:textSize="16.5sp"
+            android:paddingLeft="6dp"
+            android:paddingRight="12dp" />
     </LinearLayout>
 
     <!-- CONTENT FRAME FOR 3 TABS -->
@@ -724,20 +727,43 @@
                     android:textSize="9sp" />
             </LinearLayout>
 
-            <!-- Compact Search Bar Strip -->
-            <EditText
-                android:id="@+id/etSearchApps"
+            <!-- Compact Metro Search Bar + Quick-Jump Strip -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="36dp"
-                android:background="@drawable/bg_search_bar"
-                android:hint="Filter applications..."
-                android:textColorHint="@color/lite_text_muted"
-                android:textColor="@color/lite_text_primary"
-                android:textSize="11sp"
-                android:paddingLeft="8dp"
-                android:paddingRight="8dp"
-                android:singleLine="true"
-                android:layout_marginBottom="4dp" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:layout_marginBottom="6dp">
+
+                <EditText
+                    android:id="@+id/etSearchApps"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_metro_search"
+                    android:hint="filter applications..."
+                    android:textColorHint="@color/lite_metro_text_muted"
+                    android:textColor="@color/lite_metro_text_primary"
+                    android:textSize="11.5sp"
+                    android:paddingLeft="10dp"
+                    android:paddingRight="10dp"
+                    android:singleLine="true" />
+
+                <Button
+                    android:id="@+id/btnAppJump"
+                    style="?android:attr/borderlessButtonStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_marginLeft="6dp"
+                    android:background="@drawable/bg_metro_pill"
+                    android:fontFamily="sans-serif-medium"
+                    android:paddingLeft="12dp"
+                    android:paddingRight="12dp"
+                    android:text="A–Z"
+                    android:textColor="@color/brand_orange"
+                    android:textSize="10.5sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <!-- Retained for backward-compatible binding -->
             <TextView

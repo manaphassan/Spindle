@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Zune Metro Scale Tokens for App-Lite -->
+    <dimen name="text_size_metro_hero">38sp</dimen>
+    <dimen name="text_size_metro_artist">24sp</dimen>
+    <dimen name="text_size_metro_pivot">15sp</dimen>
+    <dimen name="text_size_metro_section">10.5sp</dimen>
+    <dimen name="text_size_metro_title">13sp</dimen>
+    <dimen name="text_size_metro_subtext">10sp</dimen>
+    <dimen name="text_size_metro_badge">8.5sp</dimen>
+
+    <dimen name="corner_radius_metro">4dp</dimen>
+    <dimen name="corner_radius_metro_pill">16dp</dimen>
+    <dimen name="corner_radius_metro_tile">4dp</dimen>
+    <dimen name="metro_tile_min_height">44dp</dimen>
+    <dimen name="metro_jump_tile_size">40dp</dimen>
+</resources>

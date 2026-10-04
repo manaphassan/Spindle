@@ -8,12 +8,12 @@
     android:gravity="center_vertical"
     android:orientation="horizontal"
     android:paddingLeft="10dp"
-    android:paddingRight="10dp">
+    android:paddingRight="12dp">
 
     <ImageView
         android:id="@+id/ivAppIcon"
-        android:layout_width="30dp"
-        android:layout_height="30dp"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
         android:contentDescription="App Icon"
         android:scaleType="fitCenter" />
 
@@ -33,8 +33,8 @@
             android:fontFamily="sans-serif-medium"
             android:singleLine="true"
             android:text="Application Name"
-            android:textColor="@color/lite_text_primary"
-            android:textSize="12.5sp" />
+            android:textColor="@color/lite_metro_text_primary"
+            android:textSize="13sp" />
 
         <TextView
             android:id="@+id/tvAppPackage"
@@ -44,7 +44,7 @@
             android:fontFamily="monospace"
             android:singleLine="true"
             android:text="com.example.app"
-            android:textColor="@color/lite_text_muted"
+            android:textColor="@color/lite_metro_text_muted"
             android:textSize="8.5sp" />
     </LinearLayout>
 
@@ -54,7 +54,7 @@
         android:layout_marginLeft="6dp"
         android:fontFamily="monospace"
         android:text="›"
-        android:textColor="@color/lite_border"
+        android:textColor="@color/lite_metro_text_muted"
         android:textSize="14sp"
         android:textStyle="bold" />
 
