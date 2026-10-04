@@ -736,6 +736,22 @@
                     app:cornerRadius="@dimen/corner_radius_pill" />
 
                 <Button
+                    android:id="@+id/btnAlbumDetailPin"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="34dp"
+                    android:layout_marginStart="8dp"
+                    android:text="PIN"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/brand_orange"
+                    android:backgroundTint="#202334"
+                    android:paddingHorizontal="4dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    app:cornerRadius="@dimen/corner_radius_pill" />
+
+                <Button
                     android:id="@+id/btnAlbumDetailExportM3u"
                     android:layout_width="0dp"
                     android:layout_weight="1"

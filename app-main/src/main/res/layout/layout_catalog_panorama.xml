@@ -474,13 +474,33 @@
                         android:clickable="true"
                         android:focusable="true">
 
-                        <ImageView
-                            android:id="@+id/ivTileArt1"
+                        <FrameLayout
                             android:layout_width="match_parent"
-                            android:layout_height="80dp"
-                            android:scaleType="centerCrop"
-                            android:background="#202334"
-                            android:contentDescription="Tile 1" />
+                            android:layout_height="80dp">
+
+                            <ImageView
+                                android:id="@+id/ivTileArt1"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:scaleType="centerCrop"
+                                android:background="#202334"
+                                android:contentDescription="Tile 1" />
+
+                            <TextView
+                                android:id="@+id/tvTilePin1"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="top|end"
+                                android:layout_margin="3dp"
+                                android:text="PIN"
+                                android:textColor="@color/white"
+                                android:textSize="8.5sp"
+                                android:fontFamily="sans-serif-bold"
+                                android:paddingHorizontal="4dp"
+                                android:paddingVertical="1dp"
+                                android:background="@color/brand_orange"
+                                android:visibility="gone" />
+                        </FrameLayout>
 
                         <TextView
                             android:id="@+id/tvTileTitle1"
@@ -518,13 +538,33 @@
                         android:clickable="true"
                         android:focusable="true">
 
-                        <ImageView
-                            android:id="@+id/ivTileArt2"
+                        <FrameLayout
                             android:layout_width="match_parent"
-                            android:layout_height="80dp"
-                            android:scaleType="centerCrop"
-                            android:background="#202334"
-                            android:contentDescription="Tile 2" />
+                            android:layout_height="80dp">
+
+                            <ImageView
+                                android:id="@+id/ivTileArt2"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:scaleType="centerCrop"
+                                android:background="#202334"
+                                android:contentDescription="Tile 2" />
+
+                            <TextView
+                                android:id="@+id/tvTilePin2"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="top|end"
+                                android:layout_margin="3dp"
+                                android:text="PIN"
+                                android:textColor="@color/white"
+                                android:textSize="8.5sp"
+                                android:fontFamily="sans-serif-bold"
+                                android:paddingHorizontal="4dp"
+                                android:paddingVertical="1dp"
+                                android:background="@color/brand_orange"
+                                android:visibility="gone" />
+                        </FrameLayout>
 
                         <TextView
                             android:id="@+id/tvTileTitle2"
@@ -569,13 +609,33 @@
                         android:clickable="true"
                         android:focusable="true">
 
-                        <ImageView
-                            android:id="@+id/ivTileArt3"
+                        <FrameLayout
                             android:layout_width="match_parent"
-                            android:layout_height="80dp"
-                            android:scaleType="centerCrop"
-                            android:background="#202334"
-                            android:contentDescription="Tile 3" />
+                            android:layout_height="80dp">
+
+                            <ImageView
+                                android:id="@+id/ivTileArt3"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:scaleType="centerCrop"
+                                android:background="#202334"
+                                android:contentDescription="Tile 3" />
+
+                            <TextView
+                                android:id="@+id/tvTilePin3"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="top|end"
+                                android:layout_margin="3dp"
+                                android:text="PIN"
+                                android:textColor="@color/white"
+                                android:textSize="8.5sp"
+                                android:fontFamily="sans-serif-bold"
+                                android:paddingHorizontal="4dp"
+                                android:paddingVertical="1dp"
+                                android:background="@color/brand_orange"
+                                android:visibility="gone" />
+                        </FrameLayout>
 
                         <TextView
                             android:id="@+id/tvTileTitle3"
@@ -613,13 +673,33 @@
                         android:clickable="true"
                         android:focusable="true">
 
-                        <ImageView
-                            android:id="@+id/ivTileArt4"
+                        <FrameLayout
                             android:layout_width="match_parent"
-                            android:layout_height="80dp"
-                            android:scaleType="centerCrop"
-                            android:background="#202334"
-                            android:contentDescription="Tile 4" />
+                            android:layout_height="80dp">
+
+                            <ImageView
+                                android:id="@+id/ivTileArt4"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:scaleType="centerCrop"
+                                android:background="#202334"
+                                android:contentDescription="Tile 4" />
+
+                            <TextView
+                                android:id="@+id/tvTilePin4"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="top|end"
+                                android:layout_margin="3dp"
+                                android:text="PIN"
+                                android:textColor="@color/white"
+                                android:textSize="8.5sp"
+                                android:fontFamily="sans-serif-bold"
+                                android:paddingHorizontal="4dp"
+                                android:paddingVertical="1dp"
+                                android:background="@color/brand_orange"
+                                android:visibility="gone" />
+                        </FrameLayout>
 
                         <TextView
                             android:id="@+id/tvTileTitle4"

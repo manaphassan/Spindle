@@ -1,5 +1,6 @@
 package com.hana.spindle.ui
 
+import android.content.Context
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Color
@@ -7,6 +8,7 @@ import android.graphics.Typeface
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.view.HapticFeedbackConstants
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
@@ -378,13 +380,20 @@ class CatalogFragment : Fragment() {
             }
         ).apply {
             onAlbumLongClicked = { album ->
+                val isPinned = isAlbumPinned(album)
+                val pinOption = if (isPinned) "Unpin from Start Screen" else "Pin to Start Screen"
                 if (album.format == "MIXTAPE") {
-                    val options = arrayOf("Play Mixtape", "Export to .M3U", "Delete Mixtape")
+                    val options = arrayOf(pinOption, "Play Mixtape", "Export to .M3U", "Delete Mixtape")
                     android.app.AlertDialog.Builder(requireContext())
                         .setTitle(album.album)
                         .setItems(options) { _, which ->
                             when (which) {
                                 0 -> {
+                                    val pinnedNow = togglePinAlbum(album)
+                                    val msg = if (pinnedNow) "Pinned '${album.album}' to Start Screen" else "Unpinned '${album.album}' from Start Screen"
+                                    Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+                                }
+                                1 -> {
                                     viewLifecycleOwner.lifecycleScope.launch {
                                         val songs = app.database.playlistDao().getTracksForPlaylist(album.year.toLong()).first()
                                         if (songs.isNotEmpty()) {
@@ -394,7 +403,7 @@ class CatalogFragment : Fragment() {
                                         }
                                     }
                                 }
-                                1 -> {
+                                2 -> {
                                     MixtapeDialogs.exportMixtape(
                                         requireContext(),
                                         app.database,
@@ -403,7 +412,7 @@ class CatalogFragment : Fragment() {
                                         album.album
                                     )
                                 }
-                                2 -> {
+                                3 -> {
                                     android.app.AlertDialog.Builder(requireContext())
                                         .setTitle("Delete Mixtape")
                                         .setMessage("Are you sure you want to delete '${album.album}'? (Music files will not be deleted)")
@@ -420,12 +429,17 @@ class CatalogFragment : Fragment() {
                         }
                         .show()
                 } else if (album.format == "SMART_MIXTAPE") {
-                    val options = arrayOf("Play Smart Tape", "Export to .M3U")
+                    val options = arrayOf(pinOption, "Play Smart Tape", "Export to .M3U")
                     android.app.AlertDialog.Builder(requireContext())
                         .setTitle(album.album)
                         .setItems(options) { _, which ->
                             when (which) {
                                 0 -> {
+                                    val pinnedNow = togglePinAlbum(album)
+                                    val msg = if (pinnedNow) "Pinned '${album.album}' to Start Screen" else "Unpinned '${album.album}' from Start Screen"
+                                    Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+                                }
+                                1 -> {
                                     viewLifecycleOwner.lifecycleScope.launch {
                                         val songs = getTracksFlowForAlbum(app, album).first()
                                         if (songs.isNotEmpty()) {
@@ -435,7 +449,7 @@ class CatalogFragment : Fragment() {
                                         }
                                     }
                                 }
-                                1 -> {
+                                2 -> {
                                     viewLifecycleOwner.lifecycleScope.launch {
                                         val songs = getTracksFlowForAlbum(app, album).first()
                                         MixtapeDialogs.exportSmartMixtape(
@@ -444,6 +458,40 @@ class CatalogFragment : Fragment() {
                                             album.album,
                                             songs
                                         )
+                                    }
+                                }
+                            }
+                        }
+                        .show()
+                } else {
+                    val options = arrayOf(pinOption, "Play Album", "View Details")
+                    android.app.AlertDialog.Builder(requireContext())
+                        .setTitle(album.album)
+                        .setItems(options) { _, which ->
+                            when (which) {
+                                0 -> {
+                                    val pinnedNow = togglePinAlbum(album)
+                                    val msg = if (pinnedNow) "Pinned '${album.album}' to Start Screen" else "Unpinned '${album.album}' from Start Screen"
+                                    Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+                                }
+                                1 -> {
+                                    albumTracksJob?.cancel()
+                                    albumTracksJob = viewLifecycleOwner.lifecycleScope.launch {
+                                        getTracksFlowForAlbum(app, album).collectLatest { albumSongs ->
+                                            if (albumSongs.isNotEmpty()) {
+                                                currentDisplayedSongs = albumSongs
+                                                audioEngine.playQueue(albumSongs, 0)
+                                                showNowPlayingSingleAudio(true)
+                                            }
+                                        }
+                                    }
+                                }
+                                2 -> {
+                                    albumTracksJob?.cancel()
+                                    albumTracksJob = viewLifecycleOwner.lifecycleScope.launch {
+                                        getTracksFlowForAlbum(app, album).collectLatest { albumSongs ->
+                                            showAlbumDetail(album, albumSongs)
+                                        }
                                     }
                                 }
                             }
@@ -527,13 +575,17 @@ class CatalogFragment : Fragment() {
             imageLoader = app.imageLoader,
             onAlbumClicked = onAlbumClickAction,
             onPlayAlbumClicked = onAlbumPlayAction
-        )
+        ).apply {
+            onAlbumLongClicked = albumAdapter.onAlbumLongClicked
+        }
 
         artistsAdapter = AlbumAdapter(
             imageLoader = app.imageLoader,
             onAlbumClicked = onAlbumClickAction,
             onPlayAlbumClicked = onAlbumPlayAction
-        )
+        ).apply {
+            onAlbumLongClicked = albumAdapter.onAlbumLongClicked
+        }
 
         mixtapesAdapter = AlbumAdapter(
             imageLoader = app.imageLoader,
@@ -944,6 +996,7 @@ class CatalogFragment : Fragment() {
         binding.btnAlbumDetailPlayAll.setTextColor(Color.WHITE)
         binding.btnAlbumDetailShuffle.backgroundTintList = ColorStateList.valueOf(if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#202334"))
         binding.btnAlbumDetailShuffle.setTextColor(primary)
+        currentAlbumItem?.let { updateAlbumDetailPinButton(it) }
         binding.vAlbumDetailDivider.setBackgroundColor(if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#24252B"))
 
         // Single Audio Now Playing
@@ -2303,6 +2356,15 @@ class CatalogFragment : Fragment() {
             }
         }
 
+        updateAlbumDetailPinButton(album)
+        binding.btnAlbumDetailPin.setOnClickListener {
+            binding.btnAlbumDetailPin.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+            val isPinned = togglePinAlbum(album)
+            updateAlbumDetailPinButton(album)
+            val msg = if (isPinned) "Pinned '${album.album}' to Start Screen" else "Unpinned '${album.album}' from Start Screen"
+            Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+        }
+
         binding.cardAlbumDetailCover.setOnClickListener {
             val album = currentAlbumItem ?: return@setOnClickListener
             showCoverArtOptionsDialog(album)
@@ -2710,44 +2772,60 @@ class CatalogFragment : Fragment() {
     }
 
     private fun updatePanoramaRecentTiles(app: SpindleApp) {
+        val pBinding = _binding?.layoutPanorama ?: return
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val recentTracks = withContext(Dispatchers.IO) { app.database.trackDao().getRecentlyAddedTracks(50).first() }
-                val recentAlbums = mutableListOf<AlbumItem>()
+                val pinned = getPinnedAlbums()
+                pBinding.tvHeaderRecent.text = if (pinned.isNotEmpty()) "pinned + recent" else "recent & new"
+
+                val tileAlbums = mutableListOf<AlbumItem>()
                 val seen = mutableSetOf<String>()
-                for (t in recentTracks) {
-                    if (t.album.isNotBlank() && seen.add(t.album)) {
-                        recentAlbums.add(AlbumItem(
-                            album = t.album,
-                            artist = t.artist,
-                            trackCount = 1,
-                            representativePath = t.path,
-                            year = t.year,
-                            format = t.fileFormat
-                        ))
-                        if (recentAlbums.size == 4) break
+
+                for (p in pinned) {
+                    if (seen.add(p.album)) {
+                        tileAlbums.add(p)
+                        if (tileAlbums.size == 4) break
                     }
                 }
-                if (recentAlbums.size < 4) {
-                    val allAlbums = withContext(Dispatchers.IO) { app.database.trackDao().getAlbums().first() }
-                    for (a in allAlbums) {
-                        if (seen.add(a.album)) {
-                            recentAlbums.add(a)
-                            if (recentAlbums.size == 4) break
+
+                if (tileAlbums.size < 4) {
+                    val recentTracks = withContext(Dispatchers.IO) { app.database.trackDao().getRecentlyAddedTracks(50).first() }
+                    for (t in recentTracks) {
+                        if (t.album.isNotBlank() && seen.add(t.album)) {
+                            tileAlbums.add(AlbumItem(
+                                album = t.album,
+                                artist = t.artist,
+                                trackCount = 1,
+                                representativePath = t.path,
+                                year = t.year,
+                                format = t.fileFormat
+                            ))
+                            if (tileAlbums.size == 4) break
                         }
                     }
                 }
-                bindRecentAlbumTiles(app, recentAlbums)
+
+                if (tileAlbums.size < 4) {
+                    val allAlbums = withContext(Dispatchers.IO) { app.database.trackDao().getAlbums().first() }
+                    for (a in allAlbums) {
+                        if (seen.add(a.album)) {
+                            tileAlbums.add(a)
+                            if (tileAlbums.size == 4) break
+                        }
+                    }
+                }
+                bindRecentAlbumTiles(app, tileAlbums, getPinnedKeys())
             } catch (_: Exception) {}
         }
     }
 
-    private fun bindRecentAlbumTiles(app: SpindleApp, albums: List<AlbumItem>) {
+    private fun bindRecentAlbumTiles(app: SpindleApp, albums: List<AlbumItem>, pinnedKeys: Set<String> = emptySet()) {
         val pBinding = _binding?.layoutPanorama ?: return
         val tiles = listOf(pBinding.tileRecent1, pBinding.tileRecent2, pBinding.tileRecent3, pBinding.tileRecent4)
         val arts = listOf(pBinding.ivTileArt1, pBinding.ivTileArt2, pBinding.ivTileArt3, pBinding.ivTileArt4)
         val titles = listOf(pBinding.tvTileTitle1, pBinding.tvTileTitle2, pBinding.tvTileTitle3, pBinding.tvTileTitle4)
         val artists = listOf(pBinding.tvTileArtist1, pBinding.tvTileArtist2, pBinding.tvTileArtist3, pBinding.tvTileArtist4)
+        val pins = listOf(pBinding.tvTilePin1, pBinding.tvTilePin2, pBinding.tvTilePin3, pBinding.tvTilePin4)
 
         for (i in 0 until 4) {
             if (i < albums.size) {
@@ -2755,6 +2833,10 @@ class CatalogFragment : Fragment() {
                 tiles[i].visibility = View.VISIBLE
                 titles[i].text = album.album
                 artists[i].text = album.artist
+
+                val isPinned = pinnedKeys.contains(getAlbumPinKey(album))
+                pins[i].visibility = if (isPinned) View.VISIBLE else View.GONE
+
                 viewLifecycleOwner.lifecycleScope.launch {
                     val bmp = app.imageLoader.loadAlbumCover(album.album, album.artist, album.representativePath, 200, 200)
                     if (bmp != null) {
@@ -2771,9 +2853,104 @@ class CatalogFragment : Fragment() {
                         }
                     }
                 }
+                tiles[i].setOnLongClickListener {
+                    tiles[i].performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                    val pinnedNow = togglePinAlbum(album)
+                    val msg = if (pinnedNow) "Pinned '${album.album}' to Start Screen" else "Unpinned '${album.album}' from Start Screen"
+                    Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+                    true
+                }
             } else {
                 tiles[i].visibility = View.INVISIBLE
             }
+        }
+    }
+
+    private fun getPinnedKeys(): Set<String> {
+        val ctx = context ?: return emptySet()
+        val prefs = ctx.getSharedPreferences("spindle_pinned_tiles", Context.MODE_PRIVATE)
+        return prefs.getStringSet("pinned_keys", emptySet()) ?: emptySet()
+    }
+
+    private fun isAlbumPinned(album: AlbumItem): Boolean {
+        return getPinnedKeys().contains(getAlbumPinKey(album))
+    }
+
+    private fun getAlbumPinKey(album: AlbumItem): String {
+        return "${album.format}:${album.album}:${album.artist}"
+    }
+
+    private fun togglePinAlbum(album: AlbumItem): Boolean {
+        val ctx = context ?: return false
+        val prefs = ctx.getSharedPreferences("spindle_pinned_tiles", Context.MODE_PRIVATE)
+        val current = prefs.getStringSet("pinned_keys", emptySet())?.toMutableSet() ?: mutableSetOf()
+        val key = getAlbumPinKey(album)
+        val isNowPinned: Boolean
+        if (current.contains(key)) {
+            current.remove(key)
+            prefs.edit().remove("pin_data_$key").putStringSet("pinned_keys", current).apply()
+            isNowPinned = false
+        } else {
+            current.add(key)
+            val payload = org.json.JSONObject().apply {
+                put("album", album.album)
+                put("artist", album.artist)
+                put("trackCount", album.trackCount)
+                put("path", album.representativePath)
+                put("year", album.year)
+                put("format", album.format)
+            }.toString()
+            prefs.edit().putString("pin_data_$key", payload).putStringSet("pinned_keys", current).apply()
+            isNowPinned = true
+        }
+        val app = activity?.application as? SpindleApp
+        if (app != null) {
+            updatePanoramaRecentTiles(app)
+        }
+        return isNowPinned
+    }
+
+    private fun getPinnedAlbums(): List<AlbumItem> {
+        val ctx = context ?: return emptyList()
+        val prefs = ctx.getSharedPreferences("spindle_pinned_tiles", Context.MODE_PRIVATE)
+        val keys = prefs.getStringSet("pinned_keys", emptySet()) ?: emptySet()
+        val list = mutableListOf<AlbumItem>()
+        for (key in keys) {
+            val raw = prefs.getString("pin_data_$key", null) ?: continue
+            try {
+                val json = org.json.JSONObject(raw)
+                list.add(AlbumItem(
+                    album = json.getString("album"),
+                    artist = json.optString("artist", ""),
+                    trackCount = json.optInt("trackCount", 1),
+                    representativePath = json.optString("path", ""),
+                    year = json.optInt("year", 0),
+                    format = json.optString("format", "FLAC")
+                ))
+            } catch (_: Exception) {}
+        }
+        return list
+    }
+
+    private fun updateAlbumDetailPinButton(album: AlbumItem) {
+        val isPinned = isAlbumPinned(album)
+        val app = activity?.application as? SpindleApp
+        val theme = app?.themeManager?.currentTheme?.value
+        val isEink = theme?.id == CassetteTheme.MONOCHROME_EINK.id
+        val accent = theme?.accentColor ?: Color.parseColor("#F97316")
+
+        if (isPinned) {
+            binding.btnAlbumDetailPin.text = "UNPIN"
+            binding.btnAlbumDetailPin.setTextColor(if (isEink) Color.BLACK else Color.parseColor("#94A3B8"))
+            binding.btnAlbumDetailPin.backgroundTintList = ColorStateList.valueOf(
+                if (isEink) Color.WHITE else Color.parseColor("#1E293B")
+            )
+        } else {
+            binding.btnAlbumDetailPin.text = "PIN"
+            binding.btnAlbumDetailPin.setTextColor(if (isEink) Color.BLACK else accent)
+            binding.btnAlbumDetailPin.backgroundTintList = ColorStateList.valueOf(
+                if (isEink) Color.WHITE else Color.parseColor("#202334")
+            )
         }
     }
 
