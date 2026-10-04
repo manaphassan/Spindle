@@ -37,6 +37,7 @@ class CassetteFoleyEngine(private val context: Context) {
         private const val TAG = "CassetteFoleyEngine"
         private const val SAMPLE_RATE = 44100
         const val PREF_FOLEY_ENABLED = "pref_cassette_foley_enabled"
+        const val PREF_METRO_CLICKS_ENABLED = "pref_metro_clicks_enabled"
 
         // Sound IDs
         const val SOUND_PLAY_SOLENOID = 1
@@ -44,6 +45,9 @@ class CassetteFoleyEngine(private val context: Context) {
         const val SOUND_MOTOR_SPOOL = 3
         const val SOUND_CARRIAGE_EJECT = 4
         const val SOUND_SWITCH_SNAP = 5
+        const val SOUND_METRO_TICK = 6
+        const val SOUND_TILE_LATCH = 7
+        const val SOUND_ROTARY_RATCHET = 8
     }
 
     private val scope = CoroutineScope(Dispatchers.IO)
@@ -52,6 +56,8 @@ class CassetteFoleyEngine(private val context: Context) {
     private var isLoaded = false
 
     var isEnabled: Boolean = true
+    var isMetroClicksEnabled: Boolean = true
+        private set
 
     val isProceduralUnlocked: Boolean
         get() = StudioUnlockManager.isFeatureUnlocked(context, StudioFeature.PROCEDURAL_FOLEY)
@@ -59,6 +65,7 @@ class CassetteFoleyEngine(private val context: Context) {
     init {
         val prefs = context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
         isEnabled = prefs.getBoolean(PREF_FOLEY_ENABLED, true)
+        isMetroClicksEnabled = prefs.getBoolean(PREF_METRO_CLICKS_ENABLED, true)
 
         initSoundPool()
     }
@@ -70,7 +77,7 @@ class CassetteFoleyEngine(private val context: Context) {
             .build()
 
         soundPool = SoundPool.Builder()
-            .setMaxStreams(4)
+            .setMaxStreams(8)
             .setAudioAttributes(audioAttributes)
             .build()
 
@@ -93,12 +100,24 @@ class CassetteFoleyEngine(private val context: Context) {
                 val fileSwitch = File(foleyDir, "switch_snap.wav")
                 if (!fileSwitch.exists()) generateSwitchSnapWav(fileSwitch)
 
+                val fileTick = File(foleyDir, "metro_tick.wav")
+                if (!fileTick.exists()) generateMetroTickWav(fileTick)
+
+                val fileLatch = File(foleyDir, "tile_latch.wav")
+                if (!fileLatch.exists()) generateTileLatchWav(fileLatch)
+
+                val fileRatchet = File(foleyDir, "rotary_ratchet.wav")
+                if (!fileRatchet.exists()) generateRotaryRatchetWav(fileRatchet)
+
                 soundPool?.let { sp ->
                     soundIdMap[SOUND_PLAY_SOLENOID] = sp.load(filePlay.absolutePath, 1)
                     soundIdMap[SOUND_STOP_RELEASE] = sp.load(fileStop.absolutePath, 1)
                     soundIdMap[SOUND_MOTOR_SPOOL] = sp.load(fileSpool.absolutePath, 1)
                     soundIdMap[SOUND_CARRIAGE_EJECT] = sp.load(fileEject.absolutePath, 1)
                     soundIdMap[SOUND_SWITCH_SNAP] = sp.load(fileSwitch.absolutePath, 1)
+                    soundIdMap[SOUND_METRO_TICK] = sp.load(fileTick.absolutePath, 1)
+                    soundIdMap[SOUND_TILE_LATCH] = sp.load(fileLatch.absolutePath, 1)
+                    soundIdMap[SOUND_ROTARY_RATCHET] = sp.load(fileRatchet.absolutePath, 1)
                 }
                 isLoaded = true
             } catch (e: Exception) {
@@ -132,6 +151,43 @@ class CassetteFoleyEngine(private val context: Context) {
         playSound(SOUND_SWITCH_SNAP, vol)
     }
 
+    /**
+     * Crisp, ultra-short mechanical micro-click for Zune jump letters, navigation detents, and buttons.
+     */
+    fun playMetroTick(pitch: Float = 1.0f) {
+        if (!isMetroClicksEnabled) return
+        val vol = if (isProceduralUnlocked) 0.38f else 0.22f
+        playSound(SOUND_METRO_TICK, vol, pitch)
+    }
+
+    /**
+     * Tactile mechanical tile press and relay click for Live Tiles, App Bar icons, and action pills.
+     */
+    fun playTilePress(pitch: Float = 1.0f) {
+        if (!isMetroClicksEnabled) return
+        val vol = if (isProceduralUnlocked) 0.42f else 0.25f
+        playSound(SOUND_TILE_LATCH, vol, pitch)
+    }
+
+    /**
+     * Tactile relay latch / release click for pinning and unpinning items to the Start Screen.
+     */
+    fun playPinAction(pinned: Boolean) {
+        if (!isMetroClicksEnabled) return
+        val pitch = if (pinned) 1.25f else 0.85f
+        val vol = if (isProceduralUnlocked) 0.45f else 0.28f
+        playSound(SOUND_TILE_LATCH, vol, pitch)
+    }
+
+    /**
+     * Stepped mechanical ratchet click for analog radio dial sweep and precision sliders.
+     */
+    fun playRotaryRatchet(pitch: Float = 1.0f) {
+        if (!isMetroClicksEnabled) return
+        val vol = if (isProceduralUnlocked) 0.32f else 0.20f
+        playSound(SOUND_ROTARY_RATCHET, vol, pitch)
+    }
+
     fun startMotorSpoolLoop(initialPitch: Float = 0.9f): Int {
         if (!isEnabled || !isLoaded) return 0
         if (!isProceduralUnlocked) {
@@ -163,17 +219,23 @@ class CassetteFoleyEngine(private val context: Context) {
         }
     }
 
-    private fun playSound(soundKey: Int, volume: Float) {
+    private fun playSound(soundKey: Int, volume: Float, pitch: Float = 1.0f) {
         if (!isEnabled || !isLoaded) return
         val sp = soundPool ?: return
         val soundId = soundIdMap[soundKey] ?: return
-        sp.play(soundId, volume, volume, 1, 0, 1.0f)
+        sp.play(soundId, volume, volume, 1, 0, pitch.coerceIn(0.5f, 2.0f))
     }
 
     fun setFoleyEnabled(enabled: Boolean) {
         isEnabled = enabled
         val prefs = context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
         prefs.edit().putBoolean(PREF_FOLEY_ENABLED, enabled).apply()
+    }
+
+    fun setMetroClicksEnabled(enabled: Boolean) {
+        isMetroClicksEnabled = enabled
+        val prefs = context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+        prefs.edit().putBoolean(PREF_METRO_CLICKS_ENABLED, enabled).apply()
     }
 
     // =========================================================================
@@ -264,6 +326,67 @@ class CassetteFoleyEngine(private val context: Context) {
             val t = i.toFloat() / SAMPLE_RATE
             val snap = (sin(2 * PI * 3400 * t) * exp(-t / 0.004f)).toFloat()
             samples[i] = (snap.coerceIn(-1.0f, 1.0f) * 32767).toInt().toShort()
+        }
+        writeWavFile(outputFile, samples)
+    }
+
+    private fun generateMetroTickWav(outputFile: File) {
+        // 12ms: Precision mechanical detent tick (4200Hz transient + 2400Hz body resonance)
+        val durationSec = 0.012f
+        val numSamples = (SAMPLE_RATE * durationSec).toInt()
+        val samples = ShortArray(numSamples)
+
+        for (i in 0 until numSamples) {
+            val t = i.toFloat() / SAMPLE_RATE
+            // 4.2kHz sharp impact with 2ms decay
+            val click = (sin(2 * PI * 4200 * t) * exp(-t / 0.0022f)).toFloat()
+            // 2.4kHz indexing tooth harmonic with 4.5ms decay
+            val tooth = (sin(2 * PI * 2400 * t) * exp(-t / 0.0045f) * 0.45f).toFloat()
+            // 900Hz micro-chassis resonance
+            val body = (sin(2 * PI * 900 * t) * exp(-t / 0.006f) * 0.25f).toFloat()
+
+            val mixed = (click * 0.75f + tooth + body).coerceIn(-1.0f, 1.0f)
+            samples[i] = (mixed * 32767).toInt().toShort()
+        }
+        writeWavFile(outputFile, samples)
+    }
+
+    private fun generateTileLatchWav(outputFile: File) {
+        // 24ms: Tactile sprung tile relay latch (3100Hz primary click + 1600Hz secondary catch + 350Hz body)
+        val durationSec = 0.024f
+        val numSamples = (SAMPLE_RATE * durationSec).toInt()
+        val samples = ShortArray(numSamples)
+
+        for (i in 0 until numSamples) {
+            val t = i.toFloat() / SAMPLE_RATE
+            val primary = (sin(2 * PI * 3100 * t) * exp(-t / 0.003f)).toFloat()
+            // Secondary bounce catch at 4ms
+            val secondary = if (t >= 0.004f) {
+                val dt = t - 0.004f
+                (sin(2 * PI * 1600 * dt) * exp(-dt / 0.005f) * 0.5f).toFloat()
+            } else 0f
+            // Low body thud
+            val body = (sin(2 * PI * 350 * t) * exp(-t / 0.012f) * 0.35f).toFloat()
+
+            val mixed = (primary * 0.7f + secondary + body).coerceIn(-1.0f, 1.0f)
+            samples[i] = (mixed * 32767).toInt().toShort()
+        }
+        writeWavFile(outputFile, samples)
+    }
+
+    private fun generateRotaryRatchetWav(outputFile: File) {
+        // 16ms: Precision rotary encoder ratchet tooth step (3600Hz transient click + 1100Hz tooth friction)
+        val durationSec = 0.016f
+        val numSamples = (SAMPLE_RATE * durationSec).toInt()
+        val samples = ShortArray(numSamples)
+
+        for (i in 0 until numSamples) {
+            val t = i.toFloat() / SAMPLE_RATE
+            val click = (sin(2 * PI * 3600 * t) * exp(-t / 0.0025f)).toFloat()
+            val friction = (sin(2 * PI * 1100 * t) * exp(-t / 0.007f) * 0.4f).toFloat()
+
+            val mixed = (click * 0.8f + friction).coerceIn(-1.0f, 1.0f)
+            samples[i] = (mixed * 32767).toInt().toShort()
         }
         writeWavFile(outputFile, samples)
     }

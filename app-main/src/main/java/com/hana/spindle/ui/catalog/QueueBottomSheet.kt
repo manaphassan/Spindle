@@ -63,9 +63,11 @@ class QueueBottomSheet : BottomSheetDialogFragment() {
 
         queueAdapter = QueueAdapter(
             onItemClicked = { index ->
+                app.audioEngine.foleyEngine.playTilePress()
                 audioEngine.playQueueIndex(index)
             },
             onRemoveClicked = { index ->
+                app.audioEngine.foleyEngine.playReleaseClick()
                 audioEngine.removeQueueItem(index)
             },
             onStartDrag = { holder ->
@@ -81,10 +83,12 @@ class QueueBottomSheet : BottomSheetDialogFragment() {
         setupTouchHelper()
 
         binding.btnClearUpcoming.setOnClickListener {
+            app.audioEngine.foleyEngine.playReleaseClick()
             audioEngine.clearUpcomingQueue()
         }
 
         binding.btnSaveQueueMixtape.setOnClickListener {
+            app.audioEngine.foleyEngine.playTilePress()
             val queue = audioEngine.currentQueueFlow.value
             MixtapeDialogs.showSaveQueueAsMixtapeDialog(
                 context = requireContext(),
@@ -95,12 +99,15 @@ class QueueBottomSheet : BottomSheetDialogFragment() {
         }
 
         binding.layoutQueueNowPlayingReturn.setOnClickListener {
+            app.audioEngine.foleyEngine.playReleaseClick()
             dismiss()
         }
         binding.btnQueueReturnNowPlaying.setOnClickListener {
+            app.audioEngine.foleyEngine.playReleaseClick()
             dismiss()
         }
         binding.tvMetroQueueLyricsPivot.setOnClickListener {
+            app.audioEngine.foleyEngine.playMetroTick(1.1f)
             dismiss()
         }
 

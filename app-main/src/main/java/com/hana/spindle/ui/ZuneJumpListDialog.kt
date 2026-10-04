@@ -17,6 +17,7 @@ import androidx.fragment.app.FragmentManager
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.hana.spindle.R
+import com.hana.spindle.SpindleApp
 import com.hana.spindle.databinding.DialogZuneJumpListBinding
 
 /**
@@ -96,7 +97,9 @@ class ZuneJumpListDialog : DialogFragment() {
 
         binding.tvJumpTitle.text = titleText
         binding.tvJumpSubtitle.text = subtitleText
+        (activity?.application as? SpindleApp)?.audioEngine?.foleyEngine?.playMetroTick(1.2f)
         binding.btnJumpClose.setOnClickListener {
+            (activity?.application as? SpindleApp)?.audioEngine?.foleyEngine?.playReleaseClick()
             dismiss()
         }
 
@@ -158,6 +161,12 @@ class ZuneJumpListDialog : DialogFragment() {
                     itemView.isFocusable = true
                     itemView.setOnClickListener {
                         itemView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                        val app = activity?.application as? SpindleApp
+                        if (item == "↑") {
+                            app?.audioEngine?.foleyEngine?.playMetroTick(1.4f)
+                        } else {
+                            app?.audioEngine?.foleyEngine?.playMetroTick(1.0f)
+                        }
                         onLetterSelected?.invoke(item)
                         dismiss()
                     }

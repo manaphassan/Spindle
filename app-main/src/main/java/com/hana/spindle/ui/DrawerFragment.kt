@@ -358,6 +358,7 @@ class DrawerFragment : Fragment() {
     private fun setupAppDrawer() {
         appAdapter = AppListAdapter(
             onAppClicked = { appInfo ->
+                (requireActivity().application as? SpindleApp)?.audioEngine?.foleyEngine?.playTilePress()
                 recentAppsManager.recordAppLaunch(appInfo.packageName)
                 val launchIntent = Intent(Intent.ACTION_MAIN).apply {
                     addCategory(Intent.CATEGORY_LAUNCHER)
@@ -367,6 +368,7 @@ class DrawerFragment : Fragment() {
                 startActivity(launchIntent)
             },
             onAppLongClicked = { appInfo ->
+                (requireActivity().application as? SpindleApp)?.audioEngine?.foleyEngine?.playTilePress(1.2f)
                 AppPropertiesDialog.show(requireContext(), appInfo) {
                     reloadApps()
                 }
@@ -392,11 +394,12 @@ class DrawerFragment : Fragment() {
 
         // Zune Metro 26-Letter Quick-Jump Grid Trigger
         binding.btnJumpApps.setOnClickListener {
+            val appInstance = requireActivity().application as SpindleApp
+            appInstance.audioEngine.foleyEngine.playMetroTick(1.1f)
             val availableLetters = allApps.map { app ->
                 val ch = app.label.trim().firstOrNull()?.uppercaseChar() ?: '#'
                 if (ch in 'A'..'Z') ch else '#'
             }.toSet()
-            val appInstance = requireActivity().application as SpindleApp
             val theme = appInstance.themeManager.currentTheme.value
             ZuneJumpListDialog.show(
                 fragmentManager = parentFragmentManager,
@@ -1264,12 +1267,20 @@ class DrawerFragment : Fragment() {
             updateThemeButtonsVisual()
         }
 
-        // 6. Cassette Mechanical Foley SFX
+        // 6. Cassette Mechanical Foley SFX & Metro UI Clicks
         binding.switchCassetteFoley.isChecked = app.audioEngine.foleyEngine.isEnabled
         binding.switchCassetteFoley.setOnCheckedChangeListener { _, isChecked ->
             app.audioEngine.foleyEngine.setFoleyEnabled(isChecked)
             if (isChecked) {
                 app.audioEngine.foleyEngine.playSwitchSnap()
+            }
+        }
+
+        binding.switchMetroClicks.isChecked = app.audioEngine.foleyEngine.isMetroClicksEnabled
+        binding.switchMetroClicks.setOnCheckedChangeListener { _, isChecked ->
+            app.audioEngine.foleyEngine.setMetroClicksEnabled(isChecked)
+            if (isChecked) {
+                app.audioEngine.foleyEngine.playMetroTick(1.2f)
             }
         }
 

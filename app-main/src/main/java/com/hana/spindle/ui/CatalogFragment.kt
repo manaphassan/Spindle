@@ -1155,6 +1155,7 @@ class CatalogFragment : Fragment() {
             else -> "music"
         }
 
+        appInstance.audioEngine.foleyEngine.playMetroTick(1.1f)
         ZuneJumpListDialog.show(
             fragmentManager = parentFragmentManager,
             availableLetters = availableLetters,
@@ -1168,6 +1169,7 @@ class CatalogFragment : Fragment() {
 
     private fun scrollToLetter(letter: String) {
         val isTop = (letter == "TOP" || letter == "↑")
+        (activity?.application as? SpindleApp)?.audioEngine?.foleyEngine?.playMetroTick(if (isTop) 1.4f else 1.0f)
         val targetChar = if (isTop) ' ' else (letter.firstOrNull()?.uppercaseChar() ?: return)
         val lm = binding.rvCatalog.layoutManager
         val panoramaLm = _binding?.layoutCatalogCollectionPanorama?.rvPanoramaTracks?.layoutManager as? LinearLayoutManager
@@ -2340,6 +2342,7 @@ class CatalogFragment : Fragment() {
 
         // Wire Action Pill Buttons
         binding.btnAlbumDetailPlayAll.setOnClickListener {
+            app.audioEngine.foleyEngine.playTilePress()
             if (songs.isNotEmpty()) {
                 currentDisplayedSongs = songs
                 audioEngine.playQueue(songs, 0)
@@ -2348,6 +2351,7 @@ class CatalogFragment : Fragment() {
         }
 
         binding.btnAlbumDetailShuffle.setOnClickListener {
+            app.audioEngine.foleyEngine.playTilePress()
             if (songs.isNotEmpty()) {
                 currentDisplayedSongs = songs
                 val shuffled = songs.shuffled()
@@ -2360,6 +2364,7 @@ class CatalogFragment : Fragment() {
         binding.btnAlbumDetailPin.setOnClickListener {
             binding.btnAlbumDetailPin.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
             val isPinned = togglePinAlbum(album)
+            app.audioEngine.foleyEngine.playPinAction(isPinned)
             updateAlbumDetailPinButton(album)
             val msg = if (isPinned) "Pinned '${album.album}' to Start Screen" else "Unpinned '${album.album}' from Start Screen"
             Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
@@ -2371,6 +2376,7 @@ class CatalogFragment : Fragment() {
         }
 
         binding.btnAlbumDetailCoverPlay.setOnClickListener {
+            app.audioEngine.foleyEngine.playTilePress()
             if (songs.isNotEmpty()) {
                 currentDisplayedSongs = songs
                 audioEngine.playQueue(songs, 0)
@@ -2379,6 +2385,7 @@ class CatalogFragment : Fragment() {
         }
 
         binding.btnAlbumDetailBack.setOnClickListener {
+            app.audioEngine.foleyEngine.playReleaseClick()
             hideAlbumDetail()
         }
 
@@ -2577,65 +2584,86 @@ class CatalogFragment : Fragment() {
             pBinding.panoramaScrollView.scrollTo(0, 0)
         }
 
+        var lastScrolledPanel = 0
         pBinding.panoramaScrollView.setOnScrollChangeListener { _, scrollX, _, _, _ ->
             pBinding.tvPanoramaParallaxTitle.translationX = -scrollX * 0.22f
+            val currentPanel = (scrollX + panelWidth / 2) / panelWidth
+            if (currentPanel != lastScrolledPanel) {
+                lastScrolledPanel = currentPanel
+                pBinding.panoramaScrollView.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                (activity?.application as? SpindleApp)?.audioEngine?.foleyEngine?.playMetroTick(0.95f)
+            }
         }
 
         // Panel 1: Now Playing & Queue Peek
         pBinding.cardPanoramaNowPlaying.setOnClickListener {
+            (activity?.application as? SpindleApp)?.audioEngine?.foleyEngine?.playTilePress()
             showNowPlayingSingleAudio(true)
         }
         pBinding.btnPanoramaExpandPlayer.setOnClickListener {
+            (activity?.application as? SpindleApp)?.audioEngine?.foleyEngine?.playTilePress()
             showNowPlayingSingleAudio(true)
         }
         pBinding.btnPanoramaPlayPause.setOnClickListener {
             audioEngine.togglePlayPause()
         }
         pBinding.btnPanoramaQueue.setOnClickListener {
+            (activity?.application as? SpindleApp)?.audioEngine?.foleyEngine?.playTilePress()
             QueueBottomSheet().show(childFragmentManager, "QueueBottomSheet")
         }
         pBinding.layoutPanoramaUpNext.setOnClickListener {
+            (activity?.application as? SpindleApp)?.audioEngine?.foleyEngine?.playTilePress()
             QueueBottomSheet().show(childFragmentManager, "QueueBottomSheet")
         }
 
         // Panel 2: Explore Typographic Menu
         pBinding.menuRowTracks.setOnClickListener {
+            (activity?.application as? SpindleApp)?.audioEngine?.foleyEngine?.playTilePress()
             showPanorama(false)
             scrollToCatalogPanel(0)
         }
         pBinding.menuRowAlbums.setOnClickListener {
+            (activity?.application as? SpindleApp)?.audioEngine?.foleyEngine?.playTilePress()
             showPanorama(false)
             scrollToCatalogPanel(1)
         }
         pBinding.menuRowArtists.setOnClickListener {
+            (activity?.application as? SpindleApp)?.audioEngine?.foleyEngine?.playTilePress()
             showPanorama(false)
             scrollToCatalogPanel(2)
         }
         pBinding.menuRowMixtapes.setOnClickListener {
+            (activity?.application as? SpindleApp)?.audioEngine?.foleyEngine?.playTilePress()
             showPanorama(false)
             scrollToCatalogPanel(3)
         }
         pBinding.menuRowFolders.setOnClickListener {
+            (activity?.application as? SpindleApp)?.audioEngine?.foleyEngine?.playTilePress()
             showPanorama(false)
             scrollToCatalogPanel(4)
         }
         pBinding.menuRowFavorites.setOnClickListener {
+            (activity?.application as? SpindleApp)?.audioEngine?.foleyEngine?.playTilePress()
             showPanorama(false)
             scrollToCatalogPanel(5)
         }
         pBinding.menuRowComposers.setOnClickListener {
+            (activity?.application as? SpindleApp)?.audioEngine?.foleyEngine?.playTilePress()
             showPanorama(false)
             scrollToCatalogPanel(6)
         }
 
         // Panel 4: Sound & Tools Shortcuts
         pBinding.cardToolSoundDeck.setOnClickListener {
+            (activity?.application as? SpindleApp)?.audioEngine?.foleyEngine?.playTilePress()
             (activity as? MainActivity)?.navigateToDrawer()
         }
         pBinding.cardToolRadio.setOnClickListener {
+            (activity?.application as? SpindleApp)?.audioEngine?.foleyEngine?.playTilePress()
             (activity as? MainActivity)?.navigateToRadio()
         }
         pBinding.cardToolApps.setOnClickListener {
+            (activity?.application as? SpindleApp)?.audioEngine?.foleyEngine?.playTilePress()
             (activity as? MainActivity)?.navigateToDrawer()
         }
     }
@@ -2846,6 +2874,7 @@ class CatalogFragment : Fragment() {
                     }
                 }
                 tiles[i].setOnClickListener {
+                    (activity?.application as? SpindleApp)?.audioEngine?.foleyEngine?.playTilePress()
                     albumTracksJob?.cancel()
                     albumTracksJob = viewLifecycleOwner.lifecycleScope.launch {
                         getTracksFlowForAlbum(app, album).collectLatest { albumSongs ->
@@ -2856,6 +2885,7 @@ class CatalogFragment : Fragment() {
                 tiles[i].setOnLongClickListener {
                     tiles[i].performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
                     val pinnedNow = togglePinAlbum(album)
+                    (activity?.application as? SpindleApp)?.audioEngine?.foleyEngine?.playPinAction(pinnedNow)
                     val msg = if (pinnedNow) "Pinned '${album.album}' to Start Screen" else "Unpinned '${album.album}' from Start Screen"
                     Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
                     true

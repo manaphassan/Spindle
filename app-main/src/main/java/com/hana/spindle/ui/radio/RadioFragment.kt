@@ -138,6 +138,8 @@ class RadioFragment : Fragment() {
 
     private fun setupHeader() {
         binding.btnRadioBackToPlayer.setOnClickListener {
+            val app = activity?.application as? SpindleApp
+            app?.audioEngine?.foleyEngine?.playReleaseClick()
             (activity as? com.hana.spindle.ui.MainActivity)?.navigateToPlayer()
         }
     }
@@ -508,6 +510,7 @@ class RadioFragment : Fragment() {
                 val freq = fmPresets.getOrElse(i) { 88.5f }
                 presetButtons[i].text = String.format(Locale.US, "%.1f", freq)
                 presetButtons[i].setOnClickListener {
+                    (activity?.application as? SpindleApp)?.audioEngine?.foleyEngine?.playTilePress()
                     stopScan()
                     binding.tuningDialView.currentFreq = freq
                     analogFmEngine.tuneFrequency(freq)
@@ -516,6 +519,7 @@ class RadioFragment : Fragment() {
                     saveRadioSettings()
                 }
                 presetButtons[i].setOnLongClickListener {
+                    (activity?.application as? SpindleApp)?.audioEngine?.foleyEngine?.playPinAction(true)
                     val curFreq = binding.tuningDialView.currentFreq
                     fmPresets[i] = curFreq
                     presetButtons[i].text = String.format(Locale.US, "%.1f", curFreq)
@@ -539,6 +543,7 @@ class RadioFragment : Fragment() {
                     presetButtons[i].text = station.callsign
                     presetButtons[i].setOnLongClickListener(null)
                     presetButtons[i].setOnClickListener {
+                        (activity?.application as? SpindleApp)?.audioEngine?.foleyEngine?.playTilePress()
                         val current = radioEngine.radioState.value.currentStation
                         val isAudioActive = radioEngine.radioState.value.isPlaying || radioEngine.radioState.value.isBuffering
                         if (current?.frequencyMhz == station.frequencyMhz && isAudioActive) {
@@ -576,6 +581,7 @@ class RadioFragment : Fragment() {
 
     private fun setupTuningDial() {
         binding.tuningDialView.onFrequencyChanged = { freq ->
+            (activity?.application as? SpindleApp)?.audioEngine?.foleyEngine?.playRotaryRatchet()
             if (isFmMode) {
                 analogFmEngine.tuneFrequency(freq)
                 syncFmAudio(freq)
@@ -587,6 +593,7 @@ class RadioFragment : Fragment() {
             }
         }
         binding.tuningDialView.onDialClicked = {
+            (activity?.application as? SpindleApp)?.audioEngine?.foleyEngine?.playSwitchSnap()
             if (isFmMode) {
                 if (analogFmEngine.isAnalogModeEnabled) {
                     analogFmEngine.stopAnalogAudio()

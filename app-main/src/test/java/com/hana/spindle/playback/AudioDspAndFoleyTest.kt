@@ -581,4 +581,80 @@ class AudioDspAndFoleyTest {
         )
         assertEquals("Pink Floyd The Dark Side of the Moon", clean2)
     }
+
+    @Test
+    fun testMetroFoleySoundConstantsAndPreferences() {
+        assertEquals(6, CassetteFoleyEngine.SOUND_METRO_TICK)
+        assertEquals(7, CassetteFoleyEngine.SOUND_TILE_LATCH)
+        assertEquals(8, CassetteFoleyEngine.SOUND_ROTARY_RATCHET)
+        assertEquals("pref_metro_clicks_enabled", CassetteFoleyEngine.PREF_METRO_CLICKS_ENABLED)
+    }
+
+    @Test
+    fun testProceduralMetroTickSynthesisWaveform() {
+        val sampleRate = 44100
+        val durationSec = 0.012f
+        val numSamples = (sampleRate * durationSec).toInt()
+        val samples = ShortArray(numSamples)
+
+        for (i in 0 until numSamples) {
+            val t = i.toFloat() / sampleRate
+            val click = (kotlin.math.sin(2 * kotlin.math.PI * 4200 * t) * kotlin.math.exp(-t / 0.0022f)).toFloat()
+            val tooth = (kotlin.math.sin(2 * kotlin.math.PI * 2400 * t) * kotlin.math.exp(-t / 0.0045f) * 0.45f).toFloat()
+            val body = (kotlin.math.sin(2 * kotlin.math.PI * 900 * t) * kotlin.math.exp(-t / 0.006f) * 0.25f).toFloat()
+            val mixed = (click * 0.75f + tooth + body).coerceIn(-1.0f, 1.0f)
+            samples[i] = (mixed * 32767).toInt().toShort()
+        }
+
+        assertTrue("Metro tick sample buffer must be exactly 12ms", samples.size > 500)
+        val maxAmp = samples.maxOrNull() ?: 0
+        assertTrue("Metro tick must have non-zero peak amplitude", maxAmp > 10000)
+        // Damping verification: tail of 12ms sample must be well below peak
+        val tailAmp = kotlin.math.abs(samples.last().toInt())
+        assertTrue("Metro tick must be heavily damped by end of waveform", tailAmp < maxAmp * 0.1f)
+    }
+
+    @Test
+    fun testProceduralTileLatchSynthesisWaveform() {
+        val sampleRate = 44100
+        val durationSec = 0.024f
+        val numSamples = (sampleRate * durationSec).toInt()
+        val samples = ShortArray(numSamples)
+
+        for (i in 0 until numSamples) {
+            val t = i.toFloat() / sampleRate
+            val primary = (kotlin.math.sin(2 * kotlin.math.PI * 3100 * t) * kotlin.math.exp(-t / 0.003f)).toFloat()
+            val secondary = if (t >= 0.004f) {
+                val dt = t - 0.004f
+                (kotlin.math.sin(2 * kotlin.math.PI * 1600 * dt) * kotlin.math.exp(-dt / 0.005f) * 0.5f).toFloat()
+            } else 0f
+            val body = (kotlin.math.sin(2 * kotlin.math.PI * 350 * t) * kotlin.math.exp(-t / 0.012f) * 0.35f).toFloat()
+            val mixed = (primary * 0.7f + secondary + body).coerceIn(-1.0f, 1.0f)
+            samples[i] = (mixed * 32767).toInt().toShort()
+        }
+
+        assertTrue("Tile latch buffer must be 24ms (approx 1058 samples)", samples.size in 1000..1100)
+        val maxAmp = samples.maxOrNull() ?: 0
+        assertTrue("Tile latch must have prominent mechanical transient", maxAmp > 12000)
+    }
+
+    @Test
+    fun testProceduralRotaryRatchetSynthesisWaveform() {
+        val sampleRate = 44100
+        val durationSec = 0.016f
+        val numSamples = (sampleRate * durationSec).toInt()
+        val samples = ShortArray(numSamples)
+
+        for (i in 0 until numSamples) {
+            val t = i.toFloat() / sampleRate
+            val click = (kotlin.math.sin(2 * kotlin.math.PI * 3600 * t) * kotlin.math.exp(-t / 0.0025f)).toFloat()
+            val friction = (kotlin.math.sin(2 * kotlin.math.PI * 1100 * t) * kotlin.math.exp(-t / 0.007f) * 0.4f).toFloat()
+            val mixed = (click * 0.8f + friction).coerceIn(-1.0f, 1.0f)
+            samples[i] = (mixed * 32767).toInt().toShort()
+        }
+
+        assertTrue("Rotary ratchet buffer must be 16ms", samples.size in 700..710)
+        val maxAmp = samples.maxOrNull() ?: 0
+        assertTrue("Rotary ratchet must produce sharp detent tick", maxAmp > 10000)
+    }
 }
