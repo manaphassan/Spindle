@@ -36,11 +36,17 @@ class DualAnalogVuMeterView @JvmOverloads constructor(
         PARCHMENT("CREAM", Color.parseColor("#26231E"), Color.parseColor("#423B30"), Color.parseColor("#F5F5F4"))
     }
 
+    var onBacklightChanged: ((BacklightTone) -> Unit)? = null
+
     var currentBacklight: BacklightTone = BacklightTone.WARM_TUNGSTEN
         set(value) {
+            val changed = (field != value)
             field = value
             updateColors()
             invalidate()
+            if (changed) {
+                onBacklightChanged?.invoke(value)
+            }
         }
 
     var isEink: Boolean = false

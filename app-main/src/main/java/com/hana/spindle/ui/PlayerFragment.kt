@@ -19,8 +19,11 @@ import android.view.animation.AccelerateInterpolator
 import android.view.animation.DecelerateInterpolator
 import android.widget.SeekBar
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.hana.spindle.R
 import com.hana.spindle.SpindleApp
 import com.hana.spindle.data.db.TrackEntity
 import com.hana.spindle.databinding.FragmentPlayerBinding
@@ -28,11 +31,14 @@ import com.hana.spindle.playback.AudioEngine
 import com.hana.spindle.playback.RepeatMode
 import com.hana.spindle.playback.ShuffleMode
 import com.hana.spindle.ui.catalog.QueueBottomSheet
+import com.hana.spindle.ui.eq.DualAnalogVuMeterView
 import com.hana.spindle.theme.CassetteTheme
 import com.hana.spindle.theme.ChassisStyle
 import com.hana.spindle.theme.ThemeManager
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.io.File
 import java.util.Locale
@@ -47,6 +53,8 @@ class PlayerFragment : Fragment() {
     private lateinit var audioEngine: AudioEngine
     private var isSideA = true
     private var isJCardVisible = false
+    private var isVuMeterVisible = false
+    private var isUserScrubbingVu = false
     private var currentAlbumCoverBitmap: Bitmap? = null
     private var currentFormatString: String = ""
     private var spoolFoleyStreamId = 0
@@ -92,6 +100,19 @@ class PlayerFragment : Fragment() {
         setupControls()
         setupCassetteFlip()
 
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, object : androidx.activity.OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                val mainAct = activity as? MainActivity
+                val isPlayerPage = mainAct?.let { it.getCurrentViewPagerItem() == 1 } ?: false
+                if (isPlayerPage && handleBackPressed()) {
+                    return
+                }
+                isEnabled = false
+                requireActivity().onBackPressedDispatcher.onBackPressed()
+                isEnabled = true
+            }
+        })
+
         // Read initial battery status
         try {
             val initialBattery = requireContext().registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
@@ -134,11 +155,13 @@ class PlayerFragment : Fragment() {
             themeManager.currentTheme.collectLatest { theme ->
                 _binding?.let { b ->
                     val isMetal81 = theme.chassisStyle == ChassisStyle.METAL_81_RED
-                    b.verticalDeckContainer.visibility = if (isMetal81) View.GONE else View.VISIBLE
-                    b.metal81Container.visibility = if (isMetal81) View.VISIBLE else View.GONE
+                    b.verticalDeckContainer.visibility = if (isMetal81 || isVuMeterVisible) View.GONE else View.VISIBLE
+                    b.metal81Container.visibility = if (isMetal81 && !isVuMeterVisible) View.VISIBLE else View.GONE
+                    b.vuMeterContainer.visibility = if (isVuMeterVisible) View.VISIBLE else View.GONE
 
                     b.verticalDeckView.theme = theme
                     b.verticalCassetteView.theme = theme
+                    b.vuMeterView.isEink = (theme.id == CassetteTheme.MONOCHROME_EINK.id)
 
                     val isVaporwave = theme.chassisStyle == ChassisStyle.VAPORWAVE_80S
                     b.tvVerticalTime.setTextColor(if (isVaporwave) Color.parseColor("#475569") else Color.parseColor("#80FFFFFF"))
@@ -238,6 +261,9 @@ class PlayerFragment : Fragment() {
             b.tvTotalDuration.text = formatTime(state.durationMs)
 
             b.btnPlayPause.text = if (state.isPlaying) "PAUSE" else "PLAY"
+
+            // 3. Dual Analog VU Meter Display
+            syncVuMeterState(state)
         }
     }
 
@@ -257,6 +283,38 @@ class PlayerFragment : Fragment() {
                     b.verticalDeckView.bluetoothBatteryPct = metrics.bluetoothBatteryPct
                     b.verticalDeckView.isBluetoothConnected = metrics.isBluetoothConnected
                     b.verticalDeckView.bluetoothConnectionStatus = metrics.bluetoothConnectionStatus
+                }
+            }
+        }
+
+
+        // 15Hz Stereo Ballistics Simulation for Analog VU Needle Galvanometer
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                var phase = 0.0
+                while (isActive) {
+                    if (isVuMeterVisible && _binding != null) {
+                        val isPlaying = audioEngine.playbackState.value.isPlaying
+                        if (isPlaying) {
+                            phase += 0.4
+                            val baseLevel = 0.65f + 0.28f * kotlin.math.sin(phase).toFloat()
+                            val peakJitter = (kotlin.math.sin(phase * 2.3) * 0.12f).toFloat()
+                            val totalLevel = (baseLevel + peakJitter).coerceIn(0f, 1f)
+
+                            val (leftLvl, rightLvl) = audioEngine.getStereoLevels(totalLevel)
+                            _binding?.vuMeterView?.setStereoLevels(leftLvl, rightLvl)
+
+                            val leftDb = (20f * kotlin.math.log10(leftLvl.coerceIn(0.001f, 1f))).coerceIn(-30f, 0f)
+                            val rightDb = (20f * kotlin.math.log10(rightLvl.coerceIn(0.001f, 1f))).coerceIn(-30f, 0f)
+                            _binding?.tvVuLeftDb?.text = String.format(Locale.US, "L: %.1f dB", leftDb)
+                            _binding?.tvVuRightDb?.text = String.format(Locale.US, "R: %.1f dB", rightDb)
+                        } else {
+                            _binding?.vuMeterView?.setStereoLevels(0.0f, 0.0f)
+                            _binding?.tvVuLeftDb?.text = "L: -∞ dB"
+                            _binding?.tvVuRightDb?.text = "R: -∞ dB"
+                        }
+                    }
+                    delay(66L)
                 }
             }
         }
@@ -306,6 +364,9 @@ class PlayerFragment : Fragment() {
         // 3D Card Flip to J-Card Liner Notes
         binding.verticalDeckView.onJCardClicked = {
             openJCardLiner(animate = true)
+        }
+        binding.verticalDeckView.onVuMeterClicked = {
+            openVuMeter(animate = true)
         }
         binding.verticalDeckView.onQueueClicked = {
             openQueueBottomSheet()
@@ -418,6 +479,8 @@ class PlayerFragment : Fragment() {
             rootGestureDetector.onTouchEvent(event)
             false
         }
+
+        setupVuMeterControls()
     }
 
     private fun openJCardLiner(animate: Boolean) {
@@ -507,6 +570,262 @@ class PlayerFragment : Fragment() {
                     .start()
             }
             .start()
+    }
+
+    private fun setupVuMeterControls() {
+        val b = _binding ?: return
+
+        // Return to Cassette Deck
+        b.btnVuBackToDeck.setOnClickListener {
+            audioEngine.foleyEngine.playReleaseClick()
+            closeVuMeter(animate = true)
+        }
+
+        // Backlight tone cycle
+        b.btnVuBacklightTone.setOnClickListener {
+            cycleVuBacklight()
+        }
+
+        // Observe backlight changes from direct touch on meter face
+        b.vuMeterView.onBacklightChanged = { tone ->
+            updateVuBacklightButton(tone)
+            val prefs = requireContext().getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+            prefs.edit().putString("pref_vu_backlight_tone", tone.name).apply()
+        }
+
+        // Restore saved backlight preference
+        val prefs = requireContext().getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+        val savedToneName = prefs.getString("pref_vu_backlight_tone", DualAnalogVuMeterView.BacklightTone.WARM_TUNGSTEN.name)
+        val tone = try {
+            DualAnalogVuMeterView.BacklightTone.valueOf(savedToneName ?: "")
+        } catch (_: Exception) {
+            DualAnalogVuMeterView.BacklightTone.WARM_TUNGSTEN
+        }
+        b.vuMeterView.currentBacklight = tone
+        updateVuBacklightButton(tone)
+
+        // Transport controls
+        b.btnVuPlayPause.setOnClickListener {
+            audioEngine.foleyEngine.playTilePress()
+            audioEngine.togglePlayPause()
+        }
+
+        b.btnVuPrev.setOnClickListener {
+            audioEngine.foleyEngine.playTilePress()
+            audioEngine.playPrevious(forcePreviousSong = true)
+        }
+
+        b.btnVuNext.setOnClickListener {
+            audioEngine.foleyEngine.playTilePress()
+            audioEngine.playNext()
+        }
+
+        b.btnVuRepeat.setOnClickListener {
+            audioEngine.foleyEngine.playMetroTick()
+            audioEngine.toggleRepeat()
+        }
+
+        b.btnVuShuffle.setOnClickListener {
+            audioEngine.foleyEngine.playMetroTick()
+            audioEngine.toggleShuffle()
+        }
+
+        b.btnVuQueue.setOnClickListener {
+            audioEngine.foleyEngine.playTilePress()
+            openQueueBottomSheet()
+        }
+
+        // Scrubbable seek bar
+        b.seekVuProgress.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                if (fromUser) {
+                    val total = audioEngine.playbackState.value.durationMs
+                    if (total > 0) {
+                        val seekMs = (total * (progress / 1000f)).toLong()
+                        b.tvVuCurrentTime.text = formatTime(seekMs)
+                    }
+                }
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {
+                isUserScrubbingVu = true
+            }
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                isUserScrubbingVu = false
+                val progress = seekBar?.progress ?: 0
+                val total = audioEngine.playbackState.value.durationMs
+                if (total > 0) {
+                    val seekMs = (total * (progress / 1000f)).toLong()
+                    audioEngine.seekTo(seekMs)
+                    audioEngine.foleyEngine.playMetroTick()
+                }
+            }
+        })
+    }
+
+    private fun cycleVuBacklight() {
+        val b = _binding ?: return
+        b.vuMeterView.cycleBacklight()
+        val tone = b.vuMeterView.currentBacklight
+        updateVuBacklightButton(tone)
+        val prefs = requireContext().getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+        prefs.edit().putString("pref_vu_backlight_tone", tone.name).apply()
+        audioEngine.foleyEngine.playMetroTick()
+    }
+
+    private fun updateVuBacklightButton(tone: DualAnalogVuMeterView.BacklightTone) {
+        _binding?.btnVuBacklightTone?.text = "${tone.nameLabel} 💡"
+    }
+
+    fun openVuMeter(animate: Boolean) {
+        if (isVuMeterVisible) return
+        if (isJCardVisible) {
+            closeJCardLiner(animate = false)
+        }
+        isVuMeterVisible = true
+        audioEngine.foleyEngine.playSwitchSnap()
+
+        val deckContainer = binding.verticalDeckContainer
+        val vuContainer = binding.vuMeterContainer
+
+        syncVuMeterState(audioEngine.playbackState.value)
+
+        if (!animate) {
+            deckContainer.visibility = View.GONE
+            deckContainer.rotationY = 0f
+            vuContainer.visibility = View.VISIBLE
+            vuContainer.rotationY = 0f
+            return
+        }
+
+        val distance = 8000f * resources.displayMetrics.density
+        deckContainer.cameraDistance = distance
+        vuContainer.cameraDistance = distance
+
+        vuContainer.visibility = View.VISIBLE
+        vuContainer.rotationY = -90f
+        vuContainer.alpha = 0f
+
+        deckContainer.animate()
+            .rotationY(90f)
+            .setDuration(240L)
+            .setInterpolator(AccelerateInterpolator())
+            .withEndAction {
+                deckContainer.visibility = View.GONE
+                deckContainer.rotationY = 0f
+                vuContainer.alpha = 1f
+                vuContainer.animate()
+                    .rotationY(0f)
+                    .setDuration(240L)
+                    .setInterpolator(DecelerateInterpolator())
+                    .start()
+            }
+            .start()
+    }
+
+    fun closeVuMeter(animate: Boolean) {
+        if (!isVuMeterVisible) return
+        isVuMeterVisible = false
+        audioEngine.foleyEngine.playSwitchSnap()
+
+        val deckContainer = binding.verticalDeckContainer
+        val vuContainer = binding.vuMeterContainer
+
+        if (!animate) {
+            vuContainer.visibility = View.GONE
+            vuContainer.rotationY = 0f
+            deckContainer.visibility = View.VISIBLE
+            deckContainer.rotationY = 0f
+            return
+        }
+
+        val distance = 8000f * resources.displayMetrics.density
+        deckContainer.cameraDistance = distance
+        vuContainer.cameraDistance = distance
+
+        deckContainer.visibility = View.VISIBLE
+        deckContainer.rotationY = 90f
+        deckContainer.alpha = 0f
+
+        vuContainer.animate()
+            .rotationY(-90f)
+            .setDuration(240L)
+            .setInterpolator(AccelerateInterpolator())
+            .withEndAction {
+                vuContainer.visibility = View.GONE
+                vuContainer.rotationY = 0f
+                deckContainer.alpha = 1f
+                deckContainer.animate()
+                    .rotationY(0f)
+                    .setDuration(240L)
+                    .setInterpolator(DecelerateInterpolator())
+                    .start()
+            }
+            .start()
+    }
+
+    fun handleBackPressed(): Boolean {
+        if (isJCardVisible) {
+            closeJCardLiner(animate = true)
+            return true
+        }
+        if (isVuMeterVisible) {
+            closeVuMeter(animate = true)
+            return true
+        }
+        return false
+    }
+
+    private fun syncVuMeterState(state: com.hana.spindle.playback.PlaybackState) {
+        _binding?.let { b ->
+            state.currentSong?.let { song ->
+                b.tvVuTrackTitle.text = song.title
+                b.tvVuTrackTitle.isSelected = true
+                b.tvVuTrackArtist.text = "${song.artist} • ${song.album}"
+                b.tvVuFormatBadge.text = currentFormatString.ifEmpty { "HI-RES AUDIO" }
+            } ?: run {
+                val hardwareName = com.hana.spindle.util.DeviceUtils.getHardwareDeviceName()
+                b.tvVuTrackTitle.text = hardwareName
+                b.tvVuTrackTitle.isSelected = true
+                b.tvVuTrackArtist.text = "Spindle Direct ALSA Output"
+                b.tvVuFormatBadge.text = "DIRECT DAC"
+            }
+
+            val bias = audioEngine.audioFxController.currentTapeFormulation.tag
+            val dolby = audioEngine.audioFxController.currentDolbyMode.badgeText
+            b.tvVuDspMode.text = "BIAS: $bias • NR: $dolby"
+
+            b.tvVuCurrentTime.text = formatTime(state.currentPositionMs)
+            b.tvVuTotalDuration.text = formatTime(state.durationMs)
+
+            if (!isUserScrubbingVu) {
+                val progressInt = if (state.durationMs > 0) {
+                    ((state.currentPositionMs * 1000) / state.durationMs).toInt()
+                } else 0
+                b.seekVuProgress.progress = progressInt.coerceIn(0, 1000)
+            }
+
+            b.btnVuPlayPause.setImageResource(if (state.isPlaying) R.drawable.ic_np_pause else R.drawable.ic_np_play)
+
+            when (state.repeatMode) {
+                RepeatMode.OFF -> {
+                    b.btnVuRepeat.setColorFilter(Color.parseColor("#71717A"))
+                }
+                RepeatMode.ALL -> {
+                    b.btnVuRepeat.setColorFilter(Color.parseColor("#F97316"))
+                }
+                RepeatMode.ONE -> {
+                    b.btnVuRepeat.setColorFilter(Color.parseColor("#FDE68A"))
+                }
+            }
+
+            if (state.shuffleMode != ShuffleMode.OFF) {
+                b.btnVuShuffle.setColorFilter(Color.parseColor("#F97316"))
+            } else {
+                b.btnVuShuffle.setColorFilter(Color.parseColor("#71717A"))
+            }
+        }
     }
 
     private fun setupCassetteFlip() {

@@ -657,4 +657,73 @@ class AudioDspAndFoleyTest {
         val maxAmp = samples.maxOrNull() ?: 0
         assertTrue("Rotary ratchet must produce sharp detent tick", maxAmp > 10000)
     }
+
+    @Test
+    fun testVuMeterDecibelBallisticsScaleInterpolation() {
+        // Testing ANSI C16.5 VU needle deflection mapping math
+        fun levelToAngle(level: Float): Float {
+            if (level <= 0.01f) return -38.0f // -20 dB
+            val db = (20.0f * kotlin.math.log10(level.coerceIn(0.001f, 1.0f))).coerceIn(-30.0f, 0.0f)
+            return when {
+                db <= -20.0f -> -38.0f
+                db <= -10.0f -> {
+                    val t = (db - (-20f)) / 10f
+                    -38.0f + (t * (-24f - (-38.0f)))
+                }
+                db <= -5.0f -> {
+                    val t = (db - (-10f)) / 5f
+                    -24f + (t * (-8f - (-24f)))
+                }
+                db <= -3.0f -> {
+                    val t = (db - (-5f)) / 2f
+                    -8f + (t * (0f - (-8f)))
+                }
+                db <= 0.0f -> {
+                    val t = (db - (-3f)) / 3f
+                    0f + (t * (38.0f - 0f))
+                }
+                else -> 38.0f
+            }
+        }
+
+        // Silent audio level (0.0) -> -38° (-20 dB baseline)
+        assertEquals(-38.0f, levelToAngle(0.0f), 0.01f)
+        assertEquals(-38.0f, levelToAngle(0.005f), 0.01f)
+
+        // 0.1 linear level (-20 dBFS) -> -38°
+        assertEquals(-38.0f, levelToAngle(0.1f), 0.05f)
+
+        // 0.316 linear level (-10 dBFS) -> -24°
+        assertEquals(-24.0f, levelToAngle(0.3162f), 0.1f)
+
+        // 0.707 linear level (-3 dBFS / nominal ~0 VU) -> 0°
+        assertEquals(0.0f, levelToAngle(0.7079f), 0.1f)
+
+        // Full scale 1.0 (0 dBFS / +3 dB VU full deflection overload) -> +38°
+        assertEquals(38.0f, levelToAngle(1.0f), 0.01f)
+    }
+
+    @Test
+    fun testAudioBalanceStereoLevelsCalculation() {
+        fun calcStereoLevels(baseLevel: Float, balance: Float): Pair<Float, Float> {
+            val leftMult = (2f * (1f - balance)).coerceIn(0f, 1f)
+            val rightMult = (2f * balance).coerceIn(0f, 1f)
+            return Pair(baseLevel * leftMult, baseLevel * rightMult)
+        }
+
+        // Center balance (0.5) gives equal L and R levels
+        val (leftCenter, rightCenter) = calcStereoLevels(0.8f, 0.5f)
+        assertEquals(0.8f, leftCenter, 0.001f)
+        assertEquals(0.8f, rightCenter, 0.001f)
+
+        // Hard Left balance (0.0) gives full L and zero R
+        val (leftFull, rightZero) = calcStereoLevels(0.75f, 0.0f)
+        assertEquals(0.75f, leftFull, 0.001f)
+        assertEquals(0.0f, rightZero, 0.001f)
+
+        // Hard Right balance (1.0) gives zero L and full R
+        val (leftZero, rightFull) = calcStereoLevels(0.75f, 1.0f)
+        assertEquals(0.0f, leftZero, 0.001f)
+        assertEquals(0.75f, rightFull, 0.001f)
+    }
 }

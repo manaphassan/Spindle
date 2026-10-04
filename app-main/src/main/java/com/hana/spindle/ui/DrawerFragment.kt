@@ -191,10 +191,18 @@ class DrawerFragment : Fragment() {
 
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
+                val mainAct = activity as? MainActivity
+                val isDrawerActive = mainAct?.let { it.getCurrentViewPagerItem() == 2 } ?: false
+                if (!isDrawerActive) {
+                    isEnabled = false
+                    requireActivity().onBackPressedDispatcher.onBackPressed()
+                    isEnabled = true
+                    return
+                }
                 if (currentTabIndex != 0) {
                     selectTab(0)
                 } else {
-                    (activity as? MainActivity)?.navigateToPlayer()
+                    mainAct.navigateToPlayer()
                 }
             }
         })

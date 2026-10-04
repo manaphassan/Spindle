@@ -269,6 +269,7 @@ class VerticalDeckView @JvmOverloads constructor(
     var onHoldSeekStop: (() -> Unit)? = null
     var onLeaderAutoStop: (() -> Unit)? = null
     var onJCardClicked: (() -> Unit)? = null
+    var onVuMeterClicked: (() -> Unit)? = null
     var onRewindClicked: (() -> Unit)? = null
     var onFastForwardClicked: (() -> Unit)? = null
     var onEjectClicked: (() -> Unit)? = null
@@ -366,6 +367,8 @@ class VerticalDeckView @JvmOverloads constructor(
                       y >= dolbyBadgeRect.top - slop && y <= dolbyBadgeRect.bottom + slop
         val inJCard = x >= jCardBadgeRect.left - slop && x <= jCardBadgeRect.right + slop &&
                       y >= jCardBadgeRect.top - slop && y <= jCardBadgeRect.bottom + slop
+        val inVu = x >= vuBadgeRect.left - slop && x <= vuBadgeRect.right + slop &&
+                   y >= vuBadgeRect.top - slop && y <= vuBadgeRect.bottom + slop
         return btnRewRect.contains(x, y) ||
                btnFwdRect.contains(x, y) ||
                btnPlayRect.contains(x, y) ||
@@ -373,6 +376,7 @@ class VerticalDeckView @JvmOverloads constructor(
                inTape ||
                inDolby ||
                inJCard ||
+               inVu ||
                (y >= ledBarRect.top - 25f && y <= ledBarRect.bottom + 25f)
     }
 
@@ -552,6 +556,7 @@ class VerticalDeckView @JvmOverloads constructor(
     private val tapeTypeBadgeRect = RectF()
     private val dolbyBadgeRect = RectF()
     private val jCardBadgeRect = RectF()
+    private val vuBadgeRect = RectF()
     private val tapeBadgeBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val tapeBadgeBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 1.4f }
     private val tapeBadgeTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -1318,10 +1323,11 @@ class VerticalDeckView @JvmOverloads constructor(
         val statusRowMidY = (statusRowTop + statusRowBottom) * 0.5f
 
         // Left side: Interactive Badges aligned to left (ledBarRect.left)
-        val badgeW1 = w * 0.155f
-        val badgeW2 = w * 0.165f
-        val badgeW3 = w * 0.155f
-        val badgeGap = w * 0.012f
+        val badgeW1 = w * 0.118f
+        val badgeW2 = w * 0.128f
+        val badgeW3 = w * 0.118f
+        val badgeW4 = w * 0.110f
+        val badgeGap = w * 0.008f
 
         val badge1Left = ledBarRect.left
         tapeTypeBadgeRect.set(badge1Left, statusRowTop, badge1Left + badgeW1, statusRowBottom)
@@ -1331,6 +1337,9 @@ class VerticalDeckView @JvmOverloads constructor(
 
         val badge3Left = dolbyBadgeRect.right + badgeGap
         jCardBadgeRect.set(badge3Left, statusRowTop, badge3Left + badgeW3, statusRowBottom)
+
+        val badge4Left = jCardBadgeRect.right + badgeGap
+        vuBadgeRect.set(badge4Left, statusRowTop, badge4Left + badgeW4, statusRowBottom)
 
         tapeBadgeTextPaint.textSize = statusRowH * 0.42f
         tapeBadgeSubTextPaint.textSize = statusRowH * 0.28f
@@ -2054,6 +2063,7 @@ class VerticalDeckView @JvmOverloads constructor(
         drawSelectorBadge(canvas, tapeTypeBadgeRect, tapeFormulation.tag, "BIAS / EQ", true)
         drawSelectorBadge(canvas, dolbyBadgeRect, dolbyMode.badgeText, "NR SYSTEM", dolbyMode != com.hana.spindle.playback.AudioFxController.DolbyMode.OFF)
         drawSelectorBadge(canvas, jCardBadgeRect, "J-CARD", "LINER", true)
+        drawSelectorBadge(canvas, vuBadgeRect, "VU", "METER", true)
 
         // 2. Right-aligned "Battery" text on left of battery led bar
         canvas.drawText("Battery", batteryLabelX, batteryLabelY, statusLabelPaint)
@@ -2849,6 +2859,16 @@ class VerticalDeckView @JvmOverloads constructor(
                 if (inJCardBadge) {
                     performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                     onJCardClicked?.invoke()
+                    return true
+                }
+
+                val inVuBadge = x >= vuBadgeRect.left - badgeSlop &&
+                                x <= vuBadgeRect.right + badgeSlop &&
+                                y >= vuBadgeRect.top - badgeSlop &&
+                                y <= vuBadgeRect.bottom + badgeSlop
+                if (inVuBadge) {
+                    performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                    onVuMeterClicked?.invoke()
                     return true
                 }
 

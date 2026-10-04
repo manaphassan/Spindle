@@ -325,6 +325,10 @@ class MainActivity : AppCompatActivity() {
                     // Return back to Main Cassette Player screen
                     navigateToPlayer()
                 } else {
+                    val playerFrag = getPlayerFragment()
+                    if (playerFrag != null && playerFrag.handleBackPressed()) {
+                        return
+                    }
                     // Already on main launcher screen; do not exit
                 }
             }
@@ -369,6 +373,18 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+    private fun getPlayerFragment(): PlayerFragment? {
+        supportFragmentManager.fragments.forEach { frag ->
+            if (frag is PlayerFragment) return frag
+            frag.childFragmentManager.fragments.forEach { child ->
+                if (child is PlayerFragment) return child
+            }
+        }
+        return null
+    }
+
+    fun getCurrentViewPagerItem(): Int = binding.viewPager.currentItem
 
     fun navigateToNowPlaying() {
         navigateToCatalog(openNowPlaying = true)
