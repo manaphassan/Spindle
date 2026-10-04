@@ -122,6 +122,7 @@ class RadioFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         loadRadioSettings()
+        setupHeader()
         setupModeToggle()
         setupFmControls()
         setupPresets()
@@ -133,6 +134,12 @@ class RadioFragment : Fragment() {
         observeTheme()
         observeBluetoothTelemetry()
         applyLoadedSettings()
+    }
+
+    private fun setupHeader() {
+        binding.btnRadioBackToPlayer.setOnClickListener {
+            (activity as? com.hana.spindle.ui.MainActivity)?.navigateToPlayer()
+        }
     }
 
     override fun onResume() {
@@ -557,12 +564,12 @@ class RadioFragment : Fragment() {
             val freq = fmPresets.getOrElse(i) { -1f }
             val isMatch = kotlin.math.abs(freq - curFreq) < 0.15f
 
-            val activeColor = if (isEink) Color.BLACK else Color.parseColor("#F97316")
-            val inactiveText = if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#2A2E45") else Color.parseColor("#FAFAF9")
-            val activeBg = if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#CBD5E1") else Color.parseColor("#2A2E45")
+            val activeColor = if (isEink) Color.WHITE else Color.WHITE
+            val inactiveText = if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#475569") else Color.parseColor("#94A3B8")
+            val activeBg = if (isEink) Color.BLACK else theme.accentColor
             val inactiveBg = if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#F1F5F9") else Color.parseColor("#202334")
 
-            presetButtons[i].setTextColor(if (isMatch) (if (isEink) Color.WHITE else activeColor) else inactiveText)
+            presetButtons[i].setTextColor(if (isMatch) activeColor else inactiveText)
             presetButtons[i].backgroundTintList = ColorStateList.valueOf(if (isMatch) activeBg else inactiveBg)
         }
     }
@@ -720,6 +727,13 @@ class RadioFragment : Fragment() {
         val presetCardBg = if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#181A22")
         binding.cardPresets.setCardBackgroundColor(presetCardBg)
 
+        binding.tvRadioHeaderTitle.setTextColor(if (isEink) Color.BLACK else theme.textPrimaryColor)
+        binding.tvRadioHeaderSubtitle.setTextColor(if (isEink) Color.DKGRAY else theme.textSecondaryColor)
+        binding.btnRadioBackToPlayer.imageTintList = ColorStateList.valueOf(if (isEink) Color.BLACK else theme.textPrimaryColor)
+        binding.btnRadioBackToPlayer.backgroundTintList = ColorStateList.valueOf(
+            if (isEink) Color.WHITE else if (isDark) Color.parseColor("#262938") else Color.parseColor("#E2E8F0")
+        )
+
         if (isEink) {
             binding.cardLcd.setCardBackgroundColor(Color.WHITE)
             binding.tvRadioFrequency.setTextColor(Color.BLACK)
@@ -729,18 +743,18 @@ class RadioFragment : Fragment() {
             binding.tvRadioRdsName.setTextColor(Color.BLACK)
         } else if (!isDark) {
             binding.cardLcd.setCardBackgroundColor(Color.parseColor("#2A2E45"))
-            binding.tvRadioFrequency.setTextColor(Color.parseColor("#FDE68A"))
-            binding.tvRadioFreqUnit.setTextColor(Color.parseColor("#FDE68A"))
+            binding.tvRadioFrequency.setTextColor(Color.WHITE)
+            binding.tvRadioFreqUnit.setTextColor(theme.accentColor)
             binding.tvRadioBandMode.setTextColor(Color.parseColor("#94A3B8"))
-            binding.tvRadioNowPlaying.setTextColor(Color.parseColor("#FAFAF9"))
-            binding.tvRadioRdsName.setTextColor(Color.parseColor("#FB7185"))
+            binding.tvRadioNowPlaying.setTextColor(Color.WHITE)
+            binding.tvRadioRdsName.setTextColor(Color.parseColor("#CBD5E1"))
         } else {
             binding.cardLcd.setCardBackgroundColor(Color.parseColor("#171926"))
-            binding.tvRadioFrequency.setTextColor(Color.parseColor("#F97316"))
-            binding.tvRadioFreqUnit.setTextColor(Color.parseColor("#FBBF24"))
+            binding.tvRadioFrequency.setTextColor(Color.WHITE)
+            binding.tvRadioFreqUnit.setTextColor(theme.accentColor)
             binding.tvRadioBandMode.setTextColor(Color.parseColor("#94A3B8"))
             binding.tvRadioNowPlaying.setTextColor(Color.parseColor("#FAFAF9"))
-            binding.tvRadioRdsName.setTextColor(Color.parseColor("#FDE68A"))
+            binding.tvRadioRdsName.setTextColor(Color.parseColor("#94A3B8"))
         }
 
         if (isFmMode) {
@@ -879,13 +893,13 @@ class RadioFragment : Fragment() {
         for (i in presetButtons.indices) {
             val station = radioEngine.userStations.ifEmpty { RadioStreamEngine.PRESET_STATIONS }.getOrNull(i)
             val isCurrent = (station != null && station.callsign == state.currentStation?.callsign)
-            val activeColor = if (isEink) Color.BLACK else theme.accentColor
-            val inactiveText = if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#2A2E45") else Color.parseColor("#FAFAF9")
-            val activeBg = if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#CBD5E1") else Color.parseColor("#2A2E45")
+            val activeColor = if (isEink) Color.WHITE else Color.WHITE
+            val inactiveText = if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#475569") else Color.parseColor("#94A3B8")
+            val activeBg = if (isEink) Color.BLACK else theme.accentColor
             val inactiveBg = if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#F1F5F9") else Color.parseColor("#202334")
 
             presetButtons[i].setTextColor(
-                if (isCurrent) (if (isEink) Color.WHITE else activeColor) else inactiveText
+                if (isCurrent) activeColor else inactiveText
             )
             presetButtons[i].backgroundTintList = ColorStateList.valueOf(
                 if (isCurrent && state.isPlaying) activeBg else inactiveBg
