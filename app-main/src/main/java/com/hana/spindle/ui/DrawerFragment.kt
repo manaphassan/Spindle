@@ -23,14 +23,17 @@ import android.view.HapticFeedbackConstants
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
+import android.widget.HorizontalScrollView
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.recyclerview.widget.RecyclerView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
@@ -140,6 +143,7 @@ class DrawerFragment : Fragment() {
         audioManager = requireContext().getSystemService(Context.AUDIO_SERVICE) as? AudioManager
 
         setupTabNavigation()
+        setupDrawerPanorama()
         setupAppDrawer()
         setupDjConsole(app)
         setupDefaultLauncher()
@@ -182,30 +186,124 @@ class DrawerFragment : Fragment() {
         binding.btnTabSettings.setOnClickListener { selectTab(2) }
 
         // Primary Landing: Sound Deck (EQ / DSP / VU Meters)
-        selectTab(0)
+        highlightDrawerTab(0)
 
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (currentTabIndex != 0) {
                     selectTab(0)
                 } else {
-                    isEnabled = false
-                    requireActivity().onBackPressedDispatcher.onBackPressed()
-                    isEnabled = true
+                    (activity as? MainActivity)?.navigateToPlayer()
                 }
             }
         })
     }
 
-    private fun selectTab(index: Int) {
-        currentTabIndex = index
-        binding.containerEq.visibility = if (index == 0) View.VISIBLE else View.GONE
-        binding.containerApps.visibility = if (index == 1) View.VISIBLE else View.GONE
-        binding.containerSettings.visibility = if (index == 2) View.VISIBLE else View.GONE
-        if (index == 2) {
-            binding.scrollSettingsContent.scrollTo(0, 0)
+    private fun setupDrawerPanorama() {
+        val dm = resources.displayMetrics
+        val peekPx = (52 * dm.density).toInt()
+        val panelWidth = dm.widthPixels - peekPx
+
+        binding.panelSoundDeck.layoutParams = binding.panelSoundDeck.layoutParams.apply { width = panelWidth }
+        binding.panelApps.layoutParams = binding.panelApps.layoutParams.apply { width = panelWidth }
+        binding.panelSettings.layoutParams = binding.panelSettings.layoutParams.apply { width = panelWidth }
+
+        // Touch disambiguation: vertical list/scroll vs horizontal panorama swipe
+        setupTouchDisambiguation(binding.rvApps, binding.drawerPanoramaScrollView)
+        setupTouchDisambiguation(binding.containerEq, binding.drawerPanoramaScrollView)
+        setupTouchDisambiguation(binding.scrollSettingsContent, binding.drawerPanoramaScrollView)
+
+        // Ensure horizontal scrolling inside DrawerFragment does not get stolen by parent ViewPager2
+        binding.drawerPanoramaScrollView.setOnTouchListener { v, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
+                    v.parent?.requestDisallowInterceptTouchEvent(true)
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    v.parent?.requestDisallowInterceptTouchEvent(false)
+                }
+            }
+            false
         }
 
+        // Kinetic parallax title + active tab tracking
+        binding.drawerPanoramaScrollView.setOnScrollChangeListener { _, scrollX, _, _, _ ->
+            binding.tvMetroHubTitle.translationX = -scrollX * 0.22f
+            val activeIdx = ((scrollX + panelWidth / 2) / panelWidth).coerceIn(0, 2)
+            if (activeIdx != currentTabIndex) {
+                currentTabIndex = activeIdx
+                highlightDrawerTab(activeIdx)
+            }
+        }
+
+        binding.btnBackToPlayer.setOnClickListener {
+            (activity as? MainActivity)?.navigateToPlayer()
+        }
+    }
+
+    private fun setupTouchDisambiguation(targetView: View, hsv: HorizontalScrollView) {
+        var downX = 0f
+        var downY = 0f
+        val touchSlop = ViewConfiguration.get(targetView.context).scaledTouchSlop
+
+        if (targetView is RecyclerView) {
+            targetView.addOnItemTouchListener(object : RecyclerView.SimpleOnItemTouchListener() {
+                override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
+                    when (e.actionMasked) {
+                        MotionEvent.ACTION_DOWN -> {
+                            downX = e.x
+                            downY = e.y
+                            hsv.requestDisallowInterceptTouchEvent(false)
+                        }
+                        MotionEvent.ACTION_MOVE -> {
+                            val dx = kotlin.math.abs(e.x - downX)
+                            val dy = kotlin.math.abs(e.y - downY)
+                            if (dy > dx && dy > touchSlop) {
+                                hsv.requestDisallowInterceptTouchEvent(true)
+                            } else if (dx > dy && dx > touchSlop) {
+                                hsv.requestDisallowInterceptTouchEvent(false)
+                            }
+                        }
+                    }
+                    return false
+                }
+            })
+        } else {
+            targetView.setOnTouchListener { _, e ->
+                when (e.actionMasked) {
+                    MotionEvent.ACTION_DOWN -> {
+                        downX = e.x
+                        downY = e.y
+                        hsv.requestDisallowInterceptTouchEvent(false)
+                    }
+                    MotionEvent.ACTION_MOVE -> {
+                        val dx = kotlin.math.abs(e.x - downX)
+                        val dy = kotlin.math.abs(e.y - downY)
+                        if (dy > dx && dy > touchSlop) {
+                            hsv.requestDisallowInterceptTouchEvent(true)
+                        } else if (dx > dy && dx > touchSlop) {
+                            hsv.requestDisallowInterceptTouchEvent(false)
+                        }
+                    }
+                }
+                false
+            }
+        }
+    }
+
+    fun scrollToDrawerPanel(index: Int) {
+        currentTabIndex = index.coerceIn(0, 2)
+        val dm = resources.displayMetrics
+        val panelWidth = dm.widthPixels - (52 * dm.density).toInt()
+        val targetX = currentTabIndex * panelWidth
+        binding.drawerPanoramaScrollView.post {
+            binding.drawerPanoramaScrollView.smoothScrollTo(targetX, 0)
+        }
+        highlightDrawerTab(currentTabIndex)
+    }
+
+    fun highlightDrawerTab(index: Int) {
+        currentTabIndex = index
         val theme = themeManager.currentTheme.value
         val isEink = theme.id == CassetteTheme.MONOCHROME_EINK.id
         val inactiveText = if (isEink) Color.GRAY else Color.WHITE
@@ -214,10 +312,20 @@ class DrawerFragment : Fragment() {
         tabs.forEachIndexed { i, tv ->
             val isActive = (i == index)
             tv.alpha = if (isActive) 1.0f else 0.40f
-            tv.setTextColor(if (isActive) (if (isEink) Color.BLACK else theme.accentColor) else inactiveText)
+            tv.setTextColor(if (isActive) (if (isEink) Color.BLACK else Color.WHITE) else inactiveText)
             tv.setTypeface(null, if (isActive) Typeface.BOLD else Typeface.NORMAL)
             tv.textSize = if (isActive) 20f else 18f
         }
+
+        val targetTab = tabs.getOrNull(index) ?: return
+        binding.tabScrollView.post {
+            val scrollX = targetTab.left - (binding.tabScrollView.width - targetTab.width) / 2
+            binding.tabScrollView.smoothScrollTo(scrollX.coerceAtLeast(0), 0)
+        }
+    }
+
+    private fun selectTab(index: Int) {
+        scrollToDrawerPanel(index)
     }
 
     // =========================================================================
