@@ -37,6 +37,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -208,16 +209,37 @@ class DrawerFragment : Fragment() {
         binding.panelApps.layoutParams = binding.panelApps.layoutParams.apply { width = panelWidth }
         binding.panelSettings.layoutParams = binding.panelSettings.layoutParams.apply { width = panelWidth }
 
+        binding.drawerPanoramaScrollView.post {
+            binding.drawerPanoramaScrollView.scrollTo(0, 0)
+            highlightDrawerTab(0)
+        }
+
         // Touch disambiguation: vertical list/scroll vs horizontal panorama swipe
         setupTouchDisambiguation(binding.rvApps, binding.drawerPanoramaScrollView)
         setupTouchDisambiguation(binding.containerEq, binding.drawerPanoramaScrollView)
         setupTouchDisambiguation(binding.scrollSettingsContent, binding.drawerPanoramaScrollView)
 
-        // Ensure horizontal scrolling inside DrawerFragment does not get stolen by parent ViewPager2
+        var startX = 0f
+        var startY = 0f
+        val touchSlop = ViewConfiguration.get(requireContext()).scaledTouchSlop
+
+        // Ensure horizontal scrolling inside DrawerFragment does not get stolen by parent ViewPager2,
+        // but when at Panel 0 (sound deck) swiping right (dx > touchSlop), smoothly swipe back to PlayerFragment
         binding.drawerPanoramaScrollView.setOnTouchListener { v, event ->
             when (event.actionMasked) {
-                MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
+                MotionEvent.ACTION_DOWN -> {
+                    startX = event.x
+                    startY = event.y
                     v.parent?.requestDisallowInterceptTouchEvent(true)
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    val dx = event.x - startX
+                    val dy = kotlin.math.abs(event.y - startY)
+                    if (binding.drawerPanoramaScrollView.scrollX <= 0 && dx > touchSlop && dx > dy) {
+                        v.parent?.requestDisallowInterceptTouchEvent(false)
+                    } else {
+                        v.parent?.requestDisallowInterceptTouchEvent(true)
+                    }
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     v.parent?.requestDisallowInterceptTouchEvent(false)
@@ -306,13 +328,15 @@ class DrawerFragment : Fragment() {
         currentTabIndex = index
         val theme = themeManager.currentTheme.value
         val isEink = theme.id == CassetteTheme.MONOCHROME_EINK.id
-        val inactiveText = if (isEink) Color.GRAY else Color.WHITE
+        val isLight = ColorUtils.calculateLuminance(theme.chassisColor) > 0.5
+        val activeText = if (isLight || isEink) Color.BLACK else Color.WHITE
+        val inactiveText = if (isLight || isEink) Color.DKGRAY else Color.WHITE
 
         val tabs = listOf(binding.btnTabEq, binding.btnTabApps, binding.btnTabSettings)
         tabs.forEachIndexed { i, tv ->
             val isActive = (i == index)
             tv.alpha = if (isActive) 1.0f else 0.40f
-            tv.setTextColor(if (isActive) (if (isEink) Color.BLACK else Color.WHITE) else inactiveText)
+            tv.setTextColor(if (isActive) activeText else inactiveText)
             tv.setTypeface(null, if (isActive) Typeface.BOLD else Typeface.NORMAL)
             tv.textSize = if (isActive) 20f else 18f
         }
@@ -1328,6 +1352,13 @@ class DrawerFragment : Fragment() {
         }
 
         updateCardsRecursively(binding.root, cardBg, primary, secondary, isDark, isEink)
+        val headerColor = if (isDark) Color.WHITE else Color.BLACK
+        binding.tvMetroHubTitle.setTextColor(headerColor)
+        binding.tvDrawerHeaderTitle.setTextColor(headerColor)
+        binding.tvHeaderSoundDeck.setTextColor(headerColor)
+        binding.tvHeaderApps.setTextColor(headerColor)
+        binding.tvHeaderSettings.setTextColor(headerColor)
+        binding.btnBackToPlayer.setColorFilter(headerColor)
         selectTab(currentTabIndex)
         updateThemeButtonsVisual()
         val accent = if (isEink) Color.BLACK else theme.accentColor

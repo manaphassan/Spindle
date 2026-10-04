@@ -181,9 +181,9 @@ class MainActivity : AppCompatActivity() {
 
             override fun createFragment(position: Int): Fragment {
                 return when (position) {
-                    0 -> DrawerFragment()
+                    0 -> RadioFragment()
                     1 -> PlayerFragment()
-                    2 -> RadioFragment()
+                    2 -> DrawerFragment()
                     else -> PlayerFragment()
                 }
             }
@@ -399,7 +399,7 @@ class MainActivity : AppCompatActivity() {
             supportFragmentManager.beginTransaction().remove(frag).commitAllowingStateLoss()
         }
         binding.viewPager.isUserInputEnabled = true
-        binding.viewPager.setCurrentItem(2, false)
+        binding.viewPager.setCurrentItem(0, false)
     }
 
     fun navigateToDrawer() {
@@ -409,7 +409,7 @@ class MainActivity : AppCompatActivity() {
             supportFragmentManager.beginTransaction().remove(frag).commitAllowingStateLoss()
         }
         binding.viewPager.isUserInputEnabled = true
-        binding.viewPager.setCurrentItem(0, false)
+        binding.viewPager.setCurrentItem(2, false)
     }
 
     private fun checkAndRequestStoragePermissions(app: SpindleApp) {
