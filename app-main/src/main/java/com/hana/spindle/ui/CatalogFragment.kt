@@ -850,17 +850,23 @@ class CatalogFragment : Fragment() {
             }
         }
 
-        // Alphabet index on tracks panel
+        // Alphabet index & Zune Quick-Jump on panorama tracks panel
+        cBinding.btnJumpTracks.setOnClickListener {
+            openZuneJumpList()
+        }
+        cBinding.tvLetterPreviewTracks.setOnClickListener {
+            openZuneJumpList()
+        }
+        cBinding.alphabetIndexTracks.setOnLongClickListener {
+            openZuneJumpList()
+            true
+        }
         cBinding.alphabetIndexTracks.onLetterSelected = { letter ->
             cBinding.tvLetterPreviewTracks.text = letter
             cBinding.tvLetterPreviewTracks.visibility = View.VISIBLE
             cBinding.tvLetterPreviewTracks.removeCallbacks(hideLetterPreviewRunnable)
             cBinding.tvLetterPreviewTracks.postDelayed(hideLetterPreviewRunnable, 800L)
-            val lm = cBinding.rvPanoramaTracks.layoutManager as? LinearLayoutManager
-            val pos = allSongsList.indexOfFirst {
-                (it.title.firstOrNull()?.uppercaseChar() ?: ' ') >= (letter.firstOrNull()?.uppercaseChar() ?: 'A')
-            }
-            if (pos >= 0) lm?.scrollToPositionWithOffset(pos, 0)
+            scrollToLetter(letter)
         }
     }
 
@@ -1035,6 +1041,16 @@ class CatalogFragment : Fragment() {
     }
 
     private fun setupAlphabetIndex() {
+        binding.btnCatalogJump.setOnClickListener {
+            openZuneJumpList()
+        }
+        binding.tvCatalogLetterPreview.setOnClickListener {
+            openZuneJumpList()
+        }
+        binding.catalogAlphabetIndex.setOnLongClickListener {
+            openZuneJumpList()
+            true
+        }
         binding.catalogAlphabetIndex.onLetterSelected = { letter ->
             binding.tvCatalogLetterPreview.text = letter
             binding.tvCatalogLetterPreview.visibility = View.VISIBLE
@@ -1047,26 +1063,84 @@ class CatalogFragment : Fragment() {
 
     private val hideLetterPreviewRunnable = Runnable {
         _binding?.tvCatalogLetterPreview?.visibility = View.GONE
+        _binding?.layoutCatalogCollectionPanorama?.tvLetterPreviewTracks?.visibility = View.GONE
+    }
+
+    private fun openZuneJumpList() {
+        val availableLetters: Set<Char> = when (currentTab) {
+            0, 5 -> {
+                currentDisplayedSongs.map { song ->
+                    val ch = song.title.trim().firstOrNull()?.uppercaseChar() ?: '#'
+                    if (ch in 'A'..'Z') ch else '#'
+                }.toSet()
+            }
+            1, 2, 3, 6 -> {
+                currentDisplayedAlbums.map { album ->
+                    val ch = album.album.trim().firstOrNull()?.uppercaseChar() ?: '#'
+                    if (ch in 'A'..'Z') ch else '#'
+                }.toSet()
+            }
+            4 -> {
+                allFoldersList.map { folder ->
+                    val ch = folder.name.trim().firstOrNull()?.uppercaseChar() ?: '#'
+                    if (ch in 'A'..'Z') ch else '#'
+                }.toSet()
+            }
+            else -> emptySet()
+        }
+
+        val appInstance = requireActivity().application as SpindleApp
+        val theme = appInstance.themeManager.currentTheme.value
+        val title = when (currentTab) {
+            0 -> "tracks"
+            1 -> "albums"
+            2 -> "artists"
+            3 -> "composers"
+            4 -> "folders"
+            5 -> "favorites"
+            6 -> "mixtapes"
+            else -> "music"
+        }
+
+        ZuneJumpListDialog.show(
+            fragmentManager = parentFragmentManager,
+            availableLetters = availableLetters,
+            title = title,
+            subtitle = "jump directly in $title",
+            accentColor = theme.accentColor
+        ) { letter ->
+            scrollToLetter(letter)
+        }
     }
 
     private fun scrollToLetter(letter: String) {
-        val targetChar = letter.firstOrNull()?.uppercaseChar() ?: return
-        val lm = binding.rvCatalog.layoutManager ?: return
+        val isTop = (letter == "TOP" || letter == "↑")
+        val targetChar = if (isTop) ' ' else (letter.firstOrNull()?.uppercaseChar() ?: return)
+        val lm = binding.rvCatalog.layoutManager
+        val panoramaLm = _binding?.layoutCatalogCollectionPanorama?.rvPanoramaTracks?.layoutManager as? LinearLayoutManager
+
+        if (isTop) {
+            (lm as? LinearLayoutManager)?.scrollToPositionWithOffset(0, 0)
+            (lm as? GridLayoutManager)?.scrollToPositionWithOffset(0, 0)
+            panoramaLm?.scrollToPositionWithOffset(0, 0)
+            return
+        }
 
         when (currentTab) {
             0, 5 -> {
                 val index = currentDisplayedSongs.indexOfFirst {
                     val firstChar = it.title.trim().firstOrNull()?.uppercaseChar() ?: '#'
-                    if (targetChar == '#') !firstChar.isLetter() else firstChar == targetChar
+                    if (targetChar == '#') firstChar !in 'A'..'Z' else firstChar == targetChar
                 }
                 if (index >= 0) {
                     (lm as? LinearLayoutManager)?.scrollToPositionWithOffset(index, 0)
+                    panoramaLm?.scrollToPositionWithOffset(index, 0)
                 }
             }
             1, 2, 3, 6 -> {
                 val index = currentDisplayedAlbums.indexOfFirst {
                     val firstChar = it.album.trim().firstOrNull()?.uppercaseChar() ?: '#'
-                    if (targetChar == '#') !firstChar.isLetter() else firstChar == targetChar
+                    if (targetChar == '#') firstChar !in 'A'..'Z' else firstChar == targetChar
                 }
                 if (index >= 0) {
                     (lm as? GridLayoutManager)?.scrollToPositionWithOffset(index, 0)
@@ -1075,7 +1149,7 @@ class CatalogFragment : Fragment() {
             4 -> {
                 val index = allFoldersList.indexOfFirst {
                     val firstChar = it.name.trim().firstOrNull()?.uppercaseChar() ?: '#'
-                    if (targetChar == '#') !firstChar.isLetter() else firstChar == targetChar
+                    if (targetChar == '#') firstChar !in 'A'..'Z' else firstChar == targetChar
                 }
                 if (index >= 0) {
                     (lm as? LinearLayoutManager)?.scrollToPositionWithOffset(index, 0)

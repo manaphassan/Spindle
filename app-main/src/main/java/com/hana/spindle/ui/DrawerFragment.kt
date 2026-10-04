@@ -390,16 +390,56 @@ class DrawerFragment : Fragment() {
             override fun afterTextChanged(s: Editable?) {}
         })
 
+        // Zune Metro 26-Letter Quick-Jump Grid Trigger
+        binding.btnJumpApps.setOnClickListener {
+            val availableLetters = allApps.map { app ->
+                val ch = app.label.trim().firstOrNull()?.uppercaseChar() ?: '#'
+                if (ch in 'A'..'Z') ch else '#'
+            }.toSet()
+            val appInstance = requireActivity().application as SpindleApp
+            val theme = appInstance.themeManager.currentTheme.value
+            ZuneJumpListDialog.show(
+                fragmentManager = parentFragmentManager,
+                availableLetters = availableLetters,
+                title = "apps",
+                subtitle = "jump directly to installed app",
+                accentColor = theme.accentColor
+            ) { letter ->
+                if (letter == "TOP" || letter == "↑") {
+                    (binding.rvApps.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(0, 0)
+                } else {
+                    val targetIndex = if (letter == "#") {
+                        allApps.indexOfFirst {
+                            val firstChar = it.label.trim().firstOrNull()?.uppercaseChar() ?: ' '
+                            firstChar !in 'A'..'Z'
+                        }
+                    } else {
+                        allApps.indexOfFirst {
+                            it.label.trim().startsWith(letter, ignoreCase = true)
+                        }
+                    }
+                    if (targetIndex >= 0) {
+                        (binding.rvApps.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(targetIndex, 0)
+                    }
+                }
+            }
+        }
+
+        binding.alphabetIndexView.setOnLongClickListener {
+            binding.btnJumpApps.performClick()
+            true
+        }
+
         // Niagara-Style Vernier Wave Alphabet Index Rail
         binding.alphabetIndexView.onLetterSelected = { letter ->
             val targetIndex = if (letter == "#") {
                 allApps.indexOfFirst {
-                    val firstChar = it.label.firstOrNull() ?: ' '
-                    !firstChar.isLetter()
+                    val firstChar = it.label.trim().firstOrNull()?.uppercaseChar() ?: ' '
+                    firstChar !in 'A'..'Z'
                 }
             } else {
                 allApps.indexOfFirst {
-                    it.label.startsWith(letter, ignoreCase = true)
+                    it.label.trim().startsWith(letter, ignoreCase = true)
                 }
             }
 

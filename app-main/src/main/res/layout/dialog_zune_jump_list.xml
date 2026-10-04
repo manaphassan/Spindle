@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F50B0C10"
+    android:clickable="true"
+    android:focusable="true">
+
+    <!-- Top Bar: Zune Metro Typography Header + Close Button -->
+    <LinearLayout
+        android:id="@+id/headerJump"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="24dp"
+        android:paddingTop="28dp"
+        android:paddingBottom="4dp">
+
+        <TextView
+            android:id="@+id/tvJumpTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="jump"
+            android:textColor="@color/text_primary"
+            android:textSize="36sp"
+            android:fontFamily="sans-serif-light" />
+
+        <ImageButton
+            android:id="@+id/btnJumpClose"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_close"
+            app:tint="@color/text_secondary"
+            android:contentDescription="Close" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tvJumpSubtitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/headerJump"
+        android:paddingHorizontal="24dp"
+        android:layout_marginBottom="16dp"
+        android:text="tap a letter to jump immediately"
+        android:textColor="@color/text_secondary"
+        android:textSize="12sp"
+        android:fontFamily="sans-serif" />
+
+    <!-- 4-Column Metro Jump Grid -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvJumpGrid"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/tvJumpSubtitle"
+        android:layout_centerHorizontal="true"
+        android:paddingHorizontal="20dp"
+        android:paddingBottom="28dp"
+        android:clipToPadding="false"
+        android:overScrollMode="never" />
+
+</RelativeLayout>

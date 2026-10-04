@@ -340,6 +340,22 @@
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
                 app:cornerRadius="14dp" />
+
+            <!-- Zune Metro Quick-Jump A-Z Pill Button -->
+            <Button
+                android:id="@+id/btnCatalogJump"
+                android:layout_width="wrap_content"
+                android:layout_height="28dp"
+                android:layout_marginStart="6dp"
+                android:text="A-Z"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                android:backgroundTint="#2A2B32"
+                android:paddingHorizontal="10dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                app:cornerRadius="14dp" />
         </LinearLayout>
 
         <View
