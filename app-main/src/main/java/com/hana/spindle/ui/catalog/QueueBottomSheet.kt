@@ -52,6 +52,7 @@ class QueueBottomSheet : BottomSheetDialogFragment() {
         val theme = app.themeManager.currentTheme.value
         val isEink = (theme.id == CassetteTheme.MONOCHROME_EINK.id)
         val isDark = theme.isDarkAppTheme
+        binding.tvMetroQueueTitle.setTextColor(theme.textPrimaryColor)
         if (isEink) {
             binding.root.setBackgroundColor(Color.WHITE)
             binding.tvQueueSummary.setTextColor(Color.BLACK)
@@ -91,6 +92,16 @@ class QueueBottomSheet : BottomSheetDialogFragment() {
                 scope = viewLifecycleOwner.lifecycleScope,
                 queue = queue
             )
+        }
+
+        binding.layoutQueueNowPlayingReturn.setOnClickListener {
+            dismiss()
+        }
+        binding.btnQueueReturnNowPlaying.setOnClickListener {
+            dismiss()
+        }
+        binding.tvMetroQueueLyricsPivot.setOnClickListener {
+            dismiss()
         }
 
         observeQueue()
@@ -208,14 +219,15 @@ class QueueBottomSheet : BottomSheetDialogFragment() {
             val b = holder.b
             val isCurrent = position == activeIndex
 
-            b.tvQueueIndex.text = String.format(Locale.US, "%02d", position + 1)
+            val trackNumStr = if (song.trackNumber > 0) String.format(Locale.US, "%02d", song.trackNumber) else String.format(Locale.US, "%02d", position + 1)
+            b.tvQueueTrackArtist.text = "$trackNumStr  ${song.artist}"
             b.tvQueueTitle.text = song.title
             val dur = String.format(
                 Locale.US, "%02d:%02d",
                 TimeUnit.MILLISECONDS.toMinutes(song.durationMs),
                 TimeUnit.MILLISECONDS.toSeconds(song.durationMs) % 60
             )
-            b.tvQueueArtistDuration.text = "${song.artist} • $dur"
+            b.tvQueueDuration.text = dur
             b.tvQueueFormat.text = song.fileFormat
 
             val activeColor = when {
@@ -239,8 +251,8 @@ class QueueBottomSheet : BottomSheetDialogFragment() {
                 else -> Color.parseColor("#E2E8F0")
             }
 
-            b.tvQueueIndex.setTextColor(subtitleColor)
-            b.tvQueueArtistDuration.setTextColor(subtitleColor)
+            b.tvQueueTrackArtist.setTextColor(subtitleColor)
+            b.tvQueueDuration.setTextColor(subtitleColor)
             b.tvQueueFormat.setTextColor(activeColor)
             b.tvQueueFormat.setBackgroundColor(formatBgColor)
             b.ivDragHandle.imageTintList = ColorStateList.valueOf(subtitleColor)
@@ -250,6 +262,7 @@ class QueueBottomSheet : BottomSheetDialogFragment() {
                 b.ivQueuePlaying.visibility = View.VISIBLE
                 b.ivQueuePlaying.imageTintList = ColorStateList.valueOf(activeColor)
                 b.tvQueueTitle.setTextColor(activeColor)
+                b.tvQueueTrackArtist.setTextColor(activeColor)
                 val activeRowBg = when {
                     isEink -> Color.WHITE
                     isDark -> Color.parseColor("#1C1E2A")
@@ -259,6 +272,7 @@ class QueueBottomSheet : BottomSheetDialogFragment() {
             } else {
                 b.ivQueuePlaying.visibility = View.GONE
                 b.tvQueueTitle.setTextColor(defaultColor)
+                b.tvQueueTrackArtist.setTextColor(subtitleColor)
                 b.root.setBackgroundColor(Color.TRANSPARENT)
             }
 

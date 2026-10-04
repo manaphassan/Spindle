@@ -85,8 +85,9 @@ class MainActivity : AppCompatActivity() {
             }
         } else if (intent?.getStringExtra("navigate") == "catalog") {
             val tab = intent.getIntExtra("tab", -1)
+            val openNp = intent.getBooleanExtra("open_now_playing", false)
             binding.viewPager.post {
-                navigateToCatalog(tab = tab)
+                navigateToCatalog(openNowPlaying = openNp, tab = tab)
             }
         }
         handlePlaybackIntent(intent)
@@ -181,9 +182,9 @@ class MainActivity : AppCompatActivity() {
 
             override fun createFragment(position: Int): Fragment {
                 return when (position) {
-                    0 -> DrawerFragment()
+                    0 -> RadioFragment()
                     1 -> PlayerFragment()
-                    2 -> RadioFragment()
+                    2 -> DrawerFragment()
                     else -> PlayerFragment()
                 }
             }
@@ -398,7 +399,8 @@ class MainActivity : AppCompatActivity() {
         if (frag != null) {
             supportFragmentManager.beginTransaction().remove(frag).commitAllowingStateLoss()
         }
-        binding.viewPager.setCurrentItem(2, false)
+        binding.viewPager.isUserInputEnabled = true
+        binding.viewPager.setCurrentItem(0, false)
     }
 
     fun navigateToDrawer() {
@@ -407,7 +409,8 @@ class MainActivity : AppCompatActivity() {
         if (frag != null) {
             supportFragmentManager.beginTransaction().remove(frag).commitAllowingStateLoss()
         }
-        binding.viewPager.setCurrentItem(0, true)
+        binding.viewPager.isUserInputEnabled = true
+        binding.viewPager.setCurrentItem(2, false)
     }
 
     private fun checkAndRequestStoragePermissions(app: SpindleApp) {
@@ -484,7 +487,8 @@ class MainActivity : AppCompatActivity() {
         }
         if (intent.getStringExtra("navigate") == "catalog") {
             val tab = intent.getIntExtra("tab", -1)
-            binding.viewPager.post { navigateToCatalog(tab = tab) }
+            val openNp = intent.getBooleanExtra("open_now_playing", false)
+            binding.viewPager.post { navigateToCatalog(openNowPlaying = openNp, tab = tab) }
             return
         }
         // Ensure pressing hardware/software Home button always brings user to Cassette Player

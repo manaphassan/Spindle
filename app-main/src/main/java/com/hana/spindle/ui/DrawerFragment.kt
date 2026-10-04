@@ -23,17 +23,21 @@ import android.view.HapticFeedbackConstants
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
+import android.widget.HorizontalScrollView
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.recyclerview.widget.RecyclerView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -140,6 +144,7 @@ class DrawerFragment : Fragment() {
         audioManager = requireContext().getSystemService(Context.AUDIO_SERVICE) as? AudioManager
 
         setupTabNavigation()
+        setupDrawerPanorama()
         setupAppDrawer()
         setupDjConsole(app)
         setupDefaultLauncher()
@@ -182,46 +187,169 @@ class DrawerFragment : Fragment() {
         binding.btnTabSettings.setOnClickListener { selectTab(2) }
 
         // Primary Landing: Sound Deck (EQ / DSP / VU Meters)
-        selectTab(0)
+        highlightDrawerTab(0)
 
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (currentTabIndex != 0) {
                     selectTab(0)
                 } else {
-                    isEnabled = false
-                    requireActivity().onBackPressedDispatcher.onBackPressed()
-                    isEnabled = true
+                    (activity as? MainActivity)?.navigateToPlayer()
                 }
             }
         })
     }
 
-    private fun selectTab(index: Int) {
-        currentTabIndex = index
-        binding.containerEq.visibility = if (index == 0) View.VISIBLE else View.GONE
-        binding.containerApps.visibility = if (index == 1) View.VISIBLE else View.GONE
-        binding.containerSettings.visibility = if (index == 2) View.VISIBLE else View.GONE
-        if (index == 2) {
-            binding.scrollSettingsContent.scrollTo(0, 0)
+    private fun setupDrawerPanorama() {
+        val dm = resources.displayMetrics
+        val peekPx = (52 * dm.density).toInt()
+        val panelWidth = dm.widthPixels - peekPx
+
+        binding.panelSoundDeck.layoutParams = binding.panelSoundDeck.layoutParams.apply { width = panelWidth }
+        binding.panelApps.layoutParams = binding.panelApps.layoutParams.apply { width = panelWidth }
+        binding.panelSettings.layoutParams = binding.panelSettings.layoutParams.apply { width = panelWidth }
+
+        binding.drawerPanoramaScrollView.post {
+            binding.drawerPanoramaScrollView.scrollTo(0, 0)
+            highlightDrawerTab(0)
         }
 
+        // Touch disambiguation: vertical list/scroll vs horizontal panorama swipe
+        setupTouchDisambiguation(binding.rvApps, binding.drawerPanoramaScrollView)
+        setupTouchDisambiguation(binding.containerEq, binding.drawerPanoramaScrollView)
+        setupTouchDisambiguation(binding.scrollSettingsContent, binding.drawerPanoramaScrollView)
+
+        var startX = 0f
+        var startY = 0f
+        val touchSlop = ViewConfiguration.get(requireContext()).scaledTouchSlop
+
+        // Ensure horizontal scrolling inside DrawerFragment does not get stolen by parent ViewPager2,
+        // but when at Panel 0 (sound deck) swiping right (dx > touchSlop), smoothly swipe back to PlayerFragment
+        binding.drawerPanoramaScrollView.setOnTouchListener { v, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    startX = event.x
+                    startY = event.y
+                    v.parent?.requestDisallowInterceptTouchEvent(true)
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    val dx = event.x - startX
+                    val dy = kotlin.math.abs(event.y - startY)
+                    if (binding.drawerPanoramaScrollView.scrollX <= 0 && dx > touchSlop && dx > dy) {
+                        v.parent?.requestDisallowInterceptTouchEvent(false)
+                    } else {
+                        v.parent?.requestDisallowInterceptTouchEvent(true)
+                    }
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    v.parent?.requestDisallowInterceptTouchEvent(false)
+                }
+            }
+            false
+        }
+
+        // Kinetic parallax title + active tab tracking
+        binding.drawerPanoramaScrollView.setOnScrollChangeListener { _, scrollX, _, _, _ ->
+            binding.tvMetroHubTitle.translationX = -scrollX * 0.22f
+            val activeIdx = ((scrollX + panelWidth / 2) / panelWidth).coerceIn(0, 2)
+            if (activeIdx != currentTabIndex) {
+                currentTabIndex = activeIdx
+                highlightDrawerTab(activeIdx)
+            }
+        }
+
+        binding.btnBackToPlayer.setOnClickListener {
+            (activity as? MainActivity)?.navigateToPlayer()
+        }
+    }
+
+    private fun setupTouchDisambiguation(targetView: View, hsv: HorizontalScrollView) {
+        var downX = 0f
+        var downY = 0f
+        val touchSlop = ViewConfiguration.get(targetView.context).scaledTouchSlop
+
+        if (targetView is RecyclerView) {
+            targetView.addOnItemTouchListener(object : RecyclerView.SimpleOnItemTouchListener() {
+                override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
+                    when (e.actionMasked) {
+                        MotionEvent.ACTION_DOWN -> {
+                            downX = e.x
+                            downY = e.y
+                            hsv.requestDisallowInterceptTouchEvent(false)
+                        }
+                        MotionEvent.ACTION_MOVE -> {
+                            val dx = kotlin.math.abs(e.x - downX)
+                            val dy = kotlin.math.abs(e.y - downY)
+                            if (dy > dx && dy > touchSlop) {
+                                hsv.requestDisallowInterceptTouchEvent(true)
+                            } else if (dx > dy && dx > touchSlop) {
+                                hsv.requestDisallowInterceptTouchEvent(false)
+                            }
+                        }
+                    }
+                    return false
+                }
+            })
+        } else {
+            targetView.setOnTouchListener { _, e ->
+                when (e.actionMasked) {
+                    MotionEvent.ACTION_DOWN -> {
+                        downX = e.x
+                        downY = e.y
+                        hsv.requestDisallowInterceptTouchEvent(false)
+                    }
+                    MotionEvent.ACTION_MOVE -> {
+                        val dx = kotlin.math.abs(e.x - downX)
+                        val dy = kotlin.math.abs(e.y - downY)
+                        if (dy > dx && dy > touchSlop) {
+                            hsv.requestDisallowInterceptTouchEvent(true)
+                        } else if (dx > dy && dx > touchSlop) {
+                            hsv.requestDisallowInterceptTouchEvent(false)
+                        }
+                    }
+                }
+                false
+            }
+        }
+    }
+
+    fun scrollToDrawerPanel(index: Int) {
+        currentTabIndex = index.coerceIn(0, 2)
+        val dm = resources.displayMetrics
+        val panelWidth = dm.widthPixels - (52 * dm.density).toInt()
+        val targetX = currentTabIndex * panelWidth
+        binding.drawerPanoramaScrollView.post {
+            binding.drawerPanoramaScrollView.smoothScrollTo(targetX, 0)
+        }
+        highlightDrawerTab(currentTabIndex)
+    }
+
+    fun highlightDrawerTab(index: Int) {
+        currentTabIndex = index
         val theme = themeManager.currentTheme.value
-        val isDark = theme.isDarkAppTheme
         val isEink = theme.id == CassetteTheme.MONOCHROME_EINK.id
-        val activeColor = ColorStateList.valueOf(if (isEink) Color.BLACK else theme.accentColor)
-        val inactiveColor = ColorStateList.valueOf(if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#202334"))
-        val activeText = Color.WHITE
-        val inactiveText = if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#2A2E45") else Color.parseColor("#FAFAF9")
+        val isLight = ColorUtils.calculateLuminance(theme.chassisColor) > 0.5
+        val activeText = if (isLight || isEink) Color.BLACK else Color.WHITE
+        val inactiveText = if (isLight || isEink) Color.DKGRAY else Color.WHITE
 
-        binding.btnTabEq.backgroundTintList = if (index == 0) activeColor else inactiveColor
-        binding.btnTabEq.setTextColor(if (index == 0) activeText else inactiveText)
+        val tabs = listOf(binding.btnTabEq, binding.btnTabApps, binding.btnTabSettings)
+        tabs.forEachIndexed { i, tv ->
+            val isActive = (i == index)
+            tv.alpha = if (isActive) 1.0f else 0.40f
+            tv.setTextColor(if (isActive) activeText else inactiveText)
+            tv.setTypeface(null, if (isActive) Typeface.BOLD else Typeface.NORMAL)
+            tv.textSize = if (isActive) 20f else 18f
+        }
 
-        binding.btnTabApps.backgroundTintList = if (index == 1) activeColor else inactiveColor
-        binding.btnTabApps.setTextColor(if (index == 1) activeText else inactiveText)
+        val targetTab = tabs.getOrNull(index) ?: return
+        binding.tabScrollView.post {
+            val scrollX = targetTab.left - (binding.tabScrollView.width - targetTab.width) / 2
+            binding.tabScrollView.smoothScrollTo(scrollX.coerceAtLeast(0), 0)
+        }
+    }
 
-        binding.btnTabSettings.backgroundTintList = if (index == 2) activeColor else inactiveColor
-        binding.btnTabSettings.setTextColor(if (index == 2) activeText else inactiveText)
+    private fun selectTab(index: Int) {
+        scrollToDrawerPanel(index)
     }
 
     // =========================================================================
@@ -262,16 +390,56 @@ class DrawerFragment : Fragment() {
             override fun afterTextChanged(s: Editable?) {}
         })
 
+        // Zune Metro 26-Letter Quick-Jump Grid Trigger
+        binding.btnJumpApps.setOnClickListener {
+            val availableLetters = allApps.map { app ->
+                val ch = app.label.trim().firstOrNull()?.uppercaseChar() ?: '#'
+                if (ch in 'A'..'Z') ch else '#'
+            }.toSet()
+            val appInstance = requireActivity().application as SpindleApp
+            val theme = appInstance.themeManager.currentTheme.value
+            ZuneJumpListDialog.show(
+                fragmentManager = parentFragmentManager,
+                availableLetters = availableLetters,
+                title = "apps",
+                subtitle = "jump directly to installed app",
+                accentColor = theme.accentColor
+            ) { letter ->
+                if (letter == "TOP" || letter == "↑") {
+                    (binding.rvApps.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(0, 0)
+                } else {
+                    val targetIndex = if (letter == "#") {
+                        allApps.indexOfFirst {
+                            val firstChar = it.label.trim().firstOrNull()?.uppercaseChar() ?: ' '
+                            firstChar !in 'A'..'Z'
+                        }
+                    } else {
+                        allApps.indexOfFirst {
+                            it.label.trim().startsWith(letter, ignoreCase = true)
+                        }
+                    }
+                    if (targetIndex >= 0) {
+                        (binding.rvApps.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(targetIndex, 0)
+                    }
+                }
+            }
+        }
+
+        binding.alphabetIndexView.setOnLongClickListener {
+            binding.btnJumpApps.performClick()
+            true
+        }
+
         // Niagara-Style Vernier Wave Alphabet Index Rail
         binding.alphabetIndexView.onLetterSelected = { letter ->
             val targetIndex = if (letter == "#") {
                 allApps.indexOfFirst {
-                    val firstChar = it.label.firstOrNull() ?: ' '
-                    !firstChar.isLetter()
+                    val firstChar = it.label.trim().firstOrNull()?.uppercaseChar() ?: ' '
+                    firstChar !in 'A'..'Z'
                 }
             } else {
                 allApps.indexOfFirst {
-                    it.label.startsWith(letter, ignoreCase = true)
+                    it.label.trim().startsWith(letter, ignoreCase = true)
                 }
             }
 
@@ -1188,10 +1356,7 @@ class DrawerFragment : Fragment() {
         val cardBg = if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#FAFAF9") else Color.parseColor("#171926")
 
         binding.root.setBackgroundColor(theme.chassisColor)
-        val barBg = ColorStateList.valueOf(
-            if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#171926")
-        )
-        binding.tabBar.backgroundTintList = barBg
+        binding.tvMetroHubTitle.setTextColor(primary)
 
         // Search Bar adaptation
         binding.etSearchApps.setTextColor(primary)
@@ -1227,6 +1392,13 @@ class DrawerFragment : Fragment() {
         }
 
         updateCardsRecursively(binding.root, cardBg, primary, secondary, isDark, isEink)
+        val headerColor = if (isDark) Color.WHITE else Color.BLACK
+        binding.tvMetroHubTitle.setTextColor(headerColor)
+        binding.tvDrawerHeaderTitle.setTextColor(headerColor)
+        binding.tvHeaderSoundDeck.setTextColor(headerColor)
+        binding.tvHeaderApps.setTextColor(headerColor)
+        binding.tvHeaderSettings.setTextColor(headerColor)
+        binding.btnBackToPlayer.setColorFilter(headerColor)
         selectTab(currentTabIndex)
         updateThemeButtonsVisual()
         val accent = if (isEink) Color.BLACK else theme.accentColor

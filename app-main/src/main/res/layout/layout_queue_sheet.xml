@@ -18,6 +18,37 @@
         android:background="@color/divider"
         android:layout_marginBottom="14dp" />
 
+    <!-- Metro Kinetic Pivot Header: queue | lyrics -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="bottom"
+        android:paddingHorizontal="20dp"
+        android:layout_marginBottom="6dp">
+
+        <TextView
+            android:id="@+id/tvMetroQueueTitle"
+            style="@style/TextAppearance.Spindle.Metro.Hero"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="queue"
+            android:textColor="@color/text_primary" />
+
+        <TextView
+            android:id="@+id/tvMetroQueueLyricsPivot"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:text="lyrics"
+            android:textColor="@color/text_secondary"
+            android:textSize="24sp"
+            android:fontFamily="sans-serif-light"
+            android:alpha="0.4"
+            android:clickable="true"
+            android:focusable="true" />
+    </LinearLayout>
+
     <!-- Header Row: Title, Meta Info, and Clear Upcoming Button -->
     <LinearLayout
         android:layout_width="match_parent"
@@ -66,7 +97,7 @@
             android:paddingHorizontal="10dp"
             android:paddingVertical="0dp"
             android:layout_marginEnd="6dp"
-            app:cornerRadius="6dp" />
+            app:cornerRadius="@dimen/corner_radius_metro" />
 
         <Button
             android:id="@+id/btnClearUpcoming"
@@ -81,7 +112,7 @@
             android:insetBottom="0dp"
             android:paddingHorizontal="10dp"
             android:paddingVertical="0dp"
-            app:cornerRadius="6dp" />
+            app:cornerRadius="@dimen/corner_radius_metro" />
     </LinearLayout>
 
     <View
@@ -109,5 +140,39 @@
         android:layout_weight="1"
         android:paddingVertical="4dp"
         android:clipToPadding="false" />
+
+    <!-- Bottom Application Bar: now playing (with circular wireframe back button) -->
+    <LinearLayout
+        android:id="@+id/layoutQueueNowPlayingReturn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:paddingTop="8dp"
+        android:paddingBottom="4dp"
+        android:clickable="true"
+        android:focusable="true">
+
+        <ImageButton
+            android:id="@+id/btnQueueReturnNowPlaying"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:background="@drawable/bg_metro_circle_button"
+            android:src="@drawable/ic_np_back"
+            android:padding="8dp"
+            android:scaleType="fitCenter"
+            app:tint="@color/text_primary"
+            android:contentDescription="Return to Now Playing" />
+
+        <TextView
+            android:id="@+id/tvQueueReturnNowPlayingLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="now playing"
+            android:textColor="@color/text_secondary"
+            android:textSize="10sp"
+            android:fontFamily="sans-serif" />
+    </LinearLayout>
 
 </LinearLayout>

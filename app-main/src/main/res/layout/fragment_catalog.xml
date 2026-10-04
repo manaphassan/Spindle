@@ -115,124 +115,128 @@
             android:maxHeight="200dp"
             android:visibility="gone" />
 
-        <!-- Minimalist 5-Tab Core Navigation -->
+        <!-- Oversized Zune Kinetic Typography Header -->
+        <TextView
+            android:id="@+id/tvMetroHeroTitle"
+            style="@style/TextAppearance.Spindle.Metro.Hero"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="14dp"
+            android:layout_marginTop="2dp"
+            android:text="music" />
+
+        <!-- Authentic Zune Typographic Pivot Navigation -->
         <HorizontalScrollView
+            android:id="@+id/tabScrollView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:scrollbars="none"
-            android:layout_marginTop="8dp"
-            android:paddingHorizontal="10dp">
+            android:layout_marginTop="2dp"
+            android:paddingHorizontal="14dp">
 
             <LinearLayout
                 android:layout_width="wrap_content"
-                android:layout_height="36dp"
+                android:layout_height="38dp"
                 android:orientation="horizontal"
                 android:gravity="center_vertical">
 
-                <Button
+                <TextView
                     android:id="@+id/tabSongs"
                     android:layout_width="wrap_content"
-                    android:layout_height="32dp"
-                    android:layout_marginHorizontal="3dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="18dp"
                     android:text="@string/tab_tracks"
-                    android:textSize="11sp"
+                    android:textSize="20sp"
                     android:textStyle="bold"
+                    android:fontFamily="sans-serif-light"
                     android:textColor="@color/white"
-                    android:backgroundTint="@color/metal81_red"
-                    android:paddingHorizontal="14dp"
-                    android:insetTop="0dp"
-                    android:insetBottom="0dp"
-                    app:cornerRadius="16dp" />
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackgroundBorderless" />
 
-                <Button
+                <TextView
                     android:id="@+id/tabAlbums"
                     android:layout_width="wrap_content"
-                    android:layout_height="32dp"
-                    android:layout_marginHorizontal="3dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="18dp"
                     android:text="@string/tab_albums"
-                    android:textSize="11sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/text_secondary"
-                    android:backgroundTint="#212228"
-                    android:paddingHorizontal="14dp"
-                    android:insetTop="0dp"
-                    android:insetBottom="0dp"
-                    app:cornerRadius="16dp" />
+                    android:textSize="18sp"
+                    android:alpha="0.45"
+                    android:fontFamily="sans-serif-light"
+                    android:textColor="@color/white"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackgroundBorderless" />
 
-                <Button
+                <TextView
                     android:id="@+id/tabArtists"
                     android:layout_width="wrap_content"
-                    android:layout_height="32dp"
-                    android:layout_marginHorizontal="3dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="18dp"
                     android:text="@string/tab_artists"
-                    android:textSize="11sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/text_secondary"
-                    android:backgroundTint="#212228"
-                    android:paddingHorizontal="14dp"
-                    android:insetTop="0dp"
-                    android:insetBottom="0dp"
-                    app:cornerRadius="16dp" />
+                    android:textSize="18sp"
+                    android:alpha="0.45"
+                    android:fontFamily="sans-serif-light"
+                    android:textColor="@color/white"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackgroundBorderless" />
 
-                <Button
-                    android:id="@+id/tabComposers"
-                    android:layout_width="wrap_content"
-                    android:layout_height="32dp"
-                    android:layout_marginHorizontal="3dp"
-                    android:text="@string/tab_composers"
-                    android:textSize="11sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/text_secondary"
-                    android:backgroundTint="#212228"
-                    android:paddingHorizontal="14dp"
-                    android:insetTop="0dp"
-                    android:insetBottom="0dp"
-                    app:cornerRadius="16dp" />
-
-                <Button
-                    android:id="@+id/tabFolders"
-                    android:layout_width="wrap_content"
-                    android:layout_height="32dp"
-                    android:layout_marginHorizontal="3dp"
-                    android:text="@string/tab_folders"
-                    android:textSize="11sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/text_secondary"
-                    android:backgroundTint="#212228"
-                    android:paddingHorizontal="14dp"
-                    android:insetTop="0dp"
-                    android:insetBottom="0dp"
-                    app:cornerRadius="16dp" />
-
-                <Button
-                    android:id="@+id/tabFavorites"
-                    android:layout_width="wrap_content"
-                    android:layout_height="32dp"
-                    android:layout_marginHorizontal="3dp"
-                    android:text="@string/tab_favorites"
-                    android:textSize="11sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/text_secondary"
-                    android:backgroundTint="#212228"
-                    android:paddingHorizontal="14dp"
-                    android:insetTop="0dp"
-                    android:insetBottom="0dp"
-                    app:cornerRadius="16dp" />
-
-                <Button
+                <TextView
                     android:id="@+id/tabMixtapes"
                     android:layout_width="wrap_content"
-                    android:layout_height="32dp"
-                    android:layout_marginHorizontal="3dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="18dp"
                     android:text="@string/tab_mixtapes"
-                    android:textSize="11sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/text_secondary"
-                    android:backgroundTint="#212228"
-                    android:paddingHorizontal="14dp"
-                    android:insetTop="0dp"
-                    android:insetBottom="0dp"
-                    app:cornerRadius="16dp" />
+                    android:textSize="18sp"
+                    android:alpha="0.45"
+                    android:fontFamily="sans-serif-light"
+                    android:textColor="@color/white"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackgroundBorderless" />
+
+                <TextView
+                    android:id="@+id/tabFolders"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="18dp"
+                    android:text="@string/tab_folders"
+                    android:textSize="18sp"
+                    android:alpha="0.45"
+                    android:fontFamily="sans-serif-light"
+                    android:textColor="@color/white"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackgroundBorderless" />
+
+                <TextView
+                    android:id="@+id/tabFavorites"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="18dp"
+                    android:text="@string/tab_favorites"
+                    android:textSize="18sp"
+                    android:alpha="0.45"
+                    android:fontFamily="sans-serif-light"
+                    android:textColor="@color/white"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackgroundBorderless" />
+
+                <TextView
+                    android:id="@+id/tabComposers"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="18dp"
+                    android:text="@string/tab_composers"
+                    android:textSize="18sp"
+                    android:alpha="0.45"
+                    android:fontFamily="sans-serif-light"
+                    android:textColor="@color/white"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackgroundBorderless" />
 
             </LinearLayout>
         </HorizontalScrollView>
@@ -336,6 +340,22 @@
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
                 app:cornerRadius="14dp" />
+
+            <!-- Zune Metro Quick-Jump A-Z Pill Button -->
+            <Button
+                android:id="@+id/btnCatalogJump"
+                android:layout_width="wrap_content"
+                android:layout_height="28dp"
+                android:layout_marginStart="6dp"
+                android:text="A-Z"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                android:backgroundTint="#2A2B32"
+                android:paddingHorizontal="10dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                app:cornerRadius="14dp" />
         </LinearLayout>
 
         <View
@@ -347,10 +367,12 @@
 
     <!-- Main Content Area with Recycler & Alphabet Rail -->
     <RelativeLayout
+        android:id="@+id/catalogContentContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@+id/catalogHeaderContainer"
-        android:layout_above="@+id/cardMiniPlayer">
+        android:layout_above="@+id/cardMiniPlayer"
+        android:visibility="gone">
 
         <!-- Recycler View with padding on right for alphabet index -->
         <androidx.recyclerview.widget.RecyclerView
@@ -387,6 +409,26 @@
             android:visibility="gone" />
     </RelativeLayout>
 
+    <!-- Zune Metro Catalogue Collection Panorama -->
+    <include
+        android:id="@+id/layoutCatalogCollectionPanorama"
+        layout="@layout/layout_catalog_collection_panorama"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/catalogHeaderContainer"
+        android:layout_above="@+id/cardMiniPlayer"
+        android:visibility="gone" />
+
+    <!-- Zune Metro Music Hub Panorama -->
+    <include
+        android:id="@+id/layoutPanorama"
+        layout="@layout/layout_catalog_panorama"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/catalogHeaderContainer"
+        android:layout_above="@+id/cardMiniPlayer"
+        android:visibility="visible" />
+
     <!-- Persistent Bottom Mini-Player Bar -->
     <androidx.cardview.widget.CardView
         android:id="@+id/cardMiniPlayer"
@@ -395,9 +437,9 @@
         android:layout_alignParentBottom="true"
         android:layout_marginHorizontal="10dp"
         android:layout_marginBottom="10dp"
-        app:cardCornerRadius="14dp"
-        app:cardElevation="6dp"
-        app:cardBackgroundColor="#1A1B20">
+        app:cardCornerRadius="@dimen/corner_radius_metro"
+        app:cardElevation="4dp"
+        app:cardBackgroundColor="@color/surface_card">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -694,6 +736,22 @@
                     app:cornerRadius="@dimen/corner_radius_pill" />
 
                 <Button
+                    android:id="@+id/btnAlbumDetailPin"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="34dp"
+                    android:layout_marginStart="8dp"
+                    android:text="PIN"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/brand_orange"
+                    android:backgroundTint="#202334"
+                    android:paddingHorizontal="4dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    app:cornerRadius="@dimen/corner_radius_pill" />
+
+                <Button
                     android:id="@+id/btnAlbumDetailExportM3u"
                     android:layout_width="0dp"
                     android:layout_weight="1"
@@ -731,66 +789,117 @@
 
     </LinearLayout>
 
-    <!-- 4. Now Playing Fullscreen Single Audio Container (Reference Image UI) -->
-    <LinearLayout
+    <!-- 4. Now Playing Fullscreen Single Audio Container (Authentic Zune Metro Artist Experience) -->
+    <FrameLayout
         android:id="@+id/nowPlayingSingleContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:background="#0F1016"
-        android:paddingTop="8dp"
-        android:paddingBottom="24dp"
-        android:paddingHorizontal="24dp"
+        android:background="#0A0B0E"
         android:clickable="true"
         android:focusable="true"
         android:elevation="20dp"
         android:visibility="gone">
 
-        <!-- Top Navigation Bar (< Back, Interactive Format Badge Pill, Spacer, ♡ Favorite, ⋮ Menu) -->
+        <!-- Ambient Artist Stage Background with subtle pan/drift -->
+        <ImageView
+            android:id="@+id/ivNpAmbientArt"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:alpha="0.25" />
+
+        <!-- Gradient Vignette Scrim over ambient artwork -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/bg_zune_ambient_scrim" />
+
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:paddingTop="8dp"
+            android:paddingBottom="24dp"
+            android:paddingHorizontal="24dp">
 
-            <ImageButton
-                android:id="@+id/btnNpBack"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_np_back"
-                app:tint="@color/text_primary"
-                android:contentDescription="Back to Catalog" />
+            <!-- Top Navigation Bar (< Back, Interactive Format Badge Pill, Spacer, ♡ Favorite, ⋮ Menu) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
 
-            <View
-                android:layout_width="0dp"
-                android:layout_height="1dp"
-                android:layout_weight="1" />
+                <ImageButton
+                    android:id="@+id/btnNpBack"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_np_back"
+                    app:tint="@color/text_primary"
+                    android:contentDescription="Back to Catalog" />
 
-            <ImageButton
-                android:id="@+id/btnNpFavorite"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_np_heart"
-                app:tint="#94A3B8"
-                android:contentDescription="Favorite" />
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1" />
 
-            <ImageButton
-                android:id="@+id/btnNpMenu"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_marginStart="4dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_np_more"
-                app:tint="@color/text_primary"
-                android:contentDescription="Options" />
-        </LinearLayout>
+                <ImageButton
+                    android:id="@+id/btnNpFavorite"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_np_heart"
+                    app:tint="#94A3B8"
+                    android:contentDescription="Favorite" />
 
-        <!-- Center Stage: Hero Circular Vinyl Disc Artwork & Synced Lyrics Drawer -->
-        <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
+                <ImageButton
+                    android:id="@+id/btnNpMenu"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_marginStart="4dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_np_more"
+                    app:tint="@color/text_primary"
+                    android:contentDescription="Options" />
+            </LinearLayout>
+
+            <!-- Zune Metro Typographic Artist & Album Header -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="2dp"
+                android:layout_marginBottom="4dp">
+
+                <TextView
+                    android:id="@+id/tvNpArtistHeader"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-light"
+                    android:textSize="32sp"
+                    android:textColor="@color/white"
+                    android:singleLine="true"
+                    android:ellipsize="marquee"
+                    android:marqueeRepeatLimit="marquee_forever"
+                    tools:text="daft punk" />
+
+                <TextView
+                    android:id="@+id/tvNpAlbumHeader"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/brand_orange"
+                    android:textSize="12sp"
+                    android:fontFamily="sans-serif-medium"
+                    android:letterSpacing="0.08"
+                    android:singleLine="true"
+                    android:ellipsize="end"
+                    tools:text="RANDOM ACCESS MEMORIES (2013)" />
+            </LinearLayout>
+
+            <!-- Center Stage: Hero Circular Vinyl Disc Artwork & Synced Lyrics Drawer -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
             android:layout_weight="1"
             android:layout_marginVertical="12dp">
 
@@ -871,24 +980,24 @@
 
         </FrameLayout>
 
-        <!-- Track Metadata (Centered, Crisp Audiophile Typography) -->
+        <!-- Track Metadata (Left-Aligned Zune Metro Typography) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:gravity="center_horizontal"
-            android:layout_marginTop="4dp"
-            android:paddingHorizontal="12dp">
+            android:layout_marginTop="2dp"
+            android:paddingHorizontal="16dp">
 
             <TextView
                 android:id="@+id/tvNpTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center"
+                android:gravity="start"
                 android:text="Track Title"
-                android:textColor="@color/text_primary"
-                android:textSize="21sp"
+                android:textColor="@color/white"
+                android:textSize="24sp"
                 android:textStyle="bold"
+                android:fontFamily="sans-serif-bold"
                 android:singleLine="true"
                 android:ellipsize="marquee"
                 android:marqueeRepeatLimit="marquee_forever" />
@@ -897,13 +1006,61 @@
                 android:id="@+id/tvNpArtist"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="3dp"
-                android:gravity="center"
+                android:layout_marginTop="2dp"
+                android:gravity="start"
                 android:text="Artist Name"
-                android:textColor="#94A3B8"
+                android:textColor="@color/text_secondary"
                 android:textSize="14sp"
+                android:fontFamily="sans-serif"
                 android:singleLine="true"
                 android:ellipsize="end" />
+
+            <!-- Inline Up Next Queue Stack -->
+            <LinearLayout
+                android:id="@+id/layoutNpUpNext"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="4dp">
+
+                <TextView
+                    android:id="@+id/tvNpNextTrack1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/text_secondary"
+                    android:alpha="0.75"
+                    android:textSize="13sp"
+                    android:singleLine="true"
+                    android:ellipsize="end"
+                    android:visibility="gone"
+                    tools:text="1-07 Demons" />
+
+                <TextView
+                    android:id="@+id/tvNpNextTrack2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="1dp"
+                    android:textColor="@color/text_secondary"
+                    android:alpha="0.50"
+                    android:textSize="13sp"
+                    android:singleLine="true"
+                    android:ellipsize="end"
+                    android:visibility="gone"
+                    tools:text="1-08 Don't Swallow the Cap" />
+
+                <TextView
+                    android:id="@+id/tvNpNextTrack3"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="1dp"
+                    android:textColor="@color/text_secondary"
+                    android:alpha="0.30"
+                    android:textSize="13sp"
+                    android:singleLine="true"
+                    android:ellipsize="end"
+                    android:visibility="gone"
+                    tools:text="1-09 Fireproof" />
+            </LinearLayout>
         </LinearLayout>
 
         <!-- Actual Song Audio Waveform Visualizer & Seek Scrubber -->
@@ -984,52 +1141,142 @@
         <!-- Bottom Actions Bar: Lyrics, Repeat, Shuffle, Queue -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="48dp"
+            android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:layout_marginTop="8dp">
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="4dp">
 
-            <ImageButton
-                android:id="@+id/btnNpLyrics"
+            <LinearLayout
+                android:id="@+id/layoutNpLyrics"
                 android:layout_width="0dp"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_np_lyrics"
-                app:tint="#94A3B8"
-                android:contentDescription="Lyrics" />
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:clickable="true"
+                android:focusable="true">
 
-            <ImageButton
-                android:id="@+id/btnNpRepeat"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_np_repeat"
-                app:tint="#94A3B8"
-                android:contentDescription="Repeat Mode" />
+                <ImageButton
+                    android:id="@+id/btnNpLyrics"
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
+                    android:background="@drawable/bg_metro_circle_button"
+                    android:src="@drawable/ic_np_lyrics"
+                    android:padding="8dp"
+                    android:scaleType="fitCenter"
+                    app:tint="@color/text_primary"
+                    android:contentDescription="Lyrics" />
 
-            <ImageButton
-                android:id="@+id/btnNpShuffle"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_np_shuffle"
-                app:tint="#94A3B8"
-                android:contentDescription="Shuffle Mode" />
+                <TextView
+                    android:id="@+id/tvNpLyricsLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="lyrics"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="10sp"
+                    android:fontFamily="sans-serif" />
+            </LinearLayout>
 
-            <ImageButton
-                android:id="@+id/btnNpQueue"
+            <LinearLayout
+                android:id="@+id/layoutNpRepeat"
                 android:layout_width="0dp"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_np_queue"
-                app:tint="#94A3B8"
-                android:contentDescription="Queue" />
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageButton
+                    android:id="@+id/btnNpRepeat"
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
+                    android:background="@drawable/bg_metro_circle_button"
+                    android:src="@drawable/ic_np_repeat"
+                    android:padding="8dp"
+                    android:scaleType="fitCenter"
+                    app:tint="@color/text_secondary"
+                    android:contentDescription="Repeat Mode" />
+
+                <TextView
+                    android:id="@+id/tvNpRepeatLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="repeat"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="10sp"
+                    android:fontFamily="sans-serif" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/layoutNpShuffle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageButton
+                    android:id="@+id/btnNpShuffle"
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
+                    android:background="@drawable/bg_metro_circle_button"
+                    android:src="@drawable/ic_np_shuffle"
+                    android:padding="8dp"
+                    android:scaleType="fitCenter"
+                    app:tint="@color/text_secondary"
+                    android:contentDescription="Shuffle Mode" />
+
+                <TextView
+                    android:id="@+id/tvNpShuffleLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="shuffle"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="10sp"
+                    android:fontFamily="sans-serif" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/layoutNpQueue"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageButton
+                    android:id="@+id/btnNpQueue"
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
+                    android:background="@drawable/bg_metro_circle_button"
+                    android:src="@drawable/ic_np_queue"
+                    android:padding="8dp"
+                    android:scaleType="fitCenter"
+                    app:tint="@color/text_primary"
+                    android:contentDescription="Queue" />
+
+                <TextView
+                    android:id="@+id/tvNpQueueLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="queue"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="10sp"
+                    android:fontFamily="sans-serif" />
+            </LinearLayout>
         </LinearLayout>
-
     </LinearLayout>
+
+    </FrameLayout>
 
 </RelativeLayout>

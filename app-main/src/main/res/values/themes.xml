@@ -11,4 +11,44 @@
         <item name="android:navigationBarColor">@color/surface_dark</item>
         <item name="android:windowBackground">@color/surface_dark</item>
     </style>
+
+    <!-- Zune Metro Typographic Hierarchy -->
+    <style name="TextAppearance.Spindle.Metro" parent="TextAppearance.MaterialComponents.Body1" />
+
+    <style name="TextAppearance.Spindle.Metro.Hero" parent="TextAppearance.MaterialComponents.Headline1">
+        <item name="android:textSize">@dimen/text_size_metro_hero</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:fontFamily">sans-serif-light</item>
+        <item name="android:letterSpacing">-0.05</item>
+    </style>
+
+    <style name="TextAppearance.Spindle.Metro.Artist" parent="TextAppearance.MaterialComponents.Headline2">
+        <item name="android:textSize">@dimen/text_size_metro_artist</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:fontFamily">sans-serif-light</item>
+        <item name="android:letterSpacing">-0.03</item>
+    </style>
+
+    <style name="TextAppearance.Spindle.Metro.Pivot" parent="TextAppearance.MaterialComponents.Body1">
+        <item name="android:textSize">@dimen/text_size_metro_pivot</item>
+        <item name="android:fontFamily">sans-serif</item>
+    </style>
+
+    <style name="TextAppearance.Spindle.Metro.Pivot.Active" parent="TextAppearance.Spindle.Metro.Pivot">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextAppearance.Spindle.Metro.Pivot.Inactive" parent="TextAppearance.Spindle.Metro.Pivot">
+        <item name="android:textColor">@color/text_muted</item>
+        <item name="android:textStyle">normal</item>
+    </style>
+
+    <style name="TextAppearance.Spindle.Metro.SectionHeader" parent="TextAppearance.MaterialComponents.Caption">
+        <item name="android:textSize">@dimen/text_size_metro_section</item>
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:fontFamily">monospace</item>
+        <item name="android:letterSpacing">0.08</item>
+    </style>
 </resources>
