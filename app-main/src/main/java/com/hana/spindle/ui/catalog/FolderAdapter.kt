@@ -10,8 +10,11 @@ import com.hana.spindle.databinding.ItemFolderBinding
 data class FolderItem(
     val name: String,
     val path: String,
-    val songCount: Int
-)
+    val trackCount: Int
+) {
+    @Deprecated("Use trackCount in accordance with canonical glossary", ReplaceWith("trackCount"))
+    val songCount: Int get() = trackCount
+}
 
 class FolderAdapter(
     private val onFolderClicked: (FolderItem) -> Unit
@@ -39,7 +42,7 @@ class FolderAdapter(
         holder.binding.tvFolderName.setTextColor(textColorPrimary)
         holder.binding.tvFolderPath.text = folder.path
         holder.binding.tvFolderPath.setTextColor(textColorSecondary)
-        holder.binding.tvFolderCount.text = "${folder.songCount} songs"
+        holder.binding.tvFolderCount.text = "${folder.trackCount} tracks"
         holder.binding.tvFolderCount.setTextColor(textColorSecondary)
         holder.itemView.setOnClickListener { onFolderClicked(folder) }
     }

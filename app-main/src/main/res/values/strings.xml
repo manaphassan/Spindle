@@ -162,4 +162,16 @@
     <string name="user_eq_export_success">Preset exported successfully</string>
     <string name="user_eq_import_success">Imported preset: %1$s</string>
     <string name="user_eq_delete_confirm">Delete profile \"%1$s\"?</string>
+
+    <!-- Transport Toasts & Queue Feedback (§8.2) -->
+    <string name="toast_next_track">Next Track</string>
+    <string name="toast_prev_track">Previous Track</string>
+    <string name="toast_audio_playing">Audio Playing</string>
+    <string name="toast_audio_paused">Audio Paused</string>
+    <string name="toast_fast_forward">Fast Forward</string>
+    <string name="toast_rewind">Rewind</string>
+    <string name="toast_added_to_queue">Added to queue: %1$s</string>
+    <string name="toast_will_play_next">Will play next: %1$s</string>
+    <string name="toast_removed_from_mixtape">Removed \'%1$s\' from mixtape</string>
+    <string name="toast_deleted_mixtape">Deleted mixtape \'%1$s\'</string>
 </resources>

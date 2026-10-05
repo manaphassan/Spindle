@@ -84,6 +84,7 @@ class CatalogFragment : Fragment() {
     private var mixtapeReorderHelper: androidx.recyclerview.widget.ItemTouchHelper? = null
 
     private var currentAlbumTracks: List<TrackEntity> = emptyList()
+    @Deprecated("Use currentAlbumTracks in accordance with canonical glossary", ReplaceWith("currentAlbumTracks"))
     private var currentAlbumSongs: List<TrackEntity>
         get() = currentAlbumTracks
         set(value) { currentAlbumTracks = value }
@@ -104,11 +105,13 @@ class CatalogFragment : Fragment() {
     private var isShowingNpLyrics = false
     private var isPanoramaVisible = true
     private var currentLoadedTrackId: Long = -1L
+    @Deprecated("Use currentLoadedTrackId in accordance with canonical glossary", ReplaceWith("currentLoadedTrackId"))
     private var currentLoadedSongId: Long
         get() = currentLoadedTrackId
         set(value) { currentLoadedTrackId = value }
 
     private var currentMiniTrackId: Long = -1L
+    @Deprecated("Use currentMiniTrackId in accordance with canonical glossary", ReplaceWith("currentMiniTrackId"))
     private var currentMiniSongId: Long
         get() = currentMiniTrackId
         set(value) { currentMiniTrackId = value }
@@ -117,11 +120,13 @@ class CatalogFragment : Fragment() {
     private var currentTab = 0
 
     private var allTracksList: List<TrackEntity> = emptyList()
+    @Deprecated("Use allTracksList in accordance with canonical glossary", ReplaceWith("allTracksList"))
     private var allSongsList: List<TrackEntity>
         get() = allTracksList
         set(value) { allTracksList = value }
 
     private var currentDisplayedTracks: List<TrackEntity> = emptyList()
+    @Deprecated("Use currentDisplayedTracks in accordance with canonical glossary", ReplaceWith("currentDisplayedTracks"))
     private var currentDisplayedSongs: List<TrackEntity>
         get() = currentDisplayedTracks
         set(value) { currentDisplayedTracks = value }
@@ -221,11 +226,11 @@ class CatalogFragment : Fragment() {
         ).apply {
             onPlayNext = { track ->
                 audioEngine.playNextInQueue(track)
-                android.widget.Toast.makeText(requireContext(), "Will play next: ${track.title}", android.widget.Toast.LENGTH_SHORT).show()
+                android.widget.Toast.makeText(requireContext(), getString(R.string.toast_will_play_next, track.title), android.widget.Toast.LENGTH_SHORT).show()
             }
             onAddToQueue = { track ->
                 audioEngine.addToQueue(track)
-                android.widget.Toast.makeText(requireContext(), "Added to queue: ${track.title}", android.widget.Toast.LENGTH_SHORT).show()
+                android.widget.Toast.makeText(requireContext(), getString(R.string.toast_added_to_queue, track.title), android.widget.Toast.LENGTH_SHORT).show()
             }
             onAddToMixtape = { track ->
                 MixtapeDialogs.showAddToMixtapeDialog(requireContext(), app.database, viewLifecycleOwner.lifecycleScope, track) {
@@ -236,7 +241,7 @@ class CatalogFragment : Fragment() {
             }
             onInspectTags = { track ->
                 TagInspectorDialog.show(requireContext(), track) {
-                    loadSongs(app)
+                    loadTracks(app)
                 }
             }
             onViewAudioSpecs = { track ->
@@ -305,7 +310,7 @@ class CatalogFragment : Fragment() {
                 viewLifecycleOwner.lifecycleScope.launch {
                     app.database.playlistDao().removeTrackFromPlaylist(playlistId, trackToRemove.id)
                     app.database.playlistDao().reorderPlaylist(playlistId, mutable.map { it.id })
-                    android.widget.Toast.makeText(requireContext(), "Removed '${trackToRemove.title}' from mixtape", android.widget.Toast.LENGTH_SHORT).show()
+                    android.widget.Toast.makeText(requireContext(), getString(R.string.toast_removed_from_mixtape, trackToRemove.title), android.widget.Toast.LENGTH_SHORT).show()
                 }
             }
 
@@ -337,11 +342,11 @@ class CatalogFragment : Fragment() {
             showTrackNumbers = true
             onPlayNext = { track ->
                 audioEngine.playNextInQueue(track)
-                android.widget.Toast.makeText(requireContext(), "Will play next: ${track.title}", android.widget.Toast.LENGTH_SHORT).show()
+                android.widget.Toast.makeText(requireContext(), getString(R.string.toast_will_play_next, track.title), android.widget.Toast.LENGTH_SHORT).show()
             }
             onAddToQueue = { track ->
                 audioEngine.addToQueue(track)
-                android.widget.Toast.makeText(requireContext(), "Added to queue: ${track.title}", android.widget.Toast.LENGTH_SHORT).show()
+                android.widget.Toast.makeText(requireContext(), getString(R.string.toast_added_to_queue, track.title), android.widget.Toast.LENGTH_SHORT).show()
             }
             onAddToMixtape = { track ->
                 MixtapeDialogs.showAddToMixtapeDialog(requireContext(), app.database, viewLifecycleOwner.lifecycleScope, track) {
@@ -352,7 +357,7 @@ class CatalogFragment : Fragment() {
             }
             onInspectTags = { track ->
                 TagInspectorDialog.show(requireContext(), track) {
-                    loadSongs(app)
+                    loadTracks(app)
                 }
             }
             onViewAudioSpecs = { track ->
@@ -369,12 +374,12 @@ class CatalogFragment : Fragment() {
                     if (playlistId > 0) {
                         val mutable = currentAlbumTracks.toMutableList()
                         mutable.remove(track)
-                        currentAlbumSongs = mutable
+                        currentAlbumTracks = mutable
                         albumTracksAdapter.submitList(mutable)
                         viewLifecycleOwner.lifecycleScope.launch {
                             app.database.playlistDao().removeTrackFromPlaylist(playlistId, track.id)
                             app.database.playlistDao().reorderPlaylist(playlistId, mutable.map { it.id })
-                            android.widget.Toast.makeText(requireContext(), "Removed '${track.title}' from mixtape", android.widget.Toast.LENGTH_SHORT).show()
+                            android.widget.Toast.makeText(requireContext(), getString(R.string.toast_removed_from_mixtape, track.title), android.widget.Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
@@ -389,18 +394,18 @@ class CatalogFragment : Fragment() {
             onAlbumClicked = { album ->
                 albumTracksJob?.cancel()
                 albumTracksJob = viewLifecycleOwner.lifecycleScope.launch {
-                    getTracksFlowForAlbum(app, album).collectLatest { albumSongs ->
-                        showAlbumDetail(album, albumSongs)
+                    getTracksFlowForAlbum(app, album).collectLatest { albumTracks ->
+                        showAlbumDetail(album, albumTracks)
                     }
                 }
             },
             onPlayAlbumClicked = { album ->
                 albumTracksJob?.cancel()
                 albumTracksJob = viewLifecycleOwner.lifecycleScope.launch {
-                    getTracksFlowForAlbum(app, album).collectLatest { albumSongs ->
-                        if (albumSongs.isNotEmpty()) {
-                            currentDisplayedSongs = albumSongs
-                            audioEngine.playQueue(albumSongs, 0)
+                    getTracksFlowForAlbum(app, album).collectLatest { albumTracks ->
+                        if (albumTracks.isNotEmpty()) {
+                            currentDisplayedTracks = albumTracks
+                            audioEngine.playQueue(albumTracks, 0)
                             showNowPlayingSingleAudio(true)
                         }
                     }
@@ -447,7 +452,7 @@ class CatalogFragment : Fragment() {
                                         .setPositiveButton("Delete") { _, _ ->
                                             viewLifecycleOwner.lifecycleScope.launch {
                                                 app.database.playlistDao().deletePlaylist(album.year.toLong())
-                                                android.widget.Toast.makeText(requireContext(), "Deleted mixtape '${album.album}'", android.widget.Toast.LENGTH_SHORT).show()
+                                                android.widget.Toast.makeText(requireContext(), getString(R.string.toast_deleted_mixtape, album.album), android.widget.Toast.LENGTH_SHORT).show()
                                             }
                                         }
                                         .setNegativeButton("Cancel", null)
@@ -469,22 +474,22 @@ class CatalogFragment : Fragment() {
                                 }
                                 1 -> {
                                     viewLifecycleOwner.lifecycleScope.launch {
-                                        val songs = getTracksFlowForAlbum(app, album).first()
-                                        if (songs.isNotEmpty()) {
-                                            currentDisplayedSongs = songs
-                                            audioEngine.playQueue(songs, 0)
+                                        val tracks = getTracksFlowForAlbum(app, album).first()
+                                        if (tracks.isNotEmpty()) {
+                                            currentDisplayedTracks = tracks
+                                            audioEngine.playQueue(tracks, 0)
                                             showNowPlayingSingleAudio(true)
                                         }
                                     }
                                 }
                                 2 -> {
                                     viewLifecycleOwner.lifecycleScope.launch {
-                                        val songs = getTracksFlowForAlbum(app, album).first()
+                                        val tracks = getTracksFlowForAlbum(app, album).first()
                                         MixtapeDialogs.exportSmartMixtape(
                                             requireContext(),
                                             viewLifecycleOwner.lifecycleScope,
                                             album.album,
-                                            songs
+                                            tracks
                                         )
                                     }
                                 }
@@ -505,10 +510,10 @@ class CatalogFragment : Fragment() {
                                 1 -> {
                                     albumTracksJob?.cancel()
                                     albumTracksJob = viewLifecycleOwner.lifecycleScope.launch {
-                                        getTracksFlowForAlbum(app, album).collectLatest { albumSongs ->
-                                            if (albumSongs.isNotEmpty()) {
-                                                currentDisplayedSongs = albumSongs
-                                                audioEngine.playQueue(albumSongs, 0)
+                                        getTracksFlowForAlbum(app, album).collectLatest { albumTracks ->
+                                            if (albumTracks.isNotEmpty()) {
+                                                currentDisplayedTracks = albumTracks
+                                                audioEngine.playQueue(albumTracks, 0)
                                                 showNowPlayingSingleAudio(true)
                                             }
                                         }
@@ -517,8 +522,8 @@ class CatalogFragment : Fragment() {
                                 2 -> {
                                     albumTracksJob?.cancel()
                                     albumTracksJob = viewLifecycleOwner.lifecycleScope.launch {
-                                        getTracksFlowForAlbum(app, album).collectLatest { albumSongs ->
-                                            showAlbumDetail(album, albumSongs)
+                                        getTracksFlowForAlbum(app, album).collectLatest { albumTracks ->
+                                            showAlbumDetail(album, albumTracks)
                                         }
                                     }
                                 }
@@ -531,10 +536,10 @@ class CatalogFragment : Fragment() {
 
         folderAdapter = FolderAdapter { folder ->
             viewLifecycleOwner.lifecycleScope.launch {
-                val folderSongs = allSongsList.filter { File(it.path).parent == folder.path }
-                if (folderSongs.isNotEmpty()) {
-                    currentDisplayedSongs = folderSongs
-                    audioEngine.playQueue(folderSongs, 0)
+                val folderTracks = allTracksList.filter { File(it.path).parent == folder.path }
+                if (folderTracks.isNotEmpty()) {
+                    currentDisplayedTracks = folderTracks
+                    audioEngine.playQueue(folderTracks, 0)
                     showNowPlayingSingleAudio(true)
                 }
             }
@@ -543,45 +548,45 @@ class CatalogFragment : Fragment() {
         // Initialize 7 Panorama Collection Adapters
         tracksAdapter = TrackAdapter(
             imageLoader = app.imageLoader,
-            onTrackClicked = { song, index ->
-                currentDisplayedSongs = allSongsList
-                audioEngine.playQueue(allSongsList, index)
+            onTrackClicked = { track, index ->
+                currentDisplayedTracks = allTracksList
+                audioEngine.playQueue(allTracksList, index)
                 showNowPlayingSingleAudio(true)
             },
-            onRatingChanged = { song, newRating ->
+            onRatingChanged = { track, newRating ->
                 viewLifecycleOwner.lifecycleScope.launch {
-                    app.database.trackDao().updateRating(song.id, newRating)
+                    app.database.trackDao().updateRating(track.id, newRating)
                 }
             }
         ).apply {
-            onPlayNext = { song ->
-                audioEngine.playNextInQueue(song)
-                android.widget.Toast.makeText(requireContext(), "Will play next: ${song.title}", android.widget.Toast.LENGTH_SHORT).show()
+            onPlayNext = { track ->
+                audioEngine.playNextInQueue(track)
+                android.widget.Toast.makeText(requireContext(), getString(R.string.toast_will_play_next, track.title), android.widget.Toast.LENGTH_SHORT).show()
             }
-            onAddToQueue = { song ->
-                audioEngine.addToQueue(song)
-                android.widget.Toast.makeText(requireContext(), "Added to queue: ${song.title}", android.widget.Toast.LENGTH_SHORT).show()
+            onAddToQueue = { track ->
+                audioEngine.addToQueue(track)
+                android.widget.Toast.makeText(requireContext(), getString(R.string.toast_added_to_queue, track.title), android.widget.Toast.LENGTH_SHORT).show()
             }
-            onAddToMixtape = { song ->
-                MixtapeDialogs.showAddToMixtapeDialog(requireContext(), app.database, viewLifecycleOwner.lifecycleScope, song) {
+            onAddToMixtape = { track ->
+                MixtapeDialogs.showAddToMixtapeDialog(requireContext(), app.database, viewLifecycleOwner.lifecycleScope, track) {
                     loadMixtapes(app)
                 }
             }
-            onInspectTags = { song ->
-                TagInspectorDialog.show(requireContext(), song) {
-                    loadSongs(app)
+            onInspectTags = { track ->
+                TagInspectorDialog.show(requireContext(), track) {
+                    loadTracks(app)
                 }
             }
-            onViewAudioSpecs = { song ->
-                DialogFileSpecs(song).show(parentFragmentManager, "DialogFileSpecs")
+            onViewAudioSpecs = { track ->
+                DialogFileSpecs(track).show(parentFragmentManager, "DialogFileSpecs")
             }
         }
 
         val onAlbumClickAction: (AlbumItem) -> Unit = { album ->
             albumTracksJob?.cancel()
             albumTracksJob = viewLifecycleOwner.lifecycleScope.launch {
-                getTracksFlowForAlbum(app, album).collectLatest { albumSongs ->
-                    showAlbumDetail(album, albumSongs)
+                getTracksFlowForAlbum(app, album).collectLatest { albumTracks ->
+                    showAlbumDetail(album, albumTracks)
                 }
             }
         }
@@ -589,10 +594,10 @@ class CatalogFragment : Fragment() {
         val onAlbumPlayAction: (AlbumItem) -> Unit = { album ->
             albumTracksJob?.cancel()
             albumTracksJob = viewLifecycleOwner.lifecycleScope.launch {
-                getTracksFlowForAlbum(app, album).collectLatest { albumSongs ->
-                    if (albumSongs.isNotEmpty()) {
-                        currentDisplayedSongs = albumSongs
-                        audioEngine.playQueue(albumSongs, 0)
+                getTracksFlowForAlbum(app, album).collectLatest { albumTracks ->
+                    if (albumTracks.isNotEmpty()) {
+                        currentDisplayedTracks = albumTracks
+                        audioEngine.playQueue(albumTracks, 0)
                         showNowPlayingSingleAudio(true)
                     }
                 }
@@ -625,32 +630,32 @@ class CatalogFragment : Fragment() {
 
         foldersAdapter = FolderAdapter { folder ->
             viewLifecycleOwner.lifecycleScope.launch {
-                val folderSongs = allSongsList.filter { File(it.path).parent == folder.path }
-                if (folderSongs.isNotEmpty()) {
+                val folderTracks = allTracksList.filter { File(it.path).parent == folder.path }
+                if (folderTracks.isNotEmpty()) {
                     val albumItem = AlbumItem(
                         album = folder.name,
                         artist = folder.path,
-                        trackCount = folderSongs.size,
-                        representativePath = folderSongs.firstOrNull()?.path ?: "",
+                        trackCount = folderTracks.size,
+                        representativePath = folderTracks.firstOrNull()?.path ?: "",
                         year = 0,
                         format = "FOLDER"
                     )
-                    showAlbumDetail(albumItem, folderSongs)
+                    showAlbumDetail(albumItem, folderTracks)
                 }
             }
         }
 
         favoritesAdapter = TrackAdapter(
             imageLoader = app.imageLoader,
-            onTrackClicked = { song, index ->
-                val favs = allSongsList.filter { it.isFavorite }
-                currentDisplayedSongs = favs
+            onTrackClicked = { track, index ->
+                val favs = allTracksList.filter { it.isFavorite }
+                currentDisplayedTracks = favs
                 audioEngine.playQueue(favs, index)
                 showNowPlayingSingleAudio(true)
             },
-            onRatingChanged = { song, newRating ->
+            onRatingChanged = { track, newRating ->
                 viewLifecycleOwner.lifecycleScope.launch {
-                    app.database.trackDao().updateRating(song.id, newRating)
+                    app.database.trackDao().updateRating(track.id, newRating)
                 }
             }
         )
@@ -662,7 +667,7 @@ class CatalogFragment : Fragment() {
         )
 
         binding.rvCatalog.layoutManager = LinearLayoutManager(requireContext())
-        binding.rvCatalog.adapter = songAdapter
+        binding.rvCatalog.adapter = tracksListAdapter
 
         searchSuggestionAdapter = SearchSuggestionAdapter { suggestion ->
             binding.rvSearchSuggestions.visibility = View.GONE
@@ -671,15 +676,15 @@ class CatalogFragment : Fragment() {
             imm?.hideSoftInputFromWindow(binding.etCatalogSearch.windowToken, 0)
 
             if (suggestion.track != null) {
-                currentDisplayedSongs = listOf(suggestion.track)
+                currentDisplayedTracks = listOf(suggestion.track)
                 audioEngine.playQueue(listOf(suggestion.track), 0)
                 showNowPlayingSingleAudio(true)
             } else if (suggestion.album != null) {
                 val album = suggestion.album
                 albumTracksJob?.cancel()
                 albumTracksJob = viewLifecycleOwner.lifecycleScope.launch {
-                    getTracksFlowForAlbum(app, album).collectLatest { albumSongs ->
-                        showAlbumDetail(album, albumSongs)
+                    getTracksFlowForAlbum(app, album).collectLatest { albumTracks ->
+                        showAlbumDetail(album, albumTracks)
                     }
                 }
             } else {
@@ -868,17 +873,17 @@ class CatalogFragment : Fragment() {
 
         // Action buttons
         cBinding.btnShuffleTracks.setOnClickListener {
-            if (allSongsList.isNotEmpty()) {
-                val shuffled = allSongsList.shuffled()
-                currentDisplayedSongs = shuffled
+            if (allTracksList.isNotEmpty()) {
+                val shuffled = allTracksList.shuffled()
+                currentDisplayedTracks = shuffled
                 audioEngine.playQueue(shuffled, 0)
                 showNowPlayingSingleAudio(true)
             }
         }
         cBinding.btnPlayTracks.setOnClickListener {
-            if (allSongsList.isNotEmpty()) {
-                currentDisplayedSongs = allSongsList
-                audioEngine.playQueue(allSongsList, 0)
+            if (allTracksList.isNotEmpty()) {
+                currentDisplayedTracks = allTracksList
+                audioEngine.playQueue(allTracksList, 0)
                 showNowPlayingSingleAudio(true)
             }
         }
@@ -1064,7 +1069,7 @@ class CatalogFragment : Fragment() {
         binding.catalogAlphabetIndex.updateTheme(secondary, accent)
 
         // Propagate to Adapters
-        songAdapter.updateThemeColors(primary, secondary, isDark, isEink)
+        tracksListAdapter.updateThemeColors(primary, secondary, isDark, isEink)
         albumAdapter.updateThemeColors(primary, secondary, isDark, isEink)
         if (::albumTracksAdapter.isInitialized) {
             albumTracksAdapter.updateThemeColors(primary, secondary, isDark, isEink)
@@ -1150,8 +1155,8 @@ class CatalogFragment : Fragment() {
     private fun openZuneJumpList() {
         val availableLetters: Set<Char> = when (currentTab) {
             0, 5 -> {
-                currentDisplayedSongs.map { song ->
-                    val ch = song.title.trim().firstOrNull()?.uppercaseChar() ?: '#'
+                currentDisplayedTracks.map { track ->
+                    val ch = track.title.trim().firstOrNull()?.uppercaseChar() ?: '#'
                     if (ch in 'A'..'Z') ch else '#'
                 }.toSet()
             }
@@ -1211,7 +1216,7 @@ class CatalogFragment : Fragment() {
 
         when (currentTab) {
             0, 5 -> {
-                val index = currentDisplayedSongs.indexOfFirst {
+                val index = currentDisplayedTracks.indexOfFirst {
                     val firstChar = it.title.trim().firstOrNull()?.uppercaseChar() ?: '#'
                     if (targetChar == '#') firstChar !in 'A'..'Z' else firstChar == targetChar
                 }
@@ -1278,17 +1283,17 @@ class CatalogFragment : Fragment() {
         }
 
         binding.btnShuffle.setOnClickListener {
-            if (currentDisplayedSongs.isNotEmpty()) {
+            if (currentDisplayedTracks.isNotEmpty()) {
                 audioEngine.setShuffleMode(com.hana.spindle.playback.ShuffleMode.ALL)
-                audioEngine.playQueue(currentDisplayedSongs, 0)
+                audioEngine.playQueue(currentDisplayedTracks, 0)
                 (activity as? MainActivity)?.navigateToPlayer()
             }
         }
 
         binding.btnPlayAll.setOnClickListener {
-            if (currentDisplayedSongs.isNotEmpty()) {
+            if (currentDisplayedTracks.isNotEmpty()) {
                 audioEngine.setShuffleMode(com.hana.spindle.playback.ShuffleMode.OFF)
-                audioEngine.playQueue(currentDisplayedSongs, 0)
+                audioEngine.playQueue(currentDisplayedTracks, 0)
                 (activity as? MainActivity)?.navigateToPlayer()
             }
         }
@@ -1417,21 +1422,21 @@ class CatalogFragment : Fragment() {
             // Fallback in-memory matching if FTS had no matches or ftsQuery was null
             if (suggestions.isEmpty()) {
                 val tokens = q.lowercase(Locale.ROOT).split(Regex("\\s+")).filter { it.isNotEmpty() }
-                val fallbackTracks = allSongsList.filter { song ->
+                val fallbackTracks = allTracksList.filter { track ->
                     tokens.all { t ->
-                        song.title.contains(t, ignoreCase = true) ||
-                        song.artist.contains(t, ignoreCase = true) ||
-                        song.album.contains(t, ignoreCase = true) ||
-                        song.composer?.contains(t, ignoreCase = true) == true
+                        track.title.contains(t, ignoreCase = true) ||
+                        track.artist.contains(t, ignoreCase = true) ||
+                        track.album.contains(t, ignoreCase = true) ||
+                        track.composer?.contains(t, ignoreCase = true) == true
                     }
                 }.take(4)
-                for (song in fallbackTracks) {
+                for (track in fallbackTracks) {
                     suggestions.add(
                         SearchSuggestion(
-                            title = song.title,
-                            subtitle = "${song.artist} • ${song.fileFormat}",
+                            title = track.title,
+                            subtitle = "${track.artist} • ${track.fileFormat}",
                             type = SuggestionType.TRACK,
-                            track = song
+                            track = track
                         )
                     )
                 }
@@ -1468,7 +1473,7 @@ class CatalogFragment : Fragment() {
 
         when (currentTab) {
             0, 5 -> {
-                var list = if (currentTab == 5) allFavoritesList else allSongsList
+                var list = if (currentTab == 5) allFavoritesList else allTracksList
 
                 // 1. Filter Chips
                 list = when (currentFilterChip) {
@@ -1533,8 +1538,8 @@ class CatalogFragment : Fragment() {
                     }
                 }
 
-                currentDisplayedSongs = list
-                songAdapter.submitList(list)
+                currentDisplayedTracks = list
+                tracksListAdapter.submitList(list)
                 if (currentTab == 0 && ::tracksAdapter.isInitialized) {
                     tracksAdapter.submitList(list)
                     _binding?.layoutCatalogCollectionPanorama?.tvTracksCount?.text = "${list.size} tracks"
@@ -1644,7 +1649,7 @@ class CatalogFragment : Fragment() {
 
         // Panel 0: Tracks
         if (::tracksAdapter.isInitialized) {
-            var tList = allSongsList
+            var tList = allTracksList
             if (tokens.isNotEmpty()) {
                 tList = tList.filter { track ->
                     tokens.all { t ->
@@ -2266,9 +2271,9 @@ class CatalogFragment : Fragment() {
         b.layoutNpUpNext.visibility = if (visibleCount > 0) View.VISIBLE else View.GONE
     }
 
-    fun showAlbumDetail(album: AlbumItem, songs: List<TrackEntity>) {
+    fun showAlbumDetail(album: AlbumItem, tracks: List<TrackEntity>) {
         currentAlbumItem = album
-        currentAlbumTracks = songs
+        currentAlbumTracks = tracks
 
         val app = requireActivity().application as SpindleApp
         val theme = app.themeManager.currentTheme.value
@@ -2285,22 +2290,22 @@ class CatalogFragment : Fragment() {
         binding.tvAlbumDetailTitle.text = album.album
         binding.tvAlbumDetailArtist.text = album.artist
 
-        val totalDurationMs = songs.sumOf { it.durationMs }
+        val totalDurationMs = tracks.sumOf { it.durationMs }
         val durationFormatted = formatTime(totalDurationMs)
         val yearStr = if (album.year > 0 && !album.isMixtape) "${album.year} • " else ""
 
-        val mixtapePartition = if (album.isMixtape && songs.size > 1) {
-            com.hana.spindle.data.MixtapePartition.partition(songs)
+        val mixtapePartition = if (album.isMixtape && tracks.size > 1) {
+            com.hana.spindle.data.MixtapePartition.partition(tracks)
         } else null
 
         if (mixtapePartition != null) {
             val sideADur = formatTime(mixtapePartition.sideADurationMs)
             val sideBDur = formatTime(mixtapePartition.sideBDurationMs)
-            binding.tvAlbumDetailMeta.text = "$yearStr${songs.size} Tracks • $durationFormatted\nSIDE A: ${mixtapePartition.sideA.size} trk ($sideADur) • SIDE B: ${mixtapePartition.sideB.size} trk ($sideBDur)"
+            binding.tvAlbumDetailMeta.text = "$yearStr${tracks.size} Tracks • $durationFormatted\nSIDE A: ${mixtapePartition.sideA.size} trk ($sideADur) • SIDE B: ${mixtapePartition.sideB.size} trk ($sideBDur)"
             albumTracksAdapter.showSideLetters = true
             albumTracksAdapter.splitIndex = mixtapePartition.splitIndex
         } else {
-            binding.tvAlbumDetailMeta.text = "$yearStr${songs.size} Tracks • $durationFormatted"
+            binding.tvAlbumDetailMeta.text = "$yearStr${tracks.size} Tracks • $durationFormatted"
             albumTracksAdapter.showSideLetters = false
             albumTracksAdapter.splitIndex = -1
         }
@@ -2329,7 +2334,7 @@ class CatalogFragment : Fragment() {
                     requireContext(),
                     viewLifecycleOwner.lifecycleScope,
                     album.album,
-                    songs
+                    tracks
                 )
             }
         } else if (album.format == "COMPOSER") {
@@ -2342,7 +2347,7 @@ class CatalogFragment : Fragment() {
                     requireContext(),
                     viewLifecycleOwner.lifecycleScope,
                     "Composer - ${album.album}",
-                    songs
+                    tracks
                 )
             }
         } else {
@@ -2380,25 +2385,25 @@ class CatalogFragment : Fragment() {
             }
         }
 
-        // Submit songs to albumTracksAdapter
-        albumTracksAdapter.submitList(songs)
+        // Submit tracks to albumTracksAdapter
+        albumTracksAdapter.submitList(tracks)
 
         // Wire Action Pill Buttons
         binding.btnAlbumDetailPlayAll.setOnClickListener {
             app.audioEngine.foleyEngine.playTilePress()
-            if (songs.isNotEmpty()) {
-                currentDisplayedSongs = songs
+            if (tracks.isNotEmpty()) {
+                currentDisplayedTracks = tracks
                 audioEngine.setMixtapeSplitIndex(mixtapePartition?.splitIndex ?: -1)
-                audioEngine.playQueue(songs, 0)
+                audioEngine.playQueue(tracks, 0)
                 showNowPlayingSingleAudio(true)
             }
         }
 
         binding.btnAlbumDetailShuffle.setOnClickListener {
             app.audioEngine.foleyEngine.playTilePress()
-            if (songs.isNotEmpty()) {
-                currentDisplayedSongs = songs
-                val shuffled = songs.shuffled()
+            if (tracks.isNotEmpty()) {
+                currentDisplayedTracks = tracks
+                val shuffled = tracks.shuffled()
                 audioEngine.playQueue(shuffled, 0)
                 showNowPlayingSingleAudio(true)
             }
@@ -2421,9 +2426,9 @@ class CatalogFragment : Fragment() {
 
         binding.btnAlbumDetailCoverPlay.setOnClickListener {
             app.audioEngine.foleyEngine.playTilePress()
-            if (songs.isNotEmpty()) {
-                currentDisplayedSongs = songs
-                audioEngine.playQueue(songs, 0)
+            if (tracks.isNotEmpty()) {
+                currentDisplayedTracks = tracks
+                audioEngine.playQueue(tracks, 0)
                 showNowPlayingSingleAudio(true)
             }
         }
@@ -2747,7 +2752,7 @@ class CatalogFragment : Fragment() {
     }
 
     private fun loadAllCatalogData(app: SpindleApp) {
-        loadSongs(app)
+        loadTracks(app)
         loadAlbums(app)
         loadArtists(app)
         loadMixtapes(app)
@@ -2921,8 +2926,8 @@ class CatalogFragment : Fragment() {
                     (activity?.application as? SpindleApp)?.audioEngine?.foleyEngine?.playTilePress()
                     albumTracksJob?.cancel()
                     albumTracksJob = viewLifecycleOwner.lifecycleScope.launch {
-                        getTracksFlowForAlbum(app, album).collectLatest { albumSongs ->
-                            showAlbumDetail(album, albumSongs)
+                        getTracksFlowForAlbum(app, album).collectLatest { albumTracks ->
+                            showAlbumDetail(album, albumTracks)
                         }
                     }
                 }
@@ -3035,14 +3040,14 @@ class CatalogFragment : Fragment() {
         return String.format(Locale.US, "%02d:%02d", minutes, seconds)
     }
 
-    private fun loadSongs(app: SpindleApp) {
+    private fun loadTracks(app: SpindleApp) {
         viewLifecycleOwner.lifecycleScope.launch {
-            app.database.trackDao().getAllTracks().collectLatest { songs ->
-                allSongsList = songs
+            app.database.trackDao().getAllTracks().collectLatest { tracks ->
+                allTracksList = tracks
                 if (::tracksAdapter.isInitialized) {
-                    tracksAdapter.submitList(songs)
+                    tracksAdapter.submitList(tracks)
                 }
-                _binding?.layoutCatalogCollectionPanorama?.tvTracksCount?.text = "${songs.size} tracks"
+                _binding?.layoutCatalogCollectionPanorama?.tvTracksCount?.text = "${tracks.size} tracks"
                 if (allFoldersList.isEmpty()) {
                     loadFolders()
                 }
@@ -3050,6 +3055,9 @@ class CatalogFragment : Fragment() {
             }
         }
     }
+
+    @Deprecated("Use loadTracks(app)", ReplaceWith("loadTracks(app)"))
+    private fun loadSongs(app: SpindleApp) = loadTracks(app)
 
     private fun loadAlbums(app: SpindleApp) {
         viewLifecycleOwner.lifecycleScope.launch {
@@ -3113,11 +3121,11 @@ class CatalogFragment : Fragment() {
     }
 
     private fun loadFolders() {
-        val folders = allSongsList.groupBy { File(it.path).parent ?: "Music" }.map { (dir, songs) ->
+        val folders = allTracksList.groupBy { File(it.path).parent ?: "Music" }.map { (dir, tracks) ->
             FolderItem(
                 name = File(dir).name,
                 path = dir,
-                songCount = songs.size
+                trackCount = tracks.size
             )
         }
         allFoldersList = folders
@@ -3130,8 +3138,8 @@ class CatalogFragment : Fragment() {
 
     private fun loadGenres(app: SpindleApp) {
         viewLifecycleOwner.lifecycleScope.launch {
-            app.database.trackDao().getAllTracks().collectLatest { songs ->
-                val genres = songs.filter { !it.genre.isNullOrBlank() }
+            app.database.trackDao().getAllTracks().collectLatest { tracks ->
+                val genres = tracks.filter { !it.genre.isNullOrBlank() }
                     .groupBy { it.genre!! }
                     .map { (genre, list) ->
                         AlbumItem(
@@ -3151,8 +3159,8 @@ class CatalogFragment : Fragment() {
 
     private fun loadHiRes(app: SpindleApp) {
         viewLifecycleOwner.lifecycleScope.launch {
-            app.database.trackDao().getHiResTracks().collectLatest { hiResSongs ->
-                allSongsList = hiResSongs
+            app.database.trackDao().getHiResTracks().collectLatest { hiResTracks ->
+                allTracksList = hiResTracks
                 applyFilterAndSort()
             }
         }

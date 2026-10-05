@@ -191,7 +191,7 @@ class PlayerFragment : Fragment() {
             b.metal81CassetteView.isPlaying = state.isPlaying
             b.metal81CassetteView.progress = state.progress
 
-            state.currentSong?.let { song ->
+            state.currentTrack?.let { song ->
                 // Deck values
                 b.verticalDeckView.isSongLoaded = true
                 b.verticalDeckView.trackTitle = song.title
@@ -786,7 +786,7 @@ class PlayerFragment : Fragment() {
 
     private fun syncVuMeterState(state: com.hana.spindle.playback.PlaybackState) {
         _binding?.let { b ->
-            state.currentSong?.let { song ->
+            state.currentTrack?.let { song ->
                 b.tvVuTrackTitle.text = song.title
                 b.tvVuTrackTitle.isSelected = true
                 b.tvVuTrackArtist.text = "${song.artist} • ${song.album}"
@@ -837,14 +837,14 @@ class PlayerFragment : Fragment() {
 
     private fun setupCassetteFlip() {
         binding.verticalCassetteView.setOnClickListener {
-            if (audioEngine.playbackState.value.currentSong != null) {
+            if (audioEngine.playbackState.value.currentTrack != null) {
                 (activity as? MainActivity)?.navigateToCatalog(openNowPlaying = true)
             } else {
                 flipCassette(binding.verticalCassetteView)
             }
         }
         binding.metal81CassetteView.setOnClickListener {
-            if (audioEngine.playbackState.value.currentSong != null) {
+            if (audioEngine.playbackState.value.currentTrack != null) {
                 (activity as? MainActivity)?.navigateToCatalog(openNowPlaying = true)
             } else {
                 flipCassette(binding.metal81CassetteView)

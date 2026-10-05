@@ -73,6 +73,7 @@ data class PlaybackState(
     val currentLyrics: LyricsData? = null,
     val activeLyricIndex: Int = -1
 ) {
+    @Deprecated("Use currentTrack in accordance with Spindle canonical glossary", ReplaceWith("currentTrack"))
     val currentSong: TrackEntity? get() = currentTrack
 }
 
@@ -503,6 +504,7 @@ class AudioEngine(
         playCurrentTrack()
     }
 
+    @Deprecated("Use playTrack(track) in accordance with Spindle canonical glossary", ReplaceWith("playTrack(song)"))
     fun playSong(song: TrackEntity) = playTrack(song)
 
     fun playNextInQueue(track: TrackEntity) {
@@ -957,8 +959,8 @@ class AudioEngine(
         try {
             val prefs = context.getSharedPreferences("spindle_playback_prefs", Context.MODE_PRIVATE)
             prefs.edit()
-                .putString("last_played_song_path", path)
-                .putLong("last_played_song_pos", pos)
+                .putString(PREF_KEY_LAST_PLAYED_TRACK_PATH, path)
+                .putLong(PREF_KEY_LAST_PLAYED_TRACK_POS, pos)
                 .apply()
         } catch (e: Exception) {
             // ignore
@@ -970,8 +972,8 @@ class AudioEngine(
             try {
                 val app = context.applicationContext as? com.hana.spindle.SpindleApp ?: return@launch
                 val prefs = context.getSharedPreferences("spindle_playback_prefs", Context.MODE_PRIVATE)
-                val lastPath = prefs.getString("last_played_song_path", null)
-                val lastPos = prefs.getLong("last_played_song_pos", 0L)
+                val lastPath = prefs.getString(PREF_KEY_LAST_PLAYED_TRACK_PATH, null)
+                val lastPos = prefs.getLong(PREF_KEY_LAST_PLAYED_TRACK_POS, 0L)
 
                 // If no song path was saved or tape was ejected, keep player empty (device name will display)
                 if (lastPath.isNullOrEmpty()) return@launch
@@ -1037,8 +1039,8 @@ class AudioEngine(
         try {
             val prefs = context.getSharedPreferences("spindle_playback_prefs", Context.MODE_PRIVATE)
             prefs.edit()
-                .remove("last_played_song_path")
-                .remove("last_played_song_pos")
+                .remove(PREF_KEY_LAST_PLAYED_TRACK_PATH)
+                .remove(PREF_KEY_LAST_PLAYED_TRACK_POS)
                 .apply()
         } catch (e: Exception) {
             // ignore
@@ -1128,24 +1130,24 @@ class AudioEngine(
 
     private fun applyShuffleMode(mode: ShuffleMode) {
         if (originalPlaylist.isEmpty()) return
-        val currentSong = playlist.getOrNull(currentIndex) ?: originalPlaylist.firstOrNull()
+        val currentTrack = playlist.getOrNull(currentIndex) ?: originalPlaylist.firstOrNull()
 
         when (mode) {
             ShuffleMode.OFF -> {
                 playlist = originalPlaylist.toMutableList()
-                currentIndex = if (currentSong != null) playlist.indexOfFirst { it.id == currentSong.id }.coerceAtLeast(0) else 0
+                currentIndex = if (currentTrack != null) playlist.indexOfFirst { it.id == currentTrack.id }.coerceAtLeast(0) else 0
             }
             ShuffleMode.ALL -> {
-                val remaining = originalPlaylist.filter { it.id != currentSong?.id }.shuffled()
-                playlist = if (currentSong != null) (listOf(currentSong) + remaining).toMutableList() else remaining.toMutableList()
+                val remaining = originalPlaylist.filter { it.id != currentTrack?.id }.shuffled()
+                playlist = if (currentTrack != null) (listOf(currentTrack) + remaining).toMutableList() else remaining.toMutableList()
                 currentIndex = 0
             }
             ShuffleMode.ALBUM -> {
-                val currentAlbum = currentSong?.album ?: ""
+                val currentAlbum = currentTrack?.album ?: ""
                 val albumSongs = originalPlaylist.filter { it.album == currentAlbum }
                 val otherSongs = originalPlaylist.filter { it.album != currentAlbum }
-                val remainingAlbum = albumSongs.filter { it.id != currentSong?.id }.shuffled()
-                val shuffledAlbum = if (currentSong != null) listOf(currentSong) + remainingAlbum else remainingAlbum
+                val remainingAlbum = albumSongs.filter { it.id != currentTrack?.id }.shuffled()
+                val shuffledAlbum = if (currentTrack != null) listOf(currentTrack) + remainingAlbum else remainingAlbum
                 playlist = (shuffledAlbum + otherSongs).toMutableList()
                 currentIndex = 0
             }
@@ -1186,13 +1188,13 @@ class AudioEngine(
             scope.launch {
                 try {
                     val app = context.applicationContext as? com.hana.spindle.SpindleApp ?: return@launch
-                    val allSongs = app.database.trackDao().getAllTracks().firstOrNull() ?: return@launch
-                    if (allSongs.isNotEmpty()) {
-                        val currentSongPath = playlist.getOrNull(currentIndex)?.path
-                        val dbIndex = allSongs.indexOfFirst { it.path == currentSongPath }
-                        val nextIndex = if (dbIndex >= 0) (dbIndex + 1) % allSongs.size else 0
-                        originalPlaylist = allSongs.toMutableList()
-                        playlist = allSongs.toMutableList()
+                    val allTracks = app.database.trackDao().getAllTracks().firstOrNull() ?: return@launch
+                    if (allTracks.isNotEmpty()) {
+                        val currentTrackPath = playlist.getOrNull(currentIndex)?.path
+                        val dbIndex = allTracks.indexOfFirst { it.path == currentTrackPath }
+                        val nextIndex = if (dbIndex >= 0) (dbIndex + 1) % allTracks.size else 0
+                        originalPlaylist = allTracks.toMutableList()
+                        playlist = allTracks.toMutableList()
                         currentIndex = nextIndex
                         playCurrentTrack(isUserInitiated)
                     }
@@ -1223,13 +1225,13 @@ class AudioEngine(
                 scope.launch {
                     try {
                         val app = context.applicationContext as? com.hana.spindle.SpindleApp ?: return@launch
-                        val allSongs = app.database.trackDao().getAllTracks().firstOrNull() ?: return@launch
-                        if (allSongs.isNotEmpty()) {
-                            val currentSongPath = playlist.getOrNull(currentIndex)?.path
-                            val dbIndex = allSongs.indexOfFirst { it.path == currentSongPath }
-                            val prevIndex = if (dbIndex > 0) dbIndex - 1 else allSongs.size - 1
-                            originalPlaylist = allSongs.toMutableList()
-                            playlist = allSongs.toMutableList()
+                        val allTracks = app.database.trackDao().getAllTracks().firstOrNull() ?: return@launch
+                        if (allTracks.isNotEmpty()) {
+                            val currentTrackPath = playlist.getOrNull(currentIndex)?.path
+                            val dbIndex = allTracks.indexOfFirst { it.path == currentTrackPath }
+                            val prevIndex = if (dbIndex > 0) dbIndex - 1 else allTracks.size - 1
+                            originalPlaylist = allTracks.toMutableList()
+                            playlist = allTracks.toMutableList()
                             currentIndex = prevIndex
                             playCurrentTrack(isUserInitiated)
                         }
@@ -1258,15 +1260,15 @@ class AudioEngine(
         scope.launch {
             try {
                 val app = context.applicationContext as? com.hana.spindle.SpindleApp ?: return@launch
-                val allSongs = app.database.trackDao().getAllTracks().firstOrNull() ?: return@launch
-                if (allSongs.isNotEmpty()) {
-                    val currentSongPath = playlist.getOrNull(currentIndex)?.path
-                    val dbIndex = allSongs.indexOfFirst { it.path == currentSongPath }.coerceAtLeast(0)
-                    for (i in 1 until allSongs.size) {
-                        val candidateIndex = (dbIndex + i) % allSongs.size
-                        if (allSongs[candidateIndex].album != currentAlbum) {
-                            originalPlaylist = allSongs.toMutableList()
-                            playlist = allSongs.toMutableList()
+                val allTracks = app.database.trackDao().getAllTracks().firstOrNull() ?: return@launch
+                if (allTracks.isNotEmpty()) {
+                    val currentTrackPath = playlist.getOrNull(currentIndex)?.path
+                    val dbIndex = allTracks.indexOfFirst { it.path == currentTrackPath }.coerceAtLeast(0)
+                    for (i in 1 until allTracks.size) {
+                        val candidateIndex = (dbIndex + i) % allTracks.size
+                        if (allTracks[candidateIndex].album != currentAlbum) {
+                            originalPlaylist = allTracks.toMutableList()
+                            playlist = allTracks.toMutableList()
                             currentIndex = candidateIndex
                             playCurrentTrack()
                             return@launch
@@ -1298,20 +1300,20 @@ class AudioEngine(
         scope.launch {
             try {
                 val app = context.applicationContext as? com.hana.spindle.SpindleApp ?: return@launch
-                val allSongs = app.database.trackDao().getAllTracks().firstOrNull() ?: return@launch
-                if (allSongs.isNotEmpty()) {
-                    val currentSongPath = playlist.getOrNull(currentIndex)?.path
-                    val dbIndex = allSongs.indexOfFirst { it.path == currentSongPath }.coerceAtLeast(0)
-                    for (i in 1 until allSongs.size) {
-                        val candidateIndex = if (dbIndex - i < 0) allSongs.size + (dbIndex - i) else dbIndex - i
-                        if (allSongs[candidateIndex].album != currentAlbum) {
-                            val targetAlbum = allSongs[candidateIndex].album
+                val allTracks = app.database.trackDao().getAllTracks().firstOrNull() ?: return@launch
+                if (allTracks.isNotEmpty()) {
+                    val currentTrackPath = playlist.getOrNull(currentIndex)?.path
+                    val dbIndex = allTracks.indexOfFirst { it.path == currentTrackPath }.coerceAtLeast(0)
+                    for (i in 1 until allTracks.size) {
+                        val candidateIndex = if (dbIndex - i < 0) allTracks.size + (dbIndex - i) else dbIndex - i
+                        if (allTracks[candidateIndex].album != currentAlbum) {
+                            val targetAlbum = allTracks[candidateIndex].album
                             var firstTrackIndex = candidateIndex
-                            while (firstTrackIndex > 0 && allSongs[firstTrackIndex - 1].album == targetAlbum) {
+                            while (firstTrackIndex > 0 && allTracks[firstTrackIndex - 1].album == targetAlbum) {
                                 firstTrackIndex--
                             }
-                            originalPlaylist = allSongs.toMutableList()
-                            playlist = allSongs.toMutableList()
+                            originalPlaylist = allTracks.toMutableList()
+                            playlist = allTracks.toMutableList()
                             currentIndex = firstTrackIndex
                             playCurrentTrack()
                             return@launch
@@ -1489,6 +1491,17 @@ class AudioEngine(
         } catch (_: Exception) {}
         audioFxController.release()
         exoPlayer.release()
+    }
+
+    companion object {
+        const val PREF_KEY_LAST_PLAYED_TRACK_PATH = "last_played_song_path"
+        const val PREF_KEY_LAST_PLAYED_TRACK_POS = "last_played_song_pos"
+
+        @Deprecated("Use PREF_KEY_LAST_PLAYED_TRACK_PATH in accordance with canonical glossary", ReplaceWith("PREF_KEY_LAST_PLAYED_TRACK_PATH"))
+        const val PREF_KEY_LAST_PLAYED_SONG_PATH = PREF_KEY_LAST_PLAYED_TRACK_PATH
+
+        @Deprecated("Use PREF_KEY_LAST_PLAYED_TRACK_POS in accordance with canonical glossary", ReplaceWith("PREF_KEY_LAST_PLAYED_TRACK_POS"))
+        const val PREF_KEY_LAST_PLAYED_SONG_POS = PREF_KEY_LAST_PLAYED_TRACK_POS
     }
 }
 

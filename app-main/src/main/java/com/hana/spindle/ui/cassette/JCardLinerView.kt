@@ -120,7 +120,7 @@ class JCardLinerView @JvmOverloads constructor(
         activeQueueIndex = activeIndex
         activeTheme = theme
 
-        val currentSong = if (activeIndex in queue.indices) queue[activeIndex] else queue.firstOrNull()
+        val currentTrack = if (activeIndex in queue.indices) queue[activeIndex] else queue.firstOrNull()
 
         // 1. Cover Artwork
         if (albumCover != null) {
@@ -130,8 +130,8 @@ class JCardLinerView @JvmOverloads constructor(
         }
 
         // 2. Spine & Metadata
-        val albumName = currentSong?.album?.takeIf { it.isNotBlank() } ?: "Spindle Mixtape"
-        val artistName = currentSong?.artist?.takeIf { it.isNotBlank() } ?: "Analog Studio"
+        val albumName = currentTrack?.album?.takeIf { it.isNotBlank() } ?: "Spindle Mixtape"
+        val artistName = currentTrack?.artist?.takeIf { it.isNotBlank() } ?: "Analog Studio"
         tvSpineTitle.text = "${artistName.uppercase()} — ${albumName.uppercase()}"
         tvJCardAlbum.text = albumName
         tvJCardArtist.text = artistName

@@ -238,7 +238,7 @@ class LockscreenActivity : AppCompatActivity() {
     }
 
     private fun syncState(state: PlaybackState) {
-        val song = state.currentSong
+        val song = state.currentTrack
         val app = application as SpindleApp
         binding.lockDeckView.apply {
             if (song != null) {

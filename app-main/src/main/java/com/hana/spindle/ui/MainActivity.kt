@@ -253,8 +253,8 @@ class MainActivity : AppCompatActivity() {
             lifecycleScope.launch {
                 app.audioEngine.playbackState.collectLatest { state ->
                     if (binding.ambientOverlayContainer.visibility == View.VISIBLE) {
-                        state.currentSong?.let { song ->
-                            binding.tvAmbientTrack.text = "${song.title} — ${song.artist}"
+                        state.currentTrack?.let { track ->
+                            binding.tvAmbientTrack.text = "${track.title} — ${track.artist}"
                         } ?: run {
                             binding.tvAmbientTrack.text = "Spindle Ambient Deck"
                         }
@@ -272,9 +272,9 @@ class MainActivity : AppCompatActivity() {
         binding.tvAmbientClock.text = timeFormat.format(Date())
 
         val app = application as? SpindleApp
-        val currentSong = app?.audioEngine?.playbackState?.value?.currentSong
-        if (currentSong != null) {
-            binding.tvAmbientTrack.text = "${currentSong.title} — ${currentSong.artist}"
+        val currentTrack = app?.audioEngine?.playbackState?.value?.currentTrack
+        if (currentTrack != null) {
+            binding.tvAmbientTrack.text = "${currentTrack.title} — ${currentTrack.artist}"
         } else {
             binding.tvAmbientTrack.text = "Spindle Ambient Deck"
         }

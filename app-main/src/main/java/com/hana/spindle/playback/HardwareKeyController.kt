@@ -5,6 +5,7 @@ import android.media.AudioManager
 import android.view.KeyEvent
 import android.widget.Toast
 
+import com.hana.spindle.R
 import com.hana.spindle.core.SpindleGlossary
 
 /**
@@ -130,13 +131,13 @@ class HardwareKeyController(
                 KeyEvent.KEYCODE_CAMERA -> {
                     audioEngine.togglePlayPause()
                     val isPlaying = audioEngine.isPlaying
-                    val msg = if (isPlaying) "Audio Playing" else "Audio Paused"
-                    showToast(context, msg)
+                    val resId = if (isPlaying) R.string.toast_audio_playing else R.string.toast_audio_paused
+                    showToast(context, resId)
                     return true
                 }
                 KeyEvent.KEYCODE_FOCUS -> {
                     audioEngine.playNext()
-                    showToast(context, "Next Track")
+                    showToast(context, R.string.toast_next_track)
                     return true
                 }
             }
@@ -198,14 +199,14 @@ class HardwareKeyController(
             KeyEvent.KEYCODE_MEDIA_FAST_FORWARD -> {
                 isSeekLongPress = true
                 audioEngine.fastForward(SpindleGlossary.SEEK_STEP_MANUAL_MS)
-                showToast(context, "Fast Forward")
+                showToast(context, R.string.toast_fast_forward)
                 return true
             }
             KeyEvent.KEYCODE_MEDIA_PREVIOUS,
             KeyEvent.KEYCODE_MEDIA_REWIND -> {
                 isSeekLongPress = true
                 audioEngine.rewind(SpindleGlossary.SEEK_STEP_MANUAL_MS)
-                showToast(context, "Rewind")
+                showToast(context, R.string.toast_rewind)
                 return true
             }
         }
@@ -218,13 +219,13 @@ class HardwareKeyController(
                 KeyEvent.KEYCODE_VOLUME_UP -> {
                     isVolumeLongPress = true
                     audioEngine.playNext()
-                    showToast(context, "Next Track")
+                    showToast(context, R.string.toast_next_track)
                     return true
                 }
                 KeyEvent.KEYCODE_VOLUME_DOWN -> {
                     isVolumeLongPress = true
                     audioEngine.playPrevious(forcePreviousSong = true)
-                    showToast(context, "Previous Track")
+                    showToast(context, R.string.toast_prev_track)
                     return true
                 }
             }
@@ -232,10 +233,11 @@ class HardwareKeyController(
         return false
     }
 
-    private fun showToast(context: Context, message: String) {
+    private fun showToast(context: Context, resId: Int) {
         try {
+            val message = context.getString(resId)
             Toast.makeText(context, message, Toast.LENGTH_SHORT)?.show()
-        } catch (_: Exception) {}
+        } catch (_: Throwable) {}
     }
 
     fun onKeyUp(

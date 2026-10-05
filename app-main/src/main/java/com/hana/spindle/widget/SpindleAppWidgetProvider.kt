@@ -93,24 +93,24 @@ class SpindleAppWidgetProvider : AppWidgetProvider() {
                 for (appWidgetId in appWidgetIds) {
                     val views = RemoteViews(context.packageName, R.layout.widget_spindle_deck)
 
-                    val song = state.currentSong
-                    if (song != null) {
-                        views.setTextViewText(R.id.widgetTvTitle, song.title)
-                        views.setTextViewText(R.id.widgetTvArtist, song.artist)
+                    val track = state.currentTrack
+                    if (track != null) {
+                        views.setTextViewText(R.id.widgetTvTitle, track.title)
+                        views.setTextViewText(R.id.widgetTvArtist, track.artist)
 
-                        val formatStr = if (song.fileFormat.equals("MP3", ignoreCase = true) && song.bitrateKbps > 0) {
-                            "MP3 • ${song.bitrateKbps}k"
-                        } else if (song.sampleRate > 0) {
-                            val kHz = if (song.sampleRate % 1000 == 0) "${song.sampleRate / 1000}" else String.format(Locale.US, "%.1f", song.sampleRate / 1000f)
-                            val bitStr = if (song.bitDepth > 0) "${song.bitDepth}b/" else ""
-                            "${song.fileFormat} • $bitStr${kHz}k"
+                        val formatStr = if (track.fileFormat.equals("MP3", ignoreCase = true) && track.bitrateKbps > 0) {
+                            "MP3 • ${track.bitrateKbps}k"
+                        } else if (track.sampleRate > 0) {
+                            val kHz = if (track.sampleRate % 1000 == 0) "${track.sampleRate / 1000}" else String.format(Locale.US, "%.1f", track.sampleRate / 1000f)
+                            val bitStr = if (track.bitDepth > 0) "${track.bitDepth}b/" else ""
+                            "${track.fileFormat} • $bitStr${kHz}k"
                         } else {
-                            song.fileFormat
+                            track.fileFormat
                         }
                         views.setTextViewText(R.id.widgetTvFormat, formatStr)
                         views.setViewVisibility(R.id.widgetTvFormat, View.VISIBLE)
 
-                        val coverBitmap = app.imageLoader.loadCover(song.path, 160, 160)
+                        val coverBitmap = app.imageLoader.loadCover(track.path, 160, 160)
                         if (coverBitmap != null) {
                             views.setImageViewBitmap(R.id.widgetIvCover, coverBitmap)
                         } else {
