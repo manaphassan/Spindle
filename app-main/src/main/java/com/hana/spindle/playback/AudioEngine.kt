@@ -880,9 +880,9 @@ class AudioEngine(
             if (cachedFile != null && cachedFile.exists() && cachedFile.length() > 0) {
                 Uri.fromFile(cachedFile)
             } else {
-                val localFile = app?.imageLoader?.findLocalFolderArt(physicalPath)
-                if (localFile != null && localFile.exists()) {
-                    Uri.fromFile(localFile)
+                val diskFile = app?.imageLoader?.getDiskCoverFile(physicalPath)
+                if (diskFile != null && diskFile.exists() && diskFile.length() > 0) {
+                    Uri.fromFile(diskFile)
                 } else null
             }
         } catch (_: Exception) {
@@ -897,15 +897,6 @@ class AudioEngine(
 
         if (artworkUri != null) {
             metadataBuilder.setArtworkUri(artworkUri)
-        } else {
-            val pictureBytes = try {
-                app?.imageLoader?.extractPictureBytes(physicalPath)
-            } catch (_: Exception) {
-                null
-            }
-            if (pictureBytes != null && pictureBytes.isNotEmpty()) {
-                metadataBuilder.setArtworkData(pictureBytes, androidx.media3.common.MediaMetadata.PICTURE_TYPE_FRONT_COVER)
-            }
         }
 
         val mediaMetadata = metadataBuilder.build()
@@ -987,12 +978,15 @@ class AudioEngine(
                 val track = allTracks[trackIndex]
                 val targetPos = if (lastPos in 0L..track.durationMs) lastPos else 0L
 
+                // Pre-build media items asynchronously on Dispatchers.IO background thread
+                val mediaItems = allTracks.map { buildMediaItem(it) }
+
                 kotlinx.coroutines.withContext(Dispatchers.Main) {
                     if (playlist.isNotEmpty() || exoPlayer.isPlaying) return@withContext
                     originalPlaylist = allTracks.toMutableList()
                     playlist = allTracks.toMutableList()
                     currentIndex = trackIndex
-                    prepareTrackWithoutPlaying(track, targetPos)
+                    prepareTrackWithoutPlaying(track, targetPos, mediaItems)
                     syncQueueState()
                 }
             } catch (e: Exception) {
@@ -1049,11 +1043,15 @@ class AudioEngine(
         syncQueueState()
     }
 
-    private fun prepareTrackWithoutPlaying(track: TrackEntity, initialPositionMs: Long = 0L) {
+    private fun prepareTrackWithoutPlaying(
+        track: TrackEntity,
+        initialPositionMs: Long = 0L,
+        prebuiltMediaItems: List<MediaItem>? = null
+    ) {
         val physicalPath = CueSheetParser.getAudioFilePath(track.path)
         val file = File(physicalPath)
         if (!file.exists()) return
-        val mediaItems = playlist.map { buildMediaItem(it) }
+        val mediaItems = prebuiltMediaItems ?: playlist.map { buildMediaItem(it) }
         exoPlayer.setMediaItems(mediaItems, currentIndex, initialPositionMs)
         exoPlayer.prepare()
         applyReplayGain(file)

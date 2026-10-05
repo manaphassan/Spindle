@@ -43,6 +43,13 @@ class ImageLoader(private val context: Context) {
     }
 
     /**
+     * Resolves the deterministic disk cache file for an audio track's cover.
+     */
+    fun getDiskCoverFile(audioPath: String): File {
+        return File(cacheDir, "${hashKey(audioPath)}.webp")
+    }
+
+    /**
      * Inspects the audio file directory for standard local folder artwork.
      */
     fun findLocalFolderArt(audioPath: String): File? {
