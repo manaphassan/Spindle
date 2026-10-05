@@ -61,9 +61,9 @@ import kotlin.math.abs
 
 /**
  * Main Android Home Launcher Activity hosting Spindle Lite's 3-screen tactile triad:
- * - Screen 0 (Left): App Drawer & Formulation Settings
+ * - Screen 0 (Left): Bauhaus Online FM Radio Streamer & Tactile Analog Tuner
  * - Screen 1 (Center): Kinetic Cassette Tape Deck Player
- * - Screen 2 (Right): Bauhaus Online FM Radio Streamer & Tactile Analog Tuner
+ * - Screen 2 (Right): System Hub, App Drawer & Formulation Settings
  */
 class LiteMainActivity : AppCompatActivity(), PlaybackListener {
 
@@ -82,10 +82,16 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
     private lateinit var trackAdapter: LiteTrackAdapter
     private lateinit var queueAdapter: LiteTrackAdapter
     private lateinit var folderAdapter: LiteFolderAdapter
+    private lateinit var artistAdapter: LiteArtistAdapter
+    private lateinit var artistTrackAdapter: LiteTrackAdapter
+    private lateinit var albumAdapter: LiteAlbumAdapter
+    private lateinit var albumTrackAdapter: LiteTrackAdapter
     private lateinit var appAdapter: LiteAppAdapter
 
-    private var currentVaultTab = 0 // 0 = TRACKS, 1 = FOLDERS, 2 = QUEUE
+    private var currentVaultTab = 0 // 0 = SONGS, 1 = ARTISTS, 2 = ALBUMS, 3 = FOLDERS, 4 = QUEUE
     private var currentVaultDirectory: File? = null
+    private var currentSelectedArtist: LiteArtist? = null
+    private var currentSelectedAlbum: LiteAlbum? = null
     private var currentDrawerTab = 1 // 0 = EQ, 1 = APPS, 2 = SETTINGS
     private var activeAppDialog: AlertDialog? = null
 
@@ -202,9 +208,9 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
 
     private fun setupViewPager() {
         val pagerAdapter = LitePagerAdapter(
-            drawerPage = drawerBinding.root,
+            radioPage = radioBinding.root,
             playerPage = playerBinding.root,
-            radioPage = radioBinding.root
+            drawerPage = drawerBinding.root
         )
         binding.viewPager.adapter = pagerAdapter
         binding.viewPager.offscreenPageLimit = 2
@@ -213,15 +219,18 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
             override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
                 val parallaxDisplacement = positionOffsetPixels * 0.2f
                 if (position == 0) {
-                    drawerBinding.tvHubHeroTitle.translationX = -parallaxDisplacement
+                    radioBinding.tvRadioHeroTitle.translationX = -parallaxDisplacement
+                    playerBinding.tvPlayerHeroTitle.translationX = (binding.viewPager.width - positionOffsetPixels) * 0.2f
                 } else if (position == 1) {
-                    radioBinding.tvRadioHeroTitle.translationX = (binding.viewPager.width - positionOffsetPixels) * 0.2f
+                    playerBinding.tvPlayerHeroTitle.translationX = -parallaxDisplacement
+                    drawerBinding.tvHubHeroTitle.translationX = (binding.viewPager.width - positionOffsetPixels) * 0.2f
                 }
             }
 
             override fun onPageSelected(position: Int) {
-                drawerBinding.tvHubHeroTitle.translationX = 0f
                 radioBinding.tvRadioHeroTitle.translationX = 0f
+                playerBinding.tvPlayerHeroTitle.translationX = 0f
+                drawerBinding.tvHubHeroTitle.translationX = 0f
             }
         })
     }
@@ -254,6 +263,10 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
         drawerBinding.btnTabApps.setTextColor(if (tabIndex == 1) activeColor else inactiveColor)
         drawerBinding.btnTabEq.setTextColor(if (tabIndex == 0) activeColor else inactiveColor)
         drawerBinding.btnTabSettings.setTextColor(if (tabIndex == 2) activeColor else inactiveColor)
+
+        drawerBinding.btnTabApps.setTypeface(null, if (tabIndex == 1) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
+        drawerBinding.btnTabEq.setTypeface(null, if (tabIndex == 0) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
+        drawerBinding.btnTabSettings.setTypeface(null, if (tabIndex == 2) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
     }
 
     private fun setupEqPage() {
@@ -1001,7 +1014,7 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
     }
 
     private fun updateRegionUi() {
-        radioBinding.btnRadioRegion.text = currentRadioRegion.label
+        radioBinding.btnRadioRegion.text = currentRadioRegion.code
     }
 
     private fun updateMonoUi() {
@@ -1196,11 +1209,11 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
 
     private fun updateAntennaUi() {
         if (isAntennaConnected) {
-            radioBinding.tvAntennaBadge.text = "ANT: 3.5M"
+            radioBinding.tvAntennaBadge.text = "3.5M"
             radioBinding.tvAntennaBadge.setTextColor(ContextCompat.getColor(this, R.color.lite_led_green))
         } else {
-            radioBinding.tvAntennaBadge.text = "ANT: DETACHED"
-            radioBinding.tvAntennaBadge.setTextColor(ContextCompat.getColor(this, R.color.lite_text_muted))
+            radioBinding.tvAntennaBadge.text = "NO ANT"
+            radioBinding.tvAntennaBadge.setTextColor(ContextCompat.getColor(this, R.color.lite_metro_text_muted))
         }
     }
 
@@ -1395,6 +1408,32 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
             binding.drawerLayout.visibility = View.GONE
         }
 
+        artistAdapter = LiteArtistAdapter(emptyList()) { artist ->
+            openArtist(artist)
+        }
+
+        artistTrackAdapter = LiteTrackAdapter(emptyList()) { position, _ ->
+            if (radioEngine.isPlaying || radioEngine.isBuffering) {
+                radioEngine.stop()
+            }
+            val activeList = artistTrackAdapter.getTracks()
+            audioEngine.setPlaylist(activeList, position)
+            binding.drawerLayout.visibility = View.GONE
+        }
+
+        albumAdapter = LiteAlbumAdapter(emptyList()) { album ->
+            openAlbum(album)
+        }
+
+        albumTrackAdapter = LiteTrackAdapter(emptyList()) { position, _ ->
+            if (radioEngine.isPlaying || radioEngine.isBuffering) {
+                radioEngine.stop()
+            }
+            val activeList = albumTrackAdapter.getTracks()
+            audioEngine.setPlaylist(activeList, position)
+            binding.drawerLayout.visibility = View.GONE
+        }
+
         folderAdapter = LiteFolderAdapter(
             onDirectoryClicked = { dir ->
                 loadVaultFolder(dir)
@@ -1439,8 +1478,10 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
 
         // Vault Sub-tab Switchers
         binding.btnVaultTracks.setOnClickListener { selectVaultTab(0) }
-        binding.btnVaultFolders.setOnClickListener { selectVaultTab(1) }
-        binding.btnVaultQueue.setOnClickListener { selectVaultTab(2) }
+        binding.btnVaultArtists.setOnClickListener { selectVaultTab(1) }
+        binding.btnVaultAlbums.setOnClickListener { selectVaultTab(2) }
+        binding.btnVaultFolders.setOnClickListener { selectVaultTab(3) }
+        binding.btnVaultQueue.setOnClickListener { selectVaultTab(4) }
 
         // Filter / Search Input
         binding.etSearchVault.addTextChangedListener(object : TextWatcher {
@@ -1449,48 +1490,92 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
                 val q = s?.toString().orEmpty()
                 when (currentVaultTab) {
                     0 -> trackAdapter.filter(q)
-                    2 -> queueAdapter.filter(q)
+                    1 -> {
+                        if (currentSelectedArtist != null) {
+                            artistTrackAdapter.filter(q)
+                        } else {
+                            artistAdapter.filter(q)
+                        }
+                    }
+                    2 -> {
+                        if (currentSelectedAlbum != null) {
+                            albumTrackAdapter.filter(q)
+                        } else {
+                            albumAdapter.filter(q)
+                        }
+                    }
+                    4 -> queueAdapter.filter(q)
                 }
             }
             override fun afterTextChanged(s: Editable?) {}
         })
 
-        // Folder Navigation Actions
+        // Folder, Artist & Album Navigation Actions
         binding.btnFolderUp.setOnClickListener {
-            val parent = currentVaultDirectory?.parentFile
-            if (parent != null && parent.canRead()) {
-                loadVaultFolder(parent)
+            if (currentVaultTab == 1 && currentSelectedArtist != null) {
+                closeArtist()
+                hapticEngine.microTick()
+            } else if (currentVaultTab == 2 && currentSelectedAlbum != null) {
+                closeAlbum()
+                hapticEngine.microTick()
+            } else if (currentVaultTab == 3) {
+                val parent = currentVaultDirectory?.parentFile
+                if (parent != null && parent.canRead()) {
+                    loadVaultFolder(parent)
+                }
             }
         }
 
         binding.btnPlayFolder.setOnClickListener {
-            val audioItems = folderAdapter.getItems().filterIsInstance<LiteFolderAdapter.Item.Audio>()
-            if (audioItems.isNotEmpty()) {
-                val folderTracks = audioItems.map { item ->
-                    item.track ?: run {
-                        val f = item.file
-                        val meta = AudioHeaderParser.extractMetadataFast(f)
-                        Track(
-                            title = meta?.title ?: f.nameWithoutExtension,
-                            artist = meta?.artist ?: (f.parentFile?.name ?: "Audio"),
-                            album = meta?.album ?: (currentVaultDirectory?.name ?: "Folder"),
-                            durationMs = meta?.durationMs ?: 0L,
-                            filePath = f.absolutePath,
-                            format = f.extension.uppercase(Locale.getDefault()),
-                            bitrate = meta?.bitrate ?: 0,
-                            sampleRate = meta?.sampleRate ?: 0,
-                            bitDepth = meta?.bitDepth ?: 0,
-                            replayGainDb = meta?.replayGainTrackDb ?: meta?.replayGainAlbumDb
-                        )
+            if (currentVaultTab == 1 && currentSelectedArtist != null) {
+                val artistTracks = currentSelectedArtist?.tracks.orEmpty()
+                if (artistTracks.isNotEmpty()) {
+                    if (radioEngine.isPlaying || radioEngine.isBuffering) {
+                        radioEngine.stop()
                     }
+                    audioEngine.setPlaylist(artistTracks, 0)
+                    binding.drawerLayout.visibility = View.GONE
+                    hapticEngine.solenoidEngage()
                 }
-                if (radioEngine.isPlaying || radioEngine.isBuffering) {
-                    radioEngine.stop()
+            } else if (currentVaultTab == 2 && currentSelectedAlbum != null) {
+                val albumTracks = currentSelectedAlbum?.tracks.orEmpty()
+                if (albumTracks.isNotEmpty()) {
+                    if (radioEngine.isPlaying || radioEngine.isBuffering) {
+                        radioEngine.stop()
+                    }
+                    audioEngine.setPlaylist(albumTracks, 0)
+                    binding.drawerLayout.visibility = View.GONE
+                    hapticEngine.solenoidEngage()
                 }
-                audioEngine.setPlaylist(folderTracks, 0)
-                binding.drawerLayout.visibility = View.GONE
-            } else {
-                Toast.makeText(this, "No audio tracks in this folder", Toast.LENGTH_SHORT).show()
+            } else if (currentVaultTab == 3) {
+                val audioItems = folderAdapter.getItems().filterIsInstance<LiteFolderAdapter.Item.Audio>()
+                if (audioItems.isNotEmpty()) {
+                    val folderTracks = audioItems.map { item ->
+                        item.track ?: run {
+                            val f = item.file
+                            val meta = AudioHeaderParser.extractMetadataFast(f)
+                            Track(
+                                title = meta?.title ?: f.nameWithoutExtension,
+                                artist = meta?.artist ?: (f.parentFile?.name ?: "Audio"),
+                                album = meta?.album ?: (currentVaultDirectory?.name ?: "Folder"),
+                                durationMs = meta?.durationMs ?: 0L,
+                                filePath = f.absolutePath,
+                                format = f.extension.uppercase(Locale.getDefault()),
+                                bitrate = meta?.bitrate ?: 0,
+                                sampleRate = meta?.sampleRate ?: 0,
+                                bitDepth = meta?.bitDepth ?: 0,
+                                replayGainDb = meta?.replayGainTrackDb ?: meta?.replayGainAlbumDb
+                            )
+                        }
+                    }
+                    if (radioEngine.isPlaying || radioEngine.isBuffering) {
+                        radioEngine.stop()
+                    }
+                    audioEngine.setPlaylist(folderTracks, 0)
+                    binding.drawerLayout.visibility = View.GONE
+                } else {
+                    Toast.makeText(this, "No audio tracks in this folder", Toast.LENGTH_SHORT).show()
+                }
             }
         }
 
@@ -1502,26 +1587,72 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
             performMediaScan()
         }
 
-        // Zune Metro 26-Letter Quick-Jump Grid for Music Tracks
+        // Zune Metro 26-Letter Quick-Jump Grid for Music Tracks, Artists, and Albums
         binding.btnVaultJump.setOnClickListener {
-            val letters = trackAdapter.getTracks()
-                .mapNotNull { it.artist.firstOrNull()?.uppercaseChar() ?: it.title.firstOrNull()?.uppercaseChar() }
-                .toSet()
-            LiteZuneJumpListDialog.show(
-                supportFragmentManager,
-                availableLetters = letters,
-                title = "music",
-                subtitle = "tap a letter to jump immediately"
-            ) { letter ->
-                if (letter == "↑") {
-                    binding.rvTrackList.scrollToPosition(0)
-                } else {
-                    val targetIdx = trackAdapter.getTracks().indexOfFirst {
-                        val ch = it.artist.firstOrNull()?.uppercaseChar() ?: it.title.firstOrNull()?.uppercaseChar() ?: '#'
-                        if (letter == "#") !ch.isLetter() else ch == letter[0]
+            if (currentVaultTab == 0) {
+                val letters = trackAdapter.getTracks()
+                    .mapNotNull { it.artist.firstOrNull()?.uppercaseChar() ?: it.title.firstOrNull()?.uppercaseChar() }
+                    .toSet()
+                LiteZuneJumpListDialog.show(
+                    supportFragmentManager,
+                    availableLetters = letters,
+                    title = "music",
+                    subtitle = "tap a letter to jump immediately"
+                ) { letter ->
+                    if (letter == "↑") {
+                        binding.rvTrackList.scrollToPosition(0)
+                    } else {
+                        val targetIdx = trackAdapter.getTracks().indexOfFirst {
+                            val ch = it.artist.firstOrNull()?.uppercaseChar() ?: it.title.firstOrNull()?.uppercaseChar() ?: '#'
+                            if (letter == "#") !ch.isLetter() else ch == letter[0]
+                        }
+                        if (targetIdx >= 0) {
+                            (binding.rvTrackList.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(targetIdx, 0)
+                        }
                     }
-                    if (targetIdx >= 0) {
-                        (binding.rvTrackList.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(targetIdx, 0)
+                }
+            } else if (currentVaultTab == 1 && currentSelectedArtist == null) {
+                val letters = artistAdapter.getArtists()
+                    .mapNotNull { it.name.firstOrNull()?.uppercaseChar() }
+                    .toSet()
+                LiteZuneJumpListDialog.show(
+                    supportFragmentManager,
+                    availableLetters = letters,
+                    title = "artists",
+                    subtitle = "tap a letter to jump immediately"
+                ) { letter ->
+                    if (letter == "↑") {
+                        binding.rvTrackList.scrollToPosition(0)
+                    } else {
+                        val targetIdx = artistAdapter.getArtists().indexOfFirst {
+                            val ch = it.name.firstOrNull()?.uppercaseChar() ?: '#'
+                            if (letter == "#") !ch.isLetter() else ch == letter[0]
+                        }
+                        if (targetIdx >= 0) {
+                            (binding.rvTrackList.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(targetIdx, 0)
+                        }
+                    }
+                }
+            } else if (currentVaultTab == 2 && currentSelectedAlbum == null) {
+                val letters = albumAdapter.getAlbums()
+                    .mapNotNull { it.name.firstOrNull()?.uppercaseChar() }
+                    .toSet()
+                LiteZuneJumpListDialog.show(
+                    supportFragmentManager,
+                    availableLetters = letters,
+                    title = "albums",
+                    subtitle = "tap a letter to jump immediately"
+                ) { letter ->
+                    if (letter == "↑") {
+                        binding.rvTrackList.scrollToPosition(0)
+                    } else {
+                        val targetIdx = albumAdapter.getAlbums().indexOfFirst {
+                            val ch = it.name.firstOrNull()?.uppercaseChar() ?: '#'
+                            if (letter == "#") !ch.isLetter() else ch == letter[0]
+                        }
+                        if (targetIdx >= 0) {
+                            (binding.rvTrackList.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(targetIdx, 0)
+                        }
                     }
                 }
             }
@@ -1622,28 +1753,130 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
         binding.tvVaultStatus.text = "Vault: ${trackAdapter.itemCount} tracks ($modeName)"
     }
 
+    private fun openArtist(artist: LiteArtist) {
+        currentSelectedArtist = artist
+        binding.containerFolderPath.visibility = View.VISIBLE
+        binding.btnFolderUp.text = "← ARTISTS"
+        binding.tvCurrentFolderPath.text = artist.name
+        binding.btnPlayFolder.text = "PLAY ALL"
+        binding.vaultFilterShelf.visibility = View.GONE
+        binding.etSearchVault.visibility = View.GONE
+        artistTrackAdapter.updateTracks(artist.tracks)
+        artistTrackAdapter.setActivePath(audioEngine.currentTrack?.filePath)
+        binding.rvTrackList.adapter = artistTrackAdapter
+        binding.tvVaultStatus.text = "${artist.name} (${artist.tracks.size} tracks)"
+        binding.btnVaultJump.visibility = View.GONE
+    }
+
+    private fun closeArtist() {
+        currentSelectedArtist = null
+        binding.containerFolderPath.visibility = View.GONE
+        binding.vaultFilterShelf.visibility = View.GONE
+        binding.etSearchVault.visibility = View.VISIBLE
+        binding.etSearchVault.hint = "filter artists..."
+        binding.rvTrackList.adapter = artistAdapter
+        binding.tvVaultStatus.text = "Vault: ${artistAdapter.itemCount} artists"
+        binding.btnVaultJump.visibility = View.VISIBLE
+    }
+
+    private fun openAlbum(album: LiteAlbum) {
+        currentSelectedAlbum = album
+        binding.containerFolderPath.visibility = View.VISIBLE
+        binding.btnFolderUp.text = "← ALBUMS"
+        binding.tvCurrentFolderPath.text = album.name
+        binding.btnPlayFolder.text = "PLAY ALL"
+        binding.vaultFilterShelf.visibility = View.GONE
+        binding.etSearchVault.visibility = View.GONE
+        albumTrackAdapter.updateTracks(album.tracks)
+        albumTrackAdapter.setActivePath(audioEngine.currentTrack?.filePath)
+        binding.rvTrackList.adapter = albumTrackAdapter
+        binding.tvVaultStatus.text = "${album.name} (${album.tracks.size} tracks)"
+        binding.btnVaultJump.visibility = View.GONE
+    }
+
+    private fun closeAlbum() {
+        currentSelectedAlbum = null
+        binding.containerFolderPath.visibility = View.GONE
+        binding.vaultFilterShelf.visibility = View.GONE
+        binding.etSearchVault.visibility = View.VISIBLE
+        binding.etSearchVault.hint = "filter albums, artists..."
+        binding.rvTrackList.adapter = albumAdapter
+        binding.tvVaultStatus.text = "Vault: ${albumAdapter.itemCount} albums"
+        binding.btnVaultJump.visibility = View.VISIBLE
+    }
+
     private fun selectVaultTab(tabIndex: Int) {
         currentVaultTab = tabIndex
         val activeColor = ContextCompat.getColor(this, R.color.brand_orange)
         val inactiveColor = ContextCompat.getColor(this, R.color.lite_metro_text_muted)
 
         binding.btnVaultTracks.setTextColor(if (tabIndex == 0) activeColor else inactiveColor)
-        binding.btnVaultFolders.setTextColor(if (tabIndex == 1) activeColor else inactiveColor)
-        binding.btnVaultQueue.setTextColor(if (tabIndex == 2) activeColor else inactiveColor)
+        binding.btnVaultArtists.setTextColor(if (tabIndex == 1) activeColor else inactiveColor)
+        binding.btnVaultAlbums.setTextColor(if (tabIndex == 2) activeColor else inactiveColor)
+        binding.btnVaultFolders.setTextColor(if (tabIndex == 3) activeColor else inactiveColor)
+        binding.btnVaultQueue.setTextColor(if (tabIndex == 4) activeColor else inactiveColor)
 
-        binding.btnVaultJump.visibility = if (tabIndex == 0) View.VISIBLE else View.GONE
+        binding.btnVaultTracks.setTypeface(null, if (tabIndex == 0) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
+        binding.btnVaultArtists.setTypeface(null, if (tabIndex == 1) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
+        binding.btnVaultAlbums.setTypeface(null, if (tabIndex == 2) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
+        binding.btnVaultFolders.setTypeface(null, if (tabIndex == 3) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
+        binding.btnVaultQueue.setTypeface(null, if (tabIndex == 4) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
+
+        binding.btnVaultJump.visibility = if (tabIndex == 0 || (tabIndex == 1 && currentSelectedArtist == null) || (tabIndex == 2 && currentSelectedAlbum == null)) View.VISIBLE else View.GONE
 
         when (tabIndex) {
             0 -> { // TRACKS / SONGS
                 binding.containerFolderPath.visibility = View.GONE
-                binding.vaultFilterShelf.visibility = View.VISIBLE
+                binding.vaultFilterShelf.visibility = View.GONE
                 binding.etSearchVault.visibility = View.VISIBLE
                 binding.etSearchVault.hint = "filter songs, artists, albums..."
                 binding.rvTrackList.adapter = trackAdapter
                 binding.tvVaultStatus.text = "Vault: ${trackAdapter.itemCount} tracks"
             }
-            1 -> { // FOLDERS
+            1 -> { // ARTISTS
+                if (currentSelectedArtist != null) {
+                    val artist = currentSelectedArtist!!
+                    binding.containerFolderPath.visibility = View.VISIBLE
+                    binding.btnFolderUp.text = "← ARTISTS"
+                    binding.tvCurrentFolderPath.text = artist.name
+                    binding.btnPlayFolder.text = "PLAY ALL"
+                    binding.vaultFilterShelf.visibility = View.GONE
+                    binding.etSearchVault.visibility = View.GONE
+                    binding.rvTrackList.adapter = artistTrackAdapter
+                    binding.tvVaultStatus.text = "${artist.name} (${artist.tracks.size} tracks)"
+                } else {
+                    binding.containerFolderPath.visibility = View.GONE
+                    binding.vaultFilterShelf.visibility = View.GONE
+                    binding.etSearchVault.visibility = View.VISIBLE
+                    binding.etSearchVault.hint = "filter artists..."
+                    binding.rvTrackList.adapter = artistAdapter
+                    binding.tvVaultStatus.text = "Vault: ${artistAdapter.itemCount} artists"
+                }
+            }
+            2 -> { // ALBUMS
+                if (currentSelectedAlbum != null) {
+                    val album = currentSelectedAlbum!!
+                    binding.containerFolderPath.visibility = View.VISIBLE
+                    binding.btnFolderUp.text = "← ALBUMS"
+                    binding.tvCurrentFolderPath.text = album.name
+                    binding.btnPlayFolder.text = "PLAY ALL"
+                    binding.vaultFilterShelf.visibility = View.GONE
+                    binding.etSearchVault.visibility = View.GONE
+                    binding.rvTrackList.adapter = albumTrackAdapter
+                    binding.tvVaultStatus.text = "${album.name} (${album.tracks.size} tracks)"
+                } else {
+                    binding.containerFolderPath.visibility = View.GONE
+                    binding.vaultFilterShelf.visibility = View.GONE
+                    binding.etSearchVault.visibility = View.VISIBLE
+                    binding.etSearchVault.hint = "filter albums, artists..."
+                    binding.rvTrackList.adapter = albumAdapter
+                    binding.tvVaultStatus.text = "Vault: ${albumAdapter.itemCount} albums"
+                }
+            }
+            3 -> { // FOLDERS
                 binding.containerFolderPath.visibility = View.VISIBLE
+                binding.btnFolderUp.text = "[.. UP]"
+                binding.btnPlayFolder.text = "PLAY ALL"
                 binding.vaultFilterShelf.visibility = View.GONE
                 binding.etSearchVault.visibility = View.GONE
                 binding.rvTrackList.adapter = folderAdapter
@@ -1653,7 +1886,7 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
                     currentVaultDirectory?.let { loadVaultFolder(it) }
                 }
             }
-            2 -> { // QUEUE
+            4 -> { // QUEUE
                 binding.containerFolderPath.visibility = View.GONE
                 binding.vaultFilterShelf.visibility = View.GONE
                 binding.etSearchVault.visibility = View.VISIBLE
@@ -1742,8 +1975,31 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
     private fun updateLibrary(tracks: List<Track>) {
         this.currentPlaylist = tracks
         trackAdapter.updateTracks(tracks)
+        val artists = tracks
+            .groupBy { it.artist.ifBlank { "Unknown Artist" } }
+            .map { (artistName, artistTracks) ->
+                LiteArtist(name = artistName, tracks = artistTracks)
+            }
+            .sortedBy { it.name.lowercase() }
+        if (::artistAdapter.isInitialized) {
+            artistAdapter.updateArtists(artists)
+        }
+        val albums = tracks
+            .groupBy { it.album.ifBlank { "Unknown Album" } }
+            .map { (albumName, albumTracks) ->
+                val artist = albumTracks.firstOrNull()?.artist?.ifBlank { "Unknown Artist" } ?: "Unknown Artist"
+                LiteAlbum(name = albumName, artist = artist, tracks = albumTracks)
+            }
+            .sortedBy { it.name.lowercase() }
+        if (::albumAdapter.isInitialized) {
+            albumAdapter.updateAlbums(albums)
+        }
         if (currentVaultTab == 0) {
             binding.tvVaultStatus.text = "Vault: ${tracks.size} tracks"
+        } else if (currentVaultTab == 1 && currentSelectedArtist == null) {
+            binding.tvVaultStatus.text = "Vault: ${artists.size} artists"
+        } else if (currentVaultTab == 2 && currentSelectedAlbum == null) {
+            binding.tvVaultStatus.text = "Vault: ${albums.size} albums"
         }
         if (tracks.isNotEmpty()) {
             if (audioEngine.currentTrack == null) {
@@ -1757,10 +2013,10 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
                 firstTrack.audioSpecsLine
             )
             playerBinding.deckView.setCassetteLabel(firstTrack.tapeBiasType)
-            playerBinding.tvIndexBadge.text = "INDEX: 000"
+            updateIndexBadge(0)
         } else {
             playerBinding.deckView.setNowPlaying("", "NO CASSETTE LOADED", "", "")
-            playerBinding.tvIndexBadge.text = "INDEX: 000"
+            updateIndexBadge(0)
         }
     }
 
@@ -1771,6 +2027,12 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
         trackAdapter.setActivePath(track?.filePath)
         if (::queueAdapter.isInitialized) {
             queueAdapter.setActivePath(track?.filePath)
+        }
+        if (::artistTrackAdapter.isInitialized) {
+            artistTrackAdapter.setActivePath(track?.filePath)
+        }
+        if (::albumTrackAdapter.isInitialized) {
+            albumTrackAdapter.setActivePath(track?.filePath)
         }
         if (::folderAdapter.isInitialized) {
             folderAdapter.setActivePath(track?.filePath)
@@ -1804,33 +2066,37 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
         if (track != null) {
             val formatUpper = track.format.uppercase().ifEmpty { "PCM" }
             playerBinding.tvDacFormat.text = when {
-                formatUpper.contains("FLAC") -> "FLAC DIRECT"
-                formatUpper.contains("WAV") -> "WAV PCM"
-                formatUpper.contains("DSD") -> "DSD STREAM"
-                formatUpper.contains("MP3") -> "MP3 DIRECT"
-                formatUpper.contains("AAC") -> "AAC LC"
-                formatUpper.contains("OGG") -> "OGG VORBIS"
-                else -> "$formatUpper DIRECT"
+                formatUpper.contains("FLAC") -> "FLAC"
+                formatUpper.contains("WAV") -> "WAV"
+                formatUpper.contains("DSD") -> "DSD"
+                formatUpper.contains("MP3") -> "MP3"
+                formatUpper.contains("AAC") -> "AAC"
+                formatUpper.contains("OGG") -> "OGG"
+                else -> formatUpper
             }
             playerBinding.tvDacSpecs.text = track.audioSpecsLine
 
             val rgStr = track.replayGainDb?.let { String.format(Locale.US, "RG: %+.1fdB", it) }
-            val gainStageStr = if (audioEngine.gainStage == LiteAudioEngine.GainStage.HIGH_CANS) "CANS +6dB" else "IEM 0dB"
+            val gainStageStr = if (audioEngine.gainStage == LiteAudioEngine.GainStage.HIGH_CANS) "+6dB" else "0.0dB"
             playerBinding.tvDacGain.text = rgStr ?: gainStageStr
         } else {
-            playerBinding.tvDacFormat.text = "DAC READY"
-            playerBinding.tvDacSpecs.text = "PCM 16-BIT / 44.1 kHz • DIRECT"
-            playerBinding.tvDacGain.text = if (audioEngine.gainStage == LiteAudioEngine.GainStage.HIGH_CANS) "CANS +6dB" else "IEM 0dB"
+            playerBinding.tvDacFormat.text = "PCM DIRECT"
+            playerBinding.tvDacSpecs.text = "16-BIT / 44.1 kHz • DIRECT"
+            playerBinding.tvDacGain.text = if (audioEngine.gainStage == LiteAudioEngine.GainStage.HIGH_CANS) "+6dB" else "0.0dB"
         }
     }
 
     private fun updateIndexBadge(counterVal: Int = 0) {
         val prefix = when (audioEngine.playMode) {
-            LiteAudioEngine.PlayMode.ALL -> "INDEX"
+            LiteAudioEngine.PlayMode.ALL -> "ALL"
             LiteAudioEngine.PlayMode.SHUFFLE -> "SHUF"
             LiteAudioEngine.PlayMode.REPEAT_ONE -> "RPT1"
         }
-        playerBinding.tvIndexBadge.text = String.format(Locale.US, "%s: %03d", prefix, counterVal)
+        playerBinding.tvIndexBadge.text = if (counterVal > 0) {
+            String.format(Locale.US, "[%s %03d]", prefix, counterVal)
+        } else {
+            String.format(Locale.US, "[%s]", prefix)
+        }
     }
 
     private fun syncUiFromActiveEngines() {
@@ -1886,7 +2152,7 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
     }
 
     private fun handlePlayPauseToggle() {
-        val isRadioScreen = binding.viewPager.currentItem == 2
+        val isRadioScreen = binding.viewPager.currentItem == 0
         if (isRadioScreen) {
             toggleRadioPlayback()
         } else {
@@ -1900,7 +2166,7 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
     }
 
     private fun handleNextTrackOrStation() {
-        val isRadioScreen = binding.viewPager.currentItem == 2
+        val isRadioScreen = binding.viewPager.currentItem == 0
         hapticEngine.tapeAdvance()
         if (isRadioScreen) {
             radioEngine.tuneNext()
@@ -1910,7 +2176,7 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
     }
 
     private fun handlePrevTrackOrStation() {
-        val isRadioScreen = binding.viewPager.currentItem == 2
+        val isRadioScreen = binding.viewPager.currentItem == 0
         hapticEngine.tapeAdvance()
         if (isRadioScreen) {
             radioEngine.tunePrev()
@@ -1927,7 +2193,7 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
             binding.drawerLayout.visibility = View.GONE
         }
 
-        binding.viewPager.currentItem = 0
+        binding.viewPager.currentItem = 2
         selectDrawerTab(1)
         hapticEngine.microTick()
     }
@@ -1949,7 +2215,7 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
 
     private fun handleMenuButtonPress() {
         if (binding.drawerLayout.visibility == View.VISIBLE) {
-            val nextVaultTab = (currentVaultTab + 1) % 3
+            val nextVaultTab = (currentVaultTab + 1) % 5
             selectVaultTab(nextVaultTab)
             hapticEngine.microTick()
             return
@@ -1961,14 +2227,14 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
                 toggleVaultDrawer()
             }
             0 -> {
-                val nextDrawerTab = (currentDrawerTab + 1) % 3
-                selectDrawerTab(nextDrawerTab)
-                hapticEngine.microTick()
-            }
-            2 -> {
                 val newMode = !isAnalogMode
                 setRadioMode(newMode)
                 radioBinding.rockerSwitchView.isFmMode = newMode
+                hapticEngine.microTick()
+            }
+            2 -> {
+                val nextDrawerTab = (currentDrawerTab + 1) % 3
+                selectDrawerTab(nextDrawerTab)
                 hapticEngine.microTick()
             }
         }
@@ -1980,7 +2246,7 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
             val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
             imm?.showSoftInput(binding.etSearchVault, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
             hapticEngine.microTick()
-        } else if (binding.viewPager.currentItem == 0) {
+        } else if (binding.viewPager.currentItem == 2) {
             selectDrawerTab(1)
             drawerBinding.etSearchApps.requestFocus()
             val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
@@ -2023,7 +2289,7 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
                 true
             }
             KeyEvent.KEYCODE_MEDIA_PLAY -> {
-                val isRadioScreen = binding.viewPager.currentItem == 2
+                val isRadioScreen = binding.viewPager.currentItem == 0
                 if (isRadioScreen) {
                     val st = radioEngine.currentStation ?: LiteRadioEngine.PRESETS[0]
                     radioEngine.playStation(st)
@@ -2035,7 +2301,7 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
             }
             KeyEvent.KEYCODE_MEDIA_PAUSE,
             KeyEvent.KEYCODE_MEDIA_STOP -> {
-                val isRadioScreen = binding.viewPager.currentItem == 2
+                val isRadioScreen = binding.viewPager.currentItem == 0
                 if (isRadioScreen) {
                     radioEngine.stop()
                 } else {
@@ -2095,7 +2361,7 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
             }
             KeyEvent.KEYCODE_MEDIA_PLAY -> {
                 if (isDown) {
-                    val isRadioScreen = binding.viewPager.currentItem == 2
+                    val isRadioScreen = binding.viewPager.currentItem == 0
                     if (isRadioScreen) {
                         val st = radioEngine.currentStation ?: LiteRadioEngine.PRESETS[0]
                         radioEngine.playStation(st)
@@ -2109,7 +2375,7 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
             KeyEvent.KEYCODE_MEDIA_PAUSE,
             KeyEvent.KEYCODE_MEDIA_STOP -> {
                 if (isDown) {
-                    val isRadioScreen = binding.viewPager.currentItem == 2
+                    val isRadioScreen = binding.viewPager.currentItem == 0
                     if (isRadioScreen) {
                         radioEngine.stop()
                     } else {
@@ -2174,7 +2440,7 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
                 if (currentFocus !is android.widget.EditText) {
                     if (isDown) {
                         if (binding.drawerLayout.visibility == View.VISIBLE) {
-                            if (currentVaultTab < 2) {
+                            if (currentVaultTab < 4) {
                                 selectVaultTab(currentVaultTab + 1)
                                 hapticEngine.microTick()
                             }
@@ -2239,8 +2505,20 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
         }
 
         if (binding.drawerLayout.visibility == View.VISIBLE) {
-            // 1. If in subfolder in FOLDERS tab, step up to parent folder
-            if (currentVaultTab == 1 && currentVaultDirectory != null && currentVaultDirectory != getInitialMusicDirectory()) {
+            // 0. If in ARTIST drilldown, return to artists list
+            if (currentVaultTab == 1 && currentSelectedArtist != null) {
+                closeArtist()
+                hapticEngine.microTick()
+                return
+            }
+            // 1. If in ALBUM drilldown, return to albums list
+            if (currentVaultTab == 2 && currentSelectedAlbum != null) {
+                closeAlbum()
+                hapticEngine.microTick()
+                return
+            }
+            // 2. If in subfolder in FOLDERS tab, step up to parent folder
+            if (currentVaultTab == 3 && currentVaultDirectory != null && currentVaultDirectory != getInitialMusicDirectory()) {
                 val parent = currentVaultDirectory?.parentFile
                 if (parent != null && parent.canRead()) {
                     loadVaultFolder(parent)

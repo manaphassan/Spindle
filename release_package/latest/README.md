@@ -21,8 +21,8 @@ This release package contains verified, production-ready APK builds for both Spi
 | **`Spindle-Standard-v1.6.0-STUDIO-release.apk`** | Standard (Production APK) | `v1.6.0-STUDIO` (Code 8) | **4.88 MB** | Modern DAP & Smartphones | Android 8.0+ (API 26+) |
 | **`Spindle-Standard-v1.6.0-STUDIO-release.aab`** | Standard (Play App Bundle) | `v1.6.0-STUDIO` (Code 8) | **7.37 MB** | Google Play Store Upload | Android 8.0+ (API 26+) |
 | **`Spindle-Standard-v1.6.0-STUDIO-debug.apk`** | Standard (Studio Debug) | `v1.6.0-STUDIO` (Code 8) | **11.10 MB** | Developer / Testing | Android 8.0+ (API 26+) |
-| **`Spindle-Lite-v1.0.1-LITE.apk`** | Lite | `v1.0.1-LITE` (Code 4) | **1.71 MB** | Vintage DAP & Small Screens | Android 4.4+ (API 19+) |
-| **`Spindle-Lite-v1.0.1-LITE-debug.apk`** | Lite (Debug) | `v1.0.1-LITE.debug` | **5.73 MB** | Developer / Testing | Android 4.4+ (API 19+) |
+| **`Spindle-Lite-v1.1.0-LITE.apk`** | Lite | `v1.1.0-LITE` (Code 5) | **1.73 MB** | Vintage DAP & Small Screens | Android 4.4+ (API 19+) |
+| **`Spindle-Lite-v1.1.0-LITE-debug.apk`** | Lite (Debug) | `v1.1.0-LITE.debug` | **5.76 MB** | Developer / Testing | Android 4.4+ (API 19+) |
 
 ---
 
@@ -43,9 +43,38 @@ sha256sum -c SHA256SUMS.txt
 62be4d545b6e3bb7adc5bfb47c79008af95b5c1db2d38fd01920d4e6191b822b  Spindle-Standard-v1.6.0-STUDIO-release.apk
 f4812c0bffd9ce8ad02949177205409226eca539ad031e912fa97ffbc5c6e25f  Spindle-Standard-v1.6.0-STUDIO-release.aab
 1d58d3f53cebd5dd9b9fea46584dd6bb5992cd89b425fc164589991105bed8e4  Spindle-Standard-v1.6.0-STUDIO-debug.apk
-b44da01ac6316809cd60de67a8f0b470c73e7f8561f514983773586b131d8382  Spindle-Lite-v1.0.1-LITE.apk
-019bf6bfb32de45f73ae45b5065de5813f69d7c8f487275bf72f44c9915efa56  Spindle-Lite-v1.0.1-LITE-debug.apk
+b39e720345addd8033207a7f5fea8e6c13c06affde0aa6ba04a86f8288641310  Spindle-Lite-v1.1.0-LITE.apk
+09765bb2989d07ab5a1b2599994674df9ed6fa9d36275ff133e1fa7e89917ad7  Spindle-Lite-v1.1.0-LITE-debug.apk
 ```
+
+---
+
+## 📻 What's New in Spindle Lite v1.1.0-LITE (Stable Release)
+
+1. **Zune HD Metro Layout & High-Density Typographic Redesign**:
+   - Complete visual revamp tailored for vintage HVGA (320×480) screens and 512MB RAM hardware.
+   - Clean, lightweight typography utilizing system sans-serif without external font bloat.
+   - High-density 54dp library rows with orange tape-spine indicators and track duration metrics.
+
+2. **Full 5-Pivot Music Vault (`songs` • `artists` • `albums` • `folders` • `queue`)**:
+   - Seamless horizontal sliding tab bar displaying the classic Zune HD music trinity.
+   - Dedicated **Artists** pivot grouping tracks by artist with album count, track count, total playback time, and fast alphabetical indexer.
+   - Dedicated **Albums** pivot grouping tracks by album with artist subtitle and duration.
+   - Full drill-down navigation: tap an artist or album to open their tracklist with `←` back pill and `PLAY ALL` action buttons.
+   - Device back key steps backward hierarchically from album/artist drilldown into list.
+
+3. **Authentic Zune 26-Letter Quick-Jump Grid (A–Z)**:
+   - Tap `A–Z` to open a 4×7 grid of letter tiles.
+   - Highlights available letters that exist in current library in vibrant orange; dims empty letters.
+   - Jump directly to any letter section with zero lag.
+
+4. **MicroSD Scan Button Modernization**:
+   - Replaced bulky text button with a clean 32×32dp circular `ic_refresh` icon, expanding header real estate.
+
+5. **Physical Hardware Key & DPAD Navigation**:
+   - Modulo 5 menu button tab cycling across all 5 pivots.
+   - D-Pad Left/Right smoothly switches vault tabs.
+   - Shutter button play/pause & half-press track advance on supported devices (e.g. Sony Xperia active).
 
 ---
 
@@ -94,7 +123,7 @@ b44da01ac6316809cd60de67a8f0b470c73e7f8561f514983773586b131d8382  Spindle-Lite-v
 adb install -r Spindle-Standard-v1.6.0-STUDIO-release.apk
 
 # Install Spindle Lite on vintage device
-adb install -r Spindle-Lite-v1.0.1-LITE.apk
+adb install -r Spindle-Lite-v1.1.0-LITE.apk
 ```
 
 ---
@@ -102,7 +131,7 @@ adb install -r Spindle-Lite-v1.0.1-LITE.apk
 ## 🎯 Which Version Should You Install?
 
 - **Choose Spindle Standard (`v1.6.0-STUDIO`)** if your device runs Android 8.0+ (API 26+). Includes synchronized lyrics with auto-download, custom EQ presets with AutoEq import, local artwork export, interactive biquad EQ visualizer, animated kinetic reels, open reel-to-reel deck, audio visualizer, FM radio, 10-band ISO parametric EQ, and analog tape saturation DSP.
-- **Choose Spindle Lite (`v1.0.1-LITE`)** if you have an older music player or vintage phone (Android 4.4 down to 4.1, 512MB RAM, HVGA 320x480 screen). Uses less than 18MB RAM and is optimized for physical hardware buttons (camera shutter, volume, d-pad).
+- **Choose Spindle Lite (`v1.1.0-LITE`)** if you have an older music player or vintage phone (Android 4.4 down to 4.1, 512MB RAM, HVGA 320x480 screen). Uses less than 18MB RAM and features the full 5-pivot Zune HD music collection, A-Z quick jump grid, and physical hardware buttons (camera shutter, volume, d-pad).
 
 ---
 

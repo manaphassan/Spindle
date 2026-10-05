@@ -4,87 +4,80 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:paddingLeft="10dp"
+    android:paddingLeft="8dp"
     android:paddingTop="8dp"
-    android:paddingRight="10dp"
-    android:paddingBottom="8dp"
+    android:paddingRight="8dp"
+    android:paddingBottom="6dp"
     android:background="@color/lite_metro_bg">
 
-    <!-- Top Header Equipment Status Bar (24dp) -->
+    <!-- Zune Metro Header & PlayMode Pill (28dp) -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="24dp"
+        android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:layout_marginBottom="4dp">
+        android:layout_marginBottom="3dp">
+
+        <TextView
+            android:id="@+id/tvPlayerHeroTitle"
+            style="@style/TextAppearance.SpindleLite.Metro.Hero"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="now playing" />
 
         <TextView
             android:id="@+id/tvIndexBadge"
             android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:gravity="center_vertical"
+            android:layout_height="24dp"
+            android:gravity="center"
             android:background="@drawable/bg_metro_pill"
-            android:fontFamily="monospace"
-            android:paddingLeft="8dp"
-            android:paddingRight="8dp"
-            android:text="INDEX: 000"
+            android:clickable="true"
+            android:focusable="true"
+            android:fontFamily="sans-serif-medium"
+            android:includeFontPadding="false"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:text="[ALL]"
             android:textColor="@color/brand_orange"
             android:textSize="9.5sp"
             android:textStyle="bold" />
 
-        <View
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:layout_weight="1" />
-
+        <!-- Hidden legacy views for safe binding compatibility -->
         <LinearLayout
             android:id="@+id/llDeviceIdentity"
             android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:background="?android:attr/selectableItemBackground"
-            android:clickable="true"
-            android:focusable="true"
-            android:gravity="center_vertical|end"
-            android:orientation="horizontal"
-            android:paddingLeft="6dp"
-            android:paddingRight="2dp">
-
+            android:layout_height="wrap_content"
+            android:visibility="gone">
             <TextView
                 android:id="@+id/tvDeviceNameplate"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-medium"
-                android:letterSpacing="0.04"
-                android:text="VINTAGE DAP"
-                android:textColor="@color/lite_metro_text_primary"
-                android:textSize="10sp"
-                android:textStyle="bold" />
-
+                android:layout_height="wrap_content" />
             <TextView
                 android:id="@+id/tvAndroidVersion"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:visibility="gone" />
+                android:layout_height="wrap_content" />
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Audiophile DAC Stream Telemetry Banner (22dp) -->
+    <!-- Audiophile DAC Stream Telemetry Banner (20dp) -->
     <LinearLayout
         android:id="@+id/llDacTelemetry"
         android:layout_width="match_parent"
-        android:layout_height="22dp"
+        android:layout_height="20dp"
         android:background="@drawable/bg_metro_search"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingLeft="8dp"
         android:paddingRight="8dp"
-        android:layout_marginBottom="6dp">
+        android:layout_marginBottom="4dp">
 
         <TextView
             android:id="@+id/tvDacFormat"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:fontFamily="monospace"
+            android:fontFamily="sans-serif-medium"
+            android:includeFontPadding="false"
             android:text="PCM DIRECT"
             android:textColor="@color/brand_orange"
             android:textSize="8.5sp"
@@ -98,7 +91,8 @@
             android:gravity="center"
             android:singleLine="true"
             android:ellipsize="marquee"
-            android:fontFamily="monospace"
+            android:fontFamily="sans-serif-medium"
+            android:includeFontPadding="false"
             android:paddingLeft="6dp"
             android:paddingRight="6dp"
             android:text="16-BIT / 44.1 kHz • DIRECT"
@@ -109,8 +103,9 @@
             android:id="@+id/tvDacGain"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:fontFamily="monospace"
-            android:text="RG: 0.0dB"
+            android:fontFamily="sans-serif-medium"
+            android:includeFontPadding="false"
+            android:text="0.0dB"
             android:textColor="@color/lite_metro_text_secondary"
             android:textSize="8.5sp" />
     </LinearLayout>

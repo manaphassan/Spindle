@@ -161,8 +161,18 @@ class LiteTrackAdapter(
             tvTitle.text = track.title
             tvTitle.setTextColor(if (isCurrent) brandOrange else primaryText)
 
-            tvArtist.text = if (track.album.isNotEmpty()) "${track.artist} • ${track.album}" else track.artist
-            tvFormat.text = "$badgePrefix${track.formatBadge}"
+            val formatTag = if (track.formatBadge.isNotEmpty()) "$badgePrefix${track.formatBadge}" else ""
+            val subtitle = buildString {
+                append(track.artist)
+                if (track.album.isNotEmpty()) {
+                    append(" • ").append(track.album)
+                }
+                if (formatTag.isNotEmpty()) {
+                    append(" • ").append(formatTag)
+                }
+            }
+            tvArtist.text = subtitle
+            tvFormat.text = formatTag
             tvFormat.setTextColor(spineColor)
 
             tvDuration.text = track.formattedDuration

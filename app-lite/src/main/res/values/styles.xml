@@ -28,6 +28,7 @@
     <style name="TextAppearance.SpindleLite.Metro.Pivot" parent="TextAppearance.AppCompat.Subhead">
         <item name="android:textSize">@dimen/text_size_metro_pivot</item>
         <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textAllCaps">false</item>
     </style>
 
     <style name="TextAppearance.SpindleLite.Metro.Pivot.Active" parent="TextAppearance.SpindleLite.Metro.Pivot">
@@ -44,6 +45,7 @@
         <item name="android:textSize">@dimen/text_size_metro_section</item>
         <item name="android:textColor">@color/lite_metro_text_secondary</item>
         <item name="android:textStyle">bold</item>
-        <item name="android:fontFamily">monospace</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:includeFontPadding">false</item>
     </style>
 </resources>

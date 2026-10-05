@@ -19,9 +19,9 @@
         android:layout_height="match_parent"
         android:background="@color/lite_metro_bg"
         android:orientation="vertical"
-        android:paddingLeft="12dp"
+        android:paddingLeft="8dp"
         android:paddingTop="8dp"
-        android:paddingRight="12dp"
+        android:paddingRight="8dp"
         android:paddingBottom="6dp"
         android:visibility="gone"
         tools:visibility="visible">
@@ -46,168 +46,199 @@
                 android:id="@+id/btnVaultJump"
                 style="?android:attr/borderlessButtonStyle"
                 android:layout_width="wrap_content"
-                android:layout_height="32dp"
-                android:layout_marginRight="6dp"
+                android:layout_height="28dp"
+                android:layout_marginRight="4dp"
                 android:background="@drawable/bg_metro_pill"
                 android:fontFamily="sans-serif-medium"
-                android:paddingLeft="10dp"
-                android:paddingRight="10dp"
+                android:includeFontPadding="false"
+                android:paddingLeft="8dp"
+                android:paddingRight="8dp"
                 android:text="A–Z"
                 android:textColor="@color/brand_orange"
-                android:textSize="10.5sp"
-                android:textStyle="bold" />
-
-            <Button
-                android:id="@+id/btnScan"
-                style="?android:attr/borderlessButtonStyle"
-                android:layout_width="wrap_content"
-                android:layout_height="32dp"
-                android:layout_marginRight="6dp"
-                android:background="@drawable/bg_metro_pill"
-                android:fontFamily="sans-serif-medium"
-                android:paddingLeft="10dp"
-                android:paddingRight="10dp"
-                android:text="@string/scan_library"
-                android:textColor="@color/lite_metro_text_secondary"
-                android:textSize="10sp"
+                android:textSize="11sp"
                 android:textStyle="bold" />
 
             <ImageButton
+                android:id="@+id/btnScan"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginRight="4dp"
+                android:background="?android:attr/selectableItemBackground"
+                android:contentDescription="@string/scan_library"
+                android:src="@drawable/ic_refresh"
+                android:tint="@color/lite_metro_text_secondary" />
+
+            <ImageButton
                 android:id="@+id/btnCloseDrawer"
-                android:layout_width="34dp"
-                android:layout_height="34dp"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
                 android:background="?android:attr/selectableItemBackground"
                 android:contentDescription="Close Drawer"
                 android:src="@drawable/ic_close"
                 android:tint="@color/lite_metro_text_secondary" />
         </LinearLayout>
 
-        <!-- Zune Typographic Pivot Bar (songs / folders / queue) -->
-        <LinearLayout
-            android:id="@+id/vaultTabBar"
+        <!-- Zune Typographic Pivot Bar (songs / albums / folders / queue) -->
+        <HorizontalScrollView
             android:layout_width="match_parent"
-            android:layout_height="38dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:layout_marginBottom="4dp">
+            android:layout_height="wrap_content"
+            android:scrollbars="none"
+            android:layout_marginBottom="3dp">
 
-            <Button
-                android:id="@+id/btnVaultTracks"
-                style="?android:attr/borderlessButtonStyle"
+            <LinearLayout
+                android:id="@+id/vaultTabBar"
                 android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:fontFamily="sans-serif"
-                android:text="songs"
-                android:textColor="@color/brand_orange"
-                android:textSize="17sp"
-                android:textStyle="bold"
-                android:paddingLeft="2dp"
-                android:paddingRight="12dp" />
+                android:layout_height="wrap_content"
+                android:minHeight="36dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
-            <Button
-                android:id="@+id/btnVaultFolders"
-                style="?android:attr/borderlessButtonStyle"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:fontFamily="sans-serif"
-                android:text="folders"
-                android:textColor="@color/lite_metro_text_muted"
-                android:textSize="17sp"
-                android:paddingLeft="6dp"
-                android:paddingRight="12dp" />
+                <Button
+                    android:id="@+id/btnVaultTracks"
+                    style="?android:attr/borderlessButtonStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minHeight="0dp"
+                    android:minWidth="0dp"
+                    android:fontFamily="sans-serif"
+                    android:text="songs"
+                    android:textAllCaps="false"
+                    android:textColor="@color/brand_orange"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
+                    android:paddingLeft="2dp"
+                    android:paddingRight="12dp" />
 
-            <Button
-                android:id="@+id/btnVaultQueue"
-                style="?android:attr/borderlessButtonStyle"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:fontFamily="sans-serif"
-                android:text="queue"
-                android:textColor="@color/lite_metro_text_muted"
-                android:textSize="17sp"
-                android:paddingLeft="6dp"
-                android:paddingRight="12dp" />
-        </LinearLayout>
+                <Button
+                    android:id="@+id/btnVaultArtists"
+                    style="?android:attr/borderlessButtonStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minHeight="0dp"
+                    android:minWidth="0dp"
+                    android:fontFamily="sans-serif"
+                    android:text="artists"
+                    android:textAllCaps="false"
+                    android:textColor="@color/lite_metro_text_muted"
+                    android:textSize="18sp"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
+                    android:paddingLeft="6dp"
+                    android:paddingRight="12dp" />
 
-        <!-- Audiophile 1-Tap Quick Filter Shelf (32dp) -->
+                <Button
+                    android:id="@+id/btnVaultAlbums"
+                    style="?android:attr/borderlessButtonStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minHeight="0dp"
+                    android:minWidth="0dp"
+                    android:fontFamily="sans-serif"
+                    android:text="albums"
+                    android:textAllCaps="false"
+                    android:textColor="@color/lite_metro_text_muted"
+                    android:textSize="18sp"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
+                    android:paddingLeft="6dp"
+                    android:paddingRight="12dp" />
+
+                <Button
+                    android:id="@+id/btnVaultFolders"
+                    style="?android:attr/borderlessButtonStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minHeight="0dp"
+                    android:minWidth="0dp"
+                    android:fontFamily="sans-serif"
+                    android:text="folders"
+                    android:textAllCaps="false"
+                    android:textColor="@color/lite_metro_text_muted"
+                    android:textSize="18sp"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
+                    android:paddingLeft="6dp"
+                    android:paddingRight="12dp" />
+
+                <Button
+                    android:id="@+id/btnVaultQueue"
+                    style="?android:attr/borderlessButtonStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minHeight="0dp"
+                    android:minWidth="0dp"
+                    android:fontFamily="sans-serif"
+                    android:text="queue"
+                    android:textAllCaps="false"
+                    android:textColor="@color/lite_metro_text_muted"
+                    android:textSize="18sp"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
+                    android:paddingLeft="6dp"
+                    android:paddingRight="12dp" />
+            </LinearLayout>
+        </HorizontalScrollView>
+
+        <!-- Audiophile Filter Shelf (Hidden to maximize track list space, bound safely) -->
         <LinearLayout
             android:id="@+id/vaultFilterShelf"
             android:layout_width="match_parent"
-            android:layout_height="30dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:layout_marginBottom="6dp">
+            android:layout_height="wrap_content"
+            android:visibility="gone">
 
             <Button
                 android:id="@+id/btnFilterAll"
                 style="?android:attr/borderlessButtonStyle"
                 android:layout_width="0dp"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:background="@drawable/bg_metro_pill"
-                android:fontFamily="monospace"
-                android:text="ALL"
-                android:textColor="@color/brand_orange"
-                android:textSize="9.5sp"
-                android:textStyle="bold" />
+                android:fontFamily="sans-serif-medium"
+                android:text="ALL" />
 
             <Button
                 android:id="@+id/btnFilterHiRes"
                 style="?android:attr/borderlessButtonStyle"
                 android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1.2"
-                android:layout_marginLeft="4dp"
-                android:background="@drawable/bg_metro_pill"
-                android:fontFamily="monospace"
-                android:text="HI-RES 24b"
-                android:textColor="@color/lite_metro_text_secondary"
-                android:textSize="9sp"
-                android:textStyle="bold" />
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="sans-serif-medium"
+                android:text="HI-RES" />
 
             <Button
                 android:id="@+id/btnFilterLossless"
                 style="?android:attr/borderlessButtonStyle"
                 android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1.2"
-                android:layout_marginLeft="4dp"
-                android:background="@drawable/bg_metro_pill"
-                android:fontFamily="monospace"
-                android:text="LOSSLESS"
-                android:textColor="@color/lite_metro_text_secondary"
-                android:textSize="9sp"
-                android:textStyle="bold" />
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="sans-serif-medium"
+                android:text="LOSSLESS" />
 
             <Button
                 android:id="@+id/btnFilterNormal"
                 style="?android:attr/borderlessButtonStyle"
                 android:layout_width="0dp"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_marginLeft="4dp"
-                android:background="@drawable/bg_metro_pill"
-                android:fontFamily="monospace"
-                android:text="NORMAL"
-                android:textColor="@color/lite_metro_text_secondary"
-                android:textSize="9sp"
-                android:textStyle="bold" />
+                android:fontFamily="sans-serif-medium"
+                android:text="NORMAL" />
         </LinearLayout>
 
         <!-- Search Bar Strip (Filter tracks) -->
         <EditText
             android:id="@+id/etSearchVault"
             android:layout_width="match_parent"
-            android:layout_height="36dp"
+            android:layout_height="34dp"
             android:background="@drawable/bg_metro_search"
             android:hint="filter tracks, artists, albums..."
             android:textColorHint="@color/lite_metro_text_muted"
             android:textColor="@color/lite_metro_text_primary"
-            android:textSize="11.5sp"
-            android:paddingLeft="10dp"
-            android:paddingRight="10dp"
+            android:textSize="12sp"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
             android:singleLine="true"
-            android:layout_marginBottom="4dp" />
+            android:layout_marginBottom="3dp" />
 
         <!-- Folder Path & Navigation Header (Shown when FOLDERS tab is active) -->
         <LinearLayout

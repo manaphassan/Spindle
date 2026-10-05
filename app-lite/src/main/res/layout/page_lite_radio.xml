@@ -5,12 +5,12 @@
     android:layout_height="match_parent"
     android:background="@color/lite_metro_bg"
     android:orientation="vertical"
-    android:paddingLeft="12dp"
+    android:paddingLeft="8dp"
     android:paddingTop="8dp"
-    android:paddingRight="12dp"
+    android:paddingRight="8dp"
     android:paddingBottom="6dp">
 
-    <!-- Oversized Zune Kinetic Typography Header -->
+    <!-- Zune Metro Header (26sp) -->
     <TextView
         android:id="@+id/tvRadioHeroTitle"
         style="@style/TextAppearance.SpindleLite.Metro.Hero"
@@ -19,10 +19,10 @@
         android:text="radio"
         android:layout_marginBottom="2dp" />
 
-    <!-- Top Header Status Bar (28dp) -->
+    <!-- Top Header Status Bar (24dp) -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="28dp"
+        android:layout_height="24dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:layout_marginBottom="4dp">
@@ -30,81 +30,34 @@
         <TextView
             android:id="@+id/tvRadioBadge"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:minHeight="28dp"
+            android:layout_height="match_parent"
             android:gravity="center"
             android:background="@drawable/bg_metro_pill"
             android:fontFamily="sans-serif-medium"
+            android:includeFontPadding="false"
             android:paddingLeft="8dp"
-            android:paddingTop="2dp"
             android:paddingRight="8dp"
-            android:paddingBottom="2dp"
             android:text="FM STEREO"
             android:textColor="@color/brand_orange"
-            android:textSize="9.5sp"
+            android:textSize="10.5sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/btnRadioMono"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:minHeight="28dp"
-            android:minWidth="44dp"
+            android:layout_height="match_parent"
             android:gravity="center"
-            android:layout_marginStart="3dp"
+            android:layout_marginStart="4dp"
             android:background="@drawable/bg_metro_pill"
             android:clickable="true"
             android:focusable="true"
             android:fontFamily="sans-serif-medium"
+            android:includeFontPadding="false"
             android:paddingLeft="8dp"
-            android:paddingTop="2dp"
             android:paddingRight="8dp"
-            android:paddingBottom="2dp"
             android:text="MONO"
             android:textColor="@color/lite_metro_text_secondary"
-            android:textSize="9.5sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/btnRadioScan"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:minHeight="28dp"
-            android:minWidth="44dp"
-            android:gravity="center"
-            android:layout_marginStart="3dp"
-            android:background="@drawable/bg_format_pill"
-            android:clickable="true"
-            android:focusable="true"
-            android:fontFamily="monospace"
-            android:paddingLeft="6dp"
-            android:paddingTop="2dp"
-            android:paddingRight="6dp"
-            android:paddingBottom="2dp"
-            android:text="SCAN"
-            android:textColor="@color/lite_amber_glow"
-            android:textSize="9sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/btnRadioRegion"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:minHeight="28dp"
-            android:minWidth="58dp"
-            android:gravity="center"
-            android:layout_marginStart="3dp"
-            android:background="@drawable/bg_format_pill"
-            android:clickable="true"
-            android:focusable="true"
-            android:fontFamily="monospace"
-            android:paddingLeft="6dp"
-            android:paddingTop="2dp"
-            android:paddingRight="6dp"
-            android:paddingBottom="2dp"
-            android:text="BAND: EU"
-            android:textColor="@color/lite_text_primary"
-            android:textSize="9sp"
+            android:textSize="10.5sp"
             android:textStyle="bold" />
 
         <View
@@ -113,20 +66,38 @@
             android:layout_weight="1" />
 
         <TextView
-            android:id="@+id/tvAntennaBadge"
+            android:id="@+id/btnRadioRegion"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:minHeight="28dp"
-            android:gravity="center_vertical|end"
-            android:background="?android:attr/selectableItemBackground"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:background="@drawable/bg_metro_pill"
             android:clickable="true"
             android:focusable="true"
-            android:fontFamily="monospace"
-            android:paddingLeft="4dp"
-            android:paddingRight="2dp"
-            android:text="ANT: DETACHED"
-            android:textColor="@color/lite_text_muted"
-            android:textSize="8sp" />
+            android:fontFamily="sans-serif-medium"
+            android:includeFontPadding="false"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:text="EU"
+            android:textColor="@color/lite_metro_text_primary"
+            android:textSize="10.5sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvAntennaBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:layout_marginStart="4dp"
+            android:background="@drawable/bg_metro_pill"
+            android:clickable="true"
+            android:focusable="true"
+            android:fontFamily="sans-serif-medium"
+            android:includeFontPadding="false"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:text="3.5M"
+            android:textColor="@color/lite_metro_text_muted"
+            android:textSize="10.5sp" />
     </LinearLayout>
 
     <!-- Concentric Acoustic Speaker Grille (Expanded Visual Presence) -->
@@ -174,7 +145,7 @@
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_weight="1.0"
+                android:layout_weight="1.1"
                 android:gravity="center_vertical"
                 android:orientation="vertical">
 
@@ -188,7 +159,8 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:fontFamily="monospace"
+                        android:fontFamily="sans-serif-medium"
+                        android:includeFontPadding="false"
                         android:text="TUNER"
                         android:textColor="@color/lite_text_muted"
                         android:textSize="8sp" />
@@ -197,14 +169,15 @@
                         android:id="@+id/tvRadioStreamStatus"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:fontFamily="monospace"
+                        android:fontFamily="sans-serif-medium"
+                        android:includeFontPadding="false"
                         android:text="STANDBY"
                         android:textColor="#10B981"
                         android:textSize="8sp"
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                <!-- Large Frequency Readout & Transport Play Button -->
+                <!-- Large Frequency Readout, SCAN Pill & Transport Play Button -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -215,31 +188,54 @@
                         android:id="@+id/tvRadioFrequency"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:fontFamily="monospace"
+                        android:fontFamily="sans-serif-medium"
                         android:includeFontPadding="false"
                         android:text="88.5"
                         android:textColor="@color/brand_orange"
-                        android:textSize="21sp"
+                        android:textSize="20sp"
                         android:textStyle="bold" />
 
                     <TextView
-                        android:layout_width="0dp"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:fontFamily="monospace"
-                        android:paddingLeft="2dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:includeFontPadding="false"
+                        android:paddingLeft="1dp"
                         android:text="M"
                         android:textColor="@color/lite_amber_glow"
-                        android:textSize="10sp"
+                        android:textSize="9sp"
                         android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/btnRadioScan"
+                        android:layout_width="wrap_content"
+                        android:layout_height="22dp"
+                        android:gravity="center"
+                        android:layout_marginStart="3dp"
+                        android:background="@drawable/bg_metro_pill"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:fontFamily="sans-serif-medium"
+                        android:includeFontPadding="false"
+                        android:paddingLeft="5dp"
+                        android:paddingRight="5dp"
+                        android:text="SCAN"
+                        android:textColor="@color/lite_amber_glow"
+                        android:textSize="8sp"
+                        android:textStyle="bold" />
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="1dp"
+                        android:layout_weight="1" />
 
                     <ImageButton
                         android:id="@+id/btnRadioPlayToggle"
-                        android:layout_width="38dp"
-                        android:layout_height="38dp"
+                        android:layout_width="34dp"
+                        android:layout_height="34dp"
                         android:background="@drawable/bg_button_tactile"
                         android:contentDescription="Play or Stop Radio"
-                        android:padding="7dp"
+                        android:padding="6dp"
                         android:src="@drawable/ic_play" />
                 </LinearLayout>
             </LinearLayout>
@@ -278,10 +274,11 @@
                 android:focusableInTouchMode="true"
                 android:marqueeRepeatLimit="marquee_forever"
                 android:singleLine="true"
-                android:fontFamily="monospace"
+                android:fontFamily="sans-serif-medium"
+                android:includeFontPadding="false"
                 android:text="LO-FI RADIO • CHILL BEATS"
                 android:textColor="@color/lite_text_primary"
-                android:textSize="9.5sp"
+                android:textSize="12sp"
                 android:textStyle="bold" />
 
             <TextView
@@ -289,12 +286,13 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
-                android:fontFamily="monospace"
+                android:fontFamily="sans-serif-medium"
+                android:includeFontPadding="false"
                 android:singleLine="true"
                 android:paddingLeft="4dp"
                 android:text="ONLINE FM"
                 android:textColor="@color/lite_amber_glow"
-                android:textSize="8.5sp" />
+                android:textSize="10.5sp" />
         </LinearLayout>
 
         <!-- Flush 4-Key Station Preset Strip (36dp) -->
@@ -315,9 +313,10 @@
                 android:layout_marginRight="4dp"
                 android:background="@drawable/bg_metro_pill"
                 android:fontFamily="sans-serif-medium"
+                android:includeFontPadding="false"
                 android:text="LO-FI"
                 android:textColor="@color/brand_orange"
-                android:textSize="9.5sp"
+                android:textSize="11sp"
                 android:textStyle="bold" />
 
             <Button
@@ -329,9 +328,10 @@
                 android:layout_marginRight="4dp"
                 android:background="@drawable/bg_metro_pill"
                 android:fontFamily="sans-serif-medium"
+                android:includeFontPadding="false"
                 android:text="ANIME"
                 android:textColor="@color/lite_metro_text_secondary"
-                android:textSize="9.5sp"
+                android:textSize="11sp"
                 android:textStyle="bold" />
 
             <Button
@@ -343,9 +343,10 @@
                 android:layout_marginRight="4dp"
                 android:background="@drawable/bg_metro_pill"
                 android:fontFamily="sans-serif-medium"
+                android:includeFontPadding="false"
                 android:text="INITIAL D"
                 android:textColor="@color/lite_metro_text_secondary"
-                android:textSize="9.5sp"
+                android:textSize="11sp"
                 android:textStyle="bold" />
 
             <Button
@@ -356,9 +357,10 @@
                 android:layout_weight="1.1"
                 android:background="@drawable/bg_metro_pill"
                 android:fontFamily="sans-serif-medium"
+                android:includeFontPadding="false"
                 android:text="CITYPOP"
                 android:textColor="@color/lite_metro_text_secondary"
-                android:textSize="9.5sp"
+                android:textSize="11sp"
                 android:textStyle="bold" />
         </LinearLayout>
 

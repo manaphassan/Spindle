@@ -6,19 +6,19 @@ import androidx.viewpager.widget.PagerAdapter
 
 /**
  * High-performance, zero-allocation PagerAdapter for Spindle Lite's 3-screen launcher triad:
- * - Page 0: Left Drawer & App Console
- * - Page 1: Kinetic Cassette Deck (Home)
- * - Page 2: Bauhaus FM Online Radio
+ * - Page 0: Bauhaus FM Online Radio & Analog Tuner (Left Screen)
+ * - Page 1: Kinetic Cassette Deck (Center Screen / Home)
+ * - Page 2: System Hub & App Drawer (Right Screen)
  *
  * Keeps pre-inflated views in memory for immediate 60fps tactile swipe transitions on ARMv7.
  */
 class LitePagerAdapter(
-    val drawerPage: View,
+    val radioPage: View,
     val playerPage: View,
-    val radioPage: View
+    val drawerPage: View
 ) : PagerAdapter() {
 
-    private val pages = arrayOf(drawerPage, playerPage, radioPage)
+    private val pages = arrayOf(radioPage, playerPage, drawerPage)
 
     override fun getCount(): Int = pages.size
 
@@ -41,9 +41,9 @@ class LitePagerAdapter(
 
     override fun getPageTitle(position: Int): CharSequence {
         return when (position) {
-            0 -> "DRAWER"
+            0 -> "RADIO"
             1 -> "DECK"
-            2 -> "RADIO"
+            2 -> "SYSTEM"
             else -> ""
         }
     }

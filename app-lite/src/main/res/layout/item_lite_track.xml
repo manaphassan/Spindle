@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="50dp"
+    android:layout_height="54dp"
     android:background="?android:attr/selectableItemBackground"
     android:gravity="center_vertical"
     android:orientation="horizontal"
     android:paddingLeft="6dp"
-    android:paddingRight="12dp">
+    android:paddingRight="10dp">
 
     <!-- Cassette Formulation Spine Pill (Type IV Gold, Type II Blue, Type I Grey) -->
     <View
         android:id="@+id/vTapeSpine"
-        android:layout_width="3dp"
+        android:layout_width="3.5dp"
         android:layout_height="match_parent"
         android:layout_marginTop="8dp"
         android:layout_marginBottom="8dp"
@@ -20,15 +20,16 @@
     <!-- Track Index / Metro Counter -->
     <TextView
         android:id="@+id/tvTrackIndex"
-        android:layout_width="28dp"
+        android:layout_width="26dp"
         android:layout_height="wrap_content"
-        android:fontFamily="monospace"
+        android:fontFamily="sans-serif-medium"
         android:gravity="center"
+        android:includeFontPadding="false"
         android:text="01"
         android:textColor="@color/lite_metro_text_muted"
-        android:textSize="11.5sp" />
+        android:textSize="12.5sp" />
 
-    <!-- Title & Artist (Metro Typographic Hierarchy) -->
+    <!-- Title & Artist / Codec (Zune HD Typographic Hierarchy - Full Runway) -->
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -43,51 +44,43 @@
             android:layout_height="wrap_content"
             android:ellipsize="end"
             android:fontFamily="sans-serif-medium"
-            android:maxLines="1"
+            android:includeFontPadding="false"
+            android:singleLine="true"
             android:text="Song Title"
             android:textColor="@color/lite_metro_text_primary"
-            android:textSize="13sp"
-            android:textStyle="bold" />
+            android:textSize="15.5sp" />
 
         <TextView
             android:id="@+id/tvItemArtist"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="1dp"
+            android:layout_marginTop="2dp"
             android:ellipsize="end"
             android:fontFamily="sans-serif"
-            android:maxLines="1"
-            android:text="Artist Name • Album"
+            android:includeFontPadding="false"
+            android:singleLine="true"
+            android:text="Artist Name • Album • FLAC"
             android:textColor="@color/lite_metro_text_secondary"
-            android:textSize="10.5sp" />
+            android:textSize="12sp" />
     </LinearLayout>
 
-    <!-- Format Pill & Duration -->
-    <LinearLayout
+    <!-- Zune HD Duration (Prominent, High Contrast) -->
+    <TextView
+        android:id="@+id/tvItemDuration"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-medium"
         android:gravity="end"
-        android:orientation="vertical">
+        android:includeFontPadding="false"
+        android:text="03:45"
+        android:textColor="@color/lite_metro_text_muted"
+        android:textSize="12.5sp" />
 
-        <TextView
-            android:id="@+id/tvItemFormat"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:fontFamily="monospace"
-            android:text="FLAC 24b"
-            android:textColor="@color/brand_orange"
-            android:textSize="9sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/tvItemDuration"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:fontFamily="monospace"
-            android:text="03:45"
-            android:textColor="@color/lite_metro_text_muted"
-            android:textSize="9.5sp" />
-    </LinearLayout>
+    <!-- Retained for binding compatibility -->
+    <TextView
+        android:id="@+id/tvItemFormat"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
 
 </LinearLayout>

@@ -1,6 +1,6 @@
 {
-  "releaseName": "Spindle Dual Edition Latest Release (v1.6.0-STUDIO / v1.0.1-LITE)",
-  "buildDate": "2026-09-29",
+  "releaseName": "Spindle Dual Edition Latest Release (v1.6.0-STUDIO / v1.1.0-LITE)",
+  "buildDate": "2026-10-05",
   "signing": "Verified authentic private release keystore (HaNa Innovation)",
   "packages": [
     {
@@ -70,20 +70,23 @@
       "edition": "Spindle Lite",
       "target": "Vintage & Low-RAM Android Devices (Android 4.4+ / API 19+)",
       "applicationId": "com.hana.spindle.lite",
-      "versionCode": 4,
-      "versionName": "1.0.1-LITE",
-      "filename": "Spindle-Lite-v1.0.1-LITE.apk",
-      "fileSizeBytes": 1792220,
-      "fileSizeFormatted": "1.71 MB",
-      "sha256": "b44da01ac6316809cd60de67a8f0b470c73e7f8561f514983773586b131d8382",
+      "versionCode": 5,
+      "versionName": "1.1.0-LITE",
+      "filename": "Spindle-Lite-v1.1.0-LITE.apk",
+      "fileSizeBytes": 1814039,
+      "fileSizeFormatted": "1.73 MB",
+      "sha256": "b39e720345addd8033207a7f5fea8e6c13c06affde0aa6ba04a86f8288641310",
       "minSdk": 19,
       "targetSdk": 34,
       "keyFeatures": [
         "Ultra-lightweight (<18 MB active RAM footprint)",
         "App Name Native Japanese Localization: スピンドルライト",
-        "Verified on 320x480 HVGA vintage hardware",
+        "Verified on 320x480 HVGA vintage hardware (Sony Ericsson Xperia active)",
+        "Full Zune HD Metro layout, typography & 5-pivot Vault (songs • artists • albums • folders • queue)",
+        "Zune 26-Letter Quick-Jump Grid (A–Z) with active letter tiles",
+        "Dedicated Artists & Albums pivots with drill-down discography, Play All, and ← pill navigation",
+        "Compact icon-based MicroSD indexing button for expanded header spacing",
         "Full physical hardware button mapping (Camera, Back, Menu, D-pad, Volume, Headset)",
-        "Tape Vault 3-tab music catalogue with folder navigation",
         "48dp touch target tactile app drawer with long-press management",
         "Mechanical 3-digit tape drum counter and Type IV/II/I cassette skins"
       ]
