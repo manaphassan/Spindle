@@ -54,7 +54,7 @@ class MainActivity : AppCompatActivity() {
     private var previousBrightness: Float = -1f
 
     private val hardwareKeyController = HardwareKeyController(
-        onNavigateToCatalog = { navigateToCatalog(openNowPlaying = false) },
+        onNavigateToVault = { navigateToVault(openNowPlaying = false) },
         onNavigateToDrawer = { navigateToDrawer() }
     )
 
@@ -83,11 +83,11 @@ class MainActivity : AppCompatActivity() {
             binding.viewPager.post {
                 navigateToDrawer()
             }
-        } else if (intent?.getStringExtra("navigate") == "catalog") {
+        } else if (intent?.getStringExtra("navigate") == "catalog" || intent?.getStringExtra("navigate") == "vault") {
             val tab = intent.getIntExtra("tab", -1)
             val openNp = intent.getBooleanExtra("open_now_playing", false)
             binding.viewPager.post {
-                navigateToCatalog(openNowPlaying = openNp, tab = tab)
+                navigateToVault(openNowPlaying = openNp, tab = tab)
             }
         }
         handlePlaybackIntent(intent)
@@ -315,11 +315,11 @@ class MainActivity : AppCompatActivity() {
                     return
                 }
                 if (binding.catalogContainer.visibility == View.VISIBLE) {
-                    val catalogFrag = supportFragmentManager.findFragmentById(R.id.catalogContainer) as? CatalogFragment
-                    if (catalogFrag != null && catalogFrag.handleBackPressed()) {
+                    val vaultFrag = supportFragmentManager.findFragmentById(R.id.catalogContainer) as? VaultFragment
+                    if (vaultFrag != null && vaultFrag.handleBackPressed()) {
                         return
                     }
-                    // Close Catalog and return to Cassette Deck
+                    // Close Vault and return to Cassette Deck
                     navigateToPlayer()
                 } else if (binding.viewPager.currentItem != 1) {
                     // Return back to Main Cassette Player screen
@@ -387,14 +387,10 @@ class MainActivity : AppCompatActivity() {
     fun getCurrentViewPagerItem(): Int = binding.viewPager.currentItem
 
     fun navigateToNowPlaying() {
-        navigateToCatalog(openNowPlaying = true)
+        navigateToVault(openNowPlaying = true)
     }
 
     fun navigateToVault(openNowPlaying: Boolean = false, tab: Int = -1) {
-        navigateToCatalog(openNowPlaying, tab)
-    }
-
-    fun navigateToCatalog(openNowPlaying: Boolean = false, tab: Int = -1) {
         binding.viewPager.isUserInputEnabled = false
         binding.catalogContainer.visibility = View.VISIBLE
         binding.catalogContainer.bringToFront()
@@ -409,9 +405,12 @@ class MainActivity : AppCompatActivity() {
             .start()
 
         supportFragmentManager.beginTransaction()
-            .replace(R.id.catalogContainer, CatalogFragment.newInstance(openNowPlaying = openNowPlaying, initialTab = tab))
+            .replace(R.id.catalogContainer, VaultFragment.newInstance(openNowPlaying = openNowPlaying, initialTab = tab))
             .commitAllowingStateLoss()
     }
+
+    @Deprecated("Use navigateToVault in accordance with canonical glossary", ReplaceWith("navigateToVault(openNowPlaying, tab)"))
+    fun navigateToCatalog(openNowPlaying: Boolean = false, tab: Int = -1) = navigateToVault(openNowPlaying, tab)
 
     fun navigateToRadio() {
         binding.catalogContainer.visibility = View.GONE
@@ -505,10 +504,10 @@ class MainActivity : AppCompatActivity() {
             binding.viewPager.post { navigateToDrawer() }
             return
         }
-        if (intent.getStringExtra("navigate") == "catalog") {
+        if (intent.getStringExtra("navigate") == "catalog" || intent.getStringExtra("navigate") == "vault") {
             val tab = intent.getIntExtra("tab", -1)
             val openNp = intent.getBooleanExtra("open_now_playing", false)
-            binding.viewPager.post { navigateToCatalog(openNowPlaying = openNp, tab = tab) }
+            binding.viewPager.post { navigateToVault(openNowPlaying = openNp, tab = tab) }
             return
         }
         // Ensure pressing hardware/software Home button always brings user to Cassette Player

@@ -24,8 +24,10 @@ import com.hana.spindle.core.SpindleGlossary
  * - Standard Media Keys (Headset Hook, Play, Pause, Stop, Next, Prev, Fast Forward, Rewind)
  */
 class HardwareKeyController(
-    private val onNavigateToCatalog: (() -> Unit)? = null,
-    private val onNavigateToDrawer: (() -> Unit)? = null
+    private val onNavigateToVault: (() -> Unit)? = null,
+    private val onNavigateToDrawer: (() -> Unit)? = null,
+    @Deprecated("Use onNavigateToVault in accordance with canonical glossary", ReplaceWith("onNavigateToVault"))
+    private val onNavigateToCatalog: (() -> Unit)? = onNavigateToVault
 ) {
     var isVolumeLongPress: Boolean = false
         private set
@@ -103,7 +105,7 @@ class HardwareKeyController(
                     return true
                 }
                 KeyEvent.KEYCODE_SEARCH -> {
-                    onNavigateToCatalog?.invoke()
+                    (onNavigateToVault ?: onNavigateToCatalog)?.invoke()
                     return true
                 }
                 KeyEvent.KEYCODE_MENU,

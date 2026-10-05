@@ -49,12 +49,10 @@ import java.io.File
 import java.util.Locale
 
 /**
- * Canonical alias for VaultFragment.
+ * Canonical implementation of the Spindle Music Vault.
  * Conforms to canonical terminology authority (docs/GLOSSARY.md).
  */
-typealias VaultFragment = CatalogFragment
-
-class CatalogFragment : Fragment() {
+class VaultFragment : Fragment() {
 
     private var _binding: FragmentCatalogBinding? = null
     private val binding get() = _binding!!
@@ -158,8 +156,8 @@ class CatalogFragment : Fragment() {
         private const val SMART_ID_FAVORITES = -5
         private const val SMART_ID_HI_RES = -6
 
-        fun newInstance(openNowPlaying: Boolean = false, initialTab: Int = -1): CatalogFragment {
-            return CatalogFragment().apply {
+        fun newInstance(openNowPlaying: Boolean = false, initialTab: Int = -1): VaultFragment {
+            return VaultFragment().apply {
                 arguments = Bundle().apply {
                     putBoolean(ARG_OPEN_NOW_PLAYING, openNowPlaying)
                     putInt(ARG_INITIAL_TAB, initialTab)
@@ -167,6 +165,10 @@ class CatalogFragment : Fragment() {
             }
         }
     }
+
+    @Deprecated("Use newInstance returning VaultFragment in accordance with canonical glossary", ReplaceWith("newInstance(openNowPlaying, initialTab)"))
+    fun newCatalogInstance(openNowPlaying: Boolean = false, initialTab: Int = -1): VaultFragment = newInstance(openNowPlaying, initialTab)
+
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -3342,3 +3344,10 @@ class CatalogFragment : Fragment() {
         _binding = null
     }
 }
+
+/**
+ * Deprecated alias for VaultFragment.
+ * Conforms to canonical terminology authority (docs/GLOSSARY.md).
+ */
+@Deprecated("Use VaultFragment in accordance with canonical glossary", ReplaceWith("VaultFragment"))
+typealias CatalogFragment = VaultFragment

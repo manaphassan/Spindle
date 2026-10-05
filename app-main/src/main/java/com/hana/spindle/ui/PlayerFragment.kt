@@ -401,7 +401,7 @@ class PlayerFragment : Fragment() {
         }
         binding.verticalDeckView.onEjectClicked = {
             // Single-press Eject: ONLY open music catalogue and keep playing song, do NOT stop it
-            (activity as? MainActivity)?.navigateToCatalog()
+            (activity as? MainActivity)?.navigateToVault()
         }
         binding.verticalDeckView.onEjectLongClicked = {
             // Hold/Long-press Eject: stop song, eject cassette, and reset title to default hardware name
@@ -423,7 +423,7 @@ class PlayerFragment : Fragment() {
             (activity as? MainActivity)?.enterAmbientSleep()
         }
         binding.verticalDeckView.onTitleClicked = {
-            (activity as? MainActivity)?.navigateToCatalog(openNowPlaying = true)
+            (activity as? MainActivity)?.navigateToVault(openNowPlaying = true)
         }
         binding.verticalDeckView.onLyricsClicked = {
             DialogLyricsSheet().show(parentFragmentManager, "DialogLyricsSheet")
@@ -450,7 +450,7 @@ class PlayerFragment : Fragment() {
         binding.metal81ChassisView.onPlayClicked = { audioEngine.togglePlayPause() }
         binding.metal81ChassisView.onStopClicked = { audioEngine.pause() }
         binding.metal81ChassisView.onEjectClicked = {
-            (activity as? MainActivity)?.navigateToCatalog()
+            (activity as? MainActivity)?.navigateToVault()
         }
         binding.btnPlayPause.setOnClickListener { audioEngine.togglePlayPause() }
         binding.btnPrev.setOnClickListener { audioEngine.playPrevious(forcePreviousSong = false) }
@@ -459,7 +459,7 @@ class PlayerFragment : Fragment() {
         binding.metal81ChassisView.onNextClicked = { audioEngine.playNext() }
         binding.btnEject.setOnClickListener {
             // Single-press: only open music catalogue, don't stop music
-            (activity as? MainActivity)?.navigateToCatalog()
+            (activity as? MainActivity)?.navigateToVault()
         }
         binding.btnEject.setOnLongClickListener {
             audioEngine.ejectCassette()
@@ -842,14 +842,14 @@ class PlayerFragment : Fragment() {
     private fun setupCassetteFlip() {
         binding.verticalCassetteView.setOnClickListener {
             if (audioEngine.playbackState.value.currentTrack != null) {
-                (activity as? MainActivity)?.navigateToCatalog(openNowPlaying = true)
+                (activity as? MainActivity)?.navigateToVault(openNowPlaying = true)
             } else {
                 flipCassette(binding.verticalCassetteView)
             }
         }
         binding.metal81CassetteView.setOnClickListener {
             if (audioEngine.playbackState.value.currentTrack != null) {
-                (activity as? MainActivity)?.navigateToCatalog(openNowPlaying = true)
+                (activity as? MainActivity)?.navigateToVault(openNowPlaying = true)
             } else {
                 flipCassette(binding.metal81CassetteView)
             }
