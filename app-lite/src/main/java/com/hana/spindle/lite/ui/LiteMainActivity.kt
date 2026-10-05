@@ -629,7 +629,7 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
         drawerBinding.tvCurrentMusicPath.text = "PATH: /storage/sdcard1/Music"
         drawerBinding.btnRescanVault.setOnClickListener {
             performMediaScan()
-            Toast.makeText(this, "Scanning MicroSD Tape Vault...", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Scanning MicroSD Vault...", Toast.LENGTH_SHORT).show()
         }
 
         // Diagnostics

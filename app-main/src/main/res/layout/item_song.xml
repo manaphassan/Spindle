@@ -146,7 +146,7 @@
         android:padding="4dp"
         android:src="@android:drawable/ic_menu_more"
         app:tint="@color/text_secondary"
-        android:contentDescription="Song Options" />
+        android:contentDescription="Track Options" />
 
     <!-- Drag & Reorder Handle for Mixtape Editing -->
     <ImageView

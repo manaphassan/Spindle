@@ -48,3 +48,9 @@ enum class CatalogFilterChip(val displayName: String) {
     MP3("MP3"),
     RATED("RATED")
 }
+
+/**
+ * Canonical alias for VaultFilterChip in accordance with Spindle Canonical Glossary (docs/GLOSSARY.md).
+ */
+typealias VaultFilterChip = CatalogFilterChip
+

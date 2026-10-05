@@ -48,9 +48,10 @@
                     android:layout_height="wrap_content"
                     android:text="tracks"
                     android:textColor="@color/white"
-                    android:textSize="22sp"
+                    android:textSize="26sp"
                     android:textStyle="bold"
-                    android:fontFamily="sans-serif-light" />
+                    android:fontFamily="sans-serif-light"
+                    android:letterSpacing="-0.03" />
 
                 <!-- Action Bar for Tracks -->
                 <LinearLayout
@@ -185,9 +186,10 @@
                     android:layout_height="wrap_content"
                     android:text="albums"
                     android:textColor="@color/white"
-                    android:textSize="22sp"
+                    android:textSize="26sp"
                     android:textStyle="bold"
-                    android:fontFamily="sans-serif-light" />
+                    android:fontFamily="sans-serif-light"
+                    android:letterSpacing="-0.03" />
 
                 <!-- Action Bar for Albums -->
                 <LinearLayout
@@ -247,9 +249,10 @@
                     android:layout_height="wrap_content"
                     android:text="artists"
                     android:textColor="@color/white"
-                    android:textSize="22sp"
+                    android:textSize="26sp"
                     android:textStyle="bold"
-                    android:fontFamily="sans-serif-light" />
+                    android:fontFamily="sans-serif-light"
+                    android:letterSpacing="-0.03" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -296,9 +299,10 @@
                     android:layout_height="wrap_content"
                     android:text="cassette mixtapes"
                     android:textColor="@color/white"
-                    android:textSize="22sp"
+                    android:textSize="26sp"
                     android:textStyle="bold"
-                    android:fontFamily="sans-serif-light" />
+                    android:fontFamily="sans-serif-light"
+                    android:letterSpacing="-0.03" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -360,9 +364,10 @@
                     android:layout_height="wrap_content"
                     android:text="folders &amp; sd card"
                     android:textColor="@color/white"
-                    android:textSize="22sp"
+                    android:textSize="26sp"
                     android:textStyle="bold"
-                    android:fontFamily="sans-serif-light" />
+                    android:fontFamily="sans-serif-light"
+                    android:letterSpacing="-0.03" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -409,9 +414,10 @@
                     android:layout_height="wrap_content"
                     android:text="favorites"
                     android:textColor="@color/white"
-                    android:textSize="22sp"
+                    android:textSize="26sp"
                     android:textStyle="bold"
-                    android:fontFamily="sans-serif-light" />
+                    android:fontFamily="sans-serif-light"
+                    android:letterSpacing="-0.03" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -458,9 +464,10 @@
                     android:layout_height="wrap_content"
                     android:text="composers"
                     android:textColor="@color/white"
-                    android:textSize="22sp"
+                    android:textSize="26sp"
                     android:textStyle="bold"
-                    android:fontFamily="sans-serif-light" />
+                    android:fontFamily="sans-serif-light"
+                    android:letterSpacing="-0.03" />
 
                 <LinearLayout
                     android:layout_width="match_parent"

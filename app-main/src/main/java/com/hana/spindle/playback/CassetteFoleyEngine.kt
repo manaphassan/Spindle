@@ -59,6 +59,8 @@ class CassetteFoleyEngine(private val context: Context) {
     var isMetroClicksEnabled: Boolean = true
         private set
 
+    val haptics = SpindleHaptics(context)
+
     val isProceduralUnlocked: Boolean
         get() = StudioUnlockManager.isFeatureUnlocked(context, StudioFeature.PROCEDURAL_FOLEY)
 
@@ -127,26 +129,31 @@ class CassetteFoleyEngine(private val context: Context) {
     }
 
     fun playSolenoidClack() {
+        haptics.vibrateSolenoid()
         val vol = if (isProceduralUnlocked) 0.45f else 0.25f
         playSound(SOUND_PLAY_SOLENOID, vol)
     }
 
     fun playReleaseClick() {
+        haptics.vibrateRelease()
         val vol = if (isProceduralUnlocked) 0.40f else 0.20f
         playSound(SOUND_STOP_RELEASE, vol)
     }
 
     fun playMotorSpool() {
+        haptics.vibrateRotaryRatchet()
         val vol = if (isProceduralUnlocked) 0.35f else 0.20f
         playSound(SOUND_MOTOR_SPOOL, vol)
     }
 
     fun playCarriageEject() {
+        haptics.vibrateCarriageEject()
         val vol = if (isProceduralUnlocked) 0.50f else 0.25f
         playSound(SOUND_CARRIAGE_EJECT, vol)
     }
 
     fun playSwitchSnap() {
+        haptics.vibrateSwitchSnap()
         val vol = if (isProceduralUnlocked) 0.38f else 0.20f
         playSound(SOUND_SWITCH_SNAP, vol)
     }
@@ -155,6 +162,7 @@ class CassetteFoleyEngine(private val context: Context) {
      * Crisp, ultra-short mechanical micro-click for Zune jump letters, navigation detents, and buttons.
      */
     fun playMetroTick(pitch: Float = 1.0f) {
+        haptics.vibrateMetroTick()
         if (!isMetroClicksEnabled) return
         val vol = if (isProceduralUnlocked) 0.38f else 0.22f
         playSound(SOUND_METRO_TICK, vol, pitch)
@@ -164,6 +172,7 @@ class CassetteFoleyEngine(private val context: Context) {
      * Tactile mechanical tile press and relay click for Live Tiles, App Bar icons, and action pills.
      */
     fun playTilePress(pitch: Float = 1.0f) {
+        haptics.vibrateTilePress()
         if (!isMetroClicksEnabled) return
         val vol = if (isProceduralUnlocked) 0.42f else 0.25f
         playSound(SOUND_TILE_LATCH, vol, pitch)
@@ -173,6 +182,7 @@ class CassetteFoleyEngine(private val context: Context) {
      * Tactile relay latch / release click for pinning and unpinning items to the Start Screen.
      */
     fun playPinAction(pinned: Boolean) {
+        haptics.vibrateTilePress()
         if (!isMetroClicksEnabled) return
         val pitch = if (pinned) 1.25f else 0.85f
         val vol = if (isProceduralUnlocked) 0.45f else 0.28f
@@ -183,6 +193,7 @@ class CassetteFoleyEngine(private val context: Context) {
      * Stepped mechanical ratchet click for analog radio dial sweep and precision sliders.
      */
     fun playRotaryRatchet(pitch: Float = 1.0f) {
+        haptics.vibrateRotaryRatchet()
         if (!isMetroClicksEnabled) return
         val vol = if (isProceduralUnlocked) 0.32f else 0.20f
         playSound(SOUND_ROTARY_RATCHET, vol, pitch)
@@ -211,6 +222,7 @@ class CassetteFoleyEngine(private val context: Context) {
     }
 
     fun playAutoStopClack() {
+        haptics.vibrateSolenoid()
         if (isProceduralUnlocked) {
             playSound(SOUND_PLAY_SOLENOID, 0.55f)
             playSound(SOUND_STOP_RELEASE, 0.45f)

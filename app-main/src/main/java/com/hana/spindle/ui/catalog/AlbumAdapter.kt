@@ -100,7 +100,7 @@ class AlbumAdapter(
             b.tvGridYear.visibility = View.GONE
         }
 
-        if (album.format != "SMART_MIXTAPE" && album.format != "COMPOSER") {
+        if (!album.isSmartMixtape && album.format != "COMPOSER") {
             b.tvGridFormat.text = album.format
         }
 
@@ -109,7 +109,7 @@ class AlbumAdapter(
             holder.loadJob?.cancel()
             b.ivGridArt.tag = album.representativePath
             b.ivGridArt.setImageDrawable(null)
-            if (album.format == "MIXTAPE" || album.representativePath.isBlank()) {
+            if (album.isMixtape || album.representativePath.isBlank()) {
                 b.ivGridArt.setPadding(32, 32, 32, 32)
                 b.ivGridArt.setImageResource(com.hana.spindle.R.drawable.ic_mixtape_tape)
             } else {

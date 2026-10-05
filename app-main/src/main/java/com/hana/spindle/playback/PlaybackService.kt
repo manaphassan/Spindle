@@ -37,6 +37,7 @@ class PlaybackService : MediaSessionService() {
         super.onCreate()
         val app = application as SpindleApp
         val player = app.audioEngine.exoPlayer
+        val forwardingPlayer = SpindleForwardingPlayer(player, app.audioEngine)
         val callback = object : MediaSession.Callback {
             override fun onMediaButtonEvent(
                 session: MediaSession,
@@ -60,9 +61,13 @@ class PlaybackService : MediaSessionService() {
             }
         }
 
-        mediaSession = MediaSession.Builder(this, player)
+        mediaSession = MediaSession.Builder(this, forwardingPlayer)
             .setCallback(callback)
             .build()
+
+        app.audioEngine.onActivePlayerChanged = { newPlayer ->
+            mediaSession?.setPlayer(SpindleForwardingPlayer(newPlayer, app.audioEngine))
+        }
 
         registerReceiver(screenOffReceiver, IntentFilter(Intent.ACTION_SCREEN_OFF))
     }
@@ -72,6 +77,11 @@ class PlaybackService : MediaSessionService() {
     }
 
     override fun onDestroy() {
+        try {
+            val app = application as? SpindleApp
+            app?.audioEngine?.onActivePlayerChanged = null
+        } catch (_: Exception) {}
+
         try {
             unregisterReceiver(screenOffReceiver)
         } catch (_: Exception) {}

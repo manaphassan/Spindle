@@ -54,7 +54,7 @@ class SpindleAppWidgetProvider : AppWidgetProvider() {
                 app.audioEngine.togglePlayPause()
             }
             ACTION_WIDGET_PREV -> {
-                app.audioEngine.playPrevious(forcePreviousSong = true)
+                app.audioEngine.playPrevious(forcePreviousSong = false)
             }
             ACTION_WIDGET_NEXT -> {
                 app.audioEngine.playNext()

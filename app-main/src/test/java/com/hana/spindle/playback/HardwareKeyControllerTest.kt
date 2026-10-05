@@ -59,6 +59,7 @@ class HardwareKeyControllerTest {
         val prevHandled = controller.onKeyDown(KeyEvent.KEYCODE_MEDIA_PREVIOUS, null, fakeContext, fakeTransport)
         assertTrue(prevHandled)
         assertEquals(1, fakeTransport.prevCount)
+        assertFalse(fakeTransport.lastForcePreviousSong ?: true)
 
         // KEYCODE_MEDIA_PLAY_PAUSE
         val toggleHandled = controller.onKeyDown(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, null, fakeContext, fakeTransport)
@@ -193,13 +194,62 @@ class HardwareKeyControllerTest {
 
         assertTrue(HardwareKeyController.handleKeyEventInternal(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PREVIOUS, fakeContext, fakeTransport))
         assertEquals(1, fakeTransport.prevCount)
+        assertFalse(fakeTransport.lastForcePreviousSong ?: true)
+
+        // Stop Key
+        assertTrue(HardwareKeyController.handleKeyEventInternal(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_STOP, fakeContext, fakeTransport))
+        assertEquals(1, fakeTransport.stopCount)
 
         // Up event for camera key must return true to prevent camera app launch
         assertTrue(HardwareKeyController.handleKeyEventInternal(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_CAMERA, fakeContext, fakeTransport))
     }
 
     // =========================================================================
-    // 5. HARDWARE BUTTON RECEIVER LISTENER ROUTING
+    // 5. HOLD = SEEK AND TAP = SKIP TEST
+    // =========================================================================
+
+    @Test
+    fun testHoldToSeekAndTapToSkip() {
+        val controller = HardwareKeyController()
+
+        // Fast Forward Long-Press (Hold = Seek)
+        val ffLongHandled = controller.onKeyLongPress(KeyEvent.KEYCODE_MEDIA_FAST_FORWARD, null, fakeContext, fakeTransport)
+        assertTrue(ffLongHandled)
+        assertTrue(controller.isSeekLongPress)
+        assertEquals(1, fakeTransport.ffCount)
+        assertEquals(0, fakeTransport.nextCount)
+
+        // Fast Forward Release after hold
+        val ffUpHandled = controller.onKeyUp(KeyEvent.KEYCODE_MEDIA_FAST_FORWARD, null, fakeContext, fakeTransport)
+        assertTrue(ffUpHandled)
+        assertFalse(controller.isSeekLongPress)
+        assertEquals(0, fakeTransport.nextCount) // did not skip on release
+
+        // Rewind Long-Press (Hold = Seek)
+        val rewLongHandled = controller.onKeyLongPress(KeyEvent.KEYCODE_MEDIA_REWIND, null, fakeContext, fakeTransport)
+        assertTrue(rewLongHandled)
+        assertTrue(controller.isSeekLongPress)
+        assertEquals(1, fakeTransport.rewCount)
+        assertEquals(0, fakeTransport.prevCount)
+
+        // Rewind Release after hold
+        val rewUpHandled = controller.onKeyUp(KeyEvent.KEYCODE_MEDIA_REWIND, null, fakeContext, fakeTransport)
+        assertTrue(rewUpHandled)
+        assertFalse(controller.isSeekLongPress)
+        assertEquals(0, fakeTransport.prevCount) // did not skip on release
+
+        // Tap Fast Forward (KeyUp without prior long press -> Tap = Skip)
+        controller.onKeyUp(KeyEvent.KEYCODE_MEDIA_FAST_FORWARD, null, fakeContext, fakeTransport)
+        assertEquals(1, fakeTransport.nextCount)
+
+        // Tap Rewind (KeyUp without prior long press -> Tap = Skip with Universal Previous)
+        controller.onKeyUp(KeyEvent.KEYCODE_MEDIA_REWIND, null, fakeContext, fakeTransport)
+        assertEquals(1, fakeTransport.prevCount)
+        assertEquals(false, fakeTransport.lastForcePreviousSong)
+    }
+
+    // =========================================================================
+    // 6. HARDWARE BUTTON RECEIVER LISTENER ROUTING
     // =========================================================================
 
     @Test
@@ -232,15 +282,20 @@ class HardwareKeyControllerTest {
     private class FakeAudioTransport : AudioTransport {
         var nextCount = 0
         var prevCount = 0
+        var lastForcePreviousSong: Boolean? = null
         var toggleCount = 0
         var playCount = 0
         var pauseCount = 0
+        var stopCount = 0
         var rewCount = 0
         var ffCount = 0
         override var isPlaying: Boolean = false
 
         override fun playNext() { nextCount++ }
-        override fun playPrevious(forcePreviousSong: Boolean) { prevCount++ }
+        override fun playPrevious(forcePreviousSong: Boolean) {
+            prevCount++
+            lastForcePreviousSong = forcePreviousSong
+        }
         override fun togglePlayPause() {
             toggleCount++
             isPlaying = !isPlaying
@@ -252,6 +307,10 @@ class HardwareKeyControllerTest {
         override fun pause() {
             pauseCount++
             isPlaying = false
+        }
+        override fun stop() {
+            stopCount++
+            pause()
         }
         override fun rewind(deltaMs: Long) { rewCount++ }
         override fun fastForward(deltaMs: Long) { ffCount++ }

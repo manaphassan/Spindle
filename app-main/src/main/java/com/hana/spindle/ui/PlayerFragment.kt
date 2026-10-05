@@ -337,12 +337,12 @@ class PlayerFragment : Fragment() {
                 audioEngine.togglePlayPause()
             }
         }
-        binding.verticalDeckView.onPrevClicked = { audioEngine.playPrevious(forcePreviousSong = true) }
+        binding.verticalDeckView.onPrevClicked = { audioEngine.playPrevious(forcePreviousSong = false) }
         binding.verticalDeckView.onNextClicked = { audioEngine.playNext() }
         binding.verticalDeckView.onNextAlbumClicked = { audioEngine.playNextAlbum() }
         binding.verticalDeckView.onPrevAlbumClicked = { audioEngine.playPreviousAlbum() }
-        binding.verticalDeckView.onHoldSeekForward = { audioEngine.fastForward(2500L) }
-        binding.verticalDeckView.onHoldSeekRewind = { audioEngine.rewind(2500L) }
+        binding.verticalDeckView.onHoldSeekForward = { audioEngine.fastForward(com.hana.spindle.core.SpindleGlossary.SEEK_STEP_HOLD_MS) }
+        binding.verticalDeckView.onHoldSeekRewind = { audioEngine.rewind(com.hana.spindle.core.SpindleGlossary.SEEK_STEP_HOLD_MS) }
 
         // Continuous high-speed motor gear spool foley with dynamic pitch & auto-stop
         binding.verticalDeckView.onHoldSeekStart = { isForward ->
@@ -380,6 +380,13 @@ class PlayerFragment : Fragment() {
         binding.jCardLinerView.onTrackSelected = { trackIndex ->
             audioEngine.playQueueIndex(trackIndex)
             closeJCardLiner(animate = true)
+        }
+
+        // Automatic Cassette 3D Flip on Auto-Reverse Side Transition
+        audioEngine.onTapeSideFlip = { isSideA ->
+            if (this.isSideA != isSideA) {
+                flipCassette(binding.metal81CassetteView)
+            }
         }
 
         binding.verticalDeckView.onSeek = { progress ->
@@ -442,9 +449,9 @@ class PlayerFragment : Fragment() {
             (activity as? MainActivity)?.navigateToCatalog()
         }
         binding.btnPlayPause.setOnClickListener { audioEngine.togglePlayPause() }
-        binding.btnPrev.setOnClickListener { audioEngine.playPrevious() }
+        binding.btnPrev.setOnClickListener { audioEngine.playPrevious(forcePreviousSong = false) }
         binding.btnNext.setOnClickListener { audioEngine.playNext() }
-        binding.metal81ChassisView.onPrevClicked = { audioEngine.playPrevious() }
+        binding.metal81ChassisView.onPrevClicked = { audioEngine.playPrevious(forcePreviousSong = false) }
         binding.metal81ChassisView.onNextClicked = { audioEngine.playNext() }
         binding.btnEject.setOnClickListener {
             // Single-press: only open music catalogue, don't stop music
@@ -612,7 +619,7 @@ class PlayerFragment : Fragment() {
 
         b.btnVuPrev.setOnClickListener {
             audioEngine.foleyEngine.playTilePress()
-            audioEngine.playPrevious(forcePreviousSong = true)
+            audioEngine.playPrevious(forcePreviousSong = false)
         }
 
         b.btnVuNext.setOnClickListener {

@@ -103,6 +103,73 @@ class AudioEngineQueueAndSleepTest {
     }
 
     @Test
+    fun testQueueRemoveCurrentTrack_lastPositionWraparound() {
+        val list = mutableListOf(
+            createDummySong(1, "Track 1"),
+            createDummySong(2, "Track 2"),
+            createDummySong(3, "Track 3")
+        )
+        var currentIndex = 2 // Last item is playing
+
+        // Remove the currently playing track
+        list.removeAt(currentIndex)
+        if (currentIndex >= list.size) {
+            currentIndex = 0 // wraps to start of playlist
+        }
+
+        assertEquals(2, list.size)
+        assertEquals("Track 1", list[0].title)
+        assertEquals(0, currentIndex) // Playing track index reset to 0
+    }
+
+    @Test
+    fun testOriginalPlaylistSyncOnRemove_removesOnlyOneOccurrence() {
+        val origList = mutableListOf(
+            createDummySong(10, "Track A"),
+            createDummySong(20, "Track B"),
+            createDummySong(10, "Track A"), // Duplicate in queue
+            createDummySong(30, "Track C")
+        )
+
+        val trackToRemove = origList[0] // Track A
+        val origIndex = origList.indexOfFirst { it.id == trackToRemove.id }
+        if (origIndex >= 0) {
+            origList.removeAt(origIndex)
+        }
+
+        assertEquals(3, origList.size)
+        assertEquals(20L, origList[0].id)
+        assertEquals(10L, origList[1].id) // Duplicate still retained
+        assertEquals(30L, origList[2].id)
+    }
+
+    @Test
+    fun testClearUpcomingQueue_preservesCurrentAndPastTracks() {
+        val list = mutableListOf(
+            createDummySong(1, "Track 1"),
+            createDummySong(2, "Track 2"),
+            createDummySong(3, "Track 3"),
+            createDummySong(4, "Track 4")
+        )
+        val origList = list.toMutableList()
+        val currentIndex = 1 // Playing Track 2
+
+        val nextIdx = currentIndex + 1
+        val past = list.take(nextIdx)
+        list.clear()
+        list.addAll(past)
+        val currentTrackIds = past.map { it.id }.toSet()
+        origList.removeAll { !currentTrackIds.contains(it.id) }
+
+        assertEquals(2, list.size)
+        assertEquals("Track 1", list[0].title)
+        assertEquals("Track 2", list[1].title)
+        assertEquals(2, origList.size)
+        assertEquals(1L, origList[0].id)
+        assertEquals(2L, origList[1].id)
+    }
+
+    @Test
     fun testAudioRouteShorthand() {
         fun formatRoute(route: String): String = when {
             route.contains("USB", ignoreCase = true) -> "• USB DAC"

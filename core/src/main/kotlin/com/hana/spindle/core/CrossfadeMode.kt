@@ -8,6 +8,11 @@ package com.hana.spindle.core
  */
 enum class CrossfadeMode(val durationMs: Long, val displayName: String) {
     GAPLESS(0L, "GAPLESS (0s)"),
-    CROSSFADE_2S(2000L, "CROSSFADE 2s"),
-    CROSSFADE_4S(4000L, "CROSSFADE 4s")
+    CROSSFADE_2S(2000L, "X-FADE 2s"),
+    CROSSFADE_4S(4000L, "X-FADE 4s");
+
+    companion object {
+        val FADE_2S get() = CROSSFADE_2S
+        val FADE_4S get() = CROSSFADE_4S
+    }
 }

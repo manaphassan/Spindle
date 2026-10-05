@@ -91,8 +91,9 @@
     <string name="radio_preset_initiald">INITIAL D</string>
     <string name="radio_preset_citypop">CITYPOP</string>
 
-    <!-- Catalog Actions & Status -->
-    <string name="catalog_new_tape">NEW TAPE</string>
+    <!-- Catalog Actions & Status (Vault Naming) -->
+    <string name="catalog_new_tape">NEW MIXTAPE</string>
+    <string name="vault_new_mixtape">NEW MIXTAPE</string>
     <string name="catalog_shuffle">SHUFFLE</string>
     <string name="catalog_play_all">PLAY ALL</string>
     <string name="catalog_scanning">Scanning…</string>
@@ -146,7 +147,6 @@
     <string name="studio_nameplate_locked_prompt">Personalized laser nameplate engraving is an exclusive Spindle Studio Collector feature.</string>
 
     <string name="action_cancel">CANCEL</string>
-    <string name="cancel">Cancel</string>
 
     <!-- Custom User EQ & Headphone Profiles -->
     <string name="user_eq_title">CUSTOM USER EQ PROFILES</string>

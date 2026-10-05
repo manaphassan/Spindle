@@ -219,7 +219,7 @@
             android:id="@+id/tvCurrentFetchItem"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Song Title • Artist"
+            android:text="Track Title • Artist"
             android:textColor="#CBD5E1"
             android:textSize="11sp"
             android:maxLines="1"

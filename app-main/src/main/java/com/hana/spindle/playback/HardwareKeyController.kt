@@ -5,6 +5,8 @@ import android.media.AudioManager
 import android.view.KeyEvent
 import android.widget.Toast
 
+import com.hana.spindle.core.SpindleGlossary
+
 /**
  * Centralized Hardware Key & DAP Button Matrix Controller (§8.2).
  * Unifies physical button handling across:
@@ -16,6 +18,7 @@ import android.widget.Toast
  * Implements:
  * - Dedicated DAP Mode (prioritizing D-pad, hardware wheel, transport keys)
  * - Volume Buttons Long-Press Skip (Hold Vol+ to skip next, Vol- to skip previous)
+ * - Hold = Seek and Tap = Skip on Hardware Transport Keys (FF/REW/NEXT/PREV)
  * - Xperia 2-Stage Camera Shutter Remap (Full-press: Play/Pause, Half-press Focus: Next Track)
  * - Standard Media Keys (Headset Hook, Play, Pause, Stop, Next, Prev, Fast Forward, Rewind)
  */
@@ -25,6 +28,11 @@ class HardwareKeyController(
 ) {
     var isVolumeLongPress: Boolean = false
         private set
+
+    var isSeekLongPress: Boolean = false
+        private set
+
+    private var wasSyntheticDownHandled: Boolean = false
 
     fun onKeyDown(
         keyCode: Int,
@@ -39,14 +47,22 @@ class HardwareKeyController(
         if (isDapMode) {
             when (keyCode) {
                 KeyEvent.KEYCODE_MEDIA_NEXT,
-                KeyEvent.KEYCODE_MEDIA_FAST_FORWARD -> {
-                    audioEngine.playNext()
-                    return true
-                }
+                KeyEvent.KEYCODE_MEDIA_FAST_FORWARD,
                 KeyEvent.KEYCODE_MEDIA_PREVIOUS,
                 KeyEvent.KEYCODE_MEDIA_REWIND -> {
-                    audioEngine.playPrevious(forcePreviousSong = true)
-                    return true
+                    if (event != null) {
+                        event.startTracking()
+                        isSeekLongPress = false
+                        return true
+                    } else {
+                        wasSyntheticDownHandled = true
+                        if (keyCode == KeyEvent.KEYCODE_MEDIA_NEXT || keyCode == KeyEvent.KEYCODE_MEDIA_FAST_FORWARD) {
+                            audioEngine.playNext()
+                        } else {
+                            audioEngine.playPrevious(forcePreviousSong = false)
+                        }
+                        return true
+                    }
                 }
                 KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
                 KeyEvent.KEYCODE_HEADSETHOOK,
@@ -60,7 +76,7 @@ class HardwareKeyController(
                 }
                 KeyEvent.KEYCODE_MEDIA_PAUSE,
                 KeyEvent.KEYCODE_MEDIA_STOP -> {
-                    audioEngine.pause()
+                    audioEngine.stop()
                     return true
                 }
                 KeyEvent.KEYCODE_FOCUS -> {
@@ -69,11 +85,11 @@ class HardwareKeyController(
                     return true
                 }
                 KeyEvent.KEYCODE_DPAD_LEFT -> {
-                    audioEngine.rewind(5000L)
+                    audioEngine.rewind(SpindleGlossary.SEEK_STEP_MANUAL_MS)
                     return true
                 }
                 KeyEvent.KEYCODE_DPAD_RIGHT -> {
-                    audioEngine.fastForward(5000L)
+                    audioEngine.fastForward(SpindleGlossary.SEEK_STEP_MANUAL_MS)
                     return true
                 }
                 KeyEvent.KEYCODE_VOLUME_MUTE -> {
@@ -128,13 +144,23 @@ class HardwareKeyController(
 
         // 4. Standard Fallback Media Keys
         when (keyCode) {
-            KeyEvent.KEYCODE_MEDIA_NEXT -> {
-                audioEngine.playNext()
-                return true
-            }
-            KeyEvent.KEYCODE_MEDIA_PREVIOUS -> {
-                audioEngine.playPrevious(forcePreviousSong = true)
-                return true
+            KeyEvent.KEYCODE_MEDIA_NEXT,
+            KeyEvent.KEYCODE_MEDIA_FAST_FORWARD,
+            KeyEvent.KEYCODE_MEDIA_PREVIOUS,
+            KeyEvent.KEYCODE_MEDIA_REWIND -> {
+                if (event != null) {
+                    event.startTracking()
+                    isSeekLongPress = false
+                    return true
+                } else {
+                    wasSyntheticDownHandled = true
+                    if (keyCode == KeyEvent.KEYCODE_MEDIA_NEXT || keyCode == KeyEvent.KEYCODE_MEDIA_FAST_FORWARD) {
+                        audioEngine.playNext()
+                    } else {
+                        audioEngine.playPrevious(forcePreviousSong = false)
+                    }
+                    return true
+                }
             }
             KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
             KeyEvent.KEYCODE_HEADSETHOOK -> {
@@ -147,15 +173,7 @@ class HardwareKeyController(
             }
             KeyEvent.KEYCODE_MEDIA_PAUSE,
             KeyEvent.KEYCODE_MEDIA_STOP -> {
-                audioEngine.pause()
-                return true
-            }
-            KeyEvent.KEYCODE_MEDIA_FAST_FORWARD -> {
-                audioEngine.fastForward(5000L)
-                return true
-            }
-            KeyEvent.KEYCODE_MEDIA_REWIND -> {
-                audioEngine.rewind(5000L)
+                audioEngine.stop()
                 return true
             }
         }
@@ -174,6 +192,24 @@ class HardwareKeyController(
         context: Context,
         audioEngine: AudioTransport
     ): Boolean {
+        // Transport keys hold = continuous seek (±5000ms)
+        when (keyCode) {
+            KeyEvent.KEYCODE_MEDIA_NEXT,
+            KeyEvent.KEYCODE_MEDIA_FAST_FORWARD -> {
+                isSeekLongPress = true
+                audioEngine.fastForward(SpindleGlossary.SEEK_STEP_MANUAL_MS)
+                showToast(context, "Fast Forward")
+                return true
+            }
+            KeyEvent.KEYCODE_MEDIA_PREVIOUS,
+            KeyEvent.KEYCODE_MEDIA_REWIND -> {
+                isSeekLongPress = true
+                audioEngine.rewind(SpindleGlossary.SEEK_STEP_MANUAL_MS)
+                showToast(context, "Rewind")
+                return true
+            }
+        }
+
         val prefs = context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
         val volumeSkipEnabled = prefs.getBoolean("pref_volume_skip", true)
 
@@ -208,6 +244,30 @@ class HardwareKeyController(
         context: Context,
         audioEngine: AudioTransport
     ): Boolean {
+        // 1. Handle transport keys (tap = skip, hold = seek)
+        when (keyCode) {
+            KeyEvent.KEYCODE_MEDIA_NEXT,
+            KeyEvent.KEYCODE_MEDIA_FAST_FORWARD,
+            KeyEvent.KEYCODE_MEDIA_PREVIOUS,
+            KeyEvent.KEYCODE_MEDIA_REWIND -> {
+                if (wasSyntheticDownHandled) {
+                    wasSyntheticDownHandled = false
+                    return true
+                }
+                if (isSeekLongPress) {
+                    isSeekLongPress = false
+                    return true
+                }
+                // Tap detected -> skip track
+                if (keyCode == KeyEvent.KEYCODE_MEDIA_NEXT || keyCode == KeyEvent.KEYCODE_MEDIA_FAST_FORWARD) {
+                    audioEngine.playNext()
+                } else {
+                    audioEngine.playPrevious(forcePreviousSong = false)
+                }
+                return true
+            }
+        }
+
         val prefs = context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
         val isDapMode = prefs.getBoolean("pref_dap_hardware_mode", false)
 
@@ -215,8 +275,6 @@ class HardwareKeyController(
             when (keyCode) {
                 KeyEvent.KEYCODE_CAMERA,
                 KeyEvent.KEYCODE_FOCUS,
-                KeyEvent.KEYCODE_MEDIA_NEXT,
-                KeyEvent.KEYCODE_MEDIA_PREVIOUS,
                 KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
                 KeyEvent.KEYCODE_MEDIA_PLAY,
                 KeyEvent.KEYCODE_MEDIA_PAUSE,
@@ -318,7 +376,7 @@ class HardwareKeyController(
                 }
                 KeyEvent.KEYCODE_MEDIA_PAUSE,
                 KeyEvent.KEYCODE_MEDIA_STOP -> {
-                    audioEngine.pause()
+                    audioEngine.stop()
                     return true
                 }
                 KeyEvent.KEYCODE_MEDIA_NEXT,
@@ -328,7 +386,7 @@ class HardwareKeyController(
                 }
                 KeyEvent.KEYCODE_MEDIA_PREVIOUS,
                 KeyEvent.KEYCODE_MEDIA_REWIND -> {
-                    audioEngine.playPrevious(forcePreviousSong = true)
+                    audioEngine.playPrevious(forcePreviousSong = false)
                     return true
                 }
                 KeyEvent.KEYCODE_DPAD_CENTER -> {
@@ -339,13 +397,13 @@ class HardwareKeyController(
                 }
                 KeyEvent.KEYCODE_DPAD_LEFT -> {
                     if (isDapMode) {
-                        audioEngine.rewind(5000L)
+                        audioEngine.rewind(SpindleGlossary.SEEK_STEP_MANUAL_MS)
                         return true
                     }
                 }
                 KeyEvent.KEYCODE_DPAD_RIGHT -> {
                     if (isDapMode) {
-                        audioEngine.fastForward(5000L)
+                        audioEngine.fastForward(SpindleGlossary.SEEK_STEP_MANUAL_MS)
                         return true
                     }
                 }

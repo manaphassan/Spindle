@@ -62,3 +62,30 @@ Historical drift across data layers, UI copy, DSP code, and documentation is per
 | **Favorite** | `TrackEntity.isFavorite`, `TrackDao.updateFavorite` | `Track.isFavorite` | `SpindleGlossary.TERM_FAVORITE` |
 | **Rating** | `TrackEntity.rating`, `TrackDao.updateRating` | — | `SpindleGlossary.TERM_RATING` |
 | **Chassis** | `CassetteTheme.kt`, `Metal81ChassisView.kt` | `page_lite_player.xml` | `SpindleGlossary.TERM_CHASSIS` |
+| **Fade** | `CrossfadeMode.kt` | — | `SpindleGlossary.TERM_FADE` |
+
+---
+
+## 5. Transport & Queue Specification (§8.2)
+
+### 5.1 Stop vs. Eject
+- **Stop = Pause**: Mechanically disengages the tape head and pinch roller. Playback halts immediately, preserving current track position and active queue.
+- **Eject**: Physically unloads the cassette. Playback stops, active queue clears, and last-played persistent pointers are purged.
+
+### 5.2 Previous: Universal DAP Rule
+- **`currentPosition > 3000ms`**: Restarts the active track from `0:00`.
+- **`currentPosition <= 3000ms`**: Jumps to the preceding track in the queue.
+- This rule applies universally across on-screen transport buttons, chassis controls, lockscreens, and hardware keys.
+
+### 5.3 Tap vs. Hold Semantics
+- **Tap (Single Press)**:
+  - Next / Fast Forward: Skip to Next Track (`playNext()`).
+  - Previous / Rewind: Skip to Previous Track via Universal Rule (`playPrevious(forcePreviousSong = false)`).
+- **Hold (Long Press)**:
+  - Fast Forward: Continuous forward seeking (`fastForward(5000L)`).
+  - Rewind: Continuous backward seeking (`rewind(5000L)`).
+
+### 5.4 Track Transition
+- **Gapless**: 0-latency sample-accurate audio buffer transition.
+- **Fade**: Equal-power volume modulation (FADE 2s, FADE 4s). "Crossfade" is retired in single-player configurations.
+

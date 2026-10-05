@@ -1,6 +1,8 @@
 package com.hana.spindle.playback
 
+import com.hana.spindle.data.MixtapePartition
 import com.hana.spindle.data.TagParser
+import com.hana.spindle.data.db.TrackEntity
 import org.junit.Assert.*
 import org.junit.Test
 import java.io.File
@@ -725,5 +727,36 @@ class AudioDspAndFoleyTest {
         val (leftZero, rightFull) = calcStereoLevels(0.75f, 1.0f)
         assertEquals(0.0f, leftZero, 0.001f)
         assertEquals(0.75f, rightFull, 0.001f)
+    }
+
+    @Test
+    fun testSpindleHapticsConstants() {
+        assertEquals("pref_tactile_haptics_enabled", SpindleHaptics.PREF_HAPTICS_ENABLED)
+        assertEquals(35L, SpindleHaptics.DURATION_SOLENOID_MS)
+        assertEquals(18L, SpindleHaptics.DURATION_RELEASE_MS)
+        assertEquals(12L, SpindleHaptics.DURATION_SWITCH_MS)
+        assertEquals(8L, SpindleHaptics.DURATION_METRO_TICK_MS)
+        assertEquals(15L, SpindleHaptics.DURATION_TILE_PRESS_MS)
+        assertEquals(6L, SpindleHaptics.DURATION_ROTARY_RATCHET_MS)
+    }
+
+    @Test
+    fun testMixtapePartitionBalancing() {
+        val tracks = listOf(
+            TrackEntity(title = "T1", artist = "A", album = "Alb", durationMs = 180000L, path = "/t1.flac"), // 3m
+            TrackEntity(title = "T2", artist = "A", album = "Alb", durationMs = 240000L, path = "/t2.flac"), // 4m
+            TrackEntity(title = "T3", artist = "A", album = "Alb", durationMs = 300000L, path = "/t3.flac"), // 5m
+            TrackEntity(title = "T4", artist = "A", album = "Alb", durationMs = 200000L, path = "/t4.flac"), // 3.3m
+            TrackEntity(title = "T5", artist = "A", album = "Alb", durationMs = 260000L, path = "/t5.flac")  // 4.3m
+        ) // Total = 1180000 ms (~19.6 min), Half = 590000 ms (~9.8 min)
+        // Accumulated: T1=180k, T1+T2=420k, T1+T2+T3=720k (diff from 590k: 720-590 = 130k vs 590-420 = 170k).
+        // Since 130k < 170k, splitIndex = 3 (T1, T2, T3 on Side A; T4, T5 on Side B).
+
+        val partition = MixtapePartition.partition(tracks)
+        assertEquals(3, partition.splitIndex)
+        assertEquals(3, partition.sideA.size)
+        assertEquals(2, partition.sideB.size)
+        assertEquals(720000L, partition.sideADurationMs)
+        assertEquals(460000L, partition.sideBDurationMs)
     }
 }

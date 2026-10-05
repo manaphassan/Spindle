@@ -56,4 +56,35 @@ object SpindleGlossary {
      * Canonical term for high-resolution HAL audio passthrough.
      */
     const val TERM_HI_RES_PASSTHROUGH = "Hi-Res Passthrough"
+
+    /**
+     * Canonical transport verbs and actions (§8.2).
+     */
+    const val ACTION_PLAY = "Play"
+    const val ACTION_PAUSE = "Pause"
+    const val ACTION_STOP = "Stop"
+    const val ACTION_EJECT = "Eject"
+    const val ACTION_PREV = "Previous"
+    const val ACTION_NEXT = "Next"
+    const val ACTION_REW = "Rewind"
+    const val ACTION_FF = "Fast Forward"
+
+    /**
+     * Canonical playback queue terms.
+     */
+    const val TERM_QUEUE = "Queue"
+    const val ACTION_PLAY_NEXT = "Play Next"
+    const val ACTION_ADD_TO_QUEUE = "Add to Queue"
+
+    /**
+     * Canonical track transition terms.
+     */
+    const val TERM_GAPLESS = "Gapless"
+    const val TERM_FADE = "Fade"
+
+    /**
+     * Standard DAP seek constants.
+     */
+    const val SEEK_STEP_HOLD_MS = 2500L
+    const val SEEK_STEP_MANUAL_MS = 5000L
 }

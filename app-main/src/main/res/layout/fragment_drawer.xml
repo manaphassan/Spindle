@@ -1957,6 +1957,44 @@
                                 android:checked="true" />
                         </LinearLayout>
 
+                        <!-- Tactile Haptic Synthesis -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginTop="8dp">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Tactile Haptic Synthesis"
+                                    android:textColor="@color/white"
+                                    android:textStyle="bold"
+                                    android:textSize="13.5sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="LRA waveform pulses for solenoid engagement, toggles, and wheel detents."
+                                    android:textColor="#A1A1AA"
+                                    android:textSize="11sp"
+                                    android:layout_marginTop="2dp" />
+                            </LinearLayout>
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/switchTactileHaptics"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:checked="true" />
+                        </LinearLayout>
+
                         <View
                             android:layout_width="match_parent"
                             android:layout_height="1dp"
@@ -2064,7 +2102,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Equal-power sinusoidal crossfade or true bit-perfect gapless transition."
+                                android:text="True dual-player equal-power overlapping crossfade or bit-perfect gapless transition."
                                 android:textColor="#A1A1AA"
                                 android:textSize="11sp"
                                 android:layout_marginTop="2dp"
@@ -2096,7 +2134,7 @@
                                     android:layout_height="36dp"
                                     android:layout_weight="1"
                                     android:layout_marginStart="6dp"
-                                    android:text="FADE 2S"
+                                    android:text="X-FADE 2S"
                                     android:textColor="@color/white"
                                     android:textSize="11sp"
                                     android:textStyle="bold"
@@ -2112,7 +2150,7 @@
                                     android:layout_height="36dp"
                                     android:layout_weight="1"
                                     android:layout_marginStart="6dp"
-                                    android:text="FADE 4S"
+                                    android:text="X-FADE 4S"
                                     android:textColor="@color/white"
                                     android:textSize="11sp"
                                     android:textStyle="bold"
@@ -2122,6 +2160,176 @@
                                     android:padding="0dp"
                                     app:cornerRadius="8dp" />
                             </LinearLayout>
+                        </LinearLayout>
+
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <!-- SECTION: CASSETTE TAPE BIAS & DOLBY NR -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="4dp"
+                    app:cardBackgroundColor="#131417"
+                    android:layout_marginBottom="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="TAPE FORMULATION &amp; BIAS"
+                            android:textColor="#71717A"
+                            android:textStyle="bold"
+                            android:textSize="10.5sp"
+                            android:fontFamily="monospace"
+                            android:layout_marginBottom="8dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Analog Tape Bias"
+                            android:textColor="@color/white"
+                            android:textStyle="bold"
+                            android:textSize="13.5sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Authentic vintage magnetic bias calibration: Normal (120µs), Chrome (70µs), or pure Metal."
+                            android:textColor="#A1A1AA"
+                            android:textSize="11sp"
+                            android:layout_marginTop="2dp"
+                            android:layout_marginBottom="8dp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="14dp">
+
+                            <Button
+                                android:id="@+id/btnTapeType1"
+                                android:layout_width="0dp"
+                                android:layout_height="36dp"
+                                android:layout_weight="1"
+                                android:text="TYPE I (NORM)"
+                                android:textColor="@color/white"
+                                android:textSize="10sp"
+                                android:textStyle="bold"
+                                android:backgroundTint="#242731"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="8dp" />
+
+                            <Button
+                                android:id="@+id/btnTapeType2"
+                                android:layout_width="0dp"
+                                android:layout_height="36dp"
+                                android:layout_weight="1"
+                                android:layout_marginStart="6dp"
+                                android:text="TYPE II (CrO2)"
+                                android:textColor="@color/white"
+                                android:textSize="10sp"
+                                android:textStyle="bold"
+                                android:backgroundTint="#242731"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="8dp" />
+
+                            <Button
+                                android:id="@+id/btnTapeType4"
+                                android:layout_width="0dp"
+                                android:layout_height="36dp"
+                                android:layout_weight="1"
+                                android:layout_marginStart="6dp"
+                                android:text="TYPE IV (METAL)"
+                                android:textColor="@color/white"
+                                android:textSize="10sp"
+                                android:textStyle="bold"
+                                android:backgroundTint="#242731"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="8dp" />
+                        </LinearLayout>
+
+                        <!-- Dolby Noise Reduction -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Dolby Noise Reduction"
+                            android:textColor="@color/white"
+                            android:textStyle="bold"
+                            android:textSize="13.5sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Vintage high-frequency noise floor compander filter."
+                            android:textColor="#A1A1AA"
+                            android:textSize="11sp"
+                            android:layout_marginTop="2dp"
+                            android:layout_marginBottom="8dp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <Button
+                                android:id="@+id/btnDolbyOff"
+                                android:layout_width="0dp"
+                                android:layout_height="36dp"
+                                android:layout_weight="1"
+                                android:text="OFF"
+                                android:textColor="@color/white"
+                                android:textSize="11sp"
+                                android:textStyle="bold"
+                                android:backgroundTint="#242731"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="8dp" />
+
+                            <Button
+                                android:id="@+id/btnDolbyB"
+                                android:layout_width="0dp"
+                                android:layout_height="36dp"
+                                android:layout_weight="1"
+                                android:layout_marginStart="6dp"
+                                android:text="DOLBY B"
+                                android:textColor="@color/white"
+                                android:textSize="11sp"
+                                android:textStyle="bold"
+                                android:backgroundTint="#242731"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="8dp" />
+
+                            <Button
+                                android:id="@+id/btnDolbyC"
+                                android:layout_width="0dp"
+                                android:layout_height="36dp"
+                                android:layout_weight="1"
+                                android:layout_marginStart="6dp"
+                                android:text="DOLBY C"
+                                android:textColor="@color/white"
+                                android:textSize="11sp"
+                                android:textStyle="bold"
+                                android:backgroundTint="#242731"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="8dp" />
                         </LinearLayout>
 
                     </LinearLayout>

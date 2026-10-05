@@ -1292,6 +1292,14 @@ class DrawerFragment : Fragment() {
             }
         }
 
+        binding.switchTactileHaptics.isChecked = app.audioEngine.foleyEngine.haptics.isEnabled
+        binding.switchTactileHaptics.setOnCheckedChangeListener { _, isChecked ->
+            app.audioEngine.foleyEngine.haptics.setHapticsEnabled(isChecked)
+            if (isChecked) {
+                app.audioEngine.foleyEngine.playSwitchSnap()
+            }
+        }
+
         // 7. ReplayGain Loudness Calibration
         fun updateReplayGainPills(mode: ReplayGainMode) {
             val isOff = mode == ReplayGainMode.OFF
@@ -1357,13 +1365,91 @@ class DrawerFragment : Fragment() {
             app.audioEngine.setCrossfadeMode(CrossfadeMode.CROSSFADE_2S)
             updateCrossfadePills(CrossfadeMode.CROSSFADE_2S)
             it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-            Toast.makeText(requireContext(), "Crossfade Transition Enabled (2s)", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Dual-Player Crossfade Enabled (2s)", Toast.LENGTH_SHORT).show()
         }
         binding.btnTransFade4s.setOnClickListener {
             app.audioEngine.setCrossfadeMode(CrossfadeMode.CROSSFADE_4S)
             updateCrossfadePills(CrossfadeMode.CROSSFADE_4S)
             it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-            Toast.makeText(requireContext(), "Crossfade Transition Enabled (4s)", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Dual-Player Crossfade Enabled (4s)", Toast.LENGTH_SHORT).show()
+        }
+
+        // 9. Tape Formulation (Bias) & Dolby NR
+        fun updateTapeBiasPills(formulation: AudioFxController.TapeFormulation) {
+            val isType1 = formulation == AudioFxController.TapeFormulation.TYPE_I_NORMAL
+            val isType2 = formulation == AudioFxController.TapeFormulation.TYPE_II_CHROME
+            val isType4 = formulation == AudioFxController.TapeFormulation.TYPE_IV_METAL
+
+            binding.btnTapeType1.setTextColor(if (isType1) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnTapeType1.backgroundTintList = ColorStateList.valueOf(if (isType1) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+
+            binding.btnTapeType2.setTextColor(if (isType2) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnTapeType2.backgroundTintList = ColorStateList.valueOf(if (isType2) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+
+            binding.btnTapeType4.setTextColor(if (isType4) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnTapeType4.backgroundTintList = ColorStateList.valueOf(if (isType4) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+        }
+
+        fun updateDolbyPills(mode: AudioFxController.DolbyMode) {
+            val isOff = mode == AudioFxController.DolbyMode.OFF
+            val isB = mode == AudioFxController.DolbyMode.DOLBY_B
+            val isC = mode == AudioFxController.DolbyMode.DOLBY_C
+
+            binding.btnDolbyOff.setTextColor(if (isOff) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnDolbyOff.backgroundTintList = ColorStateList.valueOf(if (isOff) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+
+            binding.btnDolbyB.setTextColor(if (isB) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnDolbyB.backgroundTintList = ColorStateList.valueOf(if (isB) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+
+            binding.btnDolbyC.setTextColor(if (isC) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnDolbyC.backgroundTintList = ColorStateList.valueOf(if (isC) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+        }
+
+        updateTapeBiasPills(app.audioEngine.audioFxController.currentTapeFormulation)
+        updateDolbyPills(app.audioEngine.audioFxController.currentDolbyMode)
+
+        binding.btnTapeType1.setOnClickListener {
+            app.audioEngine.setTapeFormulation(AudioFxController.TapeFormulation.TYPE_I_NORMAL)
+            updateTapeBiasPills(AudioFxController.TapeFormulation.TYPE_I_NORMAL)
+            app.audioEngine.foleyEngine.playSwitchSnap()
+            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            Toast.makeText(requireContext(), "Tape Bias: Type I Normal (120µs)", Toast.LENGTH_SHORT).show()
+        }
+        binding.btnTapeType2.setOnClickListener {
+            app.audioEngine.setTapeFormulation(AudioFxController.TapeFormulation.TYPE_II_CHROME)
+            updateTapeBiasPills(AudioFxController.TapeFormulation.TYPE_II_CHROME)
+            app.audioEngine.foleyEngine.playSwitchSnap()
+            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            Toast.makeText(requireContext(), "Tape Bias: Type II Chrome (70µs)", Toast.LENGTH_SHORT).show()
+        }
+        binding.btnTapeType4.setOnClickListener {
+            app.audioEngine.setTapeFormulation(AudioFxController.TapeFormulation.TYPE_IV_METAL)
+            updateTapeBiasPills(AudioFxController.TapeFormulation.TYPE_IV_METAL)
+            app.audioEngine.foleyEngine.playSwitchSnap()
+            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            Toast.makeText(requireContext(), "Tape Bias: Type IV Metal (70µs)", Toast.LENGTH_SHORT).show()
+        }
+
+        binding.btnDolbyOff.setOnClickListener {
+            app.audioEngine.setDolbyMode(AudioFxController.DolbyMode.OFF)
+            updateDolbyPills(AudioFxController.DolbyMode.OFF)
+            app.audioEngine.foleyEngine.playSwitchSnap()
+            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            Toast.makeText(requireContext(), "Dolby NR: OFF", Toast.LENGTH_SHORT).show()
+        }
+        binding.btnDolbyB.setOnClickListener {
+            app.audioEngine.setDolbyMode(AudioFxController.DolbyMode.DOLBY_B)
+            updateDolbyPills(AudioFxController.DolbyMode.DOLBY_B)
+            app.audioEngine.foleyEngine.playSwitchSnap()
+            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            Toast.makeText(requireContext(), "Dolby NR: B (10dB High Shelf Cut)", Toast.LENGTH_SHORT).show()
+        }
+        binding.btnDolbyC.setOnClickListener {
+            app.audioEngine.setDolbyMode(AudioFxController.DolbyMode.DOLBY_C)
+            updateDolbyPills(AudioFxController.DolbyMode.DOLBY_C)
+            app.audioEngine.foleyEngine.playSwitchSnap()
+            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            Toast.makeText(requireContext(), "Dolby NR: C (20dB High Shelf Cut)", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -1588,7 +1674,7 @@ class DrawerFragment : Fragment() {
         updateMusicPathDisplay(app)
 
         viewLifecycleOwner.lifecycleScope.launch {
-            val count = app.database.songDao().getSongCount()
+            val count = app.database.trackDao().getTrackCount()
             binding.tvSongCount.text = "$count tracks indexed in local database"
         }
 
@@ -1615,7 +1701,7 @@ class DrawerFragment : Fragment() {
 
             viewLifecycleOwner.lifecycleScope.launch {
                 app.musicScanner.scanAll()
-                val count = app.database.songDao().getSongCount()
+                val count = app.database.trackDao().getTrackCount()
                 binding.tvSongCount.text = "$count tracks indexed in local database"
                 updateMusicPathDisplay(app)
                 binding.btnRescanLibrary.text = "RESCAN MUSIC STORAGE"
@@ -1640,7 +1726,7 @@ class DrawerFragment : Fragment() {
 
             viewLifecycleOwner.lifecycleScope.launch {
                 app.musicScanner.rebuildFastIndexCache()
-                val count = app.database.songDao().getSongCount()
+                val count = app.database.trackDao().getTrackCount()
                 binding.tvSongCount.text = "$count tracks indexed in local database"
                 updateMusicPathDisplay(app)
                 binding.btnRebuildIndexCache.isEnabled = true

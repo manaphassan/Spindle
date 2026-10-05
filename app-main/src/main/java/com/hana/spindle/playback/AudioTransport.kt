@@ -1,5 +1,7 @@
 package com.hana.spindle.playback
 
+import com.hana.spindle.core.SpindleGlossary
+
 /**
  * Common playback transport interface for hardware buttons, media sessions,
  * and remote transport controllers (§8.2).
@@ -10,7 +12,8 @@ interface AudioTransport {
     fun togglePlayPause()
     fun play()
     fun pause()
-    fun rewind(deltaMs: Long = 10_000L)
-    fun fastForward(deltaMs: Long = 10_000L)
+    fun stop() { pause() }
+    fun rewind(deltaMs: Long = SpindleGlossary.SEEK_STEP_MANUAL_MS)
+    fun fastForward(deltaMs: Long = SpindleGlossary.SEEK_STEP_MANUAL_MS)
     val isPlaying: Boolean
 }

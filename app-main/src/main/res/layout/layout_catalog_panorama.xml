@@ -48,9 +48,10 @@
                     android:layout_height="wrap_content"
                     android:text="now playing"
                     android:textColor="@color/white"
-                    android:textSize="22sp"
+                    android:textSize="26sp"
                     android:textStyle="bold"
                     android:fontFamily="sans-serif-light"
+                    android:letterSpacing="-0.03"
                     android:layout_marginBottom="12dp" />
 
                 <!-- Now Playing Card -->
@@ -235,9 +236,10 @@
                     android:layout_height="wrap_content"
                     android:text="explore"
                     android:textColor="@color/white"
-                    android:textSize="22sp"
+                    android:textSize="26sp"
                     android:textStyle="bold"
                     android:fontFamily="sans-serif-light"
+                    android:letterSpacing="-0.03"
                     android:layout_marginBottom="12dp" />
 
                 <!-- Typographic Navigation Items -->
@@ -450,9 +452,10 @@
                     android:layout_height="wrap_content"
                     android:text="recent &amp; new"
                     android:textColor="@color/white"
-                    android:textSize="22sp"
+                    android:textSize="26sp"
                     android:textStyle="bold"
                     android:fontFamily="sans-serif-light"
+                    android:letterSpacing="-0.03"
                     android:layout_marginBottom="12dp" />
 
                 <!-- 2x2 Metro Grid of Album Art Tiles -->
@@ -743,9 +746,10 @@
                     android:layout_height="wrap_content"
                     android:text="sound &amp; tools"
                     android:textColor="@color/white"
-                    android:textSize="22sp"
+                    android:textSize="26sp"
                     android:textStyle="bold"
                     android:fontFamily="sans-serif-light"
+                    android:letterSpacing="-0.03"
                     android:layout_marginBottom="12dp" />
 
                 <!-- Card 1: 10-Band EQ & Sound Deck -->

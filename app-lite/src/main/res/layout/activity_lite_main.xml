@@ -200,7 +200,7 @@
             android:layout_width="match_parent"
             android:layout_height="36dp"
             android:background="@drawable/bg_metro_search"
-            android:hint="filter songs, artists, albums..."
+            android:hint="filter tracks, artists, albums..."
             android:textColorHint="@color/lite_metro_text_muted"
             android:textColor="@color/lite_metro_text_primary"
             android:textSize="11.5sp"

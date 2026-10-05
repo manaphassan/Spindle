@@ -164,6 +164,7 @@ class LiteAudioEngine(private val context: Context) :
     }
 
     private fun chainNextTrack() {
+        if (playMode != PlayMode.ALL) return
         val nextIndex = currentIndex + 1
         if (nextIndex in playlist.indices && !isNextPlayerChained) {
             isNextPlayerChained = true
@@ -215,7 +216,11 @@ class LiteAudioEngine(private val context: Context) :
     fun calculateEffectiveVolume(index: Int = currentIndex): Float {
         if (replayGainMode == ReplayGainMode.OFF) return 1.0f
         val track = if (index in playlist.indices) playlist[index] else null ?: return 1.0f
-        val gainDb = track.replayGainDb ?: 0f
+        val gainDb = when (replayGainMode) {
+            ReplayGainMode.ALBUM -> track.replayGainAlbumDb ?: track.replayGainDb ?: 0f
+            ReplayGainMode.TRACK -> track.replayGainDb ?: 0f
+            ReplayGainMode.OFF -> 0f
+        }
         if (gainDb == 0f) return 1.0f
         val linear = Math.pow(10.0, (gainDb / 20.0)).toFloat()
         return linear.coerceIn(0.1f, 1.25f)
@@ -321,6 +326,7 @@ class LiteAudioEngine(private val context: Context) :
     }
 
     fun pause() {
+        wasPlayingBeforeLoss = false
         primaryPlayer?.pause()
         isPlaying = false
         mainHandler.removeCallbacks(progressRunnable)
@@ -451,17 +457,28 @@ class LiteAudioEngine(private val context: Context) :
         return true
     }
 
+    private var wasPlayingBeforeLoss = false
+
     override fun onAudioFocusChange(focusChange: Int) {
         when (focusChange) {
-            AudioManager.AUDIOFOCUS_LOSS -> pause()
-            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> pause()
+            AudioManager.AUDIOFOCUS_LOSS -> {
+                wasPlayingBeforeLoss = false
+                pause()
+            }
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+                wasPlayingBeforeLoss = isPlaying
+                pause()
+            }
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
                 val duckVol = calculateEffectiveVolume() * 0.2f
                 primaryPlayer?.setVolume(duckVol, duckVol)
             }
             AudioManager.AUDIOFOCUS_GAIN -> {
                 applyPlayerVolume()
-                play()
+                if (wasPlayingBeforeLoss) {
+                    wasPlayingBeforeLoss = false
+                    play()
+                }
             }
         }
     }

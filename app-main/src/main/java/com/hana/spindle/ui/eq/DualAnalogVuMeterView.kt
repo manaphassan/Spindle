@@ -287,10 +287,10 @@ class DualAnalogVuMeterView @JvmOverloads constructor(
 
         val now = SystemClock.uptimeMillis()
         if (targetLeftLevel >= 0.92f) {
-            leftPeakActiveUntil = now + 120L
+            leftPeakActiveUntil = now + 160L
         }
         if (targetRightLevel >= 0.92f) {
-            rightPeakActiveUntil = now + 120L
+            rightPeakActiveUntil = now + 160L
         }
 
         postInvalidateOnAnimation()
@@ -368,9 +368,11 @@ class DualAnalogVuMeterView @JvmOverloads constructor(
         // 5. Draw Right Dial
         drawMeterDial(canvas, rightDialRect, dialClipPathRight, arcRectRight, rightAngle, "RIGHT CH 2", rightPeakActiveUntil)
 
-        // 6. Loop animation if needles are still in motion or audio is active
+        // 6. Loop animation if needles are still in motion or audio is active or peak LED is decaying
+        val now = SystemClock.uptimeMillis()
         val isMoving = abs(leftVelocity) > 0.05f || abs(rightVelocity) > 0.05f ||
-                abs(targetLeftLevel) > 0.01f || abs(targetRightLevel) > 0.01f
+                abs(targetLeftLevel) > 0.01f || abs(targetRightLevel) > 0.01f ||
+                now < leftPeakActiveUntil || now < rightPeakActiveUntil
         if (isMoving) {
             postInvalidateOnAnimation()
         }
@@ -468,9 +470,13 @@ class DualAnalogVuMeterView @JvmOverloads constructor(
         val ledCenterX = rect.right - (14f * density)
         val ledCenterY = rect.top + (14f * density)
         val ledRadius = 3.5f * density
-        val isPeaking = SystemClock.uptimeMillis() < peakActiveUntil
+        val remainingPeakMs = peakActiveUntil - SystemClock.uptimeMillis()
+        val isPeaking = remainingPeakMs > 0L
 
         if (isPeaking && !isEink) {
+            val progress = (remainingPeakMs / 160.0f).coerceIn(0f, 1f)
+            ledGlowPaint.alpha = (140 * progress).toInt()
+            ledOnPaint.alpha = (255 * progress).toInt().coerceAtLeast(30)
             canvas.drawCircle(ledCenterX, ledCenterY, ledRadius * 2.2f, ledGlowPaint)
             canvas.drawCircle(ledCenterX, ledCenterY, ledRadius, ledOnPaint)
         } else {
@@ -536,10 +542,10 @@ class DualAnalogVuMeterView @JvmOverloads constructor(
         val targetRightAngle = levelToAngle(targetRightLevel)
 
         // 2nd-order damped harmonic oscillator:
-        // natural frequency omega_n ~ 26 rad/s (gives ~300ms rise time)
-        // damping ratio zeta ~ 0.82 (gives gentle 1-2% realistic mechanical overshoot)
-        val omegaN = 26.0f
-        val zeta = 0.82f
+        // natural frequency omega_n ~ 26.5 rad/s (gives ~300ms ANSI rise time)
+        // damping ratio zeta ~ 0.825 (gives calibrated 1.2% realistic mechanical overshoot)
+        val omegaN = 26.5f
+        val zeta = 0.825f
         val k = omegaN * omegaN
         val c = 2.0f * zeta * omegaN
 

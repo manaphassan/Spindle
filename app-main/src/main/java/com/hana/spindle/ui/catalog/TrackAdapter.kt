@@ -27,6 +27,8 @@ class TrackAdapter(
     private val scope = CoroutineScope(Dispatchers.Main)
     var activeTrackId: Long? = null
     var showTrackNumbers: Boolean = false
+    var showSideLetters: Boolean = false
+    var splitIndex: Int = -1
     var isReorderable: Boolean = false
     var onStartDrag: ((RecyclerView.ViewHolder) -> Unit)? = null
     var onRemoveFromMixtape: ((TrackEntity, Int) -> Unit)? = null
@@ -78,13 +80,21 @@ class TrackAdapter(
 
         if (showTrackNumbers) {
             b.tvTrackNumber.visibility = View.VISIBLE
-            val rawTrack = track.trackNumber
-            val trackNum = when {
-                rawTrack >= 1000 -> rawTrack % 1000
-                rawTrack > 0 -> rawTrack
-                else -> position + 1
+            if (showSideLetters && splitIndex > 0) {
+                if (position < splitIndex) {
+                    b.tvTrackNumber.text = String.format(Locale.US, "A%02d", position + 1)
+                } else {
+                    b.tvTrackNumber.text = String.format(Locale.US, "B%02d", position - splitIndex + 1)
+                }
+            } else {
+                val rawTrack = track.trackNumber
+                val trackNum = when {
+                    rawTrack >= 1000 -> rawTrack % 1000
+                    rawTrack > 0 -> rawTrack
+                    else -> position + 1
+                }
+                b.tvTrackNumber.text = String.format(Locale.US, "%02d", trackNum)
             }
-            b.tvTrackNumber.text = String.format(Locale.US, "%02d", trackNum)
             b.tvTrackNumber.setTextColor(textColorSecondary)
         } else {
             b.tvTrackNumber.visibility = View.GONE

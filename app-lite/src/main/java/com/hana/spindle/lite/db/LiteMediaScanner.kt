@@ -65,7 +65,7 @@ class LiteMediaScanner(private val context: Context) {
 
                         val title = it.getString(titleIdx) ?: file.nameWithoutExtension
                         val artist = it.getString(artistIdx) ?: "Unknown Artist"
-                        val album = it.getString(albumIdx) ?: "Spindle Vault"
+                        val album = it.getString(albumIdx) ?: "Unknown Album"
                         val duration = it.getLong(durationIdx)
                         val ext = file.extension.uppercase()
 
@@ -146,7 +146,8 @@ class LiteMediaScanner(private val context: Context) {
                 bitrate = fastMeta.bitrate,
                 sampleRate = fastMeta.sampleRate,
                 bitDepth = fastMeta.bitDepth,
-                replayGainDb = fastMeta.replayGainTrackDb ?: fastMeta.replayGainAlbumDb
+                replayGainDb = fastMeta.replayGainTrackDb,
+                replayGainAlbumDb = fastMeta.replayGainAlbumDb
             )
         }
 
@@ -159,7 +160,7 @@ class LiteMediaScanner(private val context: Context) {
             val artist = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
                 ?: "Unknown Artist"
             val album = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM)
-                ?: "MicroSD Vault"
+                ?: "Unknown Album"
             val durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
             val duration = durationStr?.toLongOrNull() ?: 0L
             val bitrateStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE)

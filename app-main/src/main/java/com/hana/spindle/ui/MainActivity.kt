@@ -390,6 +390,10 @@ class MainActivity : AppCompatActivity() {
         navigateToCatalog(openNowPlaying = true)
     }
 
+    fun navigateToVault(openNowPlaying: Boolean = false, tab: Int = -1) {
+        navigateToCatalog(openNowPlaying, tab)
+    }
+
     fun navigateToCatalog(openNowPlaying: Boolean = false, tab: Int = -1) {
         binding.viewPager.isUserInputEnabled = false
         binding.catalogContainer.visibility = View.VISIBLE

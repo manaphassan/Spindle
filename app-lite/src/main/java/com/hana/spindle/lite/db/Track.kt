@@ -15,7 +15,8 @@ data class Track(
     val bitrate: Int = 0,
     val sampleRate: Int = 0,
     val bitDepth: Int = 0,
-    val replayGainDb: Float? = null
+    val replayGainDb: Float? = null,
+    val replayGainAlbumDb: Float? = null
 ) {
     val formattedDuration: String
         get() {

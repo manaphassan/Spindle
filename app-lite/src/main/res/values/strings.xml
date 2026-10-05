@@ -13,13 +13,13 @@
     <string name="transport_fast_forward">FFWD</string>
     <string name="transport_eject">EJECT</string>
 
-    <string name="drawer_title">CASSETTE VAULT</string>
+    <string name="drawer_title">VAULT</string>
     <string name="drawer_empty">No audio files found. Insert MicroSD or add music to /Music/</string>
     <string name="scan_library">Scan MicroSD</string>
     <string name="scanning">Indexing storage...</string>
     <string name="ready">READY</string>
 
     <string name="default_artist">Unknown Artist</string>
-    <string name="default_title">No Cassette Inserted</string>
-    <string name="default_album">Spindle Vault</string>
+    <string name="default_title">NO CASSETTE LOADED</string>
+    <string name="default_album">Unknown Album</string>
 </resources>

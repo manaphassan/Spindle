@@ -16,7 +16,7 @@ class SpindleApp : Application() {
     }
 
     val musicScanner: com.hana.spindle.data.MusicScanner by lazy {
-        com.hana.spindle.data.MusicScanner(this, database.songDao())
+        com.hana.spindle.data.MusicScanner(this, database.trackDao())
     }
 
     val audioEngine: com.hana.spindle.playback.AudioEngine by lazy {

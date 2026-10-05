@@ -126,11 +126,11 @@ class LockscreenActivity : AppCompatActivity() {
         binding.lockDeckView.apply {
             onPlayClicked = { audioEngine.togglePlayPause() }
             onNextClicked = { audioEngine.playNext() }
-            onPrevClicked = { audioEngine.playPrevious(forcePreviousSong = true) }
+            onPrevClicked = { audioEngine.playPrevious(forcePreviousSong = false) }
             onNextAlbumClicked = { audioEngine.playNextAlbum() }
             onPrevAlbumClicked = { audioEngine.playPreviousAlbum() }
-            onHoldSeekForward = { audioEngine.fastForward(2500L) }
-            onHoldSeekRewind = { audioEngine.rewind(2500L) }
+            onHoldSeekForward = { audioEngine.fastForward(com.hana.spindle.core.SpindleGlossary.SEEK_STEP_HOLD_MS) }
+            onHoldSeekRewind = { audioEngine.rewind(com.hana.spindle.core.SpindleGlossary.SEEK_STEP_HOLD_MS) }
             onSeek = { progress ->
                 val total = audioEngine.playbackState.value.durationMs
                 if (total > 0) {

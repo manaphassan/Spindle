@@ -836,7 +836,7 @@
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:src="@drawable/ic_np_back"
                     app:tint="@color/text_primary"
-                    android:contentDescription="Back to Catalog" />
+                    android:contentDescription="Back to Vault" />
 
                 <View
                     android:layout_width="0dp"

@@ -96,7 +96,17 @@ class AudioEngine(
     private val scope = CoroutineScope(Dispatchers.Main + Job())
     private var progressPollJob: Job? = null
 
-    val exoPlayer: ExoPlayer
+    var exoPlayer: ExoPlayer
+        private set
+
+    var secondaryPlayer: ExoPlayer? = null
+        private set
+
+    var isCrossfading: Boolean = false
+        private set
+
+    private var crossfadeTargetIndex: Int = -1
+    var onActivePlayerChanged: ((Player) -> Unit)? = null
 
     private val _playbackState = MutableStateFlow(PlaybackState())
     val playbackState: StateFlow<PlaybackState> = _playbackState.asStateFlow()
@@ -133,6 +143,15 @@ class AudioEngine(
     // Crossfade Transition Mode (GAPLESS, 2s, 4s)
     var crossfadeMode: com.hana.spindle.core.CrossfadeMode = com.hana.spindle.core.CrossfadeMode.GAPLESS
         private set
+
+    // Vintage Cassette Side A / Side B auto-reverse split boundary
+    var mixtapeSplitIndex: Int = -1
+        private set
+    var onTapeSideFlip: ((isSideA: Boolean) -> Unit)? = null
+
+    fun setMixtapeSplitIndex(index: Int) {
+        mixtapeSplitIndex = index
+    }
 
     private fun syncQueueState() {
         _currentQueueFlow.value = playlist.toList()
@@ -173,6 +192,9 @@ class AudioEngine(
             play()
         }
     }
+
+    private var playerAudioAttributes: AudioAttributes? = null
+    private var playerLoadControl: DefaultLoadControl? = null
 
     init {
         val prefs = context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
@@ -238,13 +260,13 @@ class AudioEngine(
         }
 
         // High-resolution audio attributes
-        val audioAttributes = AudioAttributes.Builder()
+        val audioAttrs = AudioAttributes.Builder()
             .setUsage(C.USAGE_MEDIA)
             .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
             .build()
 
         // Standard load control: stable buffering for local high-bitrate MicroSD FLAC playback
-        val loadControl = DefaultLoadControl.Builder()
+        val lControl = DefaultLoadControl.Builder()
             .setBufferDurationsMs(
                 15_000, // minBufferMs: 15s
                 50_000, // maxBufferMs: 50s
@@ -255,6 +277,15 @@ class AudioEngine(
             .setPrioritizeTimeOverSizeThresholds(true)
             .build()
 
+        this.playerAudioAttributes = audioAttrs
+        this.playerLoadControl = lControl
+
+        exoPlayer = createPlayerInstance()
+        audioFxController.attachSession(exoPlayer.audioSessionId)
+        restoreLastPlayedTrack()
+    }
+
+    private fun createPlayerInstance(): ExoPlayer {
         val renderersFactory = object : DefaultRenderersFactory(context) {
             override fun buildAudioRenderers(
                 context: Context,
@@ -278,74 +309,103 @@ class AudioEngine(
                 )
             }
         }.apply {
-            // Disable Float output on Android 8.0/Oreo to prevent AudioFlinger 4MB shared-memory OOM
-            // on 24-bit 96kHz/192kHz streams (not enough memory for AudioTrack).
             setEnableAudioFloatOutput(false)
             setEnableAudioTrackPlaybackParams(false)
         }
 
-        exoPlayer = ExoPlayer.Builder(context, renderersFactory)
-            .setAudioAttributes(audioAttributes, true)
-            .setLoadControl(loadControl)
+        val builder = ExoPlayer.Builder(context, renderersFactory)
             .setWakeMode(C.WAKE_MODE_LOCAL)
-            .build().apply {
-                repeatMode = Player.REPEAT_MODE_OFF
-                addAnalyticsListener(androidx.media3.exoplayer.util.EventLogger("SpindlePlayer"))
-                addListener(object : Player.Listener {
-                    override fun onIsPlayingChanged(isPlaying: Boolean) {
-                        android.util.Log.d("AudioEngine", "onIsPlayingChanged: $isPlaying")
-                        _playbackState.value = _playbackState.value.copy(isPlaying = isPlaying)
-                        notifyWidgetUpdate()
-                        if (isPlaying) {
-                            startProgressPolling()
-                        } else {
-                            stopProgressPolling()
-                            saveLastPlayed(playlist.getOrNull(currentIndex)?.path, exoPlayer.currentPosition)
-                        }
-                    }
+        playerAudioAttributes?.let { builder.setAudioAttributes(it, true) }
+        playerLoadControl?.let { builder.setLoadControl(it) }
 
-                    override fun onPlaybackStateChanged(state: Int) {
-                        android.util.Log.d("AudioEngine", "onPlaybackStateChanged: state=$state")
-                        if (state == Player.STATE_ENDED) {
-                            handleTrackEnded()
-                        }
-                    }
+        val player = builder.build()
+        attachPlayerListeners(player)
+        return player
+    }
 
-                    override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-                        if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
-                            val newIndex = exoPlayer.currentMediaItemIndex
-                            if (newIndex in playlist.indices && newIndex != currentIndex) {
-                                currentIndex = newIndex
-                                val newSong = playlist[newIndex]
-                                val physicalPath = CueSheetParser.getAudioFilePath(newSong.path)
-                                val file = File(physicalPath)
-                                applyReplayGain(file)
-                                _playbackState.value = _playbackState.value.copy(
-                                    currentTrack = newSong,
-                                    durationMs = newSong.durationMs,
-                                    currentPositionMs = 0L,
-                                    progress = 0f
-                                )
-                                loadLyricsForTrack(newSong, physicalPath)
-                                metricsTracker.updateSourceSpecs(
-                                    format = newSong.fileFormat,
-                                    bitDepth = newSong.bitDepth,
-                                    sampleRate = newSong.sampleRate,
-                                    bitrateKbps = if (newSong.bitrateKbps > 0) newSong.bitrateKbps else 1411
-                                )
-                                syncQueueState()
-                            }
-                        }
-                    }
-
-                    override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
-                        android.util.Log.e("AudioEngine", "ExoPlayer error: ${error.errorCodeName} (code=${error.errorCode}) - ${error.message}", error)
-                    }
-                })
+    private fun attachPlayerListeners(player: ExoPlayer) {
+        player.repeatMode = if (_playbackState.value.repeatMode == RepeatMode.ONE) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
+        player.addAnalyticsListener(androidx.media3.exoplayer.util.EventLogger("SpindlePlayer"))
+        player.addListener(object : Player.Listener {
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                if (player !== exoPlayer) return
+                android.util.Log.d("AudioEngine", "onIsPlayingChanged: $isPlaying")
+                _playbackState.value = _playbackState.value.copy(isPlaying = isPlaying)
+                notifyWidgetUpdate()
+                if (isPlaying) {
+                    startProgressPolling()
+                } else if (!isCrossfading) {
+                    stopProgressPolling()
+                    saveLastPlayed(playlist.getOrNull(currentIndex)?.path, exoPlayer.currentPosition)
+                }
             }
 
-        audioFxController.attachSession(exoPlayer.audioSessionId)
-        restoreLastPlayedSong()
+            override fun onPlaybackStateChanged(state: Int) {
+                if (player !== exoPlayer) return
+                android.util.Log.d("AudioEngine", "onPlaybackStateChanged: state=$state")
+                if (state == Player.STATE_ENDED) {
+                    handleTrackEnded()
+                }
+            }
+
+            override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                if (player !== exoPlayer) return
+                val newIndex = exoPlayer.currentMediaItemIndex
+                if (newIndex in playlist.indices && (newIndex != currentIndex || reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO || reason == Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT)) {
+                    currentIndex = newIndex
+                    val newTrack = playlist[newIndex]
+                    onTrackTransition(newTrack, reason)
+                }
+            }
+
+            override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+                android.util.Log.e("AudioEngine", "ExoPlayer error: ${error.errorCodeName} (code=${error.errorCode}) - ${error.message}", error)
+                if (player === secondaryPlayer) {
+                    cancelCrossfade()
+                }
+            }
+        })
+    }
+
+    private fun onTrackTransition(track: TrackEntity, reason: Int) {
+        val physicalPath = CueSheetParser.getAudioFilePath(track.path)
+        val file = File(physicalPath)
+        applyReplayGain(file)
+        _playbackState.value = _playbackState.value.copy(
+            currentTrack = track,
+            durationMs = track.durationMs,
+            currentPositionMs = 0L,
+            progress = 0f,
+            currentLyrics = null,
+            activeLyricIndex = -1
+        )
+        loadLyricsForTrack(track, physicalPath)
+        metricsTracker.updateSourceSpecs(
+            format = track.fileFormat,
+            bitDepth = track.bitDepth,
+            sampleRate = track.sampleRate,
+            bitrateKbps = if (track.bitrateKbps > 0) track.bitrateKbps else 1411
+        )
+        scope.launch(Dispatchers.IO) {
+            try {
+                val app = context.applicationContext as? com.hana.spindle.SpindleApp
+                app?.database?.trackDao()?.incrementPlayCount(track.id)
+            } catch (ignored: Exception) {}
+        }
+        saveLastPlayed(track.path, 0L)
+        syncQueueState()
+    }
+
+    private fun resyncExoPlayerPlaylist(resetPosition: Boolean = false) {
+        val curPos = if (resetPosition || exoPlayer.playbackState == Player.STATE_IDLE) 0L else exoPlayer.currentPosition
+        val wasPlaying = exoPlayer.isPlaying
+        if (playlist.isNotEmpty()) {
+            val safeIndex = currentIndex.coerceIn(0, playlist.size - 1)
+            exoPlayer.setMediaItems(playlist.map { buildMediaItem(it) }, safeIndex, curPos)
+            if (wasPlaying) exoPlayer.play()
+        } else {
+            exoPlayer.clearMediaItems()
+        }
     }
 
     private fun handleTrackEnded() {
@@ -357,17 +417,41 @@ class AudioEngine(
             return
         }
 
+        if (isCrossfading && secondaryPlayer != null) {
+            completeCrossfade()
+            return
+        }
+
+        // Vintage Cassette Side A -> Side B Auto-Reverse transition
+        val nextIdx = currentIndex + 1
+        val isCrossingToSideB = (nextIdx == mixtapeSplitIndex && mixtapeSplitIndex > 0 && nextIdx < playlist.size)
+        val isWrappingToSideA = (nextIdx >= playlist.size && mixtapeSplitIndex > 0 && _playbackState.value.repeatMode == RepeatMode.ALL)
+
+        if (isCrossingToSideB || isWrappingToSideA) {
+            val destinationIsSideA = isWrappingToSideA
+            scope.launch {
+                foleyEngine.playReleaseClick()
+                kotlinx.coroutines.delay(400)
+                foleyEngine.playCarriageEject()
+                kotlinx.coroutines.delay(350)
+                foleyEngine.playSolenoidClack()
+                onTapeSideFlip?.invoke(destinationIsSideA)
+                playNext(isUserInitiated = false)
+            }
+            return
+        }
+
         when (_playbackState.value.repeatMode) {
             RepeatMode.ONE -> {
                 seekTo(0)
-                play()
+                playCurrentTrack(isUserInitiated = false)
             }
             RepeatMode.ALL -> {
-                playNext()
+                playNext(isUserInitiated = false)
             }
             RepeatMode.OFF -> {
                 if (currentIndex + 1 < playlist.size) {
-                    playNext()
+                    playNext(isUserInitiated = false)
                 } else {
                     pause()
                     seekTo(0)
@@ -407,7 +491,19 @@ class AudioEngine(
         }
         val insertIndex = (currentIndex + 1).coerceIn(0, playlist.size)
         playlist.add(insertIndex, track)
-        originalPlaylist.add(track)
+        val currentTrackId = playlist.getOrNull(currentIndex)?.id
+        val origInsertIndex = if (currentTrackId != null) {
+            val idx = originalPlaylist.indexOfFirst { it.id == currentTrackId }
+            if (idx >= 0) idx + 1 else originalPlaylist.size
+        } else {
+            originalPlaylist.size
+        }
+        originalPlaylist.add(origInsertIndex.coerceIn(0, originalPlaylist.size), track)
+        if (insertIndex in 0..exoPlayer.mediaItemCount && exoPlayer.mediaItemCount == playlist.size - 1) {
+            exoPlayer.addMediaItem(insertIndex, buildMediaItem(track))
+        } else {
+            resyncExoPlayerPlaylist()
+        }
         syncQueueState()
     }
 
@@ -418,6 +514,11 @@ class AudioEngine(
         }
         playlist.add(track)
         originalPlaylist.add(track)
+        if (exoPlayer.mediaItemCount == playlist.size - 1) {
+            exoPlayer.addMediaItem(buildMediaItem(track))
+        } else {
+            resyncExoPlayerPlaylist()
+        }
         syncQueueState()
     }
 
@@ -432,40 +533,72 @@ class AudioEngine(
         } else if (fromPosition > currentIndex && toPosition <= currentIndex) {
             currentIndex++
         }
+        val origIndex = originalPlaylist.indexOfFirst { it.id == item.id }
+        if (origIndex >= 0) {
+            val origItem = originalPlaylist.removeAt(origIndex)
+            val newOrigIndex = toPosition.coerceIn(0, originalPlaylist.size)
+            originalPlaylist.add(newOrigIndex, origItem)
+        }
+        if (fromPosition < exoPlayer.mediaItemCount && toPosition < exoPlayer.mediaItemCount && exoPlayer.mediaItemCount == playlist.size) {
+            exoPlayer.moveMediaItem(fromPosition, toPosition)
+        } else {
+            resyncExoPlayerPlaylist()
+        }
         syncQueueState()
     }
 
     fun removeQueueItem(position: Int) {
         if (position !in playlist.indices) return
+        val trackToRemove = playlist[position]
+        val origIndex = originalPlaylist.indexOfFirst { it.id == trackToRemove.id }
+        if (origIndex >= 0) {
+            originalPlaylist.removeAt(origIndex)
+        }
         if (position == currentIndex) {
             if (playlist.size > 1) {
-                playNext()
-                val removeIdx = if (position < currentIndex) position else position
-                playlist.removeAt(removeIdx)
-                if (currentIndex > removeIdx) currentIndex--
+                playlist.removeAt(position)
+                if (currentIndex >= playlist.size) {
+                    currentIndex = 0
+                }
+                playCurrentTrack()
             } else {
                 pause()
                 playlist.clear()
                 originalPlaylist.clear()
                 currentIndex = -1
+                exoPlayer.clearMediaItems()
                 _playbackState.value = PlaybackState()
+                syncQueueState()
             }
         } else {
             playlist.removeAt(position)
+            if (position < exoPlayer.mediaItemCount && exoPlayer.mediaItemCount == playlist.size + 1) {
+                exoPlayer.removeMediaItem(position)
+            } else {
+                resyncExoPlayerPlaylist()
+            }
             if (position < currentIndex) {
                 currentIndex--
             }
+            syncQueueState()
         }
-        syncQueueState()
     }
 
     fun clearUpcomingQueue() {
         if (playlist.isEmpty() || currentIndex !in playlist.indices) return
-        val past = playlist.take(currentIndex + 1)
-        playlist.clear()
-        playlist.addAll(past)
-        originalPlaylist.clear()
-        originalPlaylist.addAll(past)
+        val nextIdx = currentIndex + 1
+        if (nextIdx < playlist.size) {
+            val past = playlist.take(nextIdx)
+            playlist.clear()
+            playlist.addAll(past)
+            val currentTrackIds = past.map { it.id }.toSet()
+            originalPlaylist.removeAll { !currentTrackIds.contains(it.id) }
+            if (nextIdx < exoPlayer.mediaItemCount) {
+                exoPlayer.removeMediaItems(nextIdx, exoPlayer.mediaItemCount)
+            } else {
+                resyncExoPlayerPlaylist()
+            }
+        }
         syncQueueState()
     }
 
@@ -507,7 +640,9 @@ class AudioEngine(
 
                 // Smooth fade-out in final 10 seconds
                 if (currentSecs in 1..10) {
-                    val targetVol = (currentSecs.toFloat() / 10f).coerceIn(0f, 1f)
+                    val effectiveDb = if (replayGainMode == com.hana.spindle.core.ReplayGainMode.OFF) 0f else (currentReplayGainDb + replayGainPreampDb)
+                    val baseVol = if (effectiveDb == 0f) 1.0f else Math.pow(10.0, (effectiveDb / 20.0)).toFloat().coerceIn(0.1f, 1.0f)
+                    val targetVol = (baseVol * (currentSecs.toFloat() / 10f)).coerceIn(0f, baseVol)
                     exoPlayer.volume = targetVol
                     isFadingOut = true
                 }
@@ -518,8 +653,7 @@ class AudioEngine(
             }
 
             pause()
-            exoPlayer.volume = 1.0f
-            isFadingOut = false
+            restoreBaseVolume()
             _sleepTimerState.value = SleepTimerState(isActive = false, remainingSeconds = 0L)
         }
     }
@@ -528,10 +662,16 @@ class AudioEngine(
         sleepTimerJob?.cancel()
         sleepTimerJob = null
         if (isFadingOut) {
-            exoPlayer.volume = 1.0f
-            isFadingOut = false
+            restoreBaseVolume()
         }
         _sleepTimerState.value = SleepTimerState(isActive = false, remainingSeconds = 0L)
+    }
+
+    private fun restoreBaseVolume() {
+        val effectiveDb = if (replayGainMode == com.hana.spindle.core.ReplayGainMode.OFF) 0f else (currentReplayGainDb + replayGainPreampDb)
+        val baseVol = if (effectiveDb == 0f) 1.0f else Math.pow(10.0, (effectiveDb / 20.0)).toFloat().coerceIn(0.1f, 1.0f)
+        exoPlayer.volume = baseVol
+        isFadingOut = false
     }
 
     fun setReplayGainMode(mode: com.hana.spindle.core.ReplayGainMode) {
@@ -631,15 +771,108 @@ class AudioEngine(
         }
     }
 
+    fun computeBaseVolumeForTrack(track: TrackEntity): Float {
+        if (replayGainMode == com.hana.spindle.core.ReplayGainMode.OFF) return 1.0f
+        val file = File(CueSheetParser.getAudioFilePath(track.path))
+        val gainDb = TagParser.extractReplayGainDb(file, replayGainMode)
+        val effectiveDb = gainDb + replayGainPreampDb
+        return if (effectiveDb == 0f) 1.0f else Math.pow(10.0, (effectiveDb / 20.0)).toFloat().coerceIn(0.1f, 1.0f)
+    }
+
+    private fun startDualPlayerCrossfade(nextIndex: Int, fadeMs: Long) {
+        if (isCrossfading) return
+        val nextTrack = playlist.getOrNull(nextIndex) ?: return
+        isCrossfading = true
+        crossfadeTargetIndex = nextIndex
+
+        if (secondaryPlayer == null) {
+            secondaryPlayer = createPlayerInstance()
+        }
+
+        val sec = secondaryPlayer ?: return
+        val mediaItem = buildMediaItem(nextTrack)
+        sec.setMediaItem(mediaItem)
+        sec.prepare()
+        sec.volume = 0f
+        sec.play()
+    }
+
+    private fun completeCrossfade() {
+        if (!isCrossfading) return
+        val nextTrack = playlist.getOrNull(crossfadeTargetIndex)
+        val sec = secondaryPlayer
+        if (nextTrack != null && sec != null) {
+            val oldPrimary = exoPlayer
+            val newPrimary = sec
+
+            oldPrimary.stop()
+            oldPrimary.clearMediaItems()
+
+            exoPlayer = newPrimary
+            secondaryPlayer = oldPrimary
+
+            currentIndex = crossfadeTargetIndex
+            isCrossfading = false
+            crossfadeTargetIndex = -1
+
+            val physicalPath = CueSheetParser.getAudioFilePath(nextTrack.path)
+            applyReplayGain(File(physicalPath))
+
+            onTrackTransition(nextTrack, Player.MEDIA_ITEM_TRANSITION_REASON_AUTO)
+            onActivePlayerChanged?.invoke(exoPlayer)
+            audioFxController.attachSession(exoPlayer.audioSessionId)
+        } else {
+            cancelCrossfade()
+        }
+    }
+
+    fun cancelCrossfade() {
+        if (!isCrossfading && secondaryPlayer == null) return
+        isCrossfading = false
+        crossfadeTargetIndex = -1
+        try {
+            secondaryPlayer?.stop()
+            secondaryPlayer?.clearMediaItems()
+        } catch (_: Exception) {}
+        restoreBaseVolume()
+    }
+
     private fun buildMediaItem(track: TrackEntity): MediaItem {
         val physicalPath = CueSheetParser.getAudioFilePath(track.path)
         val uri = Uri.fromFile(File(physicalPath))
+        val app = context.applicationContext as? com.hana.spindle.SpindleApp
+        val artworkUri: Uri? = try {
+            val cachedFile = app?.imageLoader?.getCoverFileForAlbum(track.album, track.artist)
+            if (cachedFile != null && cachedFile.exists() && cachedFile.length() > 0) {
+                Uri.fromFile(cachedFile)
+            } else {
+                val localFile = app?.imageLoader?.findLocalFolderArt(physicalPath)
+                if (localFile != null && localFile.exists()) {
+                    Uri.fromFile(localFile)
+                } else null
+            }
+        } catch (_: Exception) {
+            null
+        }
+
+        val metadataBuilder = androidx.media3.common.MediaMetadata.Builder()
+            .setTitle(track.title)
+            .setArtist(track.artist)
+            .setAlbumTitle(track.album)
+            .setDisplayTitle(track.title)
+
+        if (artworkUri != null) {
+            metadataBuilder.setArtworkUri(artworkUri)
+        }
+
+        val mediaMetadata = metadataBuilder.build()
         return if (CueSheetParser.isCueVirtualPath(track.path)) {
             val startMs = CueSheetParser.getCueStartTimeMs(track.path)
             val endMs = if (track.durationMs > 0L) startMs + track.durationMs else C.TIME_END_OF_SOURCE
             MediaItem.Builder()
                 .setUri(uri)
                 .setMediaId(track.path)
+                .setMediaMetadata(mediaMetadata)
                 .setClippingConfiguration(
                     MediaItem.ClippingConfiguration.Builder()
                         .setStartPositionMs(startMs)
@@ -651,12 +884,14 @@ class AudioEngine(
             MediaItem.Builder()
                 .setUri(uri)
                 .setMediaId(track.path)
+                .setMediaMetadata(mediaMetadata)
                 .build()
         }
     }
 
-    private fun playCurrentTrack() {
+    private fun playCurrentTrack(isUserInitiated: Boolean = true) {
         if (currentIndex !in playlist.indices) return
+        cancelCrossfade()
         try {
             (context.applicationContext as? com.hana.spindle.SpindleApp)?.radioStreamEngine?.pause()
         } catch (e: Exception) {
@@ -672,10 +907,9 @@ class AudioEngine(
         exoPlayer.setMediaItems(mediaItems, currentIndex, 0L)
         exoPlayer.prepare()
         applyReplayGain(file)
-        if (crossfadeMode != com.hana.spindle.core.CrossfadeMode.GAPLESS) {
-            exoPlayer.volume = 0.02f
+        if (isUserInitiated) {
+            foleyEngine.playSolenoidClack()
         }
-        foleyEngine.playSolenoidClack()
         exoPlayer.play()
 
         val bitrate = if (track.bitrateKbps > 0) track.bitrateKbps else if (track.durationMs > 0 && file.exists()) ((file.length() * 8L) / track.durationMs).toInt() else 1411
@@ -725,7 +959,7 @@ class AudioEngine(
         }
     }
 
-    private fun restoreLastPlayedSong() {
+    fun restoreLastPlayedTrack() {
         scope.launch(Dispatchers.IO) {
             try {
                 val app = context.applicationContext as? com.hana.spindle.SpindleApp ?: return@launch
@@ -736,28 +970,31 @@ class AudioEngine(
                 // If no song path was saved or tape was ejected, keep player empty (device name will display)
                 if (lastPath.isNullOrEmpty()) return@launch
 
-                val allSongs = app.database.songDao().getAllSongs().firstOrNull() ?: return@launch
-                if (allSongs.isEmpty()) return@launch
+                val allTracks = app.database.trackDao().getAllTracks().firstOrNull() ?: return@launch
+                if (allTracks.isEmpty()) return@launch
 
-                val songIndex = allSongs.indexOfFirst { it.path == lastPath }
-                if (songIndex < 0) return@launch
+                val trackIndex = allTracks.indexOfFirst { it.path == lastPath }
+                if (trackIndex < 0) return@launch
 
-                val song = allSongs[songIndex]
-                val targetPos = if (lastPos in 0L..song.durationMs) lastPos else 0L
+                val track = allTracks[trackIndex]
+                val targetPos = if (lastPos in 0L..track.durationMs) lastPos else 0L
 
                 kotlinx.coroutines.withContext(Dispatchers.Main) {
                     if (playlist.isNotEmpty() || exoPlayer.isPlaying) return@withContext
-                    originalPlaylist = allSongs.toMutableList()
-                    playlist = allSongs.toMutableList()
-                    currentIndex = songIndex
-                    prepareTrackWithoutPlaying(song, targetPos)
+                    originalPlaylist = allTracks.toMutableList()
+                    playlist = allTracks.toMutableList()
+                    currentIndex = trackIndex
+                    prepareTrackWithoutPlaying(track, targetPos)
                     syncQueueState()
                 }
             } catch (e: Exception) {
-                android.util.Log.e("AudioEngine", "restoreLastPlayedSong error", e)
+                android.util.Log.e("AudioEngine", "restoreLastPlayedTrack error", e)
             }
         }
     }
+
+    @Deprecated("Use restoreLastPlayedTrack() in accordance with canonical glossary", ReplaceWith("restoreLastPlayedTrack()"))
+    fun restoreLastPlayedSong() = restoreLastPlayedTrack()
 
     /**
      * Executes authentic cassette tape ejection:
@@ -768,6 +1005,7 @@ class AudioEngine(
      */
     fun ejectCassette() {
         foleyEngine.playCarriageEject()
+        cancelCrossfade()
         try {
             exoPlayer.stop()
             exoPlayer.clearMediaItems()
@@ -844,7 +1082,14 @@ class AudioEngine(
     override fun pause() {
         foleyEngine.playReleaseClick()
         exoPlayer.pause()
+        if (isCrossfading) {
+            secondaryPlayer?.pause()
+        }
         saveLastPlayed(playlist.getOrNull(currentIndex)?.path, exoPlayer.currentPosition)
+    }
+
+    override fun stop() {
+        pause()
     }
 
     override fun play() {
@@ -855,6 +1100,9 @@ class AudioEngine(
             // ignore
         }
         exoPlayer.play()
+        if (isCrossfading) {
+            secondaryPlayer?.play()
+        }
     }
 
     fun toggleShuffle(): ShuffleMode {
@@ -896,6 +1144,9 @@ class AudioEngine(
                 currentIndex = 0
             }
         }
+
+        resyncExoPlayerPlaylist()
+        syncQueueState()
     }
 
     fun toggleRepeat(): RepeatMode {
@@ -917,13 +1168,19 @@ class AudioEngine(
     }
 
     override fun playNext() {
-        foleyEngine.playMotorSpool()
+        playNext(isUserInitiated = true)
+    }
+
+    fun playNext(isUserInitiated: Boolean) {
+        if (isUserInitiated) {
+            foleyEngine.playMotorSpool()
+        }
         if (playlist.isEmpty()) return
         if (playlist.size <= 1) {
             scope.launch {
                 try {
                     val app = context.applicationContext as? com.hana.spindle.SpindleApp ?: return@launch
-                    val allSongs = app.database.songDao().getAllSongs().firstOrNull() ?: return@launch
+                    val allSongs = app.database.trackDao().getAllTracks().firstOrNull() ?: return@launch
                     if (allSongs.isNotEmpty()) {
                         val currentSongPath = playlist.getOrNull(currentIndex)?.path
                         val dbIndex = allSongs.indexOfFirst { it.path == currentSongPath }
@@ -931,7 +1188,7 @@ class AudioEngine(
                         originalPlaylist = allSongs.toMutableList()
                         playlist = allSongs.toMutableList()
                         currentIndex = nextIndex
-                        playCurrentTrack()
+                        playCurrentTrack(isUserInitiated)
                     }
                 } catch (e: Exception) {
                     android.util.Log.e("AudioEngine", "playNext expand playlist error", e)
@@ -940,21 +1197,27 @@ class AudioEngine(
             return
         }
         currentIndex = (currentIndex + 1) % playlist.size
-        playCurrentTrack()
+        playCurrentTrack(isUserInitiated)
     }
 
     override fun playPrevious(forcePreviousSong: Boolean) {
-        foleyEngine.playMotorSpool()
+        playPrevious(forcePreviousSong = forcePreviousSong, isUserInitiated = true)
+    }
+
+    fun playPrevious(forcePreviousSong: Boolean, isUserInitiated: Boolean) {
+        if (isUserInitiated) {
+            foleyEngine.playMotorSpool()
+        }
         if (playlist.isEmpty()) return
         if (!forcePreviousSong && exoPlayer.currentPosition > 3000L) {
             // Restart current track if played more than 3 seconds
-            exoPlayer.seekTo(0)
+            seekTo(0)
         } else {
             if (playlist.size <= 1) {
                 scope.launch {
                     try {
                         val app = context.applicationContext as? com.hana.spindle.SpindleApp ?: return@launch
-                        val allSongs = app.database.songDao().getAllSongs().firstOrNull() ?: return@launch
+                        val allSongs = app.database.trackDao().getAllTracks().firstOrNull() ?: return@launch
                         if (allSongs.isNotEmpty()) {
                             val currentSongPath = playlist.getOrNull(currentIndex)?.path
                             val dbIndex = allSongs.indexOfFirst { it.path == currentSongPath }
@@ -962,7 +1225,7 @@ class AudioEngine(
                             originalPlaylist = allSongs.toMutableList()
                             playlist = allSongs.toMutableList()
                             currentIndex = prevIndex
-                            playCurrentTrack()
+                            playCurrentTrack(isUserInitiated)
                         }
                     } catch (e: Exception) {
                         android.util.Log.e("AudioEngine", "playPrevious expand playlist error", e)
@@ -971,7 +1234,7 @@ class AudioEngine(
                 return
             }
             currentIndex = if (currentIndex - 1 < 0) playlist.size - 1 else currentIndex - 1
-            playCurrentTrack()
+            playCurrentTrack(isUserInitiated)
         }
     }
 
@@ -989,7 +1252,7 @@ class AudioEngine(
         scope.launch {
             try {
                 val app = context.applicationContext as? com.hana.spindle.SpindleApp ?: return@launch
-                val allSongs = app.database.songDao().getAllSongs().firstOrNull() ?: return@launch
+                val allSongs = app.database.trackDao().getAllTracks().firstOrNull() ?: return@launch
                 if (allSongs.isNotEmpty()) {
                     val currentSongPath = playlist.getOrNull(currentIndex)?.path
                     val dbIndex = allSongs.indexOfFirst { it.path == currentSongPath }.coerceAtLeast(0)
@@ -1029,7 +1292,7 @@ class AudioEngine(
         scope.launch {
             try {
                 val app = context.applicationContext as? com.hana.spindle.SpindleApp ?: return@launch
-                val allSongs = app.database.songDao().getAllSongs().firstOrNull() ?: return@launch
+                val allSongs = app.database.trackDao().getAllTracks().firstOrNull() ?: return@launch
                 if (allSongs.isNotEmpty()) {
                     val currentSongPath = playlist.getOrNull(currentIndex)?.path
                     val dbIndex = allSongs.indexOfFirst { it.path == currentSongPath }.coerceAtLeast(0)
@@ -1056,7 +1319,7 @@ class AudioEngine(
     }
 
     fun seekTo(positionMs: Long) {
-        foleyEngine.playMotorSpool()
+        cancelCrossfade()
         exoPlayer.seekTo(positionMs)
         updateProgress()
     }
@@ -1106,31 +1369,48 @@ class AudioEngine(
             activeLyricIndex = activeIndex
         )
 
-        // Equal-power sinusoidal crossfade modulation near track boundaries
+        // True dual-player equal-power overlapping crossfade near track boundaries
         if (!isFadingOut) {
             val effectiveDb = if (replayGainMode == com.hana.spindle.core.ReplayGainMode.OFF) 0f else (currentReplayGainDb + replayGainPreampDb)
             val baseVol = if (effectiveDb == 0f) 1.0f else Math.pow(10.0, (effectiveDb / 20.0)).toFloat().coerceIn(0.1f, 1.0f)
 
-            if (crossfadeMode != com.hana.spindle.core.CrossfadeMode.GAPLESS && duration > crossfadeMode.durationMs) {
+            if (crossfadeMode != com.hana.spindle.core.CrossfadeMode.GAPLESS && duration > crossfadeMode.durationMs * 2) {
                 val remainingMs = duration - current
                 val fadeMs = crossfadeMode.durationMs
 
-                if (remainingMs in 0L..fadeMs) {
-                    val fadeProgress = 1.0f - (remainingMs.toFloat() / fadeMs).coerceIn(0f, 1f)
-                    val angle = fadeProgress * (Math.PI / 2.0)
-                    val mult = Math.cos(angle).toFloat().coerceIn(0.01f, 1.0f)
-                    exoPlayer.volume = baseVol * mult
-                } else if (current in 0L..fadeMs && current > 0L) {
-                    val fadeProgress = (current.toFloat() / fadeMs).coerceIn(0f, 1f)
-                    val angle = fadeProgress * (Math.PI / 2.0)
-                    val mult = Math.sin(angle).toFloat().coerceIn(0.01f, 1.0f)
-                    exoPlayer.volume = baseVol * mult
-                } else {
+                if (remainingMs in 1L..fadeMs) {
+                    if (!isCrossfading) {
+                        val nextIdx = (currentIndex + 1) % playlist.size
+                        val isCrossingToSideB = (nextIdx == mixtapeSplitIndex && mixtapeSplitIndex > 0 && nextIdx < playlist.size)
+                        val isWrappingToSideA = (nextIdx >= playlist.size && mixtapeSplitIndex > 0 && _playbackState.value.repeatMode == RepeatMode.ALL)
+                        val isEndOfPlaylist = (_playbackState.value.repeatMode == RepeatMode.OFF && currentIndex == playlist.size - 1)
+
+                        if (!isCrossingToSideB && !isWrappingToSideA && !isEndOfPlaylist && playlist.size > 1 && _playbackState.value.repeatMode != RepeatMode.ONE) {
+                            startDualPlayerCrossfade(nextIdx, fadeMs)
+                        }
+                    }
+
+                    if (isCrossfading && secondaryPlayer != null) {
+                        val fadeProgress = (1.0f - (remainingMs.toFloat() / fadeMs)).coerceIn(0f, 1f)
+                        val angle = fadeProgress * (Math.PI / 2.0)
+                        val multPrimary = Math.cos(angle).toFloat().coerceIn(0f, 1.0f)
+                        val multNext = Math.sin(angle).toFloat().coerceIn(0f, 1.0f)
+
+                        exoPlayer.volume = (baseVol * multPrimary).coerceIn(0f, 1.0f)
+                        val nextTrack = playlist.getOrNull(crossfadeTargetIndex)
+                        val baseVolNext = if (nextTrack != null) computeBaseVolumeForTrack(nextTrack) else 1.0f
+                        secondaryPlayer?.volume = (baseVolNext * multNext).coerceIn(0f, 1.0f)
+
+                        if (remainingMs <= 60L) {
+                            completeCrossfade()
+                        }
+                    }
+                } else if (!isCrossfading) {
                     if (exoPlayer.volume != baseVol) {
                         exoPlayer.volume = baseVol
                     }
                 }
-            } else {
+            } else if (!isCrossfading) {
                 if (exoPlayer.volume != baseVol) {
                     exoPlayer.volume = baseVol
                 }
@@ -1196,6 +1476,11 @@ class AudioEngine(
             context.unregisterReceiver(becomingNoisyReceiver)
         } catch (ignored: Exception) {}
         stopProgressPolling()
+        cancelCrossfade()
+        try {
+            secondaryPlayer?.release()
+            secondaryPlayer = null
+        } catch (_: Exception) {}
         audioFxController.release()
         exoPlayer.release()
     }

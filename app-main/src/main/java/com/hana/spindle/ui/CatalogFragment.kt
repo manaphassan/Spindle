@@ -48,13 +48,23 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.Locale
 
+/**
+ * Canonical alias for VaultFragment.
+ * Conforms to canonical terminology authority (docs/GLOSSARY.md).
+ */
+typealias VaultFragment = CatalogFragment
+
 class CatalogFragment : Fragment() {
 
     private var _binding: FragmentCatalogBinding? = null
     private val binding get() = _binding!!
 
     private lateinit var audioEngine: AudioEngine
-    private lateinit var songAdapter: TrackAdapter
+    private lateinit var tracksListAdapter: TrackAdapter
+    private var songAdapter: TrackAdapter
+        get() = tracksListAdapter
+        set(value) { tracksListAdapter = value }
+
     private lateinit var albumAdapter: AlbumAdapter
     private lateinit var folderAdapter: FolderAdapter
     private lateinit var npLyricsAdapter: LyricsAdapter
@@ -73,7 +83,11 @@ class CatalogFragment : Fragment() {
     private var searchSuggestionJob: Job? = null
     private var mixtapeReorderHelper: androidx.recyclerview.widget.ItemTouchHelper? = null
 
-    private var currentAlbumSongs: List<TrackEntity> = emptyList()
+    private var currentAlbumTracks: List<TrackEntity> = emptyList()
+    private var currentAlbumSongs: List<TrackEntity>
+        get() = currentAlbumTracks
+        set(value) { currentAlbumTracks = value }
+
     private var currentAlbumItem: AlbumItem? = null
     private var albumTracksJob: Job? = null
     private var pendingPickAlbum: AlbumItem? = null
@@ -89,14 +103,28 @@ class CatalogFragment : Fragment() {
     private var isNowPlayingSingleVisible = false
     private var isShowingNpLyrics = false
     private var isPanoramaVisible = true
-    private var currentLoadedSongId: Long = -1L
-    private var currentMiniSongId: Long = -1L
+    private var currentLoadedTrackId: Long = -1L
+    private var currentLoadedSongId: Long
+        get() = currentLoadedTrackId
+        set(value) { currentLoadedTrackId = value }
+
+    private var currentMiniTrackId: Long = -1L
+    private var currentMiniSongId: Long
+        get() = currentMiniTrackId
+        set(value) { currentMiniTrackId = value }
 
     // 0: Tracks, 1: Albums, 2: Artists, 3: Mixtapes, 4: Folders, 5: Favorites, 6: Composers
     private var currentTab = 0
 
-    private var allSongsList: List<TrackEntity> = emptyList()
-    private var currentDisplayedSongs: List<TrackEntity> = emptyList()
+    private var allTracksList: List<TrackEntity> = emptyList()
+    private var allSongsList: List<TrackEntity>
+        get() = allTracksList
+        set(value) { allTracksList = value }
+
+    private var currentDisplayedTracks: List<TrackEntity> = emptyList()
+    private var currentDisplayedSongs: List<TrackEntity>
+        get() = currentDisplayedTracks
+        set(value) { currentDisplayedTracks = value }
 
     private var allAlbumsList: List<AlbumItem> = emptyList()
     private var currentDisplayedAlbums: List<AlbumItem> = emptyList()
@@ -179,40 +207,40 @@ class CatalogFragment : Fragment() {
     }
 
     private fun setupAdapters(app: SpindleApp) {
-        songAdapter = TrackAdapter(
+        tracksListAdapter = TrackAdapter(
             imageLoader = app.imageLoader,
-            onTrackClicked = { song, index ->
-                audioEngine.playQueue(currentDisplayedSongs, index)
+            onTrackClicked = { track, index ->
+                audioEngine.playQueue(currentDisplayedTracks, index)
                 showNowPlayingSingleAudio(true)
             },
-            onRatingChanged = { song, newRating ->
+            onRatingChanged = { track, newRating ->
                 viewLifecycleOwner.lifecycleScope.launch {
-                    app.database.trackDao().updateRating(song.id, newRating)
+                    app.database.trackDao().updateRating(track.id, newRating)
                 }
             }
         ).apply {
-            onPlayNext = { song ->
-                audioEngine.playNextInQueue(song)
-                android.widget.Toast.makeText(requireContext(), "Will play next: ${song.title}", android.widget.Toast.LENGTH_SHORT).show()
+            onPlayNext = { track ->
+                audioEngine.playNextInQueue(track)
+                android.widget.Toast.makeText(requireContext(), "Will play next: ${track.title}", android.widget.Toast.LENGTH_SHORT).show()
             }
-            onAddToQueue = { song ->
-                audioEngine.addToQueue(song)
-                android.widget.Toast.makeText(requireContext(), "Added to queue: ${song.title}", android.widget.Toast.LENGTH_SHORT).show()
+            onAddToQueue = { track ->
+                audioEngine.addToQueue(track)
+                android.widget.Toast.makeText(requireContext(), "Added to queue: ${track.title}", android.widget.Toast.LENGTH_SHORT).show()
             }
-            onAddToMixtape = { song ->
-                MixtapeDialogs.showAddToMixtapeDialog(requireContext(), app.database, viewLifecycleOwner.lifecycleScope, song) {
+            onAddToMixtape = { track ->
+                MixtapeDialogs.showAddToMixtapeDialog(requireContext(), app.database, viewLifecycleOwner.lifecycleScope, track) {
                     if (currentTab == 6) {
                         loadMixtapes(app)
                     }
                 }
             }
-            onInspectTags = { song ->
-                TagInspectorDialog.show(requireContext(), song) {
+            onInspectTags = { track ->
+                TagInspectorDialog.show(requireContext(), track) {
                     loadSongs(app)
                 }
             }
-            onViewAudioSpecs = { song ->
-                DialogFileSpecs(song).show(parentFragmentManager, "DialogFileSpecs")
+            onViewAudioSpecs = { track ->
+                DialogFileSpecs(track).show(parentFragmentManager, "DialogFileSpecs")
             }
         }
 
@@ -228,12 +256,12 @@ class CatalogFragment : Fragment() {
                 val fromPos = viewHolder.bindingAdapterPosition
                 val toPos = target.bindingAdapterPosition
                 if (fromPos == RecyclerView.NO_POSITION || toPos == RecyclerView.NO_POSITION || fromPos == toPos) return false
-                if (currentAlbumItem?.format != "MIXTAPE") return false
+                if (currentAlbumItem?.isMixtape != true) return false
 
-                val mutable = currentAlbumSongs.toMutableList()
+                val mutable = currentAlbumTracks.toMutableList()
                 val item = mutable.removeAt(fromPos)
                 mutable.add(toPos, item)
-                currentAlbumSongs = mutable
+                currentAlbumTracks = mutable
                 albumTracksAdapter.notifyItemMoved(fromPos, toPos)
                 return true
             }
@@ -252,9 +280,9 @@ class CatalogFragment : Fragment() {
                 viewHolder.itemView.alpha = 1.0f
                 viewHolder.itemView.scaleX = 1.0f
                 viewHolder.itemView.scaleY = 1.0f
-                if (currentAlbumItem?.format == "MIXTAPE") {
+                if (currentAlbumItem?.isMixtape == true) {
                     val playlistId = currentAlbumItem?.year?.toLong() ?: return
-                    val listToSave = currentAlbumSongs
+                    val listToSave = currentAlbumTracks
                     viewLifecycleOwner.lifecycleScope.launch {
                         app.database.playlistDao().reorderPlaylist(playlistId, listToSave.map { it.id })
                     }
@@ -263,15 +291,15 @@ class CatalogFragment : Fragment() {
 
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
                 val pos = viewHolder.bindingAdapterPosition
-                if (pos == RecyclerView.NO_POSITION || currentAlbumItem?.format != "MIXTAPE") {
+                if (pos == RecyclerView.NO_POSITION || currentAlbumItem?.isMixtape != true) {
                     albumTracksAdapter.notifyItemChanged(pos)
                     return
                 }
-                val trackToRemove = currentAlbumSongs[pos]
+                val trackToRemove = currentAlbumTracks[pos]
                 val playlistId = currentAlbumItem?.year?.toLong() ?: return
-                val mutable = currentAlbumSongs.toMutableList()
+                val mutable = currentAlbumTracks.toMutableList()
                 mutable.removeAt(pos)
-                currentAlbumSongs = mutable
+                currentAlbumTracks = mutable
                 albumTracksAdapter.submitList(mutable)
 
                 viewLifecycleOwner.lifecycleScope.launch {
@@ -282,11 +310,11 @@ class CatalogFragment : Fragment() {
             }
 
             override fun isLongPressDragEnabled(): Boolean {
-                return currentAlbumItem?.format == "MIXTAPE"
+                return currentAlbumItem?.isMixtape == true
             }
 
             override fun isItemViewSwipeEnabled(): Boolean {
-                return currentAlbumItem?.format == "MIXTAPE"
+                return currentAlbumItem?.isMixtape == true
             }
         }
         val helper = androidx.recyclerview.widget.ItemTouchHelper(reorderCallback)
@@ -295,51 +323,51 @@ class CatalogFragment : Fragment() {
 
         albumTracksAdapter = TrackAdapter(
             imageLoader = app.imageLoader,
-            onTrackClicked = { song, index ->
-                currentDisplayedSongs = currentAlbumSongs
-                audioEngine.playQueue(currentAlbumSongs, index)
+            onTrackClicked = { track, index ->
+                currentDisplayedTracks = currentAlbumTracks
+                audioEngine.playQueue(currentAlbumTracks, index)
                 showNowPlayingSingleAudio(true)
             },
-            onRatingChanged = { song, newRating ->
+            onRatingChanged = { track, newRating ->
                 viewLifecycleOwner.lifecycleScope.launch {
-                    app.database.trackDao().updateRating(song.id, newRating)
+                    app.database.trackDao().updateRating(track.id, newRating)
                 }
             }
         ).apply {
             showTrackNumbers = true
-            onPlayNext = { song ->
-                audioEngine.playNextInQueue(song)
-                android.widget.Toast.makeText(requireContext(), "Will play next: ${song.title}", android.widget.Toast.LENGTH_SHORT).show()
+            onPlayNext = { track ->
+                audioEngine.playNextInQueue(track)
+                android.widget.Toast.makeText(requireContext(), "Will play next: ${track.title}", android.widget.Toast.LENGTH_SHORT).show()
             }
-            onAddToQueue = { song ->
-                audioEngine.addToQueue(song)
-                android.widget.Toast.makeText(requireContext(), "Added to queue: ${song.title}", android.widget.Toast.LENGTH_SHORT).show()
+            onAddToQueue = { track ->
+                audioEngine.addToQueue(track)
+                android.widget.Toast.makeText(requireContext(), "Added to queue: ${track.title}", android.widget.Toast.LENGTH_SHORT).show()
             }
-            onAddToMixtape = { song ->
-                MixtapeDialogs.showAddToMixtapeDialog(requireContext(), app.database, viewLifecycleOwner.lifecycleScope, song) {
+            onAddToMixtape = { track ->
+                MixtapeDialogs.showAddToMixtapeDialog(requireContext(), app.database, viewLifecycleOwner.lifecycleScope, track) {
                     if (currentTab == 6) {
                         loadMixtapes(app)
                     }
                 }
             }
-            onInspectTags = { song ->
-                TagInspectorDialog.show(requireContext(), song) {
+            onInspectTags = { track ->
+                TagInspectorDialog.show(requireContext(), track) {
                     loadSongs(app)
                 }
             }
-            onViewAudioSpecs = { song ->
-                DialogFileSpecs(song).show(parentFragmentManager, "DialogFileSpecs")
+            onViewAudioSpecs = { track ->
+                DialogFileSpecs(track).show(parentFragmentManager, "DialogFileSpecs")
             }
             onStartDrag = { holder ->
-                if (currentAlbumItem?.format == "MIXTAPE") {
+                if (currentAlbumItem?.isMixtape == true) {
                     mixtapeReorderHelper?.startDrag(holder)
                 }
             }
             onRemoveFromMixtape = { track, _ ->
-                if (currentAlbumItem?.format == "MIXTAPE") {
+                if (currentAlbumItem?.isMixtape == true) {
                     val playlistId = currentAlbumItem?.year?.toLong() ?: 0L
                     if (playlistId > 0) {
-                        val mutable = currentAlbumSongs.toMutableList()
+                        val mutable = currentAlbumTracks.toMutableList()
                         mutable.remove(track)
                         currentAlbumSongs = mutable
                         albumTracksAdapter.submitList(mutable)
@@ -382,7 +410,7 @@ class CatalogFragment : Fragment() {
             onAlbumLongClicked = { album ->
                 val isPinned = isAlbumPinned(album)
                 val pinOption = if (isPinned) "Unpin from Start Screen" else "Pin to Start Screen"
-                if (album.format == "MIXTAPE") {
+                if (album.isMixtape) {
                     val options = arrayOf(pinOption, "Play Mixtape", "Export to .M3U", "Delete Mixtape")
                     android.app.AlertDialog.Builder(requireContext())
                         .setTitle(album.album)
@@ -395,10 +423,10 @@ class CatalogFragment : Fragment() {
                                 }
                                 1 -> {
                                     viewLifecycleOwner.lifecycleScope.launch {
-                                        val songs = app.database.playlistDao().getTracksForPlaylist(album.year.toLong()).first()
-                                        if (songs.isNotEmpty()) {
-                                            currentDisplayedSongs = songs
-                                            audioEngine.playQueue(songs, 0)
+                                        val tracks = app.database.playlistDao().getTracksForPlaylist(album.year.toLong()).first()
+                                        if (tracks.isNotEmpty()) {
+                                            currentDisplayedTracks = tracks
+                                            audioEngine.playQueue(tracks, 0)
                                             showNowPlayingSingleAudio(true)
                                         }
                                     }
@@ -1759,7 +1787,7 @@ class CatalogFragment : Fragment() {
 
     private fun setupMiniPlayer(app: SpindleApp) {
         binding.cardMiniPlayer.setOnClickListener {
-            if (audioEngine.playbackState.value.currentSong != null) {
+            if (audioEngine.playbackState.value.currentTrack != null) {
                 showNowPlayingSingleAudio(true)
             }
         }
@@ -1771,51 +1799,51 @@ class CatalogFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             audioEngine.playbackState.collectLatest { state ->
                 _binding?.let { b ->
-                    state.currentSong?.let { song ->
-                        b.tvMiniTitle.text = song.title
-                        b.tvMiniArtist.text = song.artist
+                    state.currentTrack?.let { track ->
+                        b.tvMiniTitle.text = track.title
+                        b.tvMiniArtist.text = track.artist
 
-                        val formatStr = "${song.fileFormat} ${song.bitDepth}/${song.sampleRate / 1000}k"
+                        val formatStr = "${track.fileFormat} ${track.bitDepth}/${track.sampleRate / 1000}k"
                         b.tvMiniFormat.visibility = View.VISIBLE
                         b.tvMiniFormat.text = formatStr
 
-                        if (songAdapter.activeSongId != song.id) {
-                            val oldActiveId = songAdapter.activeSongId
-                            songAdapter.activeSongId = song.id
-                            val oldPos = currentDisplayedSongs.indexOfFirst { it.id == oldActiveId }
-                            val newPos = currentDisplayedSongs.indexOfFirst { it.id == song.id }
-                            if (oldPos != -1) songAdapter.notifyItemChanged(oldPos)
-                            if (newPos != -1) songAdapter.notifyItemChanged(newPos)
+                        if (tracksListAdapter.activeTrackId != track.id) {
+                            val oldActiveId = tracksListAdapter.activeTrackId
+                            tracksListAdapter.activeTrackId = track.id
+                            val oldPos = currentDisplayedTracks.indexOfFirst { it.id == oldActiveId }
+                            val newPos = currentDisplayedTracks.indexOfFirst { it.id == track.id }
+                            if (oldPos != -1) tracksListAdapter.notifyItemChanged(oldPos)
+                            if (newPos != -1) tracksListAdapter.notifyItemChanged(newPos)
                         }
-                        if (::albumTracksAdapter.isInitialized && albumTracksAdapter.activeSongId != song.id) {
-                            val oldActiveId = albumTracksAdapter.activeSongId
-                            albumTracksAdapter.activeSongId = song.id
-                            val oldPos = currentAlbumSongs.indexOfFirst { it.id == oldActiveId }
-                            val newPos = currentAlbumSongs.indexOfFirst { it.id == song.id }
+                        if (::albumTracksAdapter.isInitialized && albumTracksAdapter.activeTrackId != track.id) {
+                            val oldActiveId = albumTracksAdapter.activeTrackId
+                            albumTracksAdapter.activeTrackId = track.id
+                            val oldPos = currentAlbumTracks.indexOfFirst { it.id == oldActiveId }
+                            val newPos = currentAlbumTracks.indexOfFirst { it.id == track.id }
                             if (oldPos != -1) albumTracksAdapter.notifyItemChanged(oldPos)
                             if (newPos != -1) albumTracksAdapter.notifyItemChanged(newPos)
                         }
 
                         // Update Now Playing Single Audio metadata
-                        b.tvNpTitle.text = song.title
-                        b.tvNpArtist.text = song.artist
-                        b.tvNpArtistHeader.text = song.artist.lowercase(Locale.ROOT)
-                        b.tvNpAlbumHeader.text = if (song.year > 0) "${song.album.uppercase(Locale.ROOT)} (${song.year})" else song.album.uppercase(Locale.ROOT)
+                        b.tvNpTitle.text = track.title
+                        b.tvNpArtist.text = track.artist
+                        b.tvNpArtistHeader.text = track.artist.lowercase(Locale.ROOT)
+                        b.tvNpAlbumHeader.text = if (track.year > 0) "${track.album.uppercase(Locale.ROOT)} (${track.year})" else track.album.uppercase(Locale.ROOT)
                         updateNowPlayingUpNextPreview()
 
-                        if (song.id != currentLoadedSongId) {
-                            currentLoadedSongId = song.id
-                            updateFavoriteIcon(song.isFavorite)
+                        if (track.id != currentLoadedTrackId) {
+                            currentLoadedTrackId = track.id
+                            updateFavoriteIcon(track.isFavorite)
 
                             // Load circular cover art, ambient backdrop, and extract accent color
                             viewLifecycleOwner.lifecycleScope.launch {
-                                val cover = app.imageLoader.loadCover(song.path, 500, 500)
+                                val cover = app.imageLoader.loadCover(track.path, 500, 500)
                                 b.circularCoverArcView.coverBitmap = cover
                                 b.ivNpAmbientArt.setImageBitmap(cover)
                                 if (b.nowPlayingSingleContainer.visibility == View.VISIBLE) {
                                     startAmbientKenBurns()
                                 }
-                                val accent = app.imageLoader.extractAccentColor(song.path)
+                                val accent = app.imageLoader.extractAccentColor(track.path)
                                 npLyricsAdapter.accentColor = accent
                                 b.circularCoverArcView.accentColor = accent
                                 b.audioWaveformView.accentColor = accent
@@ -1825,7 +1853,7 @@ class CatalogFragment : Fragment() {
                             // Extract real 64-bar song waveform amplitudes
                             waveformExtractionJob?.cancel()
                             waveformExtractionJob = viewLifecycleOwner.lifecycleScope.launch {
-                                val wave = waveformExtractor.getWaveform(song.path, 64)
+                                val wave = waveformExtractor.getWaveform(track.path, 64)
                                 b.audioWaveformView.setWaveformData(wave)
                             }
                         }
@@ -1843,11 +1871,11 @@ class CatalogFragment : Fragment() {
                         }
 
                         // Load mini cover art only when track changes
-                        if (song.id != currentMiniSongId) {
-                            currentMiniSongId = song.id
+                        if (track.id != currentMiniTrackId) {
+                            currentMiniTrackId = track.id
                             viewLifecycleOwner.lifecycleScope.launch {
                                 val isEink = app.themeManager.currentTheme.value.id == CassetteTheme.MONOCHROME_EINK.id
-                                val thumb = app.imageLoader.loadCover(song.path, 96, 96)
+                                val thumb = app.imageLoader.loadCover(track.path, 96, 96)
                                 if (thumb != null) {
                                     b.ivMiniArt.imageTintList = null
                                     b.ivMiniArt.setPadding(0, 0, 0, 0)
@@ -1928,7 +1956,7 @@ class CatalogFragment : Fragment() {
         }
 
         binding.btnNpPlayPause.setOnClickListener { audioEngine.togglePlayPause() }
-        binding.btnNpPrev.setOnClickListener { audioEngine.playPrevious(forcePreviousSong = true) }
+        binding.btnNpPrev.setOnClickListener { audioEngine.playPrevious(forcePreviousSong = false) }
         binding.btnNpNext.setOnClickListener { audioEngine.playNext() }
 
         binding.btnNpRepeat.setOnClickListener {
@@ -1953,9 +1981,9 @@ class CatalogFragment : Fragment() {
         }
 
         val openSpecsAction = View.OnClickListener {
-            val song = audioEngine.playbackState.value.currentSong
-            if (song != null) {
-                DialogFileSpecs(song).show(parentFragmentManager, "DialogFileSpecs")
+            val track = audioEngine.playbackState.value.currentTrack
+            if (track != null) {
+                DialogFileSpecs(track).show(parentFragmentManager, "DialogFileSpecs")
             }
         }
         binding.btnNpMenu.setOnClickListener(openSpecsAction)
@@ -1965,7 +1993,7 @@ class CatalogFragment : Fragment() {
             audioEngine.playNext()
         }
         binding.circularCoverArcView.onSwipeRight = {
-            audioEngine.playPrevious(forcePreviousSong = true)
+            audioEngine.playPrevious(forcePreviousSong = false)
         }
 
         // Swipe down on Now Playing screen to dismiss to music catalog
@@ -2029,11 +2057,11 @@ class CatalogFragment : Fragment() {
         }
 
         binding.btnNpDownloadLyrics.setOnClickListener {
-            val song = audioEngine.playbackState.value.currentSong ?: return@setOnClickListener
+            val track = audioEngine.playbackState.value.currentTrack ?: return@setOnClickListener
             binding.progressNpLyrics.visibility = View.VISIBLE
             binding.btnNpDownloadLyrics.isEnabled = false
             viewLifecycleOwner.lifecycleScope.launch {
-                val downloaded = app.lyricsFetcher.fetchLyricsForTrack(song, forceRefresh = true)
+                val downloaded = app.lyricsFetcher.fetchLyricsForTrack(track, forceRefresh = true)
                 binding.progressNpLyrics.visibility = View.GONE
                 binding.btnNpDownloadLyrics.isEnabled = true
                 if (downloaded != null && downloaded.lines.isNotEmpty()) {
@@ -2240,7 +2268,7 @@ class CatalogFragment : Fragment() {
 
     fun showAlbumDetail(album: AlbumItem, songs: List<TrackEntity>) {
         currentAlbumItem = album
-        currentAlbumSongs = songs
+        currentAlbumTracks = songs
 
         val app = requireActivity().application as SpindleApp
         val theme = app.themeManager.currentTheme.value
@@ -2250,8 +2278,8 @@ class CatalogFragment : Fragment() {
             "DISCOGRAPHY" -> "ARTIST"
             "COMPOSER" -> "COMPOSER"
             "GENRE" -> "GENRE"
-            "MIXTAPE" -> "MIXTAPE"
-            "SMART_MIXTAPE" -> "SMART CASSETTE"
+            AlbumItem.FORMAT_MIXTAPE -> "MIXTAPE"
+            AlbumItem.FORMAT_SMART_MIXTAPE -> "SMART CASSETTE"
             else -> "ALBUM"
         }
         binding.tvAlbumDetailTitle.text = album.album
@@ -2259,10 +2287,25 @@ class CatalogFragment : Fragment() {
 
         val totalDurationMs = songs.sumOf { it.durationMs }
         val durationFormatted = formatTime(totalDurationMs)
-        val yearStr = if (album.year > 0 && album.format != "MIXTAPE" && album.format != "SMART_MIXTAPE") "${album.year} • " else ""
-        binding.tvAlbumDetailMeta.text = "$yearStr${songs.size} Tracks • $durationFormatted"
+        val yearStr = if (album.year > 0 && !album.isMixtape) "${album.year} • " else ""
 
-        if (album.format == "MIXTAPE") {
+        val mixtapePartition = if (album.isMixtape && songs.size > 1) {
+            com.hana.spindle.data.MixtapePartition.partition(songs)
+        } else null
+
+        if (mixtapePartition != null) {
+            val sideADur = formatTime(mixtapePartition.sideADurationMs)
+            val sideBDur = formatTime(mixtapePartition.sideBDurationMs)
+            binding.tvAlbumDetailMeta.text = "$yearStr${songs.size} Tracks • $durationFormatted\nSIDE A: ${mixtapePartition.sideA.size} trk ($sideADur) • SIDE B: ${mixtapePartition.sideB.size} trk ($sideBDur)"
+            albumTracksAdapter.showSideLetters = true
+            albumTracksAdapter.splitIndex = mixtapePartition.splitIndex
+        } else {
+            binding.tvAlbumDetailMeta.text = "$yearStr${songs.size} Tracks • $durationFormatted"
+            albumTracksAdapter.showSideLetters = false
+            albumTracksAdapter.splitIndex = -1
+        }
+
+        if (album.format == AlbumItem.FORMAT_MIXTAPE) {
             albumTracksAdapter.isReorderable = true
             binding.tvAlbumDetailFormat.text = "CUSTOM CASSETTE (DRAG TO REORDER)"
             binding.tvAlbumDetailFormat.setTextColor(Color.parseColor("#F97316"))
@@ -2276,7 +2319,7 @@ class CatalogFragment : Fragment() {
                     album.album
                 )
             }
-        } else if (album.format == "SMART_MIXTAPE") {
+        } else if (album.isSmartMixtape) {
             albumTracksAdapter.isReorderable = false
             binding.tvAlbumDetailFormat.text = "SMART CASSETTE • AUTO-CURATED"
             binding.tvAlbumDetailFormat.setTextColor(Color.parseColor("#FDE68A"))
@@ -2311,7 +2354,7 @@ class CatalogFragment : Fragment() {
 
         // Load thumbnail into circular disc cover
         viewLifecycleOwner.lifecycleScope.launch {
-            if (album.format == "MIXTAPE" || album.representativePath.isBlank()) {
+            if (album.isMixtape || album.representativePath.isBlank()) {
                 binding.ivAlbumDetailCover.setPadding(32, 32, 32, 32)
                 binding.ivAlbumDetailCover.setImageResource(com.hana.spindle.R.drawable.ic_mixtape_tape)
                 binding.ivAlbumDetailCover.imageTintList = null
@@ -2345,6 +2388,7 @@ class CatalogFragment : Fragment() {
             app.audioEngine.foleyEngine.playTilePress()
             if (songs.isNotEmpty()) {
                 currentDisplayedSongs = songs
+                audioEngine.setMixtapeSplitIndex(mixtapePartition?.splitIndex ?: -1)
                 audioEngine.playQueue(songs, 0)
                 showNowPlayingSingleAudio(true)
             }
@@ -2721,13 +2765,13 @@ class CatalogFragment : Fragment() {
 
     private fun updatePanoramaPlayback(app: SpindleApp, state: com.hana.spindle.playback.PlaybackState) {
         val pBinding = _binding?.layoutPanorama ?: return
-        val song = state.currentSong
-        if (song != null) {
-            pBinding.tvPanoramaNpTitle.text = song.title
-            val artistAlbum = if (song.album.isNotBlank()) "${song.artist} • ${song.album}" else song.artist
+        val track = state.currentTrack
+        if (track != null) {
+            pBinding.tvPanoramaNpTitle.text = track.title
+            val artistAlbum = if (track.album.isNotBlank()) "${track.artist} • ${track.album}" else track.artist
             pBinding.tvPanoramaNpArtist.text = artistAlbum
             viewLifecycleOwner.lifecycleScope.launch {
-                val cover = app.imageLoader.loadCover(song.path, 400, 400)
+                val cover = app.imageLoader.loadCover(track.path, 400, 400)
                 if (cover != null) {
                     pBinding.ivPanoramaArt.setImageBitmap(cover)
                 } else {
@@ -3143,7 +3187,7 @@ class CatalogFragment : Fragment() {
             "DISCOGRAPHY" -> app.database.trackDao().getTracksByArtist(album.album)
             "COMPOSER" -> app.database.trackDao().getTracksByComposer(album.album)
             "GENRE" -> app.database.trackDao().getTracksByGenre(album.album)
-            "MIXTAPE" -> app.database.playlistDao().getTracksForPlaylist(album.year.toLong())
+            AlbumItem.FORMAT_MIXTAPE -> app.database.playlistDao().getTracksForPlaylist(album.year.toLong())
             else -> app.database.trackDao().getTracksByAlbum(album.album)
         }
     }
@@ -3166,7 +3210,7 @@ class CatalogFragment : Fragment() {
                             trackCount = recentlyAdded.size,
                             representativePath = recentlyAdded.firstOrNull()?.path ?: "",
                             year = SMART_ID_RECENTLY_ADDED,
-                            format = "SMART_MIXTAPE"
+                            format = AlbumItem.FORMAT_SMART_MIXTAPE
                         )
                     )
                 }
@@ -3183,7 +3227,7 @@ class CatalogFragment : Fragment() {
                             trackCount = recentlyPlayed.size,
                             representativePath = recentlyPlayed.firstOrNull()?.path ?: "",
                             year = SMART_ID_RECENTLY_PLAYED,
-                            format = "SMART_MIXTAPE"
+                            format = AlbumItem.FORMAT_SMART_MIXTAPE
                         )
                     )
                 }
@@ -3200,7 +3244,7 @@ class CatalogFragment : Fragment() {
                             trackCount = mostPlayed.size,
                             representativePath = mostPlayed.firstOrNull()?.path ?: "",
                             year = SMART_ID_MOST_PLAYED,
-                            format = "SMART_MIXTAPE"
+                            format = AlbumItem.FORMAT_SMART_MIXTAPE
                         )
                     )
                 }
@@ -3215,7 +3259,7 @@ class CatalogFragment : Fragment() {
                             trackCount = neverPlayed.size,
                             representativePath = neverPlayed.firstOrNull()?.path ?: "",
                             year = SMART_ID_NEVER_PLAYED,
-                            format = "SMART_MIXTAPE"
+                            format = AlbumItem.FORMAT_SMART_MIXTAPE
                         )
                     )
                 }
@@ -3230,7 +3274,7 @@ class CatalogFragment : Fragment() {
                             trackCount = favorites.size,
                             representativePath = favorites.firstOrNull()?.path ?: "",
                             year = SMART_ID_FAVORITES,
-                            format = "SMART_MIXTAPE"
+                            format = AlbumItem.FORMAT_SMART_MIXTAPE
                         )
                     )
                 }
@@ -3245,7 +3289,7 @@ class CatalogFragment : Fragment() {
                             trackCount = hiRes.size,
                             representativePath = hiRes.firstOrNull()?.path ?: "",
                             year = SMART_ID_HI_RES,
-                            format = "SMART_MIXTAPE"
+                            format = AlbumItem.FORMAT_SMART_MIXTAPE
                         )
                     )
                 }
@@ -3258,7 +3302,7 @@ class CatalogFragment : Fragment() {
                         trackCount = playlist.trackCount,
                         representativePath = "",
                         year = playlist.id.toInt(),
-                        format = "MIXTAPE"
+                        format = AlbumItem.FORMAT_MIXTAPE
                     )
                 }
 
