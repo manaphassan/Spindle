@@ -5,6 +5,7 @@ import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
@@ -56,6 +57,7 @@ class LiteFolderAdapter(
 
     class FolderViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val tvIndex: TextView = itemView.findViewById(R.id.tvTrackIndex)
+        val ivThumbnail: ImageView = itemView.findViewById(R.id.ivThumbnail)
         private val tvTitle: TextView = itemView.findViewById(R.id.tvItemTitle)
         private val tvArtist: TextView = itemView.findViewById(R.id.tvItemArtist)
         private val tvFormat: TextView = itemView.findViewById(R.id.tvItemFormat)
@@ -87,6 +89,7 @@ class LiteFolderAdapter(
                     tvFormat.text = "DIR"
                     tvFormat.setTextColor(amberGlow)
                     tvDuration.text = ""
+                    ivThumbnail.setImageResource(R.drawable.ic_folder)
 
                     itemView.setOnClickListener {
                         onDirClick(item.file)
@@ -110,6 +113,8 @@ class LiteFolderAdapter(
 
                     tvDuration.text = track?.formattedDuration ?: ""
                     tvDuration.setTextColor(mutedText)
+
+                    LiteBitmapCache.loadAsync(item.file.absolutePath, ivThumbnail, R.drawable.ic_album_placeholder)
 
                     itemView.setOnClickListener {
                         val audioFiles = allItems.filterIsInstance<Item.Audio>().map { it.file }

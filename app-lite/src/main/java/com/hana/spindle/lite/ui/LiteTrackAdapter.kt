@@ -3,6 +3,7 @@ package com.hana.spindle.lite.ui
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.SectionIndexer
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
@@ -135,6 +136,7 @@ class LiteTrackAdapter(
     class TrackViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val vTapeSpine: View = itemView.findViewById(R.id.vTapeSpine)
         private val tvIndex: TextView = itemView.findViewById(R.id.tvTrackIndex)
+        val ivThumbnail: ImageView = itemView.findViewById(R.id.ivThumbnail)
         private val tvTitle: TextView = itemView.findViewById(R.id.tvItemTitle)
         private val tvArtist: TextView = itemView.findViewById(R.id.tvItemArtist)
         private val tvFormat: TextView = itemView.findViewById(R.id.tvItemFormat)
@@ -176,6 +178,8 @@ class LiteTrackAdapter(
             tvFormat.setTextColor(spineColor)
 
             tvDuration.text = track.formattedDuration
+
+            LiteBitmapCache.loadAsync(track.filePath, ivThumbnail, R.drawable.ic_album_placeholder)
 
             itemView.setOnClickListener {
                 onClick(position, track)

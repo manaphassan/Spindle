@@ -146,6 +146,23 @@
                     android:paddingRight="12dp" />
 
                 <Button
+                    android:id="@+id/btnVaultGenres"
+                    style="?android:attr/borderlessButtonStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minHeight="0dp"
+                    android:minWidth="0dp"
+                    android:fontFamily="sans-serif"
+                    android:text="genres"
+                    android:textAllCaps="false"
+                    android:textColor="@color/lite_metro_text_muted"
+                    android:textSize="18sp"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
+                    android:paddingLeft="6dp"
+                    android:paddingRight="12dp" />
+
+                <Button
                     android:id="@+id/btnVaultFolders"
                     style="?android:attr/borderlessButtonStyle"
                     android:layout_width="wrap_content"
@@ -311,6 +328,53 @@
             android:clipToPadding="false"
             android:fastScrollEnabled="true"
             android:scrollbars="vertical" />
+
+        <!-- Vault Now-Playing Mini-Ticker (Zune HD Metro 1-line strip) -->
+        <LinearLayout
+            android:id="@+id/containerVaultTicker"
+            android:layout_width="match_parent"
+            android:layout_height="36dp"
+            android:background="@drawable/bg_metro_ticker"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingLeft="8dp"
+            android:paddingRight="6dp"
+            android:layout_marginTop="3dp"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/ivTickerThumb"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:layout_marginRight="8dp"
+                android:scaleType="centerCrop"
+                android:background="@drawable/bg_thumbnail_frame"
+                android:src="@drawable/ic_album_placeholder"
+                android:contentDescription="Now Playing Art" />
+
+            <TextView
+                android:id="@+id/tvVaultTickerText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="marquee"
+                android:marqueeRepeatLimit="marquee_forever"
+                android:singleLine="true"
+                android:fontFamily="sans-serif-medium"
+                android:includeFontPadding="false"
+                android:text="▶ NO TRACK PLAYING"
+                android:textColor="@color/brand_orange"
+                android:textSize="12sp" />
+
+            <ImageButton
+                android:id="@+id/btnVaultTickerPlayPause"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="?android:attr/selectableItemBackground"
+                android:src="@drawable/ic_play"
+                android:tint="@color/brand_orange"
+                android:contentDescription="Play/Pause" />
+        </LinearLayout>
     </LinearLayout>
 
 </FrameLayout>

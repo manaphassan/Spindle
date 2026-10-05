@@ -16,7 +16,8 @@ data class Track(
     val sampleRate: Int = 0,
     val bitDepth: Int = 0,
     val replayGainDb: Float? = null,
-    val replayGainAlbumDb: Float? = null
+    val replayGainAlbumDb: Float? = null,
+    val genre: String = "Unknown Genre"
 ) {
     val formattedDuration: String
         get() {

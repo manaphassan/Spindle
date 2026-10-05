@@ -68,6 +68,9 @@ class LiteMediaScanner(private val context: Context) {
                         val album = it.getString(albumIdx) ?: "Unknown Album"
                         val duration = it.getLong(durationIdx)
                         val ext = file.extension.uppercase()
+                        val genreIdx = it.getColumnIndex("genre")
+                        val mediaStoreGenre = if (genreIdx != -1 && !it.isNull(genreIdx)) it.getString(genreIdx) else null
+                        val genre = mediaStoreGenre?.let { g -> AudioHeaderParser.cleanNumericGenre(g) } ?: "Unknown Genre"
 
                         scannedTracks.add(
                             Track(
@@ -76,7 +79,8 @@ class LiteMediaScanner(private val context: Context) {
                                 album = album,
                                 durationMs = duration,
                                 filePath = path,
-                                format = ext.ifEmpty { "AUDIO" }
+                                format = ext.ifEmpty { "AUDIO" },
+                                genre = genre
                             )
                         )
                     }
@@ -147,7 +151,8 @@ class LiteMediaScanner(private val context: Context) {
                 sampleRate = fastMeta.sampleRate,
                 bitDepth = fastMeta.bitDepth,
                 replayGainDb = fastMeta.replayGainTrackDb,
-                replayGainAlbumDb = fastMeta.replayGainAlbumDb
+                replayGainAlbumDb = fastMeta.replayGainAlbumDb,
+                genre = fastMeta.genre ?: "Unknown Genre"
             )
         }
 
@@ -165,6 +170,8 @@ class LiteMediaScanner(private val context: Context) {
             val duration = durationStr?.toLongOrNull() ?: 0L
             val bitrateStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE)
             val bitrate = (bitrateStr?.toIntOrNull() ?: 0) / 1000
+            val genreRaw = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_GENRE)
+            val genre = AudioHeaderParser.cleanNumericGenre(genreRaw ?: "")
 
             // Native audio stream header inspection for FLAC and WAV
             val specs = AudioHeaderParser.parse(file)
@@ -180,7 +187,8 @@ class LiteMediaScanner(private val context: Context) {
                 format = file.extension.uppercase(),
                 bitrate = bitrate,
                 sampleRate = sampleRate,
-                bitDepth = bitDepth
+                bitDepth = bitDepth,
+                genre = genre
             )
         } catch (e: Exception) {
             Track(
@@ -189,7 +197,8 @@ class LiteMediaScanner(private val context: Context) {
                 album = "MicroSD",
                 durationMs = 0L,
                 filePath = file.absolutePath,
-                format = file.extension.uppercase()
+                format = file.extension.uppercase(),
+                genre = "Unknown Genre"
             )
         } finally {
             try {

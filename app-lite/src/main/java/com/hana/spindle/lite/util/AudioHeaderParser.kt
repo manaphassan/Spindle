@@ -28,7 +28,8 @@ object AudioHeaderParser {
         val bitDepth: Int,
         val bitrate: Int,
         val replayGainTrackDb: Float? = null,
-        val replayGainAlbumDb: Float? = null
+        val replayGainAlbumDb: Float? = null,
+        val genre: String? = null
     )
 
     data class CueTrackInfo(
@@ -93,6 +94,7 @@ object AudioHeaderParser {
             var album: String? = null
             var replayGainTrack: Float? = null
             var replayGainAlbum: Float? = null
+            var genre: String? = null
 
             var isLast = false
             val blockHeader = ByteArray(4)
@@ -142,6 +144,7 @@ object AudioHeaderParser {
                         album = vResult.album
                         replayGainTrack = vResult.replayGainTrackDb
                         replayGainAlbum = vResult.replayGainAlbumDb
+                        if (genre == null) genre = vResult.genre
                     }
                 } else {
                     fis.skip(blockSize.toLong())
@@ -158,7 +161,8 @@ object AudioHeaderParser {
                     bitDepth = bitDepth,
                     bitrate = if (durationMs > 0) ((file.length() * 8) / durationMs).toInt() else 0,
                     replayGainTrackDb = replayGainTrack,
-                    replayGainAlbumDb = replayGainAlbum
+                    replayGainAlbumDb = replayGainAlbum,
+                    genre = genre
                 )
             }
         }
@@ -170,7 +174,8 @@ object AudioHeaderParser {
         val artist: String?,
         val album: String?,
         val replayGainTrackDb: Float? = null,
-        val replayGainAlbumDb: Float? = null
+        val replayGainAlbumDb: Float? = null,
+        val genre: String? = null
     )
 
     fun parseGainString(value: String): Float? {
@@ -200,6 +205,7 @@ object AudioHeaderParser {
         var album: String? = null
         var rgTrack: Float? = null
         var rgAlbum: Float? = null
+        var genre: String? = null
 
         for (i in 0 until count.coerceAtMost(64)) {
             if (offset + 4 > buf.size) break
@@ -220,12 +226,13 @@ object AudioHeaderParser {
                     "TITLE" -> if (title == null) title = value
                     "ARTIST" -> if (artist == null) artist = value
                     "ALBUM" -> if (album == null) album = value
+                    "GENRE" -> if (genre == null) genre = value
                     "REPLAYGAIN_TRACK_GAIN" -> if (rgTrack == null) rgTrack = parseGainString(value)
                     "REPLAYGAIN_ALBUM_GAIN" -> if (rgAlbum == null) rgAlbum = parseGainString(value)
                 }
             }
         }
-        return VorbisCommentResult(title, artist, album, rgTrack, rgAlbum)
+        return VorbisCommentResult(title, artist, album, rgTrack, rgAlbum, genre)
     }
 
     private fun parseMp3Id3v2(file: File): ParsedMetadata? {
@@ -253,6 +260,7 @@ object AudioHeaderParser {
             var durationMs = 0L
             var replayGainTrack: Float? = null
             var replayGainAlbum: Float? = null
+            var genre: String? = null
 
             while (offset + 10 <= read) {
                 val frameId = String(tagBytes, offset, 4, StandardCharsets.US_ASCII)
@@ -283,6 +291,7 @@ object AudioHeaderParser {
                             "TIT2" -> title = cleanValue
                             "TPE1" -> artist = cleanValue
                             "TALB" -> album = cleanValue
+                            "TCON" -> if (genre == null) genre = cleanNumericGenre(cleanValue)
                             "TLEN" -> durationMs = cleanValue.toLongOrNull() ?: 0L
                             "TXXX" -> {
                                 val upper = cleanValue.uppercase()
@@ -311,9 +320,43 @@ object AudioHeaderParser {
                 bitDepth = 16,
                 bitrate = 320,
                 replayGainTrackDb = replayGainTrack,
-                replayGainAlbumDb = replayGainAlbum
+                replayGainAlbumDb = replayGainAlbum,
+                genre = genre
             )
         }
+    }
+
+    private val ID3_GENRES = arrayOf(
+        "Blues", "Classic Rock", "Country", "Dance", "Disco", "Funk", "Grunge", "Hip-Hop",
+        "Jazz", "Metal", "New Age", "Oldies", "Other", "Pop", "R&B", "Rap", "Reggae",
+        "Rock", "Techno", "Industrial", "Alternative", "Ska", "Death Metal", "Pranks",
+        "Soundtrack", "Euro-Techno", "Ambient", "Trip-Hop", "Vocal", "Jazz+Funk", "Fusion",
+        "Trance", "Classical", "Instrumental", "Acid", "House", "Game", "Sound Clip",
+        "Gospel", "Noise", "AlternRock", "Bass", "Soul", "Punk", "Space", "Meditative",
+        "Instrumental Pop", "Instrumental Rock", "Ethnic", "Gothic", "Darkwave",
+        "Techno-Industrial", "Electronic", "Pop-Folk", "Eurodance", "Dream", "Southern Rock",
+        "Comedy", "Cult", "Gangsta", "Top 40", "Christian Rap", "Pop/Funk", "Jungle",
+        "Native American", "Cabaret", "New Wave", "Psychadelic", "Rave", "Showtunes",
+        "Trailer", "Lo-Fi", "Tribal", "Acid Punk", "Acid Jazz", "Polka", "Retro",
+        "Musical", "Rock & Roll", "Hard Rock"
+    )
+
+    fun cleanNumericGenre(raw: String): String {
+        val trimmed = raw.trim()
+        if (trimmed.startsWith("(") && trimmed.contains(")")) {
+            val numStr = trimmed.substring(1, trimmed.indexOf(")")).trim()
+            val rest = trimmed.substringAfter(")").trim()
+            if (rest.isNotEmpty()) return rest
+            val idx = numStr.toIntOrNull()
+            if (idx != null && idx in ID3_GENRES.indices) {
+                return ID3_GENRES[idx]
+            }
+        }
+        val directIdx = trimmed.toIntOrNull()
+        if (directIdx != null && directIdx in ID3_GENRES.indices) {
+            return ID3_GENRES[directIdx]
+        }
+        return trimmed.ifEmpty { "Unknown Genre" }
     }
 
     private fun parseWavSpecs(file: File): AudioSpecs? {

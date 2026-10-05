@@ -21,8 +21,8 @@ This release package contains verified, production-ready APK builds for both Spi
 | **`Spindle-Standard-v1.6.0-STUDIO-release.apk`** | Standard (Production APK) | `v1.6.0-STUDIO` (Code 8) | **4.88 MB** | Modern DAP & Smartphones | Android 8.0+ (API 26+) |
 | **`Spindle-Standard-v1.6.0-STUDIO-release.aab`** | Standard (Play App Bundle) | `v1.6.0-STUDIO` (Code 8) | **7.37 MB** | Google Play Store Upload | Android 8.0+ (API 26+) |
 | **`Spindle-Standard-v1.6.0-STUDIO-debug.apk`** | Standard (Studio Debug) | `v1.6.0-STUDIO` (Code 8) | **11.10 MB** | Developer / Testing | Android 8.0+ (API 26+) |
-| **`Spindle-Lite-v1.1.0-LITE.apk`** | Lite | `v1.1.0-LITE` (Code 5) | **1.73 MB** | Vintage DAP & Small Screens | Android 4.4+ (API 19+) |
-| **`Spindle-Lite-v1.1.0-LITE-debug.apk`** | Lite (Debug) | `v1.1.0-LITE.debug` | **5.76 MB** | Developer / Testing | Android 4.4+ (API 19+) |
+| **`Spindle-Lite-v1.1.1-LITE.apk`** | Lite | `v1.1.1-LITE` (Code 6) | **1.75 MB** | Vintage DAP & Small Screens | Android 4.4+ (API 19+) |
+| **`Spindle-Lite-v1.1.1-LITE-debug.apk`** | Lite (Debug) | `v1.1.1-LITE.debug` | **5.79 MB** | Developer / Testing | Android 4.4+ (API 19+) |
 
 ---
 
@@ -43,13 +43,36 @@ sha256sum -c SHA256SUMS.txt
 62be4d545b6e3bb7adc5bfb47c79008af95b5c1db2d38fd01920d4e6191b822b  Spindle-Standard-v1.6.0-STUDIO-release.apk
 f4812c0bffd9ce8ad02949177205409226eca539ad031e912fa97ffbc5c6e25f  Spindle-Standard-v1.6.0-STUDIO-release.aab
 1d58d3f53cebd5dd9b9fea46584dd6bb5992cd89b425fc164589991105bed8e4  Spindle-Standard-v1.6.0-STUDIO-debug.apk
-b39e720345addd8033207a7f5fea8e6c13c06affde0aa6ba04a86f8288641310  Spindle-Lite-v1.1.0-LITE.apk
-09765bb2989d07ab5a1b2599994674df9ed6fa9d36275ff133e1fa7e89917ad7  Spindle-Lite-v1.1.0-LITE-debug.apk
+5395aa37d5812d4f526a862abb5e75d2f8012e03a753fc11a26c2341cee870f0  Spindle-Lite-v1.1.1-LITE.apk
+ea7ebee531bf4c7f1fb4fa5ae33ac22a551e0aac5e0f6ededf4b2ab7ac201120  Spindle-Lite-v1.1.1-LITE-debug.apk
 ```
 
 ---
 
-## 📻 What's New in Spindle Lite v1.1.0-LITE (Stable Release)
+## 📻 What's New in Spindle Lite v1.1.1-LITE (Enhancements Release)
+
+1. **Ultra-Low-RAM Album Art Thumbnails (32×32 / 48×48)**:
+   - Asynchronous background thumbnail decoding using `MediaMetadataRetriever` with `RGB_565` downsampling.
+   - Strictly capped **2MB LRU memory cache** with negative caching to avoid disk thrashing on missing art.
+   - Preserves an ultra-low **9 MB active heap footprint** while providing visual artwork flavor across Songs, Artists, Albums, Genres, and Folders.
+   - Rounded border thumbnail frames and KitKat-safe custom vinyl reel placeholders.
+
+2. **Vault Now-Playing Mini-Ticker**:
+   - 1-line minimalist Metro ticker anchored at the bottom of the Music Vault overlay.
+   - Displays real-time track marquee (`▶ TRACK — ARTIST` / `❚❚ TRACK — ARTIST`) alongside active album art thumbnail.
+   - Integrated play/pause toggle button (`btnVaultTickerPlayPause`) allowing track control without leaving the vault.
+   - Tap ticker text or background to smoothly jump directly to the Cassette Player deck.
+
+3. **6-Pivot Music Vault with Genre Drill-Down (`genres`)**:
+   - Expanded Vault to 6 pivots: `songs` • `artists` • `albums` • `genres` • `folders` • `queue`.
+   - Vorbis `GENRE` tag parsing and ID3v2 `TCON` genre parsing with automatic numeric ID translation.
+   - Dedicated `LiteGenreAdapter` with Zune Metro typography, track counts, album counts, total runtime, and SectionIndexer for A–Z jump lists.
+   - Full genre drill-down list with `← GENRES` back navigation and `PLAY ALL` action button.
+   - Extended hardware D-pad navigation to switch across all 6 pivots.
+
+---
+
+## 📻 Spindle Lite v1.1.0-LITE Baseline Features
 
 1. **Zune HD Metro Layout & High-Density Typographic Redesign**:
    - Complete visual revamp tailored for vintage HVGA (320×480) screens and 512MB RAM hardware.

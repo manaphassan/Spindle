@@ -29,13 +29,25 @@
         android:textColor="@color/lite_metro_text_muted"
         android:textSize="12.5sp" />
 
+    <!-- Ultra-Low-RAM Album Art Thumbnail (36x36 dp) -->
+    <ImageView
+        android:id="@+id/ivThumbnail"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_marginLeft="2dp"
+        android:layout_marginRight="6dp"
+        android:scaleType="centerCrop"
+        android:background="@drawable/bg_thumbnail_frame"
+        android:src="@drawable/ic_album_placeholder"
+        android:contentDescription="Artwork" />
+
     <!-- Title & Artist / Codec (Zune HD Typographic Hierarchy - Full Runway) -->
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:orientation="vertical"
-        android:paddingLeft="6dp"
+        android:paddingLeft="2dp"
         android:paddingRight="8dp">
 
         <TextView

@@ -9,74 +9,54 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.hana.spindle.lite.R
-import com.hana.spindle.lite.db.Track
 
 /**
- * Immutable data representation of an artist in Spindle Lite's library.
- * Zero database overhead; derived directly from scanned track metadata.
- */
-data class LiteArtist(
-    val name: String,
-    val tracks: List<Track>,
-    val albumCount: Int = tracks.map { it.album.ifBlank { "Unknown Album" } }.distinct().size,
-    val totalDurationMs: Long = tracks.sumOf { it.durationMs }
-) {
-    val formattedDuration: String
-        get() {
-            val totalSec = totalDurationMs / 1000
-            val min = totalSec / 60
-            val sec = totalSec % 60
-            return String.format("%02d:%02d", min, sec)
-        }
-}
-
-/**
- * Ultra-lightweight RecyclerView adapter for Zune HD Metro artist navigation.
+ * Ultra-lightweight RecyclerView adapter for Zune HD Metro genre navigation.
  * Reuses item_lite_track layout for maximum efficiency on 512MB RAM.
  */
-class LiteArtistAdapter(
-    private var artists: List<LiteArtist> = emptyList(),
-    private val onArtistClicked: (LiteArtist) -> Unit
-) : RecyclerView.Adapter<LiteArtistAdapter.ArtistViewHolder>(), SectionIndexer {
+class LiteGenreAdapter(
+    private var genres: List<LiteGenre> = emptyList(),
+    private val onGenreClicked: (LiteGenre) -> Unit
+) : RecyclerView.Adapter<LiteGenreAdapter.GenreViewHolder>(), SectionIndexer {
 
-    private var allArtists: List<LiteArtist> = artists
-    private var displayedArtists: List<LiteArtist> = artists
+    private var allGenres: List<LiteGenre> = genres
+    private var displayedGenres: List<LiteGenre> = genres
     private var sections: Array<String> = emptyArray()
     private var sectionPositions: IntArray = IntArray(0)
 
-    fun updateArtists(newArtists: List<LiteArtist>) {
-        this.allArtists = newArtists
+    fun updateGenres(newGenres: List<LiteGenre>) {
+        this.allGenres = newGenres
         applyFilterInternal("")
     }
 
-    fun getArtists(): List<LiteArtist> = displayedArtists
+    fun getGenres(): List<LiteGenre> = displayedGenres
 
     fun filter(query: String) {
         applyFilterInternal(query.trim().lowercase())
     }
 
     private fun applyFilterInternal(q: String) {
-        displayedArtists = if (q.isEmpty()) {
-            allArtists
+        displayedGenres = if (q.isEmpty()) {
+            allGenres
         } else {
-            allArtists.filter {
+            allGenres.filter {
                 it.name.lowercase().contains(q)
             }
         }
-        rebuildSections(displayedArtists)
+        rebuildSections(displayedGenres)
         notifyDataSetChanged()
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ArtistViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): GenreViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_lite_track, parent, false)
-        return ArtistViewHolder(view)
+        return GenreViewHolder(view)
     }
 
-    override fun onBindViewHolder(holder: ArtistViewHolder, position: Int) {
-        holder.bind(displayedArtists[position], position, onArtistClicked)
+    override fun onBindViewHolder(holder: GenreViewHolder, position: Int) {
+        holder.bind(displayedGenres[position], position, onGenreClicked)
     }
 
-    override fun getItemCount(): Int = displayedArtists.size
+    override fun getItemCount(): Int = displayedGenres.size
 
     // --- SectionIndexer for Zune A-Z Quick Jump ---
 
@@ -95,7 +75,7 @@ class LiteArtistAdapter(
         return 0
     }
 
-    private fun rebuildSections(list: List<LiteArtist>) {
+    private fun rebuildSections(list: List<LiteGenre>) {
         val map = LinkedHashMap<String, Int>()
         for (i in list.indices) {
             val name = list[i].name.trim()
@@ -112,7 +92,7 @@ class LiteArtistAdapter(
         sectionPositions = map.values.toIntArray()
     }
 
-    class ArtistViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    class GenreViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val vSpine: View = itemView.findViewById(R.id.vTapeSpine)
         private val tvIndex: TextView = itemView.findViewById(R.id.tvTrackIndex)
         val ivThumbnail: ImageView = itemView.findViewById(R.id.ivThumbnail)
@@ -120,7 +100,7 @@ class LiteArtistAdapter(
         private val tvArtist: TextView = itemView.findViewById(R.id.tvItemArtist)
         private val tvDuration: TextView = itemView.findViewById(R.id.tvItemDuration)
 
-        fun bind(artist: LiteArtist, position: Int, onClick: (LiteArtist) -> Unit) {
+        fun bind(genre: LiteGenre, position: Int, onClick: (LiteGenre) -> Unit) {
             val context = itemView.context
             val primaryText = ContextCompat.getColor(context, R.color.lite_metro_text_primary)
             val secondaryText = ContextCompat.getColor(context, R.color.lite_metro_text_secondary)
@@ -131,21 +111,21 @@ class LiteArtistAdapter(
             tvIndex.text = String.format("%02d", position + 1)
             tvIndex.setTextColor(mutedText)
 
-            tvTitle.text = artist.name
+            tvTitle.text = genre.name
             tvTitle.setTextColor(primaryText)
 
-            val albumStr = if (artist.albumCount == 1) "1 album" else "${artist.albumCount} albums"
-            val trackStr = if (artist.tracks.size == 1) "1 track" else "${artist.tracks.size} tracks"
-            tvArtist.text = "$albumStr • $trackStr"
+            val trackStr = if (genre.tracks.size == 1) "1 track" else "${genre.tracks.size} tracks"
+            val albumStr = if (genre.albumCount == 1) "1 album" else "${genre.albumCount} albums"
+            tvArtist.text = "$trackStr • $albumStr"
             tvArtist.setTextColor(secondaryText)
 
-            tvDuration.text = artist.formattedDuration
+            tvDuration.text = genre.formattedDuration
             tvDuration.setTextColor(mutedText)
 
-            val artPath = artist.tracks.firstOrNull()?.filePath.orEmpty()
-            LiteBitmapCache.loadAsync(artPath, ivThumbnail, R.drawable.ic_album_placeholder)
+            val firstArtPath = genre.tracks.firstOrNull()?.filePath.orEmpty()
+            LiteBitmapCache.loadAsync(firstArtPath, ivThumbnail, R.drawable.ic_album_placeholder)
 
-            itemView.setOnClickListener { onClick(artist) }
+            itemView.setOnClickListener { onClick(genre) }
         }
     }
 }

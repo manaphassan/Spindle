@@ -14,8 +14,8 @@ android {
         applicationId = "com.hana.spindle.lite"
         minSdk = 19
         targetSdk = 34
-        versionCode = 5
-        versionName = "1.1.0-LITE"
+        versionCode = 6
+        versionName = "1.1.1-LITE"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

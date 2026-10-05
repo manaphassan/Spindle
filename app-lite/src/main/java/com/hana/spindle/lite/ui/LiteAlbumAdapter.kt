@@ -3,6 +3,7 @@ package com.hana.spindle.lite.ui
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.SectionIndexer
 import android.widget.TextView
 import androidx.core.content.ContextCompat
@@ -114,6 +115,7 @@ class LiteAlbumAdapter(
     class AlbumViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val vSpine: View = itemView.findViewById(R.id.vTapeSpine)
         private val tvIndex: TextView = itemView.findViewById(R.id.tvTrackIndex)
+        val ivThumbnail: ImageView = itemView.findViewById(R.id.ivThumbnail)
         private val tvTitle: TextView = itemView.findViewById(R.id.tvItemTitle)
         private val tvArtist: TextView = itemView.findViewById(R.id.tvItemArtist)
         private val tvDuration: TextView = itemView.findViewById(R.id.tvItemDuration)
@@ -138,6 +140,9 @@ class LiteAlbumAdapter(
 
             tvDuration.text = album.formattedDuration
             tvDuration.setTextColor(mutedText)
+
+            val artPath = album.tracks.firstOrNull()?.filePath.orEmpty()
+            LiteBitmapCache.loadAsync(artPath, ivThumbnail, R.drawable.ic_album_placeholder)
 
             itemView.setOnClickListener { onClick(album) }
         }

@@ -86,12 +86,15 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
     private lateinit var artistTrackAdapter: LiteTrackAdapter
     private lateinit var albumAdapter: LiteAlbumAdapter
     private lateinit var albumTrackAdapter: LiteTrackAdapter
+    private lateinit var genreAdapter: LiteGenreAdapter
+    private lateinit var genreTrackAdapter: LiteTrackAdapter
     private lateinit var appAdapter: LiteAppAdapter
 
-    private var currentVaultTab = 0 // 0 = SONGS, 1 = ARTISTS, 2 = ALBUMS, 3 = FOLDERS, 4 = QUEUE
+    private var currentVaultTab = 0 // 0 = SONGS, 1 = ARTISTS, 2 = ALBUMS, 3 = GENRES, 4 = FOLDERS, 5 = QUEUE
     private var currentVaultDirectory: File? = null
     private var currentSelectedArtist: LiteArtist? = null
     private var currentSelectedAlbum: LiteAlbum? = null
+    private var currentSelectedGenre: LiteGenre? = null
     private var currentDrawerTab = 1 // 0 = EQ, 1 = APPS, 2 = SETTINGS
     private var activeAppDialog: AlertDialog? = null
 
@@ -1434,6 +1437,19 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
             binding.drawerLayout.visibility = View.GONE
         }
 
+        genreAdapter = LiteGenreAdapter(emptyList()) { genre ->
+            openGenre(genre)
+        }
+
+        genreTrackAdapter = LiteTrackAdapter(emptyList()) { position, _ ->
+            if (radioEngine.isPlaying || radioEngine.isBuffering) {
+                radioEngine.stop()
+            }
+            val activeList = genreTrackAdapter.getTracks()
+            audioEngine.setPlaylist(activeList, position)
+            binding.drawerLayout.visibility = View.GONE
+        }
+
         folderAdapter = LiteFolderAdapter(
             onDirectoryClicked = { dir ->
                 loadVaultFolder(dir)
@@ -1476,12 +1492,13 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
         binding.btnFilterLossless.setOnClickListener { selectVaultFilter(LiteTrackAdapter.VaultFilter.LOSSLESS) }
         binding.btnFilterNormal.setOnClickListener { selectVaultFilter(LiteTrackAdapter.VaultFilter.NORMAL) }
 
-        // Vault Sub-tab Switchers
+        // Vault Sub-tab Switchers (songs / artists / albums / genres / folders / queue)
         binding.btnVaultTracks.setOnClickListener { selectVaultTab(0) }
         binding.btnVaultArtists.setOnClickListener { selectVaultTab(1) }
         binding.btnVaultAlbums.setOnClickListener { selectVaultTab(2) }
-        binding.btnVaultFolders.setOnClickListener { selectVaultTab(3) }
-        binding.btnVaultQueue.setOnClickListener { selectVaultTab(4) }
+        binding.btnVaultGenres.setOnClickListener { selectVaultTab(3) }
+        binding.btnVaultFolders.setOnClickListener { selectVaultTab(4) }
+        binding.btnVaultQueue.setOnClickListener { selectVaultTab(5) }
 
         // Filter / Search Input
         binding.etSearchVault.addTextChangedListener(object : TextWatcher {
@@ -1504,13 +1521,20 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
                             albumAdapter.filter(q)
                         }
                     }
-                    4 -> queueAdapter.filter(q)
+                    3 -> {
+                        if (currentSelectedGenre != null) {
+                            genreTrackAdapter.filter(q)
+                        } else {
+                            genreAdapter.filter(q)
+                        }
+                    }
+                    5 -> queueAdapter.filter(q)
                 }
             }
             override fun afterTextChanged(s: Editable?) {}
         })
 
-        // Folder, Artist & Album Navigation Actions
+        // Folder, Artist, Album & Genre Navigation Actions
         binding.btnFolderUp.setOnClickListener {
             if (currentVaultTab == 1 && currentSelectedArtist != null) {
                 closeArtist()
@@ -1518,7 +1542,10 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
             } else if (currentVaultTab == 2 && currentSelectedAlbum != null) {
                 closeAlbum()
                 hapticEngine.microTick()
-            } else if (currentVaultTab == 3) {
+            } else if (currentVaultTab == 3 && currentSelectedGenre != null) {
+                closeGenre()
+                hapticEngine.microTick()
+            } else if (currentVaultTab == 4) {
                 val parent = currentVaultDirectory?.parentFile
                 if (parent != null && parent.canRead()) {
                     loadVaultFolder(parent)
@@ -1547,7 +1574,17 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
                     binding.drawerLayout.visibility = View.GONE
                     hapticEngine.solenoidEngage()
                 }
-            } else if (currentVaultTab == 3) {
+            } else if (currentVaultTab == 3 && currentSelectedGenre != null) {
+                val genreTracks = currentSelectedGenre?.tracks.orEmpty()
+                if (genreTracks.isNotEmpty()) {
+                    if (radioEngine.isPlaying || radioEngine.isBuffering) {
+                        radioEngine.stop()
+                    }
+                    audioEngine.setPlaylist(genreTracks, 0)
+                    binding.drawerLayout.visibility = View.GONE
+                    hapticEngine.solenoidEngage()
+                }
+            } else if (currentVaultTab == 4) {
                 val audioItems = folderAdapter.getItems().filterIsInstance<LiteFolderAdapter.Item.Audio>()
                 if (audioItems.isNotEmpty()) {
                     val folderTracks = audioItems.map { item ->
@@ -1564,7 +1601,8 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
                                 bitrate = meta?.bitrate ?: 0,
                                 sampleRate = meta?.sampleRate ?: 0,
                                 bitDepth = meta?.bitDepth ?: 0,
-                                replayGainDb = meta?.replayGainTrackDb ?: meta?.replayGainAlbumDb
+                                replayGainDb = meta?.replayGainTrackDb ?: meta?.replayGainAlbumDb,
+                                genre = meta?.genre ?: "Unknown Genre"
                             )
                         }
                     }
@@ -1585,6 +1623,21 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
 
         binding.btnScan.setOnClickListener {
             performMediaScan()
+        }
+
+        // Vault Now-Playing Mini-Ticker Actions (Zune HD 1-line strip)
+        binding.btnVaultTickerPlayPause.setOnClickListener {
+            handlePlayPauseToggle()
+        }
+        binding.containerVaultTicker.setOnClickListener {
+            binding.drawerLayout.visibility = View.GONE
+            binding.viewPager.currentItem = 1
+            hapticEngine.microTick()
+        }
+        binding.tvVaultTickerText.setOnClickListener {
+            binding.drawerLayout.visibility = View.GONE
+            binding.viewPager.currentItem = 1
+            hapticEngine.microTick()
         }
 
         // Zune Metro 26-Letter Quick-Jump Grid for Music Tracks, Artists, and Albums
@@ -1647,6 +1700,28 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
                         binding.rvTrackList.scrollToPosition(0)
                     } else {
                         val targetIdx = albumAdapter.getAlbums().indexOfFirst {
+                            val ch = it.name.firstOrNull()?.uppercaseChar() ?: '#'
+                            if (letter == "#") !ch.isLetter() else ch == letter[0]
+                        }
+                        if (targetIdx >= 0) {
+                            (binding.rvTrackList.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(targetIdx, 0)
+                        }
+                    }
+                }
+            } else if (currentVaultTab == 3 && currentSelectedGenre == null) {
+                val letters = genreAdapter.getGenres()
+                    .mapNotNull { it.name.firstOrNull()?.uppercaseChar() }
+                    .toSet()
+                LiteZuneJumpListDialog.show(
+                    supportFragmentManager,
+                    availableLetters = letters,
+                    title = "genres",
+                    subtitle = "tap a letter to jump immediately"
+                ) { letter ->
+                    if (letter == "↑") {
+                        binding.rvTrackList.scrollToPosition(0)
+                    } else {
+                        val targetIdx = genreAdapter.getGenres().indexOfFirst {
                             val ch = it.name.firstOrNull()?.uppercaseChar() ?: '#'
                             if (letter == "#") !ch.isLetter() else ch == letter[0]
                         }
@@ -1805,6 +1880,32 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
         binding.btnVaultJump.visibility = View.VISIBLE
     }
 
+    private fun openGenre(genre: LiteGenre) {
+        currentSelectedGenre = genre
+        binding.containerFolderPath.visibility = View.VISIBLE
+        binding.btnFolderUp.text = "← GENRES"
+        binding.tvCurrentFolderPath.text = genre.name
+        binding.btnPlayFolder.text = "PLAY ALL"
+        binding.vaultFilterShelf.visibility = View.GONE
+        binding.etSearchVault.visibility = View.GONE
+        genreTrackAdapter.updateTracks(genre.tracks)
+        genreTrackAdapter.setActivePath(audioEngine.currentTrack?.filePath)
+        binding.rvTrackList.adapter = genreTrackAdapter
+        binding.tvVaultStatus.text = "${genre.name} (${genre.tracks.size} tracks)"
+        binding.btnVaultJump.visibility = View.GONE
+    }
+
+    private fun closeGenre() {
+        currentSelectedGenre = null
+        binding.containerFolderPath.visibility = View.GONE
+        binding.vaultFilterShelf.visibility = View.GONE
+        binding.etSearchVault.visibility = View.VISIBLE
+        binding.etSearchVault.hint = "filter genres..."
+        binding.rvTrackList.adapter = genreAdapter
+        binding.tvVaultStatus.text = "Vault: ${genreAdapter.itemCount} genres"
+        binding.btnVaultJump.visibility = View.VISIBLE
+    }
+
     private fun selectVaultTab(tabIndex: Int) {
         currentVaultTab = tabIndex
         val activeColor = ContextCompat.getColor(this, R.color.brand_orange)
@@ -1813,16 +1914,18 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
         binding.btnVaultTracks.setTextColor(if (tabIndex == 0) activeColor else inactiveColor)
         binding.btnVaultArtists.setTextColor(if (tabIndex == 1) activeColor else inactiveColor)
         binding.btnVaultAlbums.setTextColor(if (tabIndex == 2) activeColor else inactiveColor)
-        binding.btnVaultFolders.setTextColor(if (tabIndex == 3) activeColor else inactiveColor)
-        binding.btnVaultQueue.setTextColor(if (tabIndex == 4) activeColor else inactiveColor)
+        binding.btnVaultGenres.setTextColor(if (tabIndex == 3) activeColor else inactiveColor)
+        binding.btnVaultFolders.setTextColor(if (tabIndex == 4) activeColor else inactiveColor)
+        binding.btnVaultQueue.setTextColor(if (tabIndex == 5) activeColor else inactiveColor)
 
         binding.btnVaultTracks.setTypeface(null, if (tabIndex == 0) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
         binding.btnVaultArtists.setTypeface(null, if (tabIndex == 1) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
         binding.btnVaultAlbums.setTypeface(null, if (tabIndex == 2) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
-        binding.btnVaultFolders.setTypeface(null, if (tabIndex == 3) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
-        binding.btnVaultQueue.setTypeface(null, if (tabIndex == 4) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
+        binding.btnVaultGenres.setTypeface(null, if (tabIndex == 3) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
+        binding.btnVaultFolders.setTypeface(null, if (tabIndex == 4) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
+        binding.btnVaultQueue.setTypeface(null, if (tabIndex == 5) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
 
-        binding.btnVaultJump.visibility = if (tabIndex == 0 || (tabIndex == 1 && currentSelectedArtist == null) || (tabIndex == 2 && currentSelectedAlbum == null)) View.VISIBLE else View.GONE
+        binding.btnVaultJump.visibility = if (tabIndex == 0 || (tabIndex == 1 && currentSelectedArtist == null) || (tabIndex == 2 && currentSelectedAlbum == null) || (tabIndex == 3 && currentSelectedGenre == null)) View.VISIBLE else View.GONE
 
         when (tabIndex) {
             0 -> { // TRACKS / SONGS
@@ -1873,7 +1976,27 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
                     binding.tvVaultStatus.text = "Vault: ${albumAdapter.itemCount} albums"
                 }
             }
-            3 -> { // FOLDERS
+            3 -> { // GENRES
+                if (currentSelectedGenre != null) {
+                    val genre = currentSelectedGenre!!
+                    binding.containerFolderPath.visibility = View.VISIBLE
+                    binding.btnFolderUp.text = "← GENRES"
+                    binding.tvCurrentFolderPath.text = genre.name
+                    binding.btnPlayFolder.text = "PLAY ALL"
+                    binding.vaultFilterShelf.visibility = View.GONE
+                    binding.etSearchVault.visibility = View.GONE
+                    binding.rvTrackList.adapter = genreTrackAdapter
+                    binding.tvVaultStatus.text = "${genre.name} (${genre.tracks.size} tracks)"
+                } else {
+                    binding.containerFolderPath.visibility = View.GONE
+                    binding.vaultFilterShelf.visibility = View.GONE
+                    binding.etSearchVault.visibility = View.VISIBLE
+                    binding.etSearchVault.hint = "filter genres..."
+                    binding.rvTrackList.adapter = genreAdapter
+                    binding.tvVaultStatus.text = "Vault: ${genreAdapter.itemCount} genres"
+                }
+            }
+            4 -> { // FOLDERS
                 binding.containerFolderPath.visibility = View.VISIBLE
                 binding.btnFolderUp.text = "[.. UP]"
                 binding.btnPlayFolder.text = "PLAY ALL"
@@ -1886,7 +2009,7 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
                     currentVaultDirectory?.let { loadVaultFolder(it) }
                 }
             }
-            4 -> { // QUEUE
+            5 -> { // QUEUE
                 binding.containerFolderPath.visibility = View.GONE
                 binding.vaultFilterShelf.visibility = View.GONE
                 binding.etSearchVault.visibility = View.VISIBLE
@@ -1897,6 +2020,7 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
                 binding.tvVaultStatus.text = "Queue: ${audioEngine.playlist.size} tracks in transport"
             }
         }
+        updateVaultTicker(audioEngine.currentTrack, audioEngine.isPlaying)
     }
 
     private fun toggleVaultDrawer() {
@@ -1905,10 +2029,26 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
         } else {
             binding.drawerLayout.visibility = View.VISIBLE
             selectVaultTab(currentVaultTab)
+            updateVaultTicker(audioEngine.currentTrack, audioEngine.isPlaying)
             if (currentVaultTab == 0) {
                 refreshTrackList()
             }
         }
+    }
+
+    private fun updateVaultTicker(track: Track?, isPlaying: Boolean) {
+        if (track == null) {
+            binding.containerVaultTicker.visibility = View.GONE
+            return
+        }
+        binding.containerVaultTicker.visibility = View.VISIBLE
+        val playPrefix = if (isPlaying) "▶ " else "❚❚ "
+        binding.tvVaultTickerText.text = "$playPrefix${track.title.uppercase(Locale.getDefault())} — ${track.artist.uppercase(Locale.getDefault())}"
+        binding.tvVaultTickerText.isSelected = true
+        binding.btnVaultTickerPlayPause.setImageResource(
+            if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play
+        )
+        LiteBitmapCache.loadAsync(track.filePath, binding.ivTickerThumb, R.drawable.ic_album_placeholder)
     }
 
     // --- Media Library & Permissions ---
@@ -1994,12 +2134,23 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
         if (::albumAdapter.isInitialized) {
             albumAdapter.updateAlbums(albums)
         }
+        val genres = tracks
+            .groupBy { it.genre.ifBlank { "Unknown Genre" } }
+            .map { (genreName, genreTracks) ->
+                LiteGenre(name = genreName, tracks = genreTracks)
+            }
+            .sortedBy { it.name.lowercase() }
+        if (::genreAdapter.isInitialized) {
+            genreAdapter.updateGenres(genres)
+        }
         if (currentVaultTab == 0) {
             binding.tvVaultStatus.text = "Vault: ${tracks.size} tracks"
         } else if (currentVaultTab == 1 && currentSelectedArtist == null) {
             binding.tvVaultStatus.text = "Vault: ${artists.size} artists"
         } else if (currentVaultTab == 2 && currentSelectedAlbum == null) {
             binding.tvVaultStatus.text = "Vault: ${albums.size} albums"
+        } else if (currentVaultTab == 3 && currentSelectedGenre == null) {
+            binding.tvVaultStatus.text = "Vault: ${genres.size} genres"
         }
         if (tracks.isNotEmpty()) {
             if (audioEngine.currentTrack == null) {
@@ -2034,9 +2185,13 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
         if (::albumTrackAdapter.isInitialized) {
             albumTrackAdapter.setActivePath(track?.filePath)
         }
+        if (::genreTrackAdapter.isInitialized) {
+            genreTrackAdapter.setActivePath(track?.filePath)
+        }
         if (::folderAdapter.isInitialized) {
             folderAdapter.setActivePath(track?.filePath)
         }
+        updateVaultTicker(track, state.isPlaying)
 
         if (track != null) {
             playerBinding.deckView.setNowPlaying(
@@ -2118,8 +2273,10 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
                 playerBinding.ledMeterView.setPlaybackState(isPlaying, 0f)
                 updateIndexBadge(0)
                 updateDacTelemetry(track)
+                updateVaultTicker(track, isPlaying)
             } else {
                 updateDacTelemetry(null)
+                updateVaultTicker(null, false)
             }
 
             if (radioEngine.isPlaying || radioEngine.isBuffering) {
@@ -2440,7 +2597,7 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
                 if (currentFocus !is android.widget.EditText) {
                     if (isDown) {
                         if (binding.drawerLayout.visibility == View.VISIBLE) {
-                            if (currentVaultTab < 4) {
+                            if (currentVaultTab < 5) {
                                 selectVaultTab(currentVaultTab + 1)
                                 hapticEngine.microTick()
                             }
@@ -2517,8 +2674,14 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
                 hapticEngine.microTick()
                 return
             }
-            // 2. If in subfolder in FOLDERS tab, step up to parent folder
-            if (currentVaultTab == 3 && currentVaultDirectory != null && currentVaultDirectory != getInitialMusicDirectory()) {
+            // 2. If in GENRE drilldown, return to genres list
+            if (currentVaultTab == 3 && currentSelectedGenre != null) {
+                closeGenre()
+                hapticEngine.microTick()
+                return
+            }
+            // 3. If in subfolder in FOLDERS tab, step up to parent folder
+            if (currentVaultTab == 4 && currentVaultDirectory != null && currentVaultDirectory != getInitialMusicDirectory()) {
                 val parent = currentVaultDirectory?.parentFile
                 if (parent != null && parent.canRead()) {
                     loadVaultFolder(parent)

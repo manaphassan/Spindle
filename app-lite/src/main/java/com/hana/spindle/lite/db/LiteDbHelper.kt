@@ -14,7 +14,7 @@ class LiteDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, 
 
     companion object {
         const val DATABASE_NAME = "spindle_lite.db"
-        const val DATABASE_VERSION = 3
+        const val DATABASE_VERSION = 4
 
         const val TABLE_TRACKS = "tracks"
         const val COL_ID = "id"
@@ -29,6 +29,7 @@ class LiteDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, 
         const val COL_BIT_DEPTH = "bit_depth"
         const val COL_REPLAYGAIN_DB = "replay_gain_db"
         const val COL_REPLAYGAIN_ALBUM_DB = "replay_gain_album_db"
+        const val COL_GENRE = "genre"
 
         @Volatile
         private var INSTANCE: LiteDbHelper? = null
@@ -54,7 +55,8 @@ class LiteDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, 
                 $COL_SAMPLE_RATE INTEGER,
                 $COL_BIT_DEPTH INTEGER DEFAULT 0,
                 $COL_REPLAYGAIN_DB REAL,
-                $COL_REPLAYGAIN_ALBUM_DB REAL
+                $COL_REPLAYGAIN_ALBUM_DB REAL,
+                $COL_GENRE TEXT DEFAULT 'Unknown Genre'
             );
         """.trimIndent()
 
@@ -69,13 +71,12 @@ class LiteDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, 
             try {
                 db.execSQL("ALTER TABLE $TABLE_TRACKS ADD COLUMN $COL_REPLAYGAIN_DB REAL;")
                 db.execSQL("ALTER TABLE $TABLE_TRACKS ADD COLUMN $COL_REPLAYGAIN_ALBUM_DB REAL;")
-            } catch (e: Exception) {
-                db.execSQL("DROP TABLE IF EXISTS $TABLE_TRACKS")
-                onCreate(db)
-            }
-        } else {
-            db.execSQL("DROP TABLE IF EXISTS $TABLE_TRACKS")
-            onCreate(db)
+            } catch (ignored: Exception) {}
+        }
+        if (oldVersion < 4) {
+            try {
+                db.execSQL("ALTER TABLE $TABLE_TRACKS ADD COLUMN $COL_GENRE TEXT DEFAULT 'Unknown Genre';")
+            } catch (ignored: Exception) {}
         }
     }
 
@@ -101,6 +102,7 @@ class LiteDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, 
                 values.put(COL_BIT_DEPTH, track.bitDepth)
                 values.put(COL_REPLAYGAIN_DB, track.replayGainDb)
                 values.put(COL_REPLAYGAIN_ALBUM_DB, track.replayGainAlbumDb)
+                values.put(COL_GENRE, track.genre)
 
                 val result = db.insertWithOnConflict(
                     TABLE_TRACKS,
@@ -211,6 +213,7 @@ class LiteDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, 
         val bitDepthIdx = cursor.getColumnIndex(COL_BIT_DEPTH)
         val rgIdx = cursor.getColumnIndex(COL_REPLAYGAIN_DB)
         val rgAlbumIdx = cursor.getColumnIndex(COL_REPLAYGAIN_ALBUM_DB)
+        val genreIdx = cursor.getColumnIndex(COL_GENRE)
 
         return Track(
             id = cursor.getLong(idIdx),
@@ -224,7 +227,8 @@ class LiteDbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, 
             sampleRate = cursor.getInt(sampleRateIdx),
             bitDepth = if (bitDepthIdx != -1) cursor.getInt(bitDepthIdx) else 0,
             replayGainDb = if (rgIdx != -1 && !cursor.isNull(rgIdx)) cursor.getFloat(rgIdx) else null,
-            replayGainAlbumDb = if (rgAlbumIdx != -1 && !cursor.isNull(rgAlbumIdx)) cursor.getFloat(rgAlbumIdx) else null
+            replayGainAlbumDb = if (rgAlbumIdx != -1 && !cursor.isNull(rgAlbumIdx)) cursor.getFloat(rgAlbumIdx) else null,
+            genre = if (genreIdx != -1 && !cursor.isNull(genreIdx)) cursor.getString(genreIdx) else "Unknown Genre"
         )
     }
 }
