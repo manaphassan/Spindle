@@ -24,6 +24,7 @@ import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.audio.MediaCodecAudioRenderer
 import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import com.hana.spindle.core.SpindleGlossary
 import com.hana.spindle.playback.extractor.SpindleExtractorsFactory
 import com.hana.spindle.data.CueSheetParser
 import com.hana.spindle.data.LyricsData
@@ -1214,7 +1215,7 @@ class AudioEngine(
             foleyEngine.playMotorSpool()
         }
         if (playlist.isEmpty()) return
-        if (!forcePreviousSong && exoPlayer.currentPosition > 3000L) {
+        if (!forcePreviousSong && exoPlayer.currentPosition > SpindleGlossary.PREVIOUS_RESTART_THRESHOLD_MS) {
             // Restart current track if played more than 3 seconds
             seekTo(0)
         } else {
@@ -1401,10 +1402,10 @@ class AudioEngine(
                         val multPrimary = Math.cos(angle).toFloat().coerceIn(0f, 1.0f)
                         val multNext = Math.sin(angle).toFloat().coerceIn(0f, 1.0f)
 
-                        exoPlayer.volume = (baseVol * multPrimary).coerceIn(0f, 1.0f)
+                        exoPlayer.volume = (baseVol * multPrimary).coerceIn(0f, baseVol)
                         val nextTrack = playlist.getOrNull(crossfadeTargetIndex)
                         val baseVolNext = if (nextTrack != null) computeBaseVolumeForTrack(nextTrack) else 1.0f
-                        secondaryPlayer?.volume = (baseVolNext * multNext).coerceIn(0f, 1.0f)
+                        secondaryPlayer?.volume = (baseVolNext * multNext).coerceIn(0f, baseVolNext)
 
                         if (remainingMs <= 60L) {
                             completeCrossfade()

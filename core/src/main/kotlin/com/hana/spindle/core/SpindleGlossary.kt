@@ -83,8 +83,10 @@ object SpindleGlossary {
     const val TERM_FADE = "Fade"
 
     /**
-     * Standard DAP seek constants.
+     * Standard DAP seek & transport threshold constants.
      */
     const val SEEK_STEP_HOLD_MS = 2500L
     const val SEEK_STEP_MANUAL_MS = 5000L
+    const val SEEK_STEP_DEFAULT_MS = 10000L
+    const val PREVIOUS_RESTART_THRESHOLD_MS = 3000L
 }

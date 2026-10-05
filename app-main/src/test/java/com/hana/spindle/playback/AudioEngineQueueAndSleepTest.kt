@@ -363,4 +363,47 @@ class AudioEngineQueueAndSleepTest {
             assertTrue("Command $cmd should be available when track is present", isAvailable)
         }
     }
+
+    @Test
+    fun testSpindleGlossary_seekAndThresholdConstants() {
+        assertEquals(2500L, com.hana.spindle.core.SpindleGlossary.SEEK_STEP_HOLD_MS)
+        assertEquals(5000L, com.hana.spindle.core.SpindleGlossary.SEEK_STEP_MANUAL_MS)
+        assertEquals(10000L, com.hana.spindle.core.SpindleGlossary.SEEK_STEP_DEFAULT_MS)
+        assertEquals(3000L, com.hana.spindle.core.SpindleGlossary.PREVIOUS_RESTART_THRESHOLD_MS)
+    }
+
+    @Test
+    fun testPreviousRestartRule_logic() {
+        fun decidePreviousAction(currentPosMs: Long, forcePrevious: Boolean): String {
+            return if (!forcePrevious && currentPosMs > com.hana.spindle.core.SpindleGlossary.PREVIOUS_RESTART_THRESHOLD_MS) {
+                "RESTART"
+            } else {
+                "SKIP_PREV"
+            }
+        }
+
+        // More than 3s without force -> restarts current song
+        assertEquals("RESTART", decidePreviousAction(3001L, false))
+        assertEquals("RESTART", decidePreviousAction(45000L, false))
+
+        // Exactly 3s or less -> skips to previous song
+        assertEquals("SKIP_PREV", decidePreviousAction(3000L, false))
+        assertEquals("SKIP_PREV", decidePreviousAction(500L, false))
+        assertEquals("SKIP_PREV", decidePreviousAction(0L, false))
+
+        // Force previous always skips, even if track played past 3s
+        assertEquals("SKIP_PREV", decidePreviousAction(35000L, true))
+    }
+
+    @Test
+    fun testSoftKneeVolumeCoercing_preservesGain() {
+        val baseVol = 1.15f
+        val multPrimary = 0.8f
+        val calculatedVol = (baseVol * multPrimary).coerceIn(0f, baseVol)
+        assertEquals(0.92f, calculatedVol, 0.001f)
+
+        // At full fade, retains baseVol above 1.0f
+        val fullVol = (baseVol * 1.0f).coerceIn(0f, baseVol)
+        assertEquals(1.15f, fullVol, 0.001f)
+    }
 }

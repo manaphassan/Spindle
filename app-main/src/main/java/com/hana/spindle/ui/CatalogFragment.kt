@@ -1792,7 +1792,7 @@ class CatalogFragment : Fragment() {
             }
         }
 
-        binding.btnMiniPrev.setOnClickListener { audioEngine.playPrevious() }
+        binding.btnMiniPrev.setOnClickListener { audioEngine.playPrevious(forcePreviousSong = false) }
         binding.btnMiniPlayPause.setOnClickListener { audioEngine.togglePlayPause() }
         binding.btnMiniNext.setOnClickListener { audioEngine.playNext() }
 
