@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.hana.spindle.R
 import com.hana.spindle.SpindleApp
 import com.hana.spindle.data.LyricsFetcher
 import com.hana.spindle.databinding.DialogLyricsBulkFetcherBinding
@@ -91,7 +92,7 @@ class DialogLyricsBulkFetcher(
     private fun startLyricsDownload(app: SpindleApp) {
         isFetching = true
         binding.btnStartFetch.isEnabled = false
-        binding.btnCancelOrDismiss.text = "CANCEL"
+        binding.btnCancelOrDismiss.text = getString(R.string.action_cancel)
         binding.layoutProgressSection.visibility = View.VISIBLE
 
         fetchJob = viewLifecycleOwner.lifecycleScope.launch {

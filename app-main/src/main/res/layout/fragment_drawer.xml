@@ -2487,7 +2487,7 @@
                                 android:layout_height="38dp"
                                 android:layout_weight="1"
                                 android:layout_marginStart="6dp"
-                                android:text="CANCEL"
+                                android:text="@string/action_cancel"
                                 android:textColor="#FB7185"
                                 android:textSize="11sp"
                                 android:textStyle="bold"

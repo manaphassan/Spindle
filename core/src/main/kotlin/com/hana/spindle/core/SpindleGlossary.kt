@@ -89,4 +89,12 @@ object SpindleGlossary {
     const val SEEK_STEP_MANUAL_MS = 5000L
     const val SEEK_STEP_DEFAULT_MS = 10000L
     const val PREVIOUS_RESTART_THRESHOLD_MS = 3000L
+
+    /**
+     * Canonical transport glyphs for vintage DAP chassis buttons (§8.2).
+     */
+    const val GLYPH_PREV = "|<<"
+    const val GLYPH_PLAY = "> PLAY"
+    const val GLYPH_PAUSE = "|| PAUSE"
+    const val GLYPH_NEXT = ">>|"
 }

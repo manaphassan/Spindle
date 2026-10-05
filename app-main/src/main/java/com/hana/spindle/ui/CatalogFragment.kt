@@ -455,7 +455,7 @@ class CatalogFragment : Fragment() {
                                                 android.widget.Toast.makeText(requireContext(), getString(R.string.toast_deleted_mixtape, album.album), android.widget.Toast.LENGTH_SHORT).show()
                                             }
                                         }
-                                        .setNegativeButton("Cancel", null)
+                                        .setNegativeButton(R.string.action_cancel, null)
                                         .show()
                                 }
                             }
@@ -2481,7 +2481,7 @@ class CatalogFragment : Fragment() {
                     }
                 }
             }
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton(R.string.action_cancel, null)
             .show()
     }
 

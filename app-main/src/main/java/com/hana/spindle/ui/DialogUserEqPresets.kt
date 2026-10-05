@@ -15,6 +15,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.hana.spindle.R
 import com.hana.spindle.SpindleApp
 import com.hana.spindle.databinding.DialogSaveUserEqPresetBinding
 import com.hana.spindle.databinding.DialogUserEqPresetsBinding
@@ -150,7 +151,7 @@ class DialogUserEqPresets(
                     Toast.makeText(requireContext(), "Failed to update preset", Toast.LENGTH_SHORT).show()
                 }
             }
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton(R.string.action_cancel, null)
             .show()
     }
 
@@ -302,7 +303,7 @@ class DialogUserEqPresets(
                 Toast.makeText(requireContext(), "Preset deleted", Toast.LENGTH_SHORT).show()
                 refreshPresetsList()
             }
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton(R.string.action_cancel, null)
             .show()
     }
 

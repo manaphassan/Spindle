@@ -260,7 +260,11 @@ class PlayerFragment : Fragment() {
             b.tvCurrentTime.text = curTimeStr
             b.tvTotalDuration.text = formatTime(state.durationMs)
 
-            b.btnPlayPause.text = if (state.isPlaying) "PAUSE" else "PLAY"
+            b.btnPlayPause.text = if (state.isPlaying) {
+                getString(R.string.player_btn_pause_label)
+            } else {
+                getString(R.string.player_btn_play_label)
+            }
 
             // 3. Dual Analog VU Meter Display
             syncVuMeterState(state)

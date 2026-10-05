@@ -1811,7 +1811,7 @@ class DrawerFragment : Fragment() {
                     binding.btnRescanLibrary.performClick()
                 }
             }
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton(R.string.action_cancel, null)
             .show()
     }
 
@@ -1833,7 +1833,7 @@ class DrawerFragment : Fragment() {
                     binding.btnRescanLibrary.performClick()
                 }
             }
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton(R.string.action_cancel, null)
             .show()
     }
 
@@ -1995,7 +1995,7 @@ class DrawerFragment : Fragment() {
                     Toast.makeText(requireContext(), "Invalid station details. Please check frequency and URL.", Toast.LENGTH_LONG).show()
                 }
             }
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton(R.string.action_cancel, null)
             .show()
     }
 

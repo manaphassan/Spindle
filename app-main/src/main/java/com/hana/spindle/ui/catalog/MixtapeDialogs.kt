@@ -112,7 +112,7 @@ object MixtapeDialogs {
                     }
                 }
             }
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton(R.string.action_cancel, null)
             .show()
     }
 
@@ -221,7 +221,7 @@ object MixtapeDialogs {
                     }
                 }
             }
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton(R.string.action_cancel, null)
             .show()
     }
 
@@ -253,7 +253,7 @@ object MixtapeDialogs {
                                 }
                             }
                         }
-                        .setNegativeButton("Cancel", null)
+                        .setNegativeButton(R.string.action_cancel, null)
                         .show()
                 } else {
                     val items = mutableListOf<String>()
@@ -290,7 +290,7 @@ object MixtapeDialogs {
                                 }
                             }
                         }
-                        .setNegativeButton("Cancel", null)
+                        .setNegativeButton(R.string.action_cancel, null)
                         .show()
                 }
             }
@@ -357,7 +357,7 @@ object MixtapeDialogs {
                     }
                 }
             }
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton(R.string.action_cancel, null)
             .show()
     }
 
@@ -435,7 +435,7 @@ object MixtapeDialogs {
                                 }
                             }
                         }
-                        .setNegativeButton("Cancel", null)
+                        .setNegativeButton(R.string.action_cancel, null)
                         .show()
                 }
             }

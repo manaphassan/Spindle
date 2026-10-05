@@ -3,14 +3,16 @@
     <string name="launcher_label">Spindle DAP Launcher</string>
 
     <!-- Transport Controls -->
-    <string name="action_play">Play</string>
-    <string name="action_pause">Pause</string>
-    <string name="action_stop">Stop</string>
-    <string name="action_prev">Previous</string>
-    <string name="action_next">Next</string>
-    <string name="action_eject">Eject</string>
-    <string name="action_rew">Rewind</string>
-    <string name="action_ff">Fast Forward</string>
+    <string name="action_play">PLAY</string>
+    <string name="action_pause">PAUSE</string>
+    <string name="action_stop">STOP</string>
+    <string name="action_prev">PREVIOUS</string>
+    <string name="action_next">NEXT</string>
+    <string name="action_eject">EJECT</string>
+    <string name="action_rew">REWIND</string>
+    <string name="action_ff">FAST FORWARD</string>
+    <string name="action_play_next">PLAY NEXT</string>
+    <string name="action_add_to_queue">ADD TO QUEUE</string>
 
     <!-- Side Labels -->
     <string name="cassette_side_a">SIDE A</string>
@@ -112,6 +114,7 @@
     <string name="player_time_divider"> / </string>
     <string name="player_btn_prev_label">|&lt;&lt;</string>
     <string name="player_btn_play_label">&gt; PLAY</string>
+    <string name="player_btn_pause_label">|| PAUSE</string>
     <string name="player_btn_next_label">&gt;&gt;|</string>
     <string name="spindle_deck_title">Spindle Tape Deck</string>
     <string name="spindle_deck_ready">Ready to Play</string>

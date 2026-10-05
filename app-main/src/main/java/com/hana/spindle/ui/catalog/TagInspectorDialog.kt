@@ -173,7 +173,7 @@ object TagInspectorDialog {
         }
 
         val btnCancel = Button(context).apply {
-            text = "CANCEL"
+            text = context.getString(com.hana.spindle.R.string.action_cancel)
             setTextColor(Color.parseColor("#A1A1AA"))
             setBackgroundColor(Color.TRANSPARENT)
             textSize = 11f

@@ -373,6 +373,14 @@ class AudioEngineQueueAndSleepTest {
     }
 
     @Test
+    fun testSpindleGlossary_glyphConstants() {
+        assertEquals("|<<", com.hana.spindle.core.SpindleGlossary.GLYPH_PREV)
+        assertEquals("> PLAY", com.hana.spindle.core.SpindleGlossary.GLYPH_PLAY)
+        assertEquals("|| PAUSE", com.hana.spindle.core.SpindleGlossary.GLYPH_PAUSE)
+        assertEquals(">>|", com.hana.spindle.core.SpindleGlossary.GLYPH_NEXT)
+    }
+
+    @Test
     fun testPreviousRestartRule_logic() {
         fun decidePreviousAction(currentPosMs: Long, forcePrevious: Boolean): String {
             return if (!forcePrevious && currentPosMs > com.hana.spindle.core.SpindleGlossary.PREVIOUS_RESTART_THRESHOLD_MS) {
