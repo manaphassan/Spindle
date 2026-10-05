@@ -92,15 +92,21 @@ object BiquadFilterCalculator {
         isoQFactors: FloatArray,
         isTapeSatEnabled: Boolean = false,
         tapeSatDrive: Float = 0.0f,
-        outCurveDb: FloatArray
+        outCurveDb: FloatArray,
+        centerFreqsHz: IntArray? = null
     ) {
         val numBands = min(10, min(isoGainsDb.size, isoQFactors.size))
         val isoFreqs = AudioFxController.ISO_FREQUENCIES
 
-        // 1. Configure coefficients for all active ISO peaking filters
+        // 1. Configure coefficients for all active peaking filters
         for (i in 0 until numBands) {
+            val freq = if (centerFreqsHz != null && i < centerFreqsHz.size) {
+                centerFreqsHz[i].toFloat()
+            } else {
+                isoFreqs[i].toFloat()
+            }
             filterBank[i].setPeaking(
-                f0 = isoFreqs[i].toFloat(),
+                f0 = freq,
                 gainDb = isoGainsDb[i],
                 q = isoQFactors[i]
             )
@@ -139,15 +145,21 @@ object BiquadFilterCalculator {
         isoGainsDb: FloatArray,
         isoQFactors: FloatArray,
         isTapeSatEnabled: Boolean = false,
-        tapeSatDrive: Float = 0.0f
+        tapeSatDrive: Float = 0.0f,
+        centerFreqsHz: IntArray? = null
     ): Float {
         val numBands = min(10, min(isoGainsDb.size, isoQFactors.size))
         val isoFreqs = AudioFxController.ISO_FREQUENCIES
         var sumDb = 0.0f
 
         for (b in 0 until numBands) {
+            val freq = if (centerFreqsHz != null && b < centerFreqsHz.size) {
+                centerFreqsHz[b].toFloat()
+            } else {
+                isoFreqs[b].toFloat()
+            }
             val filter = BiquadCoeffs().apply {
-                setPeaking(isoFreqs[b].toFloat(), isoGainsDb[b], isoQFactors[b])
+                setPeaking(freq, isoGainsDb[b], isoQFactors[b])
             }
             sumDb += filter.magnitudeDbAt(freqHz)
         }

@@ -30,15 +30,28 @@ class UserEqPresetManager(
         cachedPresets?.let { return it.toList() }
 
         val loaded = loadFromDisk()
+        val defaults = createDefaultReferencePresets()
         if (loaded.isEmpty()) {
-            val defaults = createDefaultReferencePresets()
             saveToDisk(defaults)
             cachedPresets = defaults.toMutableList()
             return defaults
         }
 
-        cachedPresets = loaded.toMutableList()
-        return loaded
+        // Automatically merge any newly added built-in reference profiles
+        val merged = loaded.toMutableList()
+        var updated = false
+        for (d in defaults) {
+            if (merged.none { it.name.equals(d.name, ignoreCase = true) }) {
+                merged.add(d)
+                updated = true
+            }
+        }
+        if (updated) {
+            saveToDisk(merged)
+        }
+
+        cachedPresets = merged
+        return merged
     }
 
     /**
@@ -280,11 +293,56 @@ class UserEqPresetManager(
             UserEqPreset(
                 name = "Sennheiser HD 600",
                 description = "Harman Target with sub-bass extension & smooth treble",
-                gainsDb = listOf(3.5f, 2.8f, 1.2f, 0.0f, -0.5f, 0.0f, 1.0f, -1.5f, -0.8f, 1.2f),
+                gainsDb = listOf(4.5f, 3.2f, 1.2f, 0.0f, -0.5f, 0.0f, 1.0f, -1.5f, -0.8f, 1.2f),
                 qFactors = listOf(1.414f, 1.414f, 1.414f, 1.414f, 1.414f, 1.414f, 2.0f, 2.5f, 1.414f, 1.414f),
+                centerFreqsHz = listOf(31, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000),
                 isParametric = true,
                 bassBoost = 200,
                 crossfeedStrength = 300,
+                isBuiltIn = true
+            ),
+            UserEqPreset(
+                name = "Sony WH-1000XM4/XM5",
+                description = "Harman Over-Ear correction: tames 200Hz boom, reveals upper mid clarity",
+                gainsDb = listOf(1.0f, -1.5f, -3.5f, -2.0f, 0.5f, 1.5f, 3.0f, 2.5f, 1.0f, 0.5f),
+                qFactors = listOf(1.414f, 1.414f, 2.2f, 1.8f, 1.414f, 1.414f, 1.8f, 2.0f, 1.414f, 1.414f),
+                centerFreqsHz = listOf(31, 63, 160, 300, 600, 1200, 2500, 4800, 8000, 16000),
+                isParametric = true,
+                bassBoost = 0,
+                crossfeedStrength = 200,
+                isBuiltIn = true
+            ),
+            UserEqPreset(
+                name = "Audio-Technica ATH-M50x",
+                description = "Flatter studio target: cleans up 200Hz mud and smooths 9kHz sibilance",
+                gainsDb = listOf(1.5f, 0.5f, -1.8f, -2.2f, -0.5f, 0.5f, 1.0f, 0.5f, -2.5f, -1.0f),
+                qFactors = listOf(1.414f, 1.414f, 1.8f, 2.0f, 1.414f, 1.414f, 1.414f, 1.8f, 3.0f, 1.414f),
+                centerFreqsHz = listOf(31, 63, 180, 280, 500, 1000, 2000, 4000, 9000, 16000),
+                isParametric = true,
+                bassBoost = 0,
+                crossfeedStrength = 150,
+                isBuiltIn = true
+            ),
+            UserEqPreset(
+                name = "HiFiMAN Sundara",
+                description = "Planar magnetic linear sub-bass lift and 6kHz resonance notch",
+                gainsDb = listOf(4.0f, 3.0f, 1.5f, 0.0f, 0.0f, 0.5f, -0.5f, 1.0f, -2.0f, 1.0f),
+                qFactors = listOf(1.0f, 1.2f, 1.414f, 1.414f, 1.414f, 1.414f, 1.414f, 1.8f, 3.5f, 1.414f),
+                centerFreqsHz = listOf(31, 63, 125, 250, 500, 1000, 2000, 4200, 6000, 14000),
+                isParametric = true,
+                bassBoost = 100,
+                crossfeedStrength = 250,
+                isBuiltIn = true
+            ),
+            UserEqPreset(
+                name = "Beyerdynamic DT 770/990",
+                description = "Mount Beyer treble notch (-4dB @ 8kHz) and clean sub-bass curve",
+                gainsDb = listOf(2.5f, 1.5f, 0.0f, 0.5f, 1.0f, 0.5f, 0.0f, -1.0f, -4.0f, -1.5f),
+                qFactors = listOf(1.414f, 1.414f, 1.414f, 1.414f, 1.414f, 1.414f, 1.414f, 2.0f, 4.0f, 2.0f),
+                centerFreqsHz = listOf(31, 63, 125, 250, 500, 1000, 2000, 4500, 8200, 16000),
+                isParametric = true,
+                bassBoost = 50,
+                crossfeedStrength = 200,
                 isBuiltIn = true
             ),
             UserEqPreset(
@@ -292,6 +350,7 @@ class UserEqPresetManager(
                 description = "Audiophile Studio Monitor & vocal intimacy profile",
                 gainsDb = listOf(1.0f, 0.5f, 0.0f, 0.5f, 1.2f, 1.5f, 0.5f, -1.0f, 1.5f, 2.0f),
                 qFactors = List(10) { 1.414f },
+                centerFreqsHz = listOf(31, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000),
                 isParametric = false,
                 bassBoost = 100,
                 crossfeedStrength = 200,
@@ -302,6 +361,7 @@ class UserEqPresetManager(
                 description = "Crinacle IEF Neutral Target with dynamic sub-bass shelf",
                 gainsDb = listOf(2.5f, 1.8f, 0.5f, 0.0f, 0.0f, 0.5f, 1.0f, 0.0f, -1.2f, 0.5f),
                 qFactors = List(10) { 1.414f },
+                centerFreqsHz = listOf(31, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000),
                 isParametric = false,
                 bassBoost = 150,
                 crossfeedStrength = 150,
@@ -312,6 +372,7 @@ class UserEqPresetManager(
                 description = "Harmonic 2nd-order analog warmth & soft high roll-off",
                 gainsDb = listOf(2.2f, 1.8f, 1.0f, 0.5f, 0.8f, 0.0f, -0.5f, -1.2f, -2.0f, -3.2f),
                 qFactors = List(10) { 1.414f },
+                centerFreqsHz = listOf(31, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000),
                 isParametric = false,
                 bassBoost = 250,
                 crossfeedStrength = 400,

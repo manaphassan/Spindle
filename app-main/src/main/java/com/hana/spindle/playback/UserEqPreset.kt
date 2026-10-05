@@ -12,8 +12,9 @@ data class UserEqPreset(
     val id: String = UUID.randomUUID().toString(),
     val name: String,
     val description: String = "",
-    val gainsDb: List<Float>, // 10 ISO center frequencies (-15.0f to +15.0f dB)
+    val gainsDb: List<Float>, // 10 center frequencies (-15.0f to +15.0f dB)
     val qFactors: List<Float> = List(10) { 1.414f }, // 10 Parametric Q factors (0.5 to 6.0)
+    val centerFreqsHz: List<Int> = com.hana.spindle.core.AudioDspConstants.ISO_FREQUENCIES.toList(), // Center frequencies
     val isParametric: Boolean = false,
     val bassBoost: Int = 0, // 0 to 1000
     val crossfeedStrength: Int = 0, // 0 to 1000
@@ -22,7 +23,7 @@ data class UserEqPreset(
 ) {
     fun toJson(): JSONObject {
         val json = JSONObject()
-        json.put("schemaVersion", 1)
+        json.put("schemaVersion", 2)
         json.put("id", id)
         json.put("name", name)
         json.put("description", description)
@@ -38,6 +39,12 @@ data class UserEqPreset(
             qArray.put(q.toDouble())
         }
         json.put("qFactors", qArray)
+
+        val freqsArray = JSONArray()
+        for (f in centerFreqsHz) {
+            freqsArray.put(f)
+        }
+        json.put("centerFreqsHz", freqsArray)
 
         json.put("isParametric", isParametric)
         json.put("bassBoost", bassBoost)
@@ -74,6 +81,17 @@ data class UserEqPreset(
             while (qFactors.size < 10) qFactors.add(1.414f)
             val finalQ = qFactors.take(10)
 
+            val defaultFreqs = com.hana.spindle.core.AudioDspConstants.ISO_FREQUENCIES
+            val freqsArray = json.optJSONArray("centerFreqsHz")
+            val freqs = mutableListOf<Int>()
+            if (freqsArray != null) {
+                for (i in 0 until freqsArray.length()) {
+                    freqs.add(freqsArray.optInt(i, defaultFreqs.getOrElse(i) { 1000 }))
+                }
+            }
+            while (freqs.size < 10) freqs.add(defaultFreqs.getOrElse(freqs.size) { 1000 })
+            val finalFreqs = freqs.take(10)
+
             val isParametric = json.optBoolean("isParametric", false)
             val bassBoost = json.optInt("bassBoost", 0)
             val crossfeedStrength = json.optInt("crossfeedStrength", 0)
@@ -86,6 +104,7 @@ data class UserEqPreset(
                 description = description,
                 gainsDb = finalGains,
                 qFactors = finalQ,
+                centerFreqsHz = finalFreqs,
                 isParametric = isParametric,
                 bassBoost = bassBoost,
                 crossfeedStrength = crossfeedStrength,

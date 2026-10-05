@@ -135,6 +135,9 @@ class AudioFxController {
     // Effective composite 10-Band ISO Gains (Base + Tape Formulation + Dolby NR)
     val isoBandsGainDb: FloatArray = FloatArray(10)
 
+    // Center frequencies (default 10 ISO standard frequencies, customizable in Parametric EQ mode)
+    val isoBandsFreqHz: IntArray = AudioDspConstants.ISO_FREQUENCIES.clone()
+
     var isLocked: Boolean = false
 
     var currentTapeFormulation: TapeFormulation = TapeFormulation.TYPE_II_CHROME
@@ -486,8 +489,8 @@ class AudioFxController {
     }
 
     /**
-     * Applies a custom user EQ preset with complete 10-band ISO gains,
-     * parametric Q-factors, bass boost, and binaural crossfeed.
+     * Applies a custom user EQ preset with complete 10-band gains,
+     * custom parametric center frequencies, Q-factors, bass boost, and binaural crossfeed.
      */
     fun applyUserPreset(preset: UserEqPreset, force: Boolean = false) {
         if (isLocked && !force) return
@@ -496,10 +499,31 @@ class AudioFxController {
         for (i in 0 until 10) {
             val q = if (i < preset.qFactors.size) preset.qFactors[i] else 1.414f
             setBandQ(i, q, force = true)
+            isoBandsFreqHz[i] = if (i < preset.centerFreqsHz.size) preset.centerFreqsHz[i] else ISO_FREQUENCIES[i]
         }
         setParametricMode(preset.isParametric, force = true)
         setFilterStrength(preset.bassBoost, force = true)
         setCrossfeedStrength(preset.crossfeedStrength, force = true)
+    }
+
+    /**
+     * Applies full parametric EQ bands with custom center frequencies, gains, and Q factors.
+     */
+    fun setParametricBands(
+        frequencies: IntArray,
+        gains: FloatArray,
+        qFactors: FloatArray,
+        force: Boolean = false
+    ) {
+        if (isLocked && !force) return
+        val count = minOf(10, minOf(frequencies.size, minOf(gains.size, qFactors.size)))
+        for (i in 0 until count) {
+            isoBandsFreqHz[i] = frequencies[i].coerceIn(20, 20000)
+            baseIsoBandsGainDb[i] = gains[i].coerceIn(-12.0f, 12.0f)
+            isoBandsQ[i] = qFactors[i].coerceIn(0.2f, 10.0f)
+        }
+        isParametricMode = true
+        recomputeEffectiveGains()
     }
 
     /**
@@ -511,6 +535,7 @@ class AudioFxController {
             description = description,
             gainsDb = baseIsoBandsGainDb.toList(),
             qFactors = isoBandsQ.toList(),
+            centerFreqsHz = isoBandsFreqHz.toList(),
             isParametric = isParametricMode,
             bassBoost = bassBoostStrength,
             crossfeedStrength = crossfeedStrength
@@ -568,17 +593,18 @@ class AudioFxController {
     }
 
     /**
-     * Interpolates the gain in dB for a given frequency in Hz based on the 10 ISO center frequencies.
+     * Interpolates the gain in dB for a given frequency in Hz based on the 10 center frequencies.
      * Uses log2 frequency space for natural acoustic interpolation.
      */
     fun interpolateIsoGain(freqHz: Int): Float {
+        val freqs = isoBandsFreqHz
         if (!isParametricMode) {
-            if (freqHz <= ISO_FREQUENCIES[0]) return isoBandsGainDb[0]
-            if (freqHz >= ISO_FREQUENCIES[9]) return isoBandsGainDb[9]
+            if (freqHz <= freqs[0]) return isoBandsGainDb[0]
+            if (freqHz >= freqs[9]) return isoBandsGainDb[9]
 
             for (i in 0 until 9) {
-                val f0 = ISO_FREQUENCIES[i]
-                val f1 = ISO_FREQUENCIES[i + 1]
+                val f0 = freqs[i]
+                val f1 = freqs[i + 1]
                 if (freqHz in f0..f1) {
                     val logF0 = ln(f0.toDouble())
                     val logF1 = ln(f1.toDouble())
@@ -595,7 +621,7 @@ class AudioFxController {
             for (i in 0 until 10) {
                 val gain = isoBandsGainDb[i]
                 if (abs(gain) < 0.05f) continue
-                val fc = ISO_FREQUENCIES[i].toDouble()
+                val fc = freqs[i].toDouble()
                 val q = isoBandsQ[i].toDouble()
                 val logRatio = ln(f / fc)
                 val bell = exp(-0.5 * (logRatio * q * 1.5) * (logRatio * q * 1.5)).toFloat()

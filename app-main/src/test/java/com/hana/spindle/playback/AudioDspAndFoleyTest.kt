@@ -759,4 +759,278 @@ class AudioDspAndFoleyTest {
         assertEquals(720000L, partition.sideADurationMs)
         assertEquals(460000L, partition.sideBDurationMs)
     }
+
+    @Test
+    fun testStudioSoftKneePeakLimiter() {
+        // Signals below -0.5 dBFS (~0.944) must be strictly linear and untouched
+        assertEquals(0.10f, com.hana.spindle.core.AudioDspConstants.applySoftKneeLimiter(0.10f), 0.001f)
+        assertEquals(0.50f, com.hana.spindle.core.AudioDspConstants.applySoftKneeLimiter(0.50f), 0.001f)
+        assertEquals(0.80f, com.hana.spindle.core.AudioDspConstants.applySoftKneeLimiter(0.80f), 0.001f)
+        assertEquals(0.944f, com.hana.spindle.core.AudioDspConstants.applySoftKneeLimiter(0.944f), 0.001f)
+
+        // Signals around 0 dBFS (1.0) must be smoothly compressed with safety margin
+        val at0dB = com.hana.spindle.core.AudioDspConstants.applySoftKneeLimiter(1.0f)
+        assertTrue("Gain at 1.0 should be between 0.98 and 0.99, was $at0dB", at0dB in 0.98f..0.99f)
+
+        // Huge signals (+3dB = 1.414, +6dB = 2.0, +12dB = 3.98) must smoothly saturate and never exceed 1.15
+        val at3dB = com.hana.spindle.core.AudioDspConstants.applySoftKneeLimiter(1.414f)
+        val at6dB = com.hana.spindle.core.AudioDspConstants.applySoftKneeLimiter(2.0f)
+        val at12dB = com.hana.spindle.core.AudioDspConstants.applySoftKneeLimiter(3.98f)
+
+        assertTrue(at3dB > at0dB)
+        assertTrue(at6dB > at3dB)
+        assertTrue(at12dB >= at6dB)
+        assertTrue(at12dB <= 1.15f)
+    }
+
+    @Test
+    fun testAiffIeeeExtendedFloatDecoding() {
+        val rate44100Bytes = byteArrayOf(0x40.toByte(), 0x0E.toByte(), 0xAC.toByte(), 0x44.toByte(), 0, 0, 0, 0, 0, 0)
+        assertEquals(44100, com.hana.spindle.playback.extractor.AiffExtractor.readIeeeExtendedFloat(rate44100Bytes))
+
+        val rate48000Bytes = byteArrayOf(0x40.toByte(), 0x0E.toByte(), 0xBB.toByte(), 0x80.toByte(), 0, 0, 0, 0, 0, 0)
+        assertEquals(48000, com.hana.spindle.playback.extractor.AiffExtractor.readIeeeExtendedFloat(rate48000Bytes))
+
+        val rate96000Bytes = byteArrayOf(0x40.toByte(), 0x0F.toByte(), 0xBB.toByte(), 0x80.toByte(), 0, 0, 0, 0, 0, 0)
+        assertEquals(96000, com.hana.spindle.playback.extractor.AiffExtractor.readIeeeExtendedFloat(rate96000Bytes))
+
+        val rate192000Bytes = byteArrayOf(0x40.toByte(), 0x10.toByte(), 0xBB.toByte(), 0x80.toByte(), 0, 0, 0, 0, 0, 0)
+        assertEquals(192000, com.hana.spindle.playback.extractor.AiffExtractor.readIeeeExtendedFloat(rate192000Bytes))
+    }
+
+    @Test
+    fun testAiffHeaderParsingAndExtraction() {
+        val tempAiff = File.createTempFile("test_audio", ".aiff")
+        try {
+            val bb = ByteBuffer.allocate(64).apply {
+                order(ByteOrder.BIG_ENDIAN)
+                // FORM chunk
+                put("FORM".toByteArray(Charsets.US_ASCII))
+                putInt(46) // Remaining length
+                put("AIFF".toByteArray(Charsets.US_ASCII))
+
+                // COMM chunk
+                put("COMM".toByteArray(Charsets.US_ASCII))
+                putInt(18) // Chunk size
+                putShort(2) // 2 Channels (Stereo)
+                putInt(96000) // 96000 frames (1 second at 96kHz)
+                putShort(24) // 24-bit resolution
+                // 96000 Hz in 80-bit IEEE extended float
+                put(byteArrayOf(0x40.toByte(), 0x0F.toByte(), 0xBB.toByte(), 0x80.toByte(), 0, 0, 0, 0, 0, 0))
+
+                // SSND chunk header
+                put("SSND".toByteArray(Charsets.US_ASCII))
+                putInt(16) // 8 bytes header + 8 bytes dummy data
+                putInt(0) // offset
+                putInt(0) // blockSize
+                putLong(0L) // 8 bytes data
+            }
+
+            tempAiff.writeBytes(bb.array())
+
+            val info = TagParser.parseAiffStreamInfo(tempAiff)
+            assertNotNull(info)
+            assertEquals(96000, info!!.sampleRate)
+            assertEquals(2, info.channels)
+            assertEquals(24, info.bitDepth)
+            assertEquals(1000L, info.durationMs)
+        } finally {
+            tempAiff.delete()
+        }
+    }
+
+    @Test
+    fun testParametricEqCustomFrequenciesAndResponse() {
+        val customFreqs = intArrayOf(60, 180, 500, 1000, 2800, 5000, 8000, 10000, 12000, 16000)
+        val gains = floatArrayOf(0f, 4.0f, 0f, 0f, -3.0f, 0f, 0f, 0f, 0f, 0f)
+        val qFactors = floatArrayOf(1.4f, 2.0f, 1.4f, 1.4f, 3.0f, 1.4f, 1.4f, 1.4f, 1.4f, 1.4f)
+        val outCurve = FloatArray(BiquadFilterCalculator.NUM_POINTS)
+
+        BiquadFilterCalculator.calculateCascadedResponse(
+            isoGainsDb = gains,
+            isoQFactors = qFactors,
+            outCurveDb = outCurve,
+            centerFreqsHz = customFreqs
+        )
+
+        // Probe around 180Hz (should have +4dB boost)
+        val responseAt180 = BiquadFilterCalculator.calculateResponseAt(
+            freqHz = 180f,
+            isoGainsDb = gains,
+            isoQFactors = qFactors,
+            centerFreqsHz = customFreqs
+        )
+        assertEquals(4.0f, responseAt180, 0.5f)
+
+        // Probe around 2800Hz (should have -3dB dip)
+        val responseAt2800 = BiquadFilterCalculator.calculateResponseAt(
+            freqHz = 2800f,
+            isoGainsDb = gains,
+            isoQFactors = qFactors,
+            centerFreqsHz = customFreqs
+        )
+        assertEquals(-3.0f, responseAt2800, 0.5f)
+    }
+
+    @Test
+    fun testHeadphoneAutoEqProfilesLoadingAndApplying() {
+        val tempDir = java.nio.file.Files.createTempDirectory("spindle_eq_test").toFile()
+        try {
+            val manager = UserEqPresetManager(baseDir = tempDir)
+            val presets = manager.getPresets()
+
+            // Verify core reference headphone targets are present
+            val presetNames = presets.map { it.name }
+            assertTrue(presetNames.any { it.contains("Sennheiser HD 600", ignoreCase = true) })
+            assertTrue(presetNames.any { it.contains("Sony WH-1000XM4", ignoreCase = true) })
+            assertTrue(presetNames.any { it.contains("ATH-M50x", ignoreCase = true) })
+            assertTrue(presetNames.any { it.contains("Sundara", ignoreCase = true) })
+            assertTrue(presetNames.any { it.contains("Beyerdynamic", ignoreCase = true) })
+
+            // Test Sony XM4/XM5 profile
+            val sonyPreset = presets.first { it.name.contains("Sony WH-1000XM4", ignoreCase = true) }
+            assertEquals(10, sonyPreset.centerFreqsHz.size)
+            assertEquals(160, sonyPreset.centerFreqsHz[2]) // 160Hz mud tame
+            assertTrue(sonyPreset.isParametric)
+
+            // Test JSON serialization round-trip
+            val json = sonyPreset.toJson()
+            val restored = UserEqPreset.fromJson(json)
+            assertEquals(sonyPreset.name, restored.name)
+            assertEquals(sonyPreset.centerFreqsHz, restored.centerFreqsHz)
+            assertEquals(sonyPreset.gainsDb, restored.gainsDb)
+            assertEquals(sonyPreset.qFactors, restored.qFactors)
+            assertTrue(restored.isParametric)
+
+            // Test applying to AudioFxController
+            val controller = AudioFxController()
+            controller.applyUserPreset(sonyPreset, force = true)
+            assertEquals(sonyPreset.name, controller.currentPresetName)
+            assertTrue(controller.isParametricMode)
+            assertEquals(160, controller.isoBandsFreqHz[2])
+            assertEquals(-3.5f, controller.baseIsoBandsGainDb[2], 0.1f)
+        } finally {
+            tempDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun testDsfDecimationLutFilter() {
+        // Alternating bits (0xAA = 10101010b, 0x55 = 01010101b) is delta-sigma zero-crossing silence
+        val pcmSilence = com.hana.spindle.playback.extractor.DsfExtractor.decimate32BitsToPcm24(
+            0xAA, 0xAA, 0xAA, 0xAA
+        )
+        // Should be near zero (within quantization noise band)
+        assertTrue("Silence PCM was $pcmSilence", kotlin.math.abs(pcmSilence) < 100000)
+
+        // All 1s is full-scale positive peak
+        val pcmPositiveMax = com.hana.spindle.playback.extractor.DsfExtractor.decimate32BitsToPcm24(
+            0xFF, 0xFF, 0xFF, 0xFF
+        )
+        assertTrue("Positive peak was $pcmPositiveMax", pcmPositiveMax > 8000000)
+
+        // All 0s is full-scale negative peak
+        val pcmNegativeMax = com.hana.spindle.playback.extractor.DsfExtractor.decimate32BitsToPcm24(
+            0x00, 0x00, 0x00, 0x00
+        )
+        assertTrue("Negative peak was $pcmNegativeMax", pcmNegativeMax < -8000000)
+    }
+
+    @Test
+    fun testDsfHeaderParsing() {
+        val tempDsf = File.createTempFile("test_audio", ".dsf")
+        try {
+            val bb = ByteBuffer.allocate(92).apply {
+                order(ByteOrder.LITTLE_ENDIAN)
+
+                // 1. 'DSD ' chunk (28 bytes)
+                put("DSD ".toByteArray(Charsets.US_ASCII))
+                putLong(28L) // chunk size
+                putLong(92L) // file size
+                putLong(0L)  // metadata ptr
+
+                // 2. 'fmt ' chunk (52 bytes)
+                put("fmt ".toByteArray(Charsets.US_ASCII))
+                putLong(52L) // fmt chunk size
+                putInt(1)    // format version
+                putInt(0)    // format ID
+                putInt(2)    // channel type (stereo)
+                putInt(2)    // channel count
+                putInt(2822400) // 2.8224 MHz (DSD64)
+                putInt(1)    // bits per sample
+                putLong(2822400L) // 2822400 samples (1.0 second)
+                putInt(4096) // block size
+                putInt(0)    // reserved
+
+                // 3. 'data' chunk header (12 bytes)
+                put("data".toByteArray(Charsets.US_ASCII))
+                putLong(12L) // chunk size with no data
+            }
+
+            tempDsf.writeBytes(bb.array())
+
+            val info = TagParser.parseDsfStreamInfo(tempDsf)
+            assertNotNull(info)
+            assertEquals(2822400, info!!.sampleRate)
+            assertEquals(2, info.channels)
+            assertEquals(1, info.bitDepth)
+            assertEquals(1000L, info.durationMs)
+        } finally {
+            tempDsf.delete()
+        }
+    }
+
+    @Test
+    fun testAiffHeaderParsingAndIeeeFloat() {
+        // 44100 Hz IEEE 754 80-bit extended float:
+        // exp = 16383 + 15 = 16398 (0x400E), mantissa = 0xAC44000000000000L
+        val bytes44100 = byteArrayOf(
+            0x40.toByte(), 0x0E.toByte(),
+            0xAC.toByte(), 0x44.toByte(), 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+        )
+        val rate44100 = com.hana.spindle.playback.extractor.AiffExtractor.readIeeeExtendedFloat(bytes44100)
+        assertEquals(44100, rate44100)
+
+        // 96000 Hz IEEE 754 80-bit extended float:
+        // exp = 16383 + 16 = 16399 (0x400F), mantissa = 0xBB80000000000000L
+        val bytes96000 = byteArrayOf(
+            0x40.toByte(), 0x0F.toByte(),
+            0xBB.toByte(), 0x80.toByte(), 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+        )
+        val rate96000 = com.hana.spindle.playback.extractor.AiffExtractor.readIeeeExtendedFloat(bytes96000)
+        assertEquals(96000, rate96000)
+
+        // Test AIFF file parsing
+        val tempAiff = File.createTempFile("test_audio", ".aiff")
+        try {
+            val bb = ByteBuffer.allocate(46).apply {
+                order(ByteOrder.BIG_ENDIAN)
+
+                // FORM chunk header
+                put("FORM".toByteArray(Charsets.US_ASCII))
+                putInt(38) // form size
+                put("AIFF".toByteArray(Charsets.US_ASCII))
+
+                // COMM chunk header
+                put("COMM".toByteArray(Charsets.US_ASCII))
+                putInt(18) // comm chunk size
+                putShort(2) // 2 channels
+                putInt(96000) // 96000 frames (1.0 sec at 96kHz)
+                putShort(24) // 24-bit
+                put(bytes96000) // 10-byte 96kHz rate
+            }
+
+            tempAiff.writeBytes(bb.array())
+
+            val info = TagParser.parseAiffStreamInfo(tempAiff)
+            assertNotNull(info)
+            assertEquals(96000, info!!.sampleRate)
+            assertEquals(2, info.channels)
+            assertEquals(24, info.bitDepth)
+            assertEquals(1000L, info.durationMs)
+        } finally {
+            tempAiff.delete()
+        }
+    }
 }
+

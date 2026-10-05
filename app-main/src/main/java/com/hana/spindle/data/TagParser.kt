@@ -18,7 +18,9 @@ object TagParser {
 
         val format = file.extension.uppercase(Locale.ROOT)
         val flacInfo = if (format == "FLAC") parseFlacStreamInfo(file) else null
-        val wavInfo = if (format == "WAV" || format == "AIFF" || format == "AIF") parseWavStreamInfo(file) else null
+        val wavInfo = if (format == "WAV") parseWavStreamInfo(file) else null
+        val aiffInfo = if (format == "AIFF" || format == "AIF") parseAiffStreamInfo(file) else null
+        val dsfInfo = if (format == "DSF" || format == "DSD") parseDsfStreamInfo(file) else null
 
         var title: String? = null
         var artist: String? = null
@@ -49,7 +51,7 @@ object TagParser {
             genre = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_GENRE)
             rawBitrate = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE)?.toIntOrNull()
         } catch (e: Exception) {
-            // MediaMetadataRetriever may fail on Android 8.0 for some FLAC files
+            // MediaMetadataRetriever may fail on Android 8.0 for some FLAC/AIFF/DSF files
         } finally {
             try {
                 retriever.release()
@@ -59,6 +61,12 @@ object TagParser {
         var durationMs = durationStr?.toLongOrNull() ?: 0L
         if (durationMs <= 0L && flacInfo != null && flacInfo.durationMs > 0L) {
             durationMs = flacInfo.durationMs
+        }
+        if (durationMs <= 0L && aiffInfo != null && aiffInfo.durationMs > 0L) {
+            durationMs = aiffInfo.durationMs
+        }
+        if (durationMs <= 0L && dsfInfo != null && dsfInfo.durationMs > 0L) {
+            durationMs = dsfInfo.durationMs
         }
 
         if (durationMs <= 0L) {
@@ -112,12 +120,14 @@ object TagParser {
         val sampleRate = when {
             flacInfo != null && flacInfo.sampleRate > 0 -> flacInfo.sampleRate
             wavInfo != null && wavInfo.sampleRate > 0 -> wavInfo.sampleRate
+            aiffInfo != null && aiffInfo.sampleRate > 0 -> aiffInfo.sampleRate
+            dsfInfo != null && dsfInfo.sampleRate > 0 -> dsfInfo.sampleRate
             else -> {
                 when {
                     format == "FLAC" && bitrateKbps > 2000 -> 96000
                     format == "FLAC" && bitrateKbps > 1200 -> 48000
                     format == "WAV" && bitrateKbps > 3000 -> 96000
-                    format == "DSD" || format == "DSF" -> 176400
+                    format == "DSD" || format == "DSF" -> 2822400
                     else -> 44100
                 }
             }
@@ -127,10 +137,12 @@ object TagParser {
         val bitDepth = when {
             flacInfo != null && flacInfo.bitDepth > 0 -> flacInfo.bitDepth
             wavInfo != null && wavInfo.bitDepth > 0 -> wavInfo.bitDepth
+            aiffInfo != null && aiffInfo.bitDepth > 0 -> aiffInfo.bitDepth
+            dsfInfo != null && dsfInfo.bitDepth > 0 -> dsfInfo.bitDepth
             else -> estimateBitDepth(format, bitrateKbps, sampleRate)
         }
 
-        val channels = flacInfo?.channels ?: wavInfo?.channels ?: 2
+        val channels = flacInfo?.channels ?: wavInfo?.channels ?: aiffInfo?.channels ?: dsfInfo?.channels ?: 2
 
         // Check if lyrics exist (.lrc sidecar, .txt, or embedded ID3/Vorbis tags)
         val lrcFile = File(file.parentFile, "${file.nameWithoutExtension}.lrc")
@@ -387,6 +399,134 @@ object TagParser {
                     offset++
                 }
                 null
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    data class AiffInfo(
+        val sampleRate: Int,
+        val channels: Int,
+        val bitDepth: Int,
+        val durationMs: Long
+    )
+
+    fun parseAiffStreamInfo(file: File): AiffInfo? {
+        if (!file.exists() || file.length() < 30) return null
+        return try {
+            java.io.RandomAccessFile(file, "r").use { raf ->
+                val magic = ByteArray(12)
+                if (raf.read(magic) < 12) return null
+                if (magic[0] != 'F'.code.toByte() || magic[1] != 'O'.code.toByte() ||
+                    magic[2] != 'R'.code.toByte() || magic[3] != 'M'.code.toByte()
+                ) return null
+
+                val formType = String(magic, 8, 4, Charsets.US_ASCII)
+                if (formType != "AIFF" && formType != "AIFC") return null
+
+                val fileLength = file.length()
+                while (raf.filePointer + 8 <= fileLength) {
+                    val chunkHeader = ByteArray(8)
+                    if (raf.read(chunkHeader) < 8) break
+                    val chunkId = String(chunkHeader, 0, 4, Charsets.US_ASCII)
+                    val chunkSize = ((chunkHeader[4].toLong() and 0xFF) shl 24) or
+                            ((chunkHeader[5].toLong() and 0xFF) shl 16) or
+                            ((chunkHeader[6].toLong() and 0xFF) shl 8) or
+                            (chunkHeader[7].toLong() and 0xFF)
+
+                    if (chunkId == "COMM") {
+                        val commBuf = ByteArray(minOf(chunkSize.toInt(), 32))
+                        if (raf.read(commBuf) < 18) return null
+                        val channels = ((commBuf[0].toInt() and 0xFF) shl 8) or (commBuf[1].toInt() and 0xFF)
+                        val numSampleFrames = ((commBuf[2].toLong() and 0xFF) shl 24) or
+                                ((commBuf[3].toLong() and 0xFF) shl 16) or
+                                ((commBuf[4].toLong() and 0xFF) shl 8) or
+                                (commBuf[5].toLong() and 0xFF)
+                        val sampleSize = ((commBuf[6].toInt() and 0xFF) shl 8) or (commBuf[7].toInt() and 0xFF)
+
+                        val rateBytes = ByteArray(10)
+                        System.arraycopy(commBuf, 8, rateBytes, 0, 10)
+                        val sampleRate = com.hana.spindle.playback.extractor.AiffExtractor.readIeeeExtendedFloat(rateBytes)
+                        val durationMs = if (sampleRate > 0) (numSampleFrames * 1000L) / sampleRate else 0L
+
+                        if (sampleRate in 8000..384000 && sampleSize in 8..32) {
+                            return AiffInfo(sampleRate, channels, sampleSize, durationMs)
+                        }
+                        return null
+                    } else {
+                        // Skip chunk data + padding byte if odd size
+                        val skipBytes = chunkSize + (chunkSize % 2L)
+                        raf.seek(raf.filePointer + skipBytes)
+                    }
+                }
+                null
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    data class DsfInfo(
+        val sampleRate: Int,
+        val channels: Int,
+        val bitDepth: Int,
+        val durationMs: Long
+    )
+
+    fun parseDsfStreamInfo(file: File): DsfInfo? {
+        if (!file.exists() || file.length() < 92) return null
+        return try {
+            java.io.RandomAccessFile(file, "r").use { raf ->
+                // 1. Read 'DSD ' header chunk (28 bytes)
+                val header = ByteArray(28)
+                if (raf.read(header) < 28) return null
+                if (header[0] != 'D'.code.toByte() || header[1] != 'S'.code.toByte() ||
+                    header[2] != 'D'.code.toByte() || header[3] != ' '.code.toByte()
+                ) return null
+
+                // 2. Read 'fmt ' chunk header (12 bytes: 4 magic + 8 size)
+                val fmtHdr = ByteArray(12)
+                if (raf.read(fmtHdr) < 12) return null
+                if (fmtHdr[0] != 'f'.code.toByte() || fmtHdr[1] != 'm'.code.toByte() ||
+                    fmtHdr[2] != 't'.code.toByte() || fmtHdr[3] != ' '.code.toByte()
+                ) return null
+
+                val fmtSize = ((fmtHdr[4].toLong() and 0xFF)) or
+                        ((fmtHdr[5].toLong() and 0xFF) shl 8) or
+                        ((fmtHdr[6].toLong() and 0xFF) shl 16) or
+                        ((fmtHdr[7].toLong() and 0xFF) shl 24) or
+                        ((fmtHdr[8].toLong() and 0xFF) shl 32) or
+                        ((fmtHdr[9].toLong() and 0xFF) shl 40) or
+                        ((fmtHdr[10].toLong() and 0xFF) shl 48) or
+                        ((fmtHdr[11].toLong() and 0xFF) shl 56)
+
+                val payloadSize = (fmtSize - 12).toInt().coerceIn(40, 256)
+                val payload = ByteArray(payloadSize)
+                if (raf.read(payload) < payloadSize) return null
+
+                // payload offsets (little-endian):
+                // 12..15: channelCount
+                // 16..19: samplingFrequency
+                // 24..31: sampleCount
+                val channels = (payload[12].toInt() and 0xFF) or ((payload[13].toInt() and 0xFF) shl 8)
+                val sampleRate = (payload[16].toInt() and 0xFF) or
+                        ((payload[17].toInt() and 0xFF) shl 8) or
+                        ((payload[18].toInt() and 0xFF) shl 16) or
+                        ((payload[19].toInt() and 0xFF) shl 24)
+                val sampleCount = (payload[24].toLong() and 0xFF) or
+                        ((payload[25].toLong() and 0xFF) shl 8) or
+                        ((payload[26].toLong() and 0xFF) shl 16) or
+                        ((payload[27].toLong() and 0xFF) shl 24) or
+                        ((payload[28].toLong() and 0xFF) shl 32) or
+                        ((payload[29].toLong() and 0xFF) shl 40) or
+                        ((payload[30].toLong() and 0xFF) shl 48) or
+                        ((payload[31].toLong() and 0xFF) shl 56)
+
+                val durationMs = if (sampleRate > 0) (sampleCount * 1000L) / sampleRate else 0L
+                if (sampleRate >= 2822400 && channels in 1..8) {
+                    DsfInfo(sampleRate, channels, 1, durationMs)
+                } else null
             }
         } catch (e: Exception) {
             null

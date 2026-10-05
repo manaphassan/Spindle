@@ -731,9 +731,11 @@ class DrawerFragment : Fragment() {
                 binding.layoutAutoEqPills.removeViewAt(7)
             }
 
-            // 3. Append custom user EQ presets
-            val customPresets = app.userEqPresetManager.getPresets().filter { !it.isBuiltIn }
-            customPresets.forEach { preset ->
+            // 3. Append reference headphone targets & custom presets
+            val allActivePresets = app.userEqPresetManager.getPresets().filter { preset ->
+                preset.name !in setOf("HARMAN", "CRINACLE", "MOONDROP", "HD600", "WARM_TUBE", "V_SHAPE", "FLAT")
+            }
+            allActivePresets.forEach { preset ->
                 val pill = layoutInflater.inflate(R.layout.item_autoeq_pill, binding.layoutAutoEqPills, false) as Button
                 val isSelected = preset.name.equals(currentName, ignoreCase = true)
                 val displayName = if (preset.name.length > 18) preset.name.take(16) + "…" else preset.name

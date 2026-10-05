@@ -49,7 +49,7 @@ Spindle comes in two editions so you get the smoothest experience on whatever de
 
 | Edition | Best For... | What You Get | Download |
 | :--- | :--- | :--- | :---: |
-| **Spindle Standard**<br/>`v1.6.0-STUDIO` | **Modern phones & newer DAPs**<br/>Android 8.0 or newer | • Smooth animated cassette tape reels & 10.5" Studio Deck<br/>• Synchronized lyrics engine with LRCLIB auto-download<br/>• Custom User EQ presets & AutoEq target curve import<br/>• Interactive Biquad frequency response scope & HD cover art workshop<br/>• 10-band tone equalizer with dual dancing VU meters<br/>• Crisp high-resolution audio (FLAC, MP3, WAV, CUE) | [**Download APK**](release_package/latest/Spindle-Standard-v1.6.0-STUDIO-release.apk)<br/><sub>Size: 4.88 MB</sub><br/><sub>[Release Package](release_package/latest/)</sub> |
+| **Spindle Standard**<br/>`v1.7.0-STUDIO` | **Modern phones & newer DAPs**<br/>Android 8.0 or newer | • Smooth animated cassette tape reels & 10.5" Studio Deck<br/>• Bit-perfect 32-bit Float PCM & studio soft-knee limiter<br/>• Native DSD (.dsf, .dff) 32-tap LUT & Apple AIFF (.aiff) engines<br/>• Parametric EQ & reference AutoEQ headphone workshop<br/>• Synchronized lyrics engine with LRCLIB auto-download<br/>• 10-band tone equalizer with dual dancing VU meters | [**Download APK**](release_package/latest/Spindle-Standard-v1.7.0-STUDIO-release.apk)<br/><sub>Size: 4.88 MB</sub><br/><sub>[Release Package](release_package/latest/)</sub> |
 | **Spindle Lite**<br/>`v1.0.1-LITE` | **Vintage phones & compact players**<br/>Android 4.4 (KitKat) down to 4.1<br/>Tiny 3-inch screens & 512MB RAM | • Super lightweight — sips battery & uses almost zero RAM<br/>• 3-digit mechanical tape drum counter & cassette skins<br/>• Tape Vault library with folder navigation<br/>• Full physical button control (camera shutter, volume, d-pad)<br/>• Blazing fast on decade-old hardware | [**Download APK**](release_package/latest/Spindle-Lite-v1.0.1-LITE.apk)<br/><sub>Size: 1.71 MB</sub><br/><sub>[Release Package](release_package/latest/)</sub> |
 
 > 💡 **Not sure which one to pick?**  
@@ -114,7 +114,7 @@ Spindle comes in two editions so you get the smoothest experience on whatever de
 - 📁 **Your Music, Your Folders**: If you organize your albums in folders on your SD card, you'll feel right at home with direct folder browsing, fast A-Z jumping, and instant search.
 - 📻 **Analog Radio Fun**: Spin the virtual tuning flywheel to dial in FM radio stations or listen to curated online streams.
 - 📼 **Mixtapes & .M3U Portability**: Craft custom mixtape playlists with drag-and-drop track reordering, export standard `.m3u8` playlists, and import existing libraries effortlessly.
-- 🎚️ **Audiophile Engine & Tone**: 10-band equalizer with live hardware band disclosure, 89 dB ReplayGain volume normalization, and equal-power crossfade transitions.
+- 🎚️ **Audiophile Engine & Extended Formats**: Bit-perfect 32-bit Float PCM audio pipeline, studio soft-knee limiter (tanh), native DSD (DSF/DFF) 32-tap LUT decimation, Apple AIFF demuxer, 10-band ISO & parametric EQ with reference AutoEQ headphone profiles (Sony, Sennheiser, Audio-Technica, HiFiMAN, Beyerdynamic, Moondrop), 89 dB ReplayGain calibration, and equal-power crossfade.
 
 ---
 

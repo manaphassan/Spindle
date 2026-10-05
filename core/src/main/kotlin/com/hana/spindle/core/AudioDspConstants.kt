@@ -51,4 +51,18 @@ object AudioDspConstants {
      * and natural high-frequency hysteresis tape saturation compression roll-off (-1.5dB @ 8kHz, -2.8dB @ 16kHz).
      */
     val CURVE_TAPE_SATURATION_WARMTH = floatArrayOf(2.2f, 3.2f, 2.5f, 1.5f, 1.0f, 0.2f, -0.4f, -0.8f, -1.5f, -2.8f)
+
+    /**
+     * Studio-grade soft-knee peak limiter.
+     * Prevents harsh digital clipping when positive ReplayGain pre-amps (+3dB to +12dB)
+     * or EQ boosts push linear gain above unity (1.0 = 0 dBFS).
+     * Linear up to -0.5 dBFS (threshold ~0.944), smoothly compressing peaks with a tanh knee above.
+     */
+    fun applySoftKneeLimiter(linearGain: Float): Float {
+        if (linearGain <= 0.944f) return linearGain.coerceAtLeast(0.05f)
+        val threshold = 0.944f
+        val excess = linearGain - threshold
+        val compressed = threshold + 0.20f * kotlin.math.tanh((excess / 0.25f).toDouble()).toFloat()
+        return compressed.coerceIn(0.05f, 1.15f)
+    }
 }

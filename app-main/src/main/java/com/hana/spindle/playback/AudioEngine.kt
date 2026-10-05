@@ -23,6 +23,8 @@ import androidx.media3.exoplayer.audio.AudioRendererEventListener
 import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.audio.MediaCodecAudioRenderer
 import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import com.hana.spindle.playback.extractor.SpindleExtractorsFactory
 import com.hana.spindle.data.CueSheetParser
 import com.hana.spindle.data.LyricsData
 import com.hana.spindle.data.LyricsParser
@@ -309,12 +311,15 @@ class AudioEngine(
                 )
             }
         }.apply {
-            setEnableAudioFloatOutput(false)
+            setEnableAudioFloatOutput(true)
             setEnableAudioTrackPlaybackParams(false)
         }
 
-        val builder = ExoPlayer.Builder(context, renderersFactory)
-            .setWakeMode(C.WAKE_MODE_LOCAL)
+        val builder = ExoPlayer.Builder(
+            context,
+            renderersFactory,
+            DefaultMediaSourceFactory(context, SpindleExtractorsFactory())
+        ).setWakeMode(C.WAKE_MODE_LOCAL)
         playerAudioAttributes?.let { builder.setAudioAttributes(it, true) }
         playerLoadControl?.let { builder.setLoadControl(it) }
 
@@ -669,8 +674,8 @@ class AudioEngine(
 
     private fun restoreBaseVolume() {
         val effectiveDb = if (replayGainMode == com.hana.spindle.core.ReplayGainMode.OFF) 0f else (currentReplayGainDb + replayGainPreampDb)
-        val baseVol = if (effectiveDb == 0f) 1.0f else Math.pow(10.0, (effectiveDb / 20.0)).toFloat().coerceIn(0.1f, 1.0f)
-        exoPlayer.volume = baseVol
+        val rawLinear = if (effectiveDb == 0f) 1.0f else Math.pow(10.0, (effectiveDb / 20.0)).toFloat()
+        exoPlayer.volume = applySoftKneeLimiter(rawLinear)
         isFadingOut = false
     }
 
@@ -755,6 +760,15 @@ class AudioEngine(
         return true
     }
 
+    /**
+     * Studio-grade soft-knee peak limiter.
+     * Prevents harsh digital clipping when positive ReplayGain pre-amps (+3dB to +12dB)
+     * or EQ boosts push linear gain above unity (1.0 = 0 dBFS).
+     * Linear up to -0.5 dBFS (threshold ~0.944), smoothly compressing peaks with a tanh knee above.
+     */
+    fun applySoftKneeLimiter(linearGain: Float): Float =
+        com.hana.spindle.core.AudioDspConstants.applySoftKneeLimiter(linearGain)
+
     private fun applyReplayGain(trackFile: File) {
         if (replayGainMode == com.hana.spindle.core.ReplayGainMode.OFF) {
             currentReplayGainDb = 0f
@@ -763,9 +777,10 @@ class AudioEngine(
         }
         currentReplayGainDb = TagParser.extractReplayGainDb(trackFile, replayGainMode)
         val effectiveDb = currentReplayGainDb + replayGainPreampDb
-        val targetVolume = if (effectiveDb == 0f) 1.0f else {
-            Math.pow(10.0, (effectiveDb / 20.0)).toFloat().coerceIn(0.1f, 1.0f)
+        val rawLinear = if (effectiveDb == 0f) 1.0f else {
+            Math.pow(10.0, (effectiveDb / 20.0)).toFloat()
         }
+        val targetVolume = applySoftKneeLimiter(rawLinear)
         if (!isFadingOut) {
             exoPlayer.volume = targetVolume
         }
@@ -776,7 +791,8 @@ class AudioEngine(
         val file = File(CueSheetParser.getAudioFilePath(track.path))
         val gainDb = TagParser.extractReplayGainDb(file, replayGainMode)
         val effectiveDb = gainDb + replayGainPreampDb
-        return if (effectiveDb == 0f) 1.0f else Math.pow(10.0, (effectiveDb / 20.0)).toFloat().coerceIn(0.1f, 1.0f)
+        val rawLinear = if (effectiveDb == 0f) 1.0f else Math.pow(10.0, (effectiveDb / 20.0)).toFloat()
+        return applySoftKneeLimiter(rawLinear)
     }
 
     private fun startDualPlayerCrossfade(nextIndex: Int, fadeMs: Long) {
