@@ -388,7 +388,7 @@ class ImageLoader(private val context: Context) {
         }
     }
 
-    private fun extractPictureBytes(audioPath: String): ByteArray? {
+    fun extractPictureBytes(audioPath: String): ByteArray? {
         val retriever = MediaMetadataRetriever()
         return try {
             retriever.setDataSource(audioPath)

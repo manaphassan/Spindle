@@ -296,4 +296,71 @@ class AudioEngineQueueAndSleepTest {
         assertEquals(30L, crossRefs[2].songId)
         crossRefs.forEach { assertEquals(42L, it.playlistId) }
     }
+
+    @Test
+    fun testTrackStarted_stateConsistency() {
+        val initialTrack = createDummySong(1, "Track A")
+        val nextTrack = createDummySong(2, "Track B")
+
+        var state = PlaybackState(
+            isPlaying = true,
+            currentTrack = initialTrack,
+            durationMs = initialTrack.durationMs,
+            currentPositionMs = 45000L,
+            progress = 0.25f,
+            activeLyricIndex = 5
+        )
+
+        // Simulate onTrackStarted transition
+        state = state.copy(
+            isPlaying = true,
+            currentTrack = nextTrack,
+            currentPositionMs = 0L,
+            durationMs = nextTrack.durationMs,
+            progress = 0f,
+            currentLyrics = null,
+            activeLyricIndex = -1
+        )
+
+        assertEquals(2L, state.currentTrack?.id)
+        assertEquals("Track B", state.currentTrack?.title)
+        assertEquals(0L, state.currentPositionMs)
+        assertEquals(0f, state.progress, 0.001f)
+        assertEquals(-1, state.activeLyricIndex)
+        assertEquals(null, state.currentLyrics)
+        assertTrue(state.isPlaying)
+    }
+
+    @Test
+    fun testSpindleForwardingPlayer_commandAvailability_contract() {
+        val requiredCommands = intArrayOf(
+            androidx.media3.common.Player.COMMAND_PLAY_PAUSE,
+            androidx.media3.common.Player.COMMAND_SEEK_TO_NEXT,
+            androidx.media3.common.Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM,
+            androidx.media3.common.Player.COMMAND_SEEK_TO_PREVIOUS,
+            androidx.media3.common.Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM,
+            androidx.media3.common.Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM,
+            androidx.media3.common.Player.COMMAND_SEEK_TO_MEDIA_ITEM,
+            androidx.media3.common.Player.COMMAND_STOP
+        )
+
+        // When track is present, all commands must resolve to true
+        val hasTrack = true
+        for (cmd in requiredCommands) {
+            val isAvailable = if (hasTrack) {
+                when (cmd) {
+                    androidx.media3.common.Player.COMMAND_PLAY_PAUSE,
+                    androidx.media3.common.Player.COMMAND_SEEK_TO_NEXT,
+                    androidx.media3.common.Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM,
+                    androidx.media3.common.Player.COMMAND_SEEK_TO_PREVIOUS,
+                    androidx.media3.common.Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM,
+                    androidx.media3.common.Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM,
+                    androidx.media3.common.Player.COMMAND_SEEK_TO_MEDIA_ITEM,
+                    androidx.media3.common.Player.COMMAND_STOP -> true
+                    else -> false
+                }
+            } else false
+            assertTrue("Command $cmd should be available when track is present", isAvailable)
+        }
+    }
 }

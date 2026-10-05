@@ -59,4 +59,37 @@ class SpindleForwardingPlayer(
             }
         }
     }
+
+    override fun getAvailableCommands(): Player.Commands {
+        val builder = super.getAvailableCommands().buildUpon()
+        if (audioEngine.playbackState.value.currentTrack != null) {
+            builder.addAll(
+                Player.COMMAND_PLAY_PAUSE,
+                Player.COMMAND_SEEK_TO_NEXT,
+                Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM,
+                Player.COMMAND_SEEK_TO_PREVIOUS,
+                Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM,
+                Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM,
+                Player.COMMAND_SEEK_TO_MEDIA_ITEM,
+                Player.COMMAND_STOP
+            )
+        }
+        return builder.build()
+    }
+
+    override fun isCommandAvailable(command: Int): Boolean {
+        if (audioEngine.playbackState.value.currentTrack != null) {
+            when (command) {
+                Player.COMMAND_PLAY_PAUSE,
+                Player.COMMAND_SEEK_TO_NEXT,
+                Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM,
+                Player.COMMAND_SEEK_TO_PREVIOUS,
+                Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM,
+                Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM,
+                Player.COMMAND_SEEK_TO_MEDIA_ITEM,
+                Player.COMMAND_STOP -> return true
+            }
+        }
+        return super.isCommandAvailable(command)
+    }
 }

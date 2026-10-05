@@ -356,10 +356,14 @@ class AudioEngine(
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                 if (player !== exoPlayer) return
                 val newIndex = exoPlayer.currentMediaItemIndex
-                if (newIndex in playlist.indices && (newIndex != currentIndex || reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO || reason == Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT)) {
-                    currentIndex = newIndex
-                    val newTrack = playlist[newIndex]
-                    onTrackTransition(newTrack, reason)
+                if (newIndex in playlist.indices) {
+                    val isNewTrack = (newIndex != currentIndex)
+                    val isAutoOrRepeat = (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO || reason == Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT)
+                    if (isNewTrack || isAutoOrRepeat) {
+                        currentIndex = newIndex
+                        val newTrack = playlist[newIndex]
+                        onTrackStarted(newTrack, reason = reason, isUserInitiated = false)
+                    }
                 }
             }
 
@@ -372,14 +376,24 @@ class AudioEngine(
         })
     }
 
-    private fun onTrackTransition(track: TrackEntity, reason: Int) {
+    private fun onTrackStarted(track: TrackEntity, reason: Int = -1, isUserInitiated: Boolean = false) {
         val physicalPath = CueSheetParser.getAudioFilePath(track.path)
         val file = File(physicalPath)
         applyReplayGain(file)
+
+        val bitrate = if (track.bitrateKbps > 0) {
+            track.bitrateKbps
+        } else if (track.durationMs > 0 && file.exists()) {
+            ((file.length() * 8L) / track.durationMs).toInt()
+        } else {
+            1411
+        }
+
         _playbackState.value = _playbackState.value.copy(
+            isPlaying = if (isUserInitiated) true else exoPlayer.isPlaying,
             currentTrack = track,
-            durationMs = track.durationMs,
             currentPositionMs = 0L,
+            durationMs = track.durationMs,
             progress = 0f,
             currentLyrics = null,
             activeLyricIndex = -1
@@ -389,7 +403,7 @@ class AudioEngine(
             format = track.fileFormat,
             bitDepth = track.bitDepth,
             sampleRate = track.sampleRate,
-            bitrateKbps = if (track.bitrateKbps > 0) track.bitrateKbps else 1411
+            bitrateKbps = bitrate
         )
         scope.launch(Dispatchers.IO) {
             try {
@@ -399,6 +413,7 @@ class AudioEngine(
         }
         saveLastPlayed(track.path, 0L)
         syncQueueState()
+        notifyWidgetUpdate()
     }
 
     private fun resyncExoPlayerPlaylist(resetPosition: Boolean = false) {
@@ -834,7 +849,7 @@ class AudioEngine(
             val physicalPath = CueSheetParser.getAudioFilePath(nextTrack.path)
             applyReplayGain(File(physicalPath))
 
-            onTrackTransition(nextTrack, Player.MEDIA_ITEM_TRANSITION_REASON_AUTO)
+            onTrackStarted(nextTrack, reason = Player.MEDIA_ITEM_TRANSITION_REASON_AUTO, isUserInitiated = false)
             onActivePlayerChanged?.invoke(exoPlayer)
             audioFxController.attachSession(exoPlayer.audioSessionId)
         } else {
@@ -879,6 +894,15 @@ class AudioEngine(
 
         if (artworkUri != null) {
             metadataBuilder.setArtworkUri(artworkUri)
+        } else {
+            val pictureBytes = try {
+                app?.imageLoader?.extractPictureBytes(physicalPath)
+            } catch (_: Exception) {
+                null
+            }
+            if (pictureBytes != null && pictureBytes.isNotEmpty()) {
+                metadataBuilder.setArtworkData(pictureBytes, androidx.media3.common.MediaMetadata.PICTURE_TYPE_FRONT_COVER)
+            }
         }
 
         val mediaMetadata = metadataBuilder.build()
@@ -910,9 +934,7 @@ class AudioEngine(
         cancelCrossfade()
         try {
             (context.applicationContext as? com.hana.spindle.SpindleApp)?.radioStreamEngine?.pause()
-        } catch (e: Exception) {
-            // ignore
-        }
+        } catch (_: Exception) {}
         val track = playlist[currentIndex]
         val physicalPath = CueSheetParser.getAudioFilePath(track.path)
         val file = File(physicalPath)
@@ -922,44 +944,11 @@ class AudioEngine(
         val mediaItems = playlist.map { buildMediaItem(it) }
         exoPlayer.setMediaItems(mediaItems, currentIndex, 0L)
         exoPlayer.prepare()
-        applyReplayGain(file)
         if (isUserInitiated) {
             foleyEngine.playSolenoidClack()
         }
         exoPlayer.play()
-
-        val bitrate = if (track.bitrateKbps > 0) track.bitrateKbps else if (track.durationMs > 0 && file.exists()) ((file.length() * 8L) / track.durationMs).toInt() else 1411
-
-        _playbackState.value = _playbackState.value.copy(
-            isPlaying = true,
-            currentTrack = track,
-            currentPositionMs = 0L,
-            durationMs = track.durationMs,
-            progress = 0f,
-            currentLyrics = null,
-            activeLyricIndex = -1
-        )
-
-        // Increment play count asynchronously
-        scope.launch(Dispatchers.IO) {
-            try {
-                val app = context.applicationContext as? com.hana.spindle.SpindleApp
-                app?.database?.trackDao()?.incrementPlayCount(track.id)
-            } catch (ignored: Exception) {}
-        }
-
-        // Load lyrics asynchronously (with automatic LRCLIB fallback)
-        loadLyricsForTrack(track, physicalPath)
-
-        // Update telemetry
-        metricsTracker.updateSourceSpecs(
-            format = track.fileFormat,
-            bitDepth = track.bitDepth,
-            sampleRate = track.sampleRate,
-            bitrateKbps = bitrate
-        )
-        saveLastPlayed(track.path, 0L)
-        syncQueueState()
+        onTrackStarted(track, reason = -1, isUserInitiated = isUserInitiated)
     }
 
     private fun saveLastPlayed(path: String?, pos: Long) {
