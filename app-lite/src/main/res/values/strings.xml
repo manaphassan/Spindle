@@ -20,6 +20,6 @@
     <string name="ready">READY</string>
 
     <string name="default_artist">Unknown Artist</string>
-    <string name="default_title">NO CASSETTE LOADED</string>
+    <string name="default_title">No Track Loaded</string>
     <string name="default_album">Unknown Album</string>
 </resources>

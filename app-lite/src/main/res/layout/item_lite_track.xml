@@ -58,7 +58,7 @@
             android:fontFamily="sans-serif-medium"
             android:includeFontPadding="false"
             android:singleLine="true"
-            android:text="Song Title"
+            android:text="Track Title"
             android:textColor="@color/lite_metro_text_primary"
             android:textSize="15.5sp" />
 

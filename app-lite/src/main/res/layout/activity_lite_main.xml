@@ -101,7 +101,7 @@
                     android:minHeight="0dp"
                     android:minWidth="0dp"
                     android:fontFamily="sans-serif"
-                    android:text="songs"
+                    android:text="tracks"
                     android:textAllCaps="false"
                     android:textColor="@color/brand_orange"
                     android:textSize="18sp"

@@ -1468,7 +1468,8 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
                             bitrate = meta?.bitrate ?: 0,
                             sampleRate = meta?.sampleRate ?: 0,
                             bitDepth = meta?.bitDepth ?: 0,
-                            replayGainDb = meta?.replayGainTrackDb ?: meta?.replayGainAlbumDb
+                            replayGainDb = meta?.replayGainTrackDb,
+                            replayGainAlbumDb = meta?.replayGainAlbumDb
                         )
                     }
                 }
@@ -1601,7 +1602,8 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
                                 bitrate = meta?.bitrate ?: 0,
                                 sampleRate = meta?.sampleRate ?: 0,
                                 bitDepth = meta?.bitDepth ?: 0,
-                                replayGainDb = meta?.replayGainTrackDb ?: meta?.replayGainAlbumDb,
+                                replayGainDb = meta?.replayGainTrackDb,
+                                replayGainAlbumDb = meta?.replayGainAlbumDb,
                                 genre = meta?.genre ?: "Unknown Genre"
                             )
                         }
@@ -1932,7 +1934,7 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
                 binding.containerFolderPath.visibility = View.GONE
                 binding.vaultFilterShelf.visibility = View.GONE
                 binding.etSearchVault.visibility = View.VISIBLE
-                binding.etSearchVault.hint = "filter songs, artists, albums..."
+                binding.etSearchVault.hint = "filter tracks, artists, albums..."
                 binding.rvTrackList.adapter = trackAdapter
                 binding.tvVaultStatus.text = "Vault: ${trackAdapter.itemCount} tracks"
             }
@@ -2166,7 +2168,7 @@ class LiteMainActivity : AppCompatActivity(), PlaybackListener {
             playerBinding.deckView.setCassetteLabel(firstTrack.tapeBiasType)
             updateIndexBadge(0)
         } else {
-            playerBinding.deckView.setNowPlaying("", "NO CASSETTE LOADED", "", "")
+            playerBinding.deckView.setNowPlaying("", getString(R.string.default_title), "", "")
             updateIndexBadge(0)
         }
     }

@@ -155,7 +155,7 @@ object AudioHeaderParser {
                 return ParsedMetadata(
                     title = title ?: file.nameWithoutExtension,
                     artist = artist ?: "Unknown Artist",
-                    album = album ?: "FLAC Vault",
+                    album = album ?: "Unknown Album",
                     durationMs = durationMs,
                     sampleRate = sampleRate,
                     bitDepth = bitDepth,
@@ -314,7 +314,7 @@ object AudioHeaderParser {
             return ParsedMetadata(
                 title = title ?: file.nameWithoutExtension,
                 artist = artist ?: "Unknown Artist",
-                album = album ?: "MP3 Vault",
+                album = album ?: "Unknown Album",
                 durationMs = durationMs,
                 sampleRate = 44100,
                 bitDepth = 16,
@@ -409,7 +409,7 @@ object AudioHeaderParser {
                         return ParsedMetadata(
                             title = file.nameWithoutExtension,
                             artist = "PCM Audio",
-                            album = "WAV Vault",
+                            album = "Unknown Album",
                             durationMs = durationMs,
                             sampleRate = sampleRate,
                             bitDepth = bitDepth,

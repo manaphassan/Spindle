@@ -898,7 +898,7 @@
                     android:layout_height="wrap_content"
                     android:fontFamily="monospace"
                     android:letterSpacing="0.06"
-                    android:text="TAPE VAULT STORAGE"
+                    android:text="VAULT STORAGE"
                     android:textColor="@color/lite_text_secondary"
                     android:textSize="9.5sp"
                     android:textStyle="bold"
@@ -929,7 +929,7 @@
                         android:layout_height="38dp"
                         android:background="@drawable/bg_preset_button"
                         android:fontFamily="monospace"
-                        android:text="RESCAN TAPE VAULT"
+                        android:text="RESCAN VAULT"
                         android:textColor="@color/brand_orange"
                         android:textSize="10sp"
                         android:textStyle="bold" />

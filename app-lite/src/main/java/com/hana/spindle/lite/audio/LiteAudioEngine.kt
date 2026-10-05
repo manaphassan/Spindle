@@ -33,24 +33,43 @@ class LiteAudioEngine(private val context: Context) :
         SHUFFLE
     }
 
-    enum class GainStage(val gainDb: Float) {
-        LOW_IEM(0f),
-        HIGH_CANS(6f)
+    enum class GainStage(val gainDb: Float, val displayName: String) {
+        LOW_IEM(0f, "IEM (0dB)"),
+        HIGH_CANS(6f, "CANS (+6dB)")
     }
 
-    enum class ReplayGainMode {
-        OFF,
-        TRACK,
-        ALBUM
+    enum class ReplayGainMode(val displayName: String) {
+        OFF("OFF"),
+        TRACK("TRACK GAIN"),
+        ALBUM("ALBUM GAIN")
     }
 
-    enum class CrossfadeMode(val durationMs: Long) {
-        GAPLESS(0L),
-        CROSSFADE_2S(2000L),
-        CROSSFADE_4S(4000L)
+    enum class CrossfadeMode(val durationMs: Long, val displayName: String) {
+        GAPLESS(0L, "GAPLESS (0s)"),
+        CROSSFADE_2S(2000L, "FADE 2s"),
+        CROSSFADE_4S(4000L, "FADE 4s");
+
+        companion object {
+            val FADE_2S get() = CROSSFADE_2S
+            val FADE_4S get() = CROSSFADE_4S
+        }
     }
 
     var playMode: PlayMode = PlayMode.ALL
+        set(value) {
+            field = value
+            if (value != PlayMode.ALL && isNextPlayerChained) {
+                try {
+                    primaryPlayer?.setNextMediaPlayer(null)
+                } catch (ignored: Exception) {}
+                try {
+                    nextPlayer?.stop()
+                    nextPlayer?.release()
+                } catch (ignored: Exception) {}
+                nextPlayer = null
+                isNextPlayerChained = false
+            }
+        }
 
     var gainStage: GainStage = GainStage.LOW_IEM
         set(value) {
@@ -114,7 +133,7 @@ class LiteAudioEngine(private val context: Context) :
                 } catch (e: Exception) {
                     // Safe catch if player was released
                 }
-                val delay = if (isScreenOn) 30L else 2000L
+                val delay = if (isScreenOn) 250L else 2000L
                 mainHandler.postDelayed(this, delay)
             }
         }
@@ -325,13 +344,19 @@ class LiteAudioEngine(private val context: Context) :
         }
     }
 
-    fun pause() {
-        wasPlayingBeforeLoss = false
+    fun pause(fromFocusLoss: Boolean = false) {
+        if (!fromFocusLoss) {
+            wasPlayingBeforeLoss = false
+        }
         primaryPlayer?.pause()
         isPlaying = false
         mainHandler.removeCallbacks(progressRunnable)
         notifyStateChanged()
     }
+
+    fun playNext() = next()
+
+    fun playPrevious() = previous()
 
     fun next() {
         if (playlist.isEmpty()) return
@@ -463,15 +488,18 @@ class LiteAudioEngine(private val context: Context) :
         when (focusChange) {
             AudioManager.AUDIOFOCUS_LOSS -> {
                 wasPlayingBeforeLoss = false
-                pause()
+                pause(fromFocusLoss = false)
             }
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
-                wasPlayingBeforeLoss = isPlaying
-                pause()
+                val shouldResume = isPlaying
+                pause(fromFocusLoss = true)
+                wasPlayingBeforeLoss = shouldResume
             }
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
                 val duckVol = calculateEffectiveVolume() * 0.2f
-                primaryPlayer?.setVolume(duckVol, duckVol)
+                try {
+                    primaryPlayer?.setVolume(duckVol, duckVol)
+                } catch (ignored: Exception) {}
             }
             AudioManager.AUDIOFOCUS_GAIN -> {
                 applyPlayerVolume()

@@ -75,19 +75,25 @@ class AudiophileAbBenchmarkTest {
      */
     @Test
     fun testScreenOffCpuThrottlingMetrics() {
-        val screenOnIntervalMs = 30L    // ~33.3 FPS for kinetic cassette animation
+        val legacyScreenOnIntervalMs = 30L
+        val screenOnIntervalMs = 250L   // 4 Hz smooth index/position ticker for vintage CPU conservation
         val screenOffIntervalMs = 2000L // Low-frequency telemetry interval for pocket playback
 
+        val wakeupsPerMinuteLegacy = 60_000L / legacyScreenOnIntervalMs
         val wakeupsPerMinuteScreenOn = 60_000L / screenOnIntervalMs
         val wakeupsPerMinuteScreenOff = 60_000L / screenOffIntervalMs
 
-        assertEquals(2000L, wakeupsPerMinuteScreenOn)
+        assertEquals(2000L, wakeupsPerMinuteLegacy)
+        assertEquals(240L, wakeupsPerMinuteScreenOn)
         assertEquals(30L, wakeupsPerMinuteScreenOff)
 
-        val wakeupsEliminatedPerMinute = wakeupsPerMinuteScreenOn - wakeupsPerMinuteScreenOff
-        assertEquals(1970L, wakeupsEliminatedPerMinute)
+        val wakeupsEliminatedScreenOn = wakeupsPerMinuteLegacy - wakeupsPerMinuteScreenOn
+        assertEquals(1760L, wakeupsEliminatedScreenOn)
 
-        val reductionPercentage = (wakeupsEliminatedPerMinute.toDouble() / wakeupsPerMinuteScreenOn.toDouble()) * 100.0
+        val wakeupsEliminatedScreenOff = wakeupsPerMinuteLegacy - wakeupsPerMinuteScreenOff
+        assertEquals(1970L, wakeupsEliminatedScreenOff)
+
+        val reductionPercentage = (wakeupsEliminatedScreenOff.toDouble() / wakeupsPerMinuteLegacy.toDouble()) * 100.0
         assertTrue("Wakeup reduction must exceed 98% for vintage DAP power conservation", reductionPercentage >= 98.0)
         assertEquals(98.5, reductionPercentage, 0.1)
     }
@@ -199,5 +205,25 @@ class AudiophileAbBenchmarkTest {
 
         val deltaDb = cansStage.gainDb - iemStage.gainDb
         assertEquals(6.0f, deltaDb, 0.001f)
+    }
+
+    /**
+     * A/B Test 8: Canonical Spindle Glossary Enums & Display Names.
+     * Validates that GainStage, ReplayGainMode, and CrossfadeMode mirror canonical display strings.
+     */
+    @Test
+    fun testCanonicalGlossaryDisplayNames() {
+        assertEquals("IEM (0dB)", LiteAudioEngine.GainStage.LOW_IEM.displayName)
+        assertEquals("CANS (+6dB)", LiteAudioEngine.GainStage.HIGH_CANS.displayName)
+
+        assertEquals("OFF", LiteAudioEngine.ReplayGainMode.OFF.displayName)
+        assertEquals("TRACK GAIN", LiteAudioEngine.ReplayGainMode.TRACK.displayName)
+        assertEquals("ALBUM GAIN", LiteAudioEngine.ReplayGainMode.ALBUM.displayName)
+
+        assertEquals("GAPLESS (0s)", LiteAudioEngine.CrossfadeMode.GAPLESS.displayName)
+        assertEquals("FADE 2s", LiteAudioEngine.CrossfadeMode.CROSSFADE_2S.displayName)
+        assertEquals("FADE 4s", LiteAudioEngine.CrossfadeMode.CROSSFADE_4S.displayName)
+        assertEquals(LiteAudioEngine.CrossfadeMode.CROSSFADE_2S, LiteAudioEngine.CrossfadeMode.FADE_2S)
+        assertEquals(LiteAudioEngine.CrossfadeMode.CROSSFADE_4S, LiteAudioEngine.CrossfadeMode.FADE_4S)
     }
 }
