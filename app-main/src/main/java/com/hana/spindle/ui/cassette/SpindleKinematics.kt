@@ -31,6 +31,83 @@ class SpindleKinematics(
         val rightAngularSpeed: Float  // Relative rotational speed for right reel
     )
 
+    data class ReelInertia(
+        val leftInertia: Float,        // Normalized rotational inertia of left reel (0.25 bare hub .. 1.0 full spool)
+        val rightInertia: Float,       // Normalized rotational inertia of right reel (0.25 bare hub .. 1.0 full spool)
+        val leftDecayTimeSec: Float,   // Deceleration coast-down damping time constant (seconds)
+        val rightDecayTimeSec: Float   // Deceleration coast-down damping time constant (seconds)
+    )
+
+    /**
+     * Calculates rotational inertia and coast-down damping time constants for both reels.
+     * Full spools possess significantly greater physical mass and rotational momentum than bare hubs.
+     */
+    fun calculateInertia(progress: Float): ReelInertia {
+        val p = progress.coerceIn(0f, 1f)
+        val leftI = (0.25f + 0.75f * (1f - p)).coerceIn(0.25f, 1.0f)
+        val rightI = (0.25f + 0.75f * p).coerceIn(0.25f, 1.0f)
+
+        // Baseline decay time: 0.12s + up to 0.24s inertia scaling (150ms bare hub .. 360ms full spool)
+        val leftDecay = 0.12f + 0.24f * leftI
+        val rightDecay = 0.12f + 0.24f * rightI
+
+        return ReelInertia(
+            leftInertia = leftI,
+            rightInertia = rightI,
+            leftDecayTimeSec = leftDecay,
+            rightDecayTimeSec = rightDecay
+        )
+    }
+
+    /**
+     * Flywheel kinetic momentum tracker simulating physical motor spin-up,
+     * frictional coast-down damping, and smooth fast-wind release transitions.
+     * Zero-heap-allocation per frame.
+     */
+    class FlywheelInertiaTracker(
+        var currentSpeed: Float = 0f,
+        val accelerationTimeSec: Float = 0.16f,
+        val baseDecayTimeSec: Float = 0.26f
+    ) {
+        /**
+         * Step physics simulation forward by [deltaSec].
+         *
+         * @param targetSpeed Normalized target speed (0.0f = stop, 1.0f = play, >1.0f = fast wind).
+         * @param deltaSec Elapsed time in seconds.
+         * @param inertia Reel inertia factor (0.25 to 1.0).
+         * @return Updated [currentSpeed].
+         */
+        fun step(targetSpeed: Float, deltaSec: Float, inertia: Float = 0.6f): Float {
+            val clampedInertia = inertia.coerceIn(0.2f, 1.2f)
+            val diff = targetSpeed - currentSpeed
+            if (kotlin.math.abs(diff) < 0.0005f) {
+                currentSpeed = targetSpeed
+                return currentSpeed
+            }
+
+            val isAccelerating = kotlin.math.abs(targetSpeed) > kotlin.math.abs(currentSpeed)
+            val tau = if (isAccelerating) {
+                accelerationTimeSec * clampedInertia
+            } else {
+                baseDecayTimeSec * clampedInertia
+            }
+
+            // Exponential damping: alpha = 1 - exp(-dt / tau)
+            val alpha = (1.0f - kotlin.math.exp(-deltaSec / tau)).coerceIn(0f, 1f)
+            currentSpeed += alpha * diff
+
+            // Snap to exact target when close enough to avoid endless micro-renderings
+            if (kotlin.math.abs(targetSpeed - currentSpeed) < 0.01f && kotlin.math.abs(targetSpeed) < 0.01f) {
+                currentSpeed = 0f
+            }
+            return currentSpeed
+        }
+
+        fun reset(speed: Float = 0f) {
+            currentSpeed = speed
+        }
+    }
+
     /**
      * Calculates reel radii and angular velocities based on playback progress.
      *

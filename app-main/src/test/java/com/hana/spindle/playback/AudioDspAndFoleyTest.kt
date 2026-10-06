@@ -176,6 +176,12 @@ class AudioDspAndFoleyTest {
         assertTrue("Type I must have warm low-end boost", fx.isoBandsGainDb[0] > 2.0f)
         assertTrue("Type I must roll off upper treble", fx.isoBandsGainDb[9] < -2.0f)
 
+        // Switch to Type III Ferrichrome: dual-layer hybrid (warm bass + crisp highs)
+        fx.setTapeFormulation(AudioFxController.TapeFormulation.TYPE_III_FERRICHROME)
+        assertEquals(AudioFxController.TapeFormulation.TYPE_III_FERRICHROME, fx.currentTapeFormulation)
+        assertTrue("Type III must have rich bass punch", fx.isoBandsGainDb[0] >= 1.5f)
+        assertTrue("Type III must have extended top-end air", fx.isoBandsGainDb[8] >= 0.5f)
+
         // Switch to Type IV Metal (Extralloy Metal-XR): extended high-frequency response
         fx.setTapeFormulation(AudioFxController.TapeFormulation.TYPE_IV_METAL)
         assertEquals(AudioFxController.TapeFormulation.TYPE_IV_METAL, fx.currentTapeFormulation)

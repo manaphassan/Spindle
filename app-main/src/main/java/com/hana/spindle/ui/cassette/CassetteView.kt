@@ -70,7 +70,10 @@ class CassetteView @JvmOverloads constructor(
                     startRotation()
                 }
             } else {
-                stopRotation()
+                // If the flywheel still has momentum, let the animator continue coast-down damping
+                if (rotationAnimator?.isRunning != true && flywheelTracker.currentSpeed > 0f) {
+                    startRotation()
+                }
             }
             invalidate()
         }
@@ -81,11 +84,13 @@ class CassetteView @JvmOverloads constructor(
             invalidate()
         }
 
-    // Animation state
+    // Animation & Flywheel Inertia state
     private var reelAngle1 = 0f
     private var reelAngle2 = 0f
     private var tapeTravelOffset = 0f
     private var rotationAnimator: ValueAnimator? = null
+    private val flywheelTracker = SpindleKinematics.FlywheelInertiaTracker()
+    private var lastFrameTimeMs = 0L
 
     // Pre-allocated Paints (Zero allocation in onDraw)
     private val shellPaint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -285,15 +290,33 @@ class CassetteView @JvmOverloads constructor(
 
     private fun startRotation() {
         if (rotationAnimator?.isRunning == true) return
-        rotationAnimator = ValueAnimator.ofFloat(0f, 360f).apply {
-            duration = 2000L
+        lastFrameTimeMs = android.os.SystemClock.uptimeMillis()
+        rotationAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 1000L
             repeatCount = ValueAnimator.INFINITE
             interpolator = LinearInterpolator()
             addUpdateListener {
+                val now = android.os.SystemClock.uptimeMillis()
+                val deltaSec = if (lastFrameTimeMs > 0L) {
+                    ((now - lastFrameTimeMs) / 1000f).coerceIn(0.001f, 0.050f)
+                } else {
+                    0.016f
+                }
+                lastFrameTimeMs = now
+
+                val inertia = kinematics.calculateInertia(progress)
+                val targetSpeed = if (isPlaying) 1.0f else 0.0f
+                val effectiveSpeed = flywheelTracker.step(targetSpeed, deltaSec, (inertia.leftInertia + inertia.rightInertia) * 0.5f)
+
+                if (effectiveSpeed <= 0f && !isPlaying) {
+                    stopRotation()
+                    return@addUpdateListener
+                }
+
                 val kinematicsState = kinematics.calculate(progress, baseRadius)
-                reelAngle1 = (reelAngle1 + 4f * kinematicsState.leftAngularSpeed) % 360f
-                reelAngle2 = (reelAngle2 + 4f * kinematicsState.rightAngularSpeed) % 360f
-                tapeTravelOffset = (tapeTravelOffset + 2.8f * kinematicsState.leftAngularSpeed) % 40f
+                reelAngle1 = (reelAngle1 + 4f * kinematicsState.leftAngularSpeed * effectiveSpeed) % 360f
+                reelAngle2 = (reelAngle2 + 4f * kinematicsState.rightAngularSpeed * effectiveSpeed) % 360f
+                tapeTravelOffset = (tapeTravelOffset + 2.8f * kinematicsState.leftAngularSpeed * effectiveSpeed) % 40f
                 invalidate()
             }
             start()
@@ -303,6 +326,7 @@ class CassetteView @JvmOverloads constructor(
     private fun stopRotation() {
         rotationAnimator?.cancel()
         rotationAnimator = null
+        lastFrameTimeMs = 0L
     }
 
     override fun onDraw(canvas: Canvas) {

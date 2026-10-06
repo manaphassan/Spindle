@@ -45,6 +45,8 @@ data class CassetteTheme(
     val reelHubColor: Int = Color.WHITE,
     val tapeRibbonColor: Int = Color.parseColor("#2E1F1A"),
     val vfdGlowColor: Int = Color.parseColor("#FDE68A"),
+    val tapeFormulation: com.hana.spindle.playback.AudioFxController.TapeFormulation =
+        com.hana.spindle.playback.AudioFxController.TapeFormulation.TYPE_II_CHROME,
     val isDarkAppTheme: Boolean = true
 ) {
     companion object {
@@ -360,6 +362,33 @@ data class CassetteTheme(
             isDarkAppTheme = true
         )
 
+        // 13. Sony Duad 90 (Type III Ferrichrome FeCr)
+        val SONY_DUAD_TYPE3 = CassetteTheme(
+            id = "theme_sony_duad_type3",
+            name = "Sony Duad Type III",
+            subtitle = "Ferrichrome FeCr • Dual-Layer Hybrid",
+            chassisStyle = ChassisStyle.VERTICAL_DECK,
+            chassisColor = Color.parseColor("#141D20"),
+            diagonalBezelColor = Color.parseColor("#0F1618"),
+            dialColor = Color.parseColor("#FAFAF9"),
+            surfaceColor = Color.parseColor("#172327"),
+            cardBorderColor = Color.parseColor("#23393F"),
+            textPrimaryColor = Color.parseColor("#FAFAF9"),
+            textSecondaryColor = Color.parseColor("#99F6E4"),
+            accentColor = Color.parseColor("#14B8A6"), // Metallic Teal Hero
+            shellColor = Color.parseColor("#121A1E"),
+            shellTexture = ShellTexture.CERAMIC_COMPOSITE,
+            labelBackgroundColor = Color.parseColor("#0E1619"),
+            labelTextColor = Color.parseColor("#CCFBF1"),
+            labelAccentColor = Color.parseColor("#14B8A6"), // Teal metallic stripe
+            windowTint = Color.argb(32, 20, 184, 166),
+            reelHubColor = Color.parseColor("#E2E8F0"),     // Precision Aluminum Hubs
+            tapeRibbonColor = Color.parseColor("#281E19"),  // FeCr dual-layer ribbon
+            vfdGlowColor = Color.parseColor("#14B8A6"),
+            tapeFormulation = com.hana.spindle.playback.AudioFxController.TapeFormulation.TYPE_III_FERRICHROME,
+            isDarkAppTheme = true
+        )
+
         // All Curated Theme Presets
         val ALL_PRESETS = listOf(
             METAL_XR_TYPE4,
@@ -372,6 +401,7 @@ data class CassetteTheme(
             SKELETON_REEL,
             REEL_TO_REEL_STUDIO,
             SONY_HF_90,
+            SONY_DUAD_TYPE3,
             DENON_HD8_100,
             METAL_81_RED
         )
@@ -380,9 +410,10 @@ data class CassetteTheme(
         val VERTICAL_STUDIO_DECK = METAL_XR_TYPE4
         val VAPORWAVE_80S = LIGHT
         val METAL_81_RED_HERO = METAL_81_RED
-        val TYPE_I_NORMAL = DARK
+        val TYPE_I_NORMAL = SONY_HF_90
+        val TYPE_II_CHROME = TDK_SA_90
+        val TYPE_III_FERRICHROME = SONY_DUAD_TYPE3
         val TYPE_IV_METAL = METAL_XR_TYPE4
-        val TYPE_II_CHROME = DARK
         val ALBUM_ADAPTIVE = DARK
     }
 }

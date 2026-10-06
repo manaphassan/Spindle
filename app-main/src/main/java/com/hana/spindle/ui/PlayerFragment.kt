@@ -139,6 +139,7 @@ class PlayerFragment : Fragment() {
         super.onResume()
         requireContext().registerReceiver(batteryReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
         syncState()
+        syncVuBacklightPreference()
     }
 
     override fun onPause() {
@@ -885,6 +886,21 @@ class PlayerFragment : Fragment() {
 
     fun openQueueBottomSheet() {
         QueueBottomSheet().show(childFragmentManager, "QueueBottomSheet")
+    }
+
+    private fun syncVuBacklightPreference() {
+        val b = _binding ?: return
+        val prefs = requireContext().getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+        val savedToneName = prefs.getString("pref_vu_backlight_tone", DualAnalogVuMeterView.BacklightTone.WARM_TUNGSTEN.name)
+        val tone = try {
+            DualAnalogVuMeterView.BacklightTone.valueOf(savedToneName ?: "")
+        } catch (_: Exception) {
+            DualAnalogVuMeterView.BacklightTone.WARM_TUNGSTEN
+        }
+        if (b.vuMeterView.currentBacklight != tone) {
+            b.vuMeterView.currentBacklight = tone
+            updateVuBacklightButton(tone)
+        }
     }
 
     override fun onDestroyView() {

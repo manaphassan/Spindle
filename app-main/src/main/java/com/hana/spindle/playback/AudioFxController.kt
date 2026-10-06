@@ -51,6 +51,7 @@ class AudioFxController {
         // Vintage Cassette Tape Formulation Profiles (EQ / Saturation)
         val CURVE_TYPE_I_NORMAL = AudioDspConstants.CURVE_TYPE_I_NORMAL
         val CURVE_TYPE_II_CHROME = AudioDspConstants.CURVE_TYPE_II_CHROME
+        val CURVE_TYPE_III_FERRICHROME = AudioDspConstants.CURVE_TYPE_III_FERRICHROME
         val CURVE_TYPE_IV_METAL = AudioDspConstants.CURVE_TYPE_IV_METAL
 
         // Dolby Noise Reduction Compander Emulation Curves
@@ -64,6 +65,7 @@ class AudioFxController {
     enum class TapeFormulation(val label: String, val tag: String) {
         TYPE_I_NORMAL("NORMAL (Fe₂O₃)", "TYPE I"),
         TYPE_II_CHROME("HIGH (CrO₂)", "TYPE II"),
+        TYPE_III_FERRICHROME("FERRICHROME (FeCr)", "TYPE III"),
         TYPE_IV_METAL("METAL (Pure)", "TYPE IV")
     }
 
@@ -228,6 +230,7 @@ class AudioFxController {
         val tapeCurve = when (currentTapeFormulation) {
             TapeFormulation.TYPE_I_NORMAL -> CURVE_TYPE_I_NORMAL
             TapeFormulation.TYPE_II_CHROME -> CURVE_TYPE_II_CHROME
+            TapeFormulation.TYPE_III_FERRICHROME -> CURVE_TYPE_III_FERRICHROME
             TapeFormulation.TYPE_IV_METAL -> CURVE_TYPE_IV_METAL
         }
         val dolbyCurve = when (currentDolbyMode) {

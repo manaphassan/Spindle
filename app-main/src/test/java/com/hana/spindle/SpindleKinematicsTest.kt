@@ -85,4 +85,68 @@ class SpindleKinematicsTest {
         val dRoller = kotlin.math.hypot(outPoints[2] - 300f, outPoints[3] - 150f)
         assertEquals(10f, dRoller, 0.01f)
     }
+
+    @Test
+    fun testReelInertiaCalculation() {
+        // Start of tape: Left (supply) is full spool (max inertia), Right is bare hub (min inertia)
+        val startInertia = kinematics.calculateInertia(0.0f)
+        assertEquals(1.0f, startInertia.leftInertia, 0.01f)
+        assertEquals(0.25f, startInertia.rightInertia, 0.01f)
+        assertTrue(startInertia.leftDecayTimeSec > startInertia.rightDecayTimeSec)
+
+        // Midpoint: Both reels have equal mass and inertia
+        val midInertia = kinematics.calculateInertia(0.5f)
+        assertEquals(midInertia.leftInertia, midInertia.rightInertia, 0.01f)
+        assertEquals(midInertia.leftDecayTimeSec, midInertia.rightDecayTimeSec, 0.01f)
+
+        // End of tape: Left is bare hub, Right is full spool
+        val endInertia = kinematics.calculateInertia(1.0f)
+        assertEquals(0.25f, endInertia.leftInertia, 0.01f)
+        assertEquals(1.0f, endInertia.rightInertia, 0.01f)
+        assertTrue(endInertia.rightDecayTimeSec > endInertia.leftDecayTimeSec)
+    }
+
+    @Test
+    fun testFlywheelInertiaAccelerationAndDecay() {
+        val tracker = SpindleKinematics.FlywheelInertiaTracker()
+        assertEquals(0f, tracker.currentSpeed, 0.001f)
+
+        // Spin up from 0 to 1.0 (PLAY) with 16ms frames
+        val speeds = mutableListOf<Float>()
+        for (i in 0 until 20) {
+            val s = tracker.step(targetSpeed = 1.0f, deltaSec = 0.016f, inertia = 0.5f)
+            speeds.add(s)
+        }
+        // Verify monotonic acceleration
+        for (i in 1 until speeds.size) {
+            assertTrue("Speed must increase during spin-up", speeds[i] >= speeds[i - 1])
+        }
+        assertTrue("Speed after 320ms should approach 1.0", tracker.currentSpeed > 0.85f)
+
+        // Coast-down decay to 0 (STOP)
+        val decaySpeeds = mutableListOf<Float>()
+        for (i in 0 until 60) {
+            val s = tracker.step(targetSpeed = 0.0f, deltaSec = 0.016f, inertia = 0.5f)
+            decaySpeeds.add(s)
+        }
+        // Verify monotonic deceleration
+        for (i in 1 until decaySpeeds.size) {
+            assertTrue("Speed must decrease during coast-down", decaySpeeds[i] <= decaySpeeds[i - 1])
+        }
+        assertEquals("Speed after coast-down should be 0.0", 0.0f, tracker.currentSpeed, 0.001f)
+
+        // Test inertia comparison: heavy spool vs bare hub coast-down
+        val trackerHeavy = SpindleKinematics.FlywheelInertiaTracker(currentSpeed = 1.0f)
+        val trackerLight = SpindleKinematics.FlywheelInertiaTracker(currentSpeed = 1.0f)
+
+        // Step both for 150ms
+        trackerHeavy.step(targetSpeed = 0f, deltaSec = 0.15f, inertia = 1.0f)
+        trackerLight.step(targetSpeed = 0f, deltaSec = 0.15f, inertia = 0.25f)
+
+        assertTrue(
+            "Heavy spool with more momentum should maintain higher residual speed than light spool",
+            trackerHeavy.currentSpeed > trackerLight.currentSpeed
+        )
+    }
 }
+

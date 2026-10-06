@@ -33,6 +33,8 @@ object AudioDspConstants {
     val CURVE_TYPE_I_NORMAL = floatArrayOf(2.5f, 3.0f, 2.0f, 1.0f, 0.5f, 0.0f, -0.5f, -1.0f, -1.8f, -3.0f)
     /** Reference 70µs CrO₂ studio benchmark */
     val CURVE_TYPE_II_CHROME = floatArrayOf(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f)
+    /** Dual-layer hybrid (Ferric base for deep punch + Chromium top for crisp 70µs highs) */
+    val CURVE_TYPE_III_FERRICHROME = floatArrayOf(2.0f, 2.2f, 1.5f, 0.5f, 0.0f, 0.0f, 0.5f, 0.8f, 1.0f, 0.5f)
     /** Wide-bandwidth pure metal, extended transients */
     val CURVE_TYPE_IV_METAL = floatArrayOf(1.0f, 0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 0.5f, 1.0f, 1.2f, 1.5f)
 

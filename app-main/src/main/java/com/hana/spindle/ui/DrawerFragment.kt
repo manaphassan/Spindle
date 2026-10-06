@@ -1382,6 +1382,7 @@ class DrawerFragment : Fragment() {
         fun updateTapeBiasPills(formulation: AudioFxController.TapeFormulation) {
             val isType1 = formulation == AudioFxController.TapeFormulation.TYPE_I_NORMAL
             val isType2 = formulation == AudioFxController.TapeFormulation.TYPE_II_CHROME
+            val isType3 = formulation == AudioFxController.TapeFormulation.TYPE_III_FERRICHROME
             val isType4 = formulation == AudioFxController.TapeFormulation.TYPE_IV_METAL
 
             binding.btnTapeType1.setTextColor(if (isType1) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
@@ -1389,6 +1390,9 @@ class DrawerFragment : Fragment() {
 
             binding.btnTapeType2.setTextColor(if (isType2) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
             binding.btnTapeType2.backgroundTintList = ColorStateList.valueOf(if (isType2) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+
+            binding.btnTapeType3.setTextColor(if (isType3) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnTapeType3.backgroundTintList = ColorStateList.valueOf(if (isType3) Color.parseColor("#16261B") else Color.parseColor("#242731"))
 
             binding.btnTapeType4.setTextColor(if (isType4) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
             binding.btnTapeType4.backgroundTintList = ColorStateList.valueOf(if (isType4) Color.parseColor("#16261B") else Color.parseColor("#242731"))
@@ -1426,6 +1430,13 @@ class DrawerFragment : Fragment() {
             it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
             Toast.makeText(requireContext(), "Tape Bias: Type II Chrome (70µs)", Toast.LENGTH_SHORT).show()
         }
+        binding.btnTapeType3.setOnClickListener {
+            app.audioEngine.setTapeFormulation(AudioFxController.TapeFormulation.TYPE_III_FERRICHROME)
+            updateTapeBiasPills(AudioFxController.TapeFormulation.TYPE_III_FERRICHROME)
+            app.audioEngine.foleyEngine.playSwitchSnap()
+            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            Toast.makeText(requireContext(), "Tape Bias: Type III FeCr (70µs)", Toast.LENGTH_SHORT).show()
+        }
         binding.btnTapeType4.setOnClickListener {
             app.audioEngine.setTapeFormulation(AudioFxController.TapeFormulation.TYPE_IV_METAL)
             updateTapeBiasPills(AudioFxController.TapeFormulation.TYPE_IV_METAL)
@@ -1455,6 +1466,46 @@ class DrawerFragment : Fragment() {
             it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
             Toast.makeText(requireContext(), "Dolby NR: C (20dB High Shelf Cut)", Toast.LENGTH_SHORT).show()
         }
+
+        // 9b. VU Meter Illumination Modes
+        fun updateVuTonePills(tone: com.hana.spindle.ui.eq.DualAnalogVuMeterView.BacklightTone) {
+            val isAmber = tone == com.hana.spindle.ui.eq.DualAnalogVuMeterView.BacklightTone.WARM_TUNGSTEN
+            val isCyan = tone == com.hana.spindle.ui.eq.DualAnalogVuMeterView.BacklightTone.MCINTOSH_CYAN
+            val isGreen = tone == com.hana.spindle.ui.eq.DualAnalogVuMeterView.BacklightTone.STUDIO_MINT
+            val isCream = tone == com.hana.spindle.ui.eq.DualAnalogVuMeterView.BacklightTone.PARCHMENT
+
+            binding.btnVuToneAmber.setTextColor(if (isAmber) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnVuToneAmber.backgroundTintList = ColorStateList.valueOf(if (isAmber) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+
+            binding.btnVuToneCyan.setTextColor(if (isCyan) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnVuToneCyan.backgroundTintList = ColorStateList.valueOf(if (isCyan) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+
+            binding.btnVuToneGreen.setTextColor(if (isGreen) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnVuToneGreen.backgroundTintList = ColorStateList.valueOf(if (isGreen) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+
+            binding.btnVuToneCream.setTextColor(if (isCream) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnVuToneCream.backgroundTintList = ColorStateList.valueOf(if (isCream) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+        }
+
+        val currentSavedToneName = prefs.getString("pref_vu_backlight_tone", com.hana.spindle.ui.eq.DualAnalogVuMeterView.BacklightTone.WARM_TUNGSTEN.name)
+        val initialTone = try {
+            com.hana.spindle.ui.eq.DualAnalogVuMeterView.BacklightTone.valueOf(currentSavedToneName ?: "")
+        } catch (_: Exception) {
+            com.hana.spindle.ui.eq.DualAnalogVuMeterView.BacklightTone.WARM_TUNGSTEN
+        }
+        updateVuTonePills(initialTone)
+
+        fun selectVuTone(tone: com.hana.spindle.ui.eq.DualAnalogVuMeterView.BacklightTone) {
+            prefs.edit().putString("pref_vu_backlight_tone", tone.name).apply()
+            updateVuTonePills(tone)
+            app.audioEngine.foleyEngine.playSwitchSnap()
+            Toast.makeText(requireContext(), "VU Backlight: ${tone.nameLabel}", Toast.LENGTH_SHORT).show()
+        }
+
+        binding.btnVuToneAmber.setOnClickListener { selectVuTone(com.hana.spindle.ui.eq.DualAnalogVuMeterView.BacklightTone.WARM_TUNGSTEN) }
+        binding.btnVuToneCyan.setOnClickListener { selectVuTone(com.hana.spindle.ui.eq.DualAnalogVuMeterView.BacklightTone.MCINTOSH_CYAN) }
+        binding.btnVuToneGreen.setOnClickListener { selectVuTone(com.hana.spindle.ui.eq.DualAnalogVuMeterView.BacklightTone.STUDIO_MINT) }
+        binding.btnVuToneCream.setOnClickListener { selectVuTone(com.hana.spindle.ui.eq.DualAnalogVuMeterView.BacklightTone.PARCHMENT) }
     }
 
     private fun applyDrawerTheme(theme: CassetteTheme) {
