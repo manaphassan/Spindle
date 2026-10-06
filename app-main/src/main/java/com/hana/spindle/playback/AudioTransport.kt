@@ -12,8 +12,12 @@ interface AudioTransport {
     fun togglePlayPause()
     fun play()
     fun pause()
-    fun stop() { pause() }
+    fun stop() {
+        pause()
+        seekTo(0L)
+    }
     fun rewind(deltaMs: Long = SpindleGlossary.SEEK_STEP_MANUAL_MS)
     fun fastForward(deltaMs: Long = SpindleGlossary.SEEK_STEP_MANUAL_MS)
+    fun seekTo(positionMs: Long) = Unit
     val isPlaying: Boolean
 }

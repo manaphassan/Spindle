@@ -334,6 +334,32 @@ data class CassetteTheme(
             isDarkAppTheme = true
         )
 
+        // 12. Metal-81 Red (1981 Classic Red Chassis)
+        val METAL_81_RED = CassetteTheme(
+            id = "theme_metal_81_red",
+            name = "Metal-81 Red",
+            subtitle = "1981 Classic Crimson Chassis",
+            chassisStyle = ChassisStyle.METAL_81_RED,
+            chassisColor = Color.parseColor("#B91C1C"),
+            diagonalBezelColor = Color.parseColor("#18181B"),
+            dialColor = Color.parseColor("#FAFAF9"),
+            surfaceColor = Color.parseColor("#202334"),
+            cardBorderColor = Color.parseColor("#3B405D"),
+            textPrimaryColor = Color.parseColor("#FAFAF9"),
+            textSecondaryColor = Color.parseColor("#B0B4CE"),
+            accentColor = Color.parseColor("#EF4444"),
+            shellColor = Color.parseColor("#262626"),
+            shellTexture = ShellTexture.MATTE_PLASTIC,
+            labelBackgroundColor = Color.parseColor("#F5F4EE"),
+            labelTextColor = Color.parseColor("#1A1A1A"),
+            labelAccentColor = Color.parseColor("#DC2626"),
+            windowTint = Color.argb(40, 255, 255, 255),
+            reelHubColor = Color.WHITE,
+            tapeRibbonColor = Color.parseColor("#3E2723"),
+            vfdGlowColor = Color.parseColor("#00E5FF"),
+            isDarkAppTheme = true
+        )
+
         // All Curated Theme Presets
         val ALL_PRESETS = listOf(
             METAL_XR_TYPE4,
@@ -346,13 +372,14 @@ data class CassetteTheme(
             SKELETON_REEL,
             REEL_TO_REEL_STUDIO,
             SONY_HF_90,
-            DENON_HD8_100
+            DENON_HD8_100,
+            METAL_81_RED
         )
 
         // Backward compatibility aliases for legacy references
         val VERTICAL_STUDIO_DECK = METAL_XR_TYPE4
         val VAPORWAVE_80S = LIGHT
-        val METAL_81_RED_HERO = DARK
+        val METAL_81_RED_HERO = METAL_81_RED
         val TYPE_I_NORMAL = DARK
         val TYPE_IV_METAL = METAL_XR_TYPE4
         val TYPE_II_CHROME = DARK

@@ -448,7 +448,7 @@ class PlayerFragment : Fragment() {
 
         // Metal-81 Red Controls
         binding.metal81ChassisView.onPlayClicked = { audioEngine.togglePlayPause() }
-        binding.metal81ChassisView.onStopClicked = { audioEngine.pause() }
+        binding.metal81ChassisView.onStopClicked = { audioEngine.stop() }
         binding.metal81ChassisView.onEjectClicked = {
             (activity as? MainActivity)?.navigateToVault()
         }

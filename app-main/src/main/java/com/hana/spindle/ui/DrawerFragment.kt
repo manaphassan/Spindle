@@ -1130,6 +1130,7 @@ class DrawerFragment : Fragment() {
         }
         binding.btnThemeSonyHf.setOnClickListener { switchTheme(CassetteTheme.SONY_HF_90) }
         binding.btnThemeDenonHd.setOnClickListener { switchTheme(CassetteTheme.DENON_HD8_100) }
+        binding.btnThemeMetal81.setOnClickListener { switchTheme(CassetteTheme.METAL_81_RED) }
     }
 
     private fun updateThemeButtonsVisual() {
@@ -1149,6 +1150,7 @@ class DrawerFragment : Fragment() {
         binding.btnThemeStudioReel.backgroundTintList = if (curId == CassetteTheme.REEL_TO_REEL_STUDIO.id) activeColor else ColorStateList.valueOf(Color.parseColor("#241B14"))
         binding.btnThemeSonyHf.backgroundTintList = if (curId == CassetteTheme.SONY_HF_90.id) activeColor else ColorStateList.valueOf(Color.parseColor("#181A20"))
         binding.btnThemeDenonHd.backgroundTintList = if (curId == CassetteTheme.DENON_HD8_100.id) activeColor else ColorStateList.valueOf(Color.parseColor("#141318"))
+        binding.btnThemeMetal81.backgroundTintList = if (curId == CassetteTheme.METAL_81_RED.id) activeColor else ColorStateList.valueOf(Color.parseColor("#261014"))
 
         binding.tvActiveThemeName.text = themeManager.currentTheme.value.name
     }

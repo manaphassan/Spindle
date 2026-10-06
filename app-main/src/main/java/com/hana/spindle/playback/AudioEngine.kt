@@ -313,6 +313,7 @@ class AudioEngine(
                 )
             }
         }.apply {
+            setEnableDecoderFallback(true)
             setEnableAudioFloatOutput(true)
             setEnableAudioTrackPlaybackParams(false)
         }
@@ -373,6 +374,10 @@ class AudioEngine(
                 android.util.Log.e("AudioEngine", "ExoPlayer error: ${error.errorCodeName} (code=${error.errorCode}) - ${error.message}", error)
                 if (player === secondaryPlayer) {
                     cancelCrossfade()
+                } else {
+                    _playbackState.value = _playbackState.value.copy(isPlaying = false)
+                    stopProgressPolling()
+                    notifyWidgetUpdate()
                 }
             }
         })
@@ -1096,6 +1101,8 @@ class AudioEngine(
 
     override fun stop() {
         pause()
+        seekTo(0L)
+        saveLastPlayed(playlist.getOrNull(currentIndex)?.path, 0L)
     }
 
     override fun play() {
@@ -1104,6 +1111,9 @@ class AudioEngine(
             (context.applicationContext as? com.hana.spindle.SpindleApp)?.radioStreamEngine?.pause()
         } catch (e: Exception) {
             // ignore
+        }
+        if (exoPlayer.playbackState == Player.STATE_IDLE) {
+            exoPlayer.prepare()
         }
         exoPlayer.play()
         if (isCrossfading) {
@@ -1324,7 +1334,7 @@ class AudioEngine(
         }
     }
 
-    fun seekTo(positionMs: Long) {
+    override fun seekTo(positionMs: Long) {
         cancelCrossfade()
         exoPlayer.seekTo(positionMs)
         updateProgress()
@@ -1504,6 +1514,68 @@ class AudioEngine(
 }
 
 /**
+ * Parsed FLAC STREAMINFO header parameters used for configuring Qualcomm OMX ExtendedACodec.
+ */
+internal data class FlacStreamInfo(
+    val minBlockSize: Int,
+    val maxBlockSize: Int,
+    val minFrameSize: Int,
+    val maxFrameSize: Int,
+    val sampleRate: Int,
+    val channels: Int,
+    val bitsPerSample: Int,
+    val bitWidth: Int
+) {
+    companion object {
+        fun parse(csd: ByteArray, pcmEncoding: Int = C.ENCODING_INVALID): FlacStreamInfo? {
+            if (csd.size < 14) return null
+            val offset = when {
+                csd.size >= 42 && csd[0] == 0x66.toByte() && csd[1] == 0x4C.toByte() && csd[2] == 0x61.toByte() && csd[3] == 0x43.toByte() -> 8
+                csd.size >= 38 && (csd[0].toInt() and 0x7F) == 0 && csd[1] == 0.toByte() && csd[2] == 0.toByte() && csd[3] == 0x22.toByte() -> 4
+                else -> 0
+            }
+            if (csd.size < offset + 14) return null
+
+            val minBlockSize = ((csd[offset].toInt() and 0xFF) shl 8) or (csd[offset + 1].toInt() and 0xFF)
+            val maxBlockSize = ((csd[offset + 2].toInt() and 0xFF) shl 8) or (csd[offset + 3].toInt() and 0xFF)
+            val minFrameSize = ((csd[offset + 4].toInt() and 0xFF) shl 16) or ((csd[offset + 5].toInt() and 0xFF) shl 8) or (csd[offset + 6].toInt() and 0xFF)
+            val maxFrameSize = ((csd[offset + 7].toInt() and 0xFF) shl 16) or ((csd[offset + 8].toInt() and 0xFF) shl 8) or (csd[offset + 9].toInt() and 0xFF)
+
+            val b10 = csd[offset + 10].toInt() and 0xFF
+            val b11 = csd[offset + 11].toInt() and 0xFF
+            val b12 = csd[offset + 12].toInt() and 0xFF
+            val b13 = csd[offset + 13].toInt() and 0xFF
+
+            val sampleRate = (b10 shl 12) or (b11 shl 4) or ((b12 and 0xF0) ushr 4)
+            val channels = ((b12 ushr 1) and 0x07) + 1
+            val streamBps = (((b12 and 0x01) shl 4) or ((b13 and 0xF0) ushr 4)) + 1
+
+            val effectiveBitWidth = when (pcmEncoding) {
+                C.ENCODING_PCM_24BIT -> 24
+                C.ENCODING_PCM_32BIT -> 32
+                C.ENCODING_PCM_16BIT -> 16
+                else -> when (streamBps) {
+                    in 17..24 -> 24
+                    in 25..32 -> 32
+                    else -> 16
+                }
+            }
+
+            return FlacStreamInfo(
+                minBlockSize = minBlockSize,
+                maxBlockSize = maxBlockSize,
+                minFrameSize = minFrameSize,
+                maxFrameSize = maxFrameSize,
+                sampleRate = sampleRate,
+                channels = channels,
+                bitsPerSample = streamBps,
+                bitWidth = effectiveBitWidth
+            )
+        }
+    }
+}
+
+/**
  * Custom MediaCodec audio renderer that intercepts Qualcomm OMX FLAC decoders
  * and injects the proprietary ExtendedACodec parameters (bit-width, min/max block size,
  * min/max frame size) extracted directly from the stream CSD header.
@@ -1536,51 +1608,34 @@ private class QualcommFlacMediaCodecAudioRenderer(
         val mediaFormat = super.getMediaFormat(format, codecMimeType, codecMaxInputSize, codecOperatingRate)
         if (codecMimeType == MimeTypes.AUDIO_FLAC || codecMimeType.contains("flac", ignoreCase = true)) {
             val csd = format.initializationData.firstOrNull()
-            if (csd != null && csd.size >= 18) {
-                val offset = when {
-                    csd.size >= 42 && (csd[4].toInt() and 0x7F) == 0 && csd[5] == 0.toByte() && csd[7] == 0x22.toByte() -> 8
-                    csd.size >= 38 && csd[0] == 0x66.toByte() && csd[1] == 0x4C.toByte() -> 4
-                    else -> 0
-                }
-                if (csd.size >= offset + 18) {
-                    val minBlockSize = ((csd[offset].toInt() and 0xFF) shl 8) or (csd[offset + 1].toInt() and 0xFF)
-                    val maxBlockSize = ((csd[offset + 2].toInt() and 0xFF) shl 8) or (csd[offset + 3].toInt() and 0xFF)
-                    val minFrameSize = ((csd[offset + 4].toInt() and 0xFF) shl 16) or ((csd[offset + 5].toInt() and 0xFF) shl 8) or (csd[offset + 6].toInt() and 0xFF)
-                    val maxFrameSize = ((csd[offset + 7].toInt() and 0xFF) shl 16) or ((csd[offset + 8].toInt() and 0xFF) shl 8) or (csd[offset + 9].toInt() and 0xFF)
-                    val b12 = csd[offset + 12].toInt() and 0xFF
-                    val bitsPerSample = ((b12 ushr 1) and 0x1F) + 1
+            val info = if (csd != null) FlacStreamInfo.parse(csd, format.pcmEncoding) else null
+            if (info != null) {
+                android.util.Log.i(
+                    "AudioEngine",
+                    "Qualcomm FLAC ExtendedACodec keys: bitWidth=${info.bitWidth}, bps=${info.bitsPerSample}, sampleRate=${info.sampleRate}, channels=${info.channels}, minBlock=${info.minBlockSize}, maxBlock=${info.maxBlockSize}, minFrame=${info.minFrameSize}, maxFrame=${info.maxFrameSize}"
+                )
 
-                    val bitWidth = when (format.pcmEncoding) {
-                        C.ENCODING_PCM_24BIT -> 24
-                        C.ENCODING_PCM_32BIT -> 32
-                        else -> if (bitsPerSample > 0) bitsPerSample else 16
-                    }
-
-                    android.util.Log.i(
-                        "AudioEngine",
-                        "Injecting Qualcomm FLAC ExtendedACodec keys: bitWidth=$bitWidth, minBlock=$minBlockSize, maxBlock=$maxBlockSize, minFrame=$minFrameSize, maxFrame=$maxFrameSize"
-                    )
-
-                    mediaFormat.setInteger("bit-width", bitWidth)
-                    mediaFormat.setInteger("bits-per-sample", bitWidth)
-                    if (minBlockSize > 0) mediaFormat.setInteger("min-block-size", minBlockSize)
-                    if (maxBlockSize > 0) mediaFormat.setInteger("max-block-size", maxBlockSize)
-                    if (minFrameSize > 0) mediaFormat.setInteger("min-frame-size", minFrameSize)
-                    if (maxFrameSize > 0) mediaFormat.setInteger("max-frame-size", maxFrameSize)
-                }
+                // Inject bit-width and bits-per-sample. Valid values for Qualcomm ExtendedACodec are 16, 24, 32.
+                mediaFormat.setInteger("bit-width", info.bitWidth)
+                mediaFormat.setInteger("bits-per-sample", info.bitWidth)
+                if (info.minBlockSize in 16..65535) mediaFormat.setInteger("min-block-size", info.minBlockSize)
+                if (info.maxBlockSize in 16..65535) mediaFormat.setInteger("max-block-size", info.maxBlockSize)
+                if (info.minFrameSize > 0) mediaFormat.setInteger("min-frame-size", info.minFrameSize)
+                if (info.maxFrameSize > 0) mediaFormat.setInteger("max-frame-size", info.maxFrameSize)
             } else {
                 val bitWidth = when (format.pcmEncoding) {
                     C.ENCODING_PCM_24BIT -> 24
                     C.ENCODING_PCM_32BIT -> 32
                     else -> 16
                 }
-                android.util.Log.i("AudioEngine", "Injecting Qualcomm FLAC ExtendedACodec fallback keys: bitWidth=$bitWidth")
-                mediaFormat.setInteger("bit-width", bitWidth)
-                mediaFormat.setInteger("bits-per-sample", bitWidth)
-                mediaFormat.setInteger("min-block-size", 4096)
-                mediaFormat.setInteger("max-block-size", 4096)
+                android.util.Log.i("AudioEngine", "Qualcomm FLAC fallback bitWidth=$bitWidth")
+                if (bitWidth > 16) {
+                    mediaFormat.setInteger("bit-width", bitWidth)
+                    mediaFormat.setInteger("bits-per-sample", bitWidth)
+                }
             }
         }
         return mediaFormat
     }
 }
+

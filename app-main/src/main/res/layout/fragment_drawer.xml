@@ -1348,6 +1348,21 @@
                                     android:paddingHorizontal="10dp"
                                     android:layout_marginStart="5dp"
                                     app:cornerRadius="8dp" />
+
+                                <Button
+                                    android:id="@+id/btnThemeMetal81"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="38dp"
+                                    android:text="METAL-81 RED"
+                                    android:textColor="#EF4444"
+                                    android:textSize="9.5sp"
+                                    android:textStyle="bold"
+                                    android:backgroundTint="#261014"
+                                    android:insetTop="0dp"
+                                    android:insetBottom="0dp"
+                                    android:paddingHorizontal="10dp"
+                                    android:layout_marginStart="5dp"
+                                    app:cornerRadius="8dp" />
                             </LinearLayout>
                         </HorizontalScrollView>
 
