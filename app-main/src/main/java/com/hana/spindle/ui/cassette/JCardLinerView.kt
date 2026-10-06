@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.hana.spindle.R
 import com.hana.spindle.data.db.TrackEntity
+import com.hana.spindle.playback.UsbDacInfo
 import com.hana.spindle.theme.CassetteTheme
 import java.util.Locale
 import java.util.concurrent.TimeUnit
@@ -59,6 +60,8 @@ class JCardLinerView @JvmOverloads constructor(
     private var fullQueue: List<TrackEntity> = emptyList()
     private var activeQueueIndex: Int = -1
     private var showingSideB: Boolean = false
+    private var currentAudioFormat: String = ""
+    private var currentUsbDacInfo: UsbDacInfo? = null
 
     init {
         LayoutInflater.from(context).inflate(R.layout.layout_jcard_liner, this, true)
@@ -114,11 +117,14 @@ class JCardLinerView @JvmOverloads constructor(
         activeIndex: Int,
         albumCover: Bitmap?,
         audioFormat: String,
-        theme: CassetteTheme
+        theme: CassetteTheme,
+        usbDacInfo: UsbDacInfo? = null
     ) {
         fullQueue = queue
         activeQueueIndex = activeIndex
         activeTheme = theme
+        currentAudioFormat = audioFormat
+        currentUsbDacInfo = usbDacInfo
 
         val currentTrack = if (activeIndex in queue.indices) queue[activeIndex] else queue.firstOrNull()
 
@@ -149,8 +155,7 @@ class JCardLinerView @JvmOverloads constructor(
         }
         tvSpineTapeModel.text = tapeModelName
 
-        val fmt = if (audioFormat.isNotBlank()) audioFormat else "FLAC 24-bit / 96kHz"
-        tvJCardAudioSpecs.text = "$fmt • Direct PCM"
+        updateAudioSpecsText()
 
         // 3. Side A / Side B Split & Timings
         val splitIndex = getSplitIndex(queue.size)
@@ -214,6 +219,25 @@ class JCardLinerView @JvmOverloads constructor(
         val minutes = totalSec / 60
         val seconds = totalSec % 60
         return String.format(Locale.US, "%02d:%02d", minutes, seconds)
+    }
+
+    fun updateUsbDacInfo(info: UsbDacInfo?) {
+        currentUsbDacInfo = info
+        updateAudioSpecsText()
+    }
+
+    private fun updateAudioSpecsText() {
+        val fmt = if (currentAudioFormat.isNotBlank()) currentAudioFormat else "FLAC 24-bit / 96kHz"
+        val dac = currentUsbDacInfo
+        if (dac != null && dac.isConnected) {
+            val brand = dac.brandBadge.takeIf { it.isNotBlank() } ?: "USB DAC"
+            val bitStr = if (dac.bitDepthBits > 0) "${dac.bitDepthBits}-bit / " else ""
+            val rateStr = if (dac.maxSampleRateHz > 0) "${dac.maxSampleRateHz / 1000}kHz" else ""
+            val dacSpec = if (bitStr.isNotEmpty() || rateStr.isNotEmpty()) "$bitStr$rateStr" else "BIT-PERFECT"
+            tvJCardAudioSpecs.text = "$fmt • $brand DIRECT • $dacSpec"
+        } else {
+            tvJCardAudioSpecs.text = "$fmt • Direct PCM"
+        }
     }
 
     // Inner Adapter for J-Card Track Items

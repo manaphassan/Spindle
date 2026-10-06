@@ -192,6 +192,41 @@ class VerticalDeckView @JvmOverloads constructor(
             invalidate()
         }
 
+    var isUsbDacConnected: Boolean = false
+        set(value) {
+            field = value
+            fitStudioLabelText()
+            invalidate()
+        }
+
+    var usbDacName: String? = null
+        set(value) {
+            field = value
+            fitStudioLabelText()
+            invalidate()
+        }
+
+    var usbDacBrandBadge: String? = null
+        set(value) {
+            field = value
+            fitStudioLabelText()
+            invalidate()
+        }
+
+    var usbDacMaxSampleRateHz: Int = 0
+        set(value) {
+            field = value
+            fitStudioLabelText()
+            invalidate()
+        }
+
+    var usbDacBitDepthBits: Int = 0
+        set(value) {
+            field = value
+            fitStudioLabelText()
+            invalidate()
+        }
+
     var durationMs: Long = 0L
         set(value) {
             field = value
@@ -2383,6 +2418,13 @@ class VerticalDeckView @JvmOverloads constructor(
     }
 
     private fun getRouteRowText(): String {
+        if (isUsbDacConnected) {
+            val brand = usbDacBrandBadge?.takeIf { it.isNotBlank() } ?: "USB DAC"
+            val bitStr = if (usbDacBitDepthBits > 0) "${usbDacBitDepthBits}-bit / " else ""
+            val rateStr = if (usbDacMaxSampleRateHz > 0) "${usbDacMaxSampleRateHz / 1000}kHz" else ""
+            val caps = if (rateStr.isNotBlank()) " • $bitStr$rateStr" else ""
+            return if (isBitPerfect) "$brand DIRECT$caps" else "$brand • USB DAC"
+        }
         return when {
             outputRoute.contains("USB", ignoreCase = true) -> if (isBitPerfect) "USB DIRECT" else "USB DAC"
             outputRoute.contains("3.5mm", ignoreCase = true) -> if (isBitPerfect) "3.5mm DIRECT" else "3.5mm OUTPUT"

@@ -221,7 +221,7 @@ class DialogUserEqPresets(
                 Toast.makeText(requireContext(), "Failed to save imported preset", Toast.LENGTH_SHORT).show()
             }
         } else {
-            Toast.makeText(requireContext(), "Unrecognized EQ format in clipboard (AutoEq GraphicEQ or Spindle JSON required)", Toast.LENGTH_LONG).show()
+            Toast.makeText(requireContext(), "Unrecognized EQ format in clipboard (AutoEq GraphicEQ, CSV, or Spindle JSON required)", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -281,16 +281,26 @@ class DialogUserEqPresets(
 
     private fun exportPreset(preset: UserEqPreset) {
         val app = requireActivity().application as SpindleApp
-        val jsonString = app.userEqPresetManager.exportPresetToJson(preset)
-
-        val sendIntent = Intent().apply {
-            action = Intent.ACTION_SEND
-            putExtra(Intent.EXTRA_TEXT, jsonString)
-            putExtra(Intent.EXTRA_SUBJECT, "Spindle EQ - ${preset.name}")
-            type = "text/plain"
-        }
-        val shareIntent = Intent.createChooser(sendIntent, "Export EQ Preset: ${preset.name}")
-        startActivity(shareIntent)
+        val formats = arrayOf("AutoEq Measurement CSV (*.csv)", "Spindle Preset JSON (*.json)")
+        AlertDialog.Builder(requireContext())
+            .setTitle("Export \"${preset.name}\"")
+            .setItems(formats) { _, which ->
+                val payload = if (which == 0) {
+                    app.userEqPresetManager.exportPresetToCsv(preset)
+                } else {
+                    app.userEqPresetManager.exportPresetToJson(preset)
+                }
+                val sendIntent = Intent().apply {
+                    action = Intent.ACTION_SEND
+                    putExtra(Intent.EXTRA_TEXT, payload)
+                    putExtra(Intent.EXTRA_SUBJECT, "Spindle EQ - ${preset.name}")
+                    type = "text/plain"
+                }
+                val shareIntent = Intent.createChooser(sendIntent, "Export EQ: ${preset.name}")
+                startActivity(shareIntent)
+            }
+            .setNegativeButton(R.string.action_cancel, null)
+            .show()
     }
 
     private fun confirmDeletePreset(preset: UserEqPreset) {

@@ -43,6 +43,11 @@ class AudioFxController {
         val CURVE_DIFFUSE_FIELD = AudioDspConstants.CURVE_DIFFUSE_FIELD
         val CURVE_MOONDROP_VDSF = AudioDspConstants.CURVE_MOONDROP_VDSF
         val CURVE_SENNHEISER_HD600 = AudioDspConstants.CURVE_SENNHEISER_HD600
+        val CURVE_HARMAN_OVER_EAR_2020 = AudioDspConstants.CURVE_HARMAN_OVER_EAR_2020
+        val CURVE_CRINACLE_IEF_BASS = AudioDspConstants.CURVE_CRINACLE_IEF_BASS
+        val CURVE_ETYMOTIC_ER4 = AudioDspConstants.CURVE_ETYMOTIC_ER4
+        val CURVE_SONY_MDR7506 = AudioDspConstants.CURVE_SONY_MDR7506
+        val CURVE_SENNHEISER_HD650 = AudioDspConstants.CURVE_SENNHEISER_HD650
         val CURVE_WARM_ANALOG_TAPE = AudioDspConstants.CURVE_WARM_ANALOG_TAPE
         val CURVE_V_SHAPE_PUNCH = AudioDspConstants.CURVE_V_SHAPE_PUNCH
         val CURVE_AIR_STAGE = AudioDspConstants.CURVE_AIR_STAGE
@@ -151,7 +156,9 @@ class AudioFxController {
     // Studio Collector Harmonic Tape Saturation DSP
     var isTapeSaturationEnabled: Boolean = false
         private set
-    var tapeSaturationDrive: Float = 1.0f // 0.0f to 1.0f
+    var tapeSaturationDrive: Float = 1.0f // 0.0f to 1.0f (normalized)
+        private set
+    var tapeSaturationDriveDb: Float = 6.0f // 0.0f to 6.0f dB (nominal +6.0dB full head bump drive)
         private set
 
     // Cached 3-band tone gains (-12.0f to +12.0f dB)
@@ -221,9 +228,30 @@ class AudioFxController {
     fun setTapeSaturationDrive(drive: Float, force: Boolean = false) {
         if (isLocked && !force) return
         tapeSaturationDrive = drive.coerceIn(0.0f, 1.0f)
+        tapeSaturationDriveDb = tapeSaturationDrive * 6.0f
         if (isTapeSaturationEnabled) {
             recomputeEffectiveGains()
         }
+    }
+
+    fun setTapeSaturationDriveDb(driveDb: Float, force: Boolean = false) {
+        if (isLocked && !force) return
+        tapeSaturationDriveDb = driveDb.coerceIn(0.0f, 6.0f)
+        tapeSaturationDrive = (tapeSaturationDriveDb / 6.0f).coerceIn(0.0f, 1.0f)
+        if (isTapeSaturationEnabled) {
+            recomputeEffectiveGains()
+        }
+    }
+
+    /**
+     * Applies magnetic hysteresis soft-clipping tape saturation with soft-knee limiter protection.
+     * y(x) = tanh(alpha * x) / tanh(alpha), where alpha is derived from tape drive dB (0dB..+6dB).
+     */
+    fun applyTapeSaturation(sample: Float): Float {
+        if (!isTapeSaturationEnabled) return sample
+        val alpha = AudioDspConstants.driveDbToAlpha(tapeSaturationDriveDb)
+        val saturated = AudioDspConstants.evaluateTapeSaturationTanh(sample, alpha)
+        return AudioDspConstants.applySoftKneeLimiter(saturated)
     }
 
     fun recomputeEffectiveGains() {
@@ -239,7 +267,7 @@ class AudioFxController {
             DolbyMode.DOLBY_C -> CURVE_DOLBY_C
         }
         val satCurve = if (isTapeSaturationEnabled) {
-            FloatArray(10) { i -> CURVE_TAPE_SATURATION_WARMTH[i] * tapeSaturationDrive }
+            AudioDspConstants.computeTapeSaturationGains(tapeSaturationDriveDb)
         } else {
             CURVE_FLAT
         }
@@ -443,10 +471,20 @@ class AudioFxController {
                 setFilterStrength(250, force = true)
                 setCrossfeedStrength(200, force = true)
             }
+            "HARMAN_2020", "HARMAN_OVER_EAR", "HARMAN_OE" -> {
+                setAllIsoBands(CURVE_HARMAN_OVER_EAR_2020, force = true)
+                setFilterStrength(250, force = true)
+                setCrossfeedStrength(200, force = true)
+            }
             "CRINACLE", "CRINACLE_IEF" -> {
                 setAllIsoBands(CURVE_CRINACLE_IEF, force = true)
                 setFilterStrength(0, force = true)
                 setCrossfeedStrength(100, force = true)
+            }
+            "CRINACLE_BASS", "CRINACLE_IEF_BASS", "DUSK" -> {
+                setAllIsoBands(CURVE_CRINACLE_IEF_BASS, force = true)
+                setFilterStrength(150, force = true)
+                setCrossfeedStrength(150, force = true)
             }
             "DIFFUSE_FIELD", "DIFFUSE" -> {
                 setAllIsoBands(CURVE_DIFFUSE_FIELD, force = true)
@@ -462,6 +500,21 @@ class AudioFxController {
                 setAllIsoBands(CURVE_SENNHEISER_HD600, force = true)
                 setFilterStrength(200, force = true)
                 setCrossfeedStrength(250, force = true)
+            }
+            "HD650", "SENNHEISER_HD650", "HD6XX" -> {
+                setAllIsoBands(CURVE_SENNHEISER_HD650, force = true)
+                setFilterStrength(200, force = true)
+                setCrossfeedStrength(250, force = true)
+            }
+            "ETYMOTIC", "ETYMOTIC_ER4", "ER4" -> {
+                setAllIsoBands(CURVE_ETYMOTIC_ER4, force = true)
+                setFilterStrength(0, force = true)
+                setCrossfeedStrength(100, force = true)
+            }
+            "SONY_MDR7506", "MDR7506", "7506" -> {
+                setAllIsoBands(CURVE_SONY_MDR7506, force = true)
+                setFilterStrength(100, force = true)
+                setCrossfeedStrength(150, force = true)
             }
             "WARM_TUBE", "WARM_ANALOG", "TUBE" -> {
                 setAllIsoBands(CURVE_WARM_ANALOG_TAPE, force = true)

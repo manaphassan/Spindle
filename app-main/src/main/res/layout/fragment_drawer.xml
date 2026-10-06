@@ -757,6 +757,55 @@
                                 android:checked="false" />
                         </LinearLayout>
 
+                        <!-- 1b. Tape Saturation Drive Gain Control (0.0 to +6.0 dB) -->
+                        <LinearLayout
+                            android:id="@+id/containerTapeSaturationDrive"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:layout_marginTop="2dp"
+                            android:layout_marginBottom="8dp"
+                            android:paddingHorizontal="2dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical">
+
+                                <TextView
+                                    android:id="@+id/tvTapeSaturationDriveLabel"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="TAPE DRIVE / FLUX LEVEL"
+                                    android:textColor="#71717A"
+                                    android:textStyle="bold"
+                                    android:textSize="9.5sp"
+                                    android:fontFamily="monospace" />
+
+                                <TextView
+                                    android:id="@+id/tvTapeSaturationDrive"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="+3.0 dB"
+                                    android:textColor="#F97316"
+                                    android:textStyle="bold"
+                                    android:textSize="10.5sp"
+                                    android:fontFamily="monospace" />
+                            </LinearLayout>
+
+                            <SeekBar
+                                android:id="@+id/seekTapeSaturationDrive"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:max="60"
+                                android:progress="30"
+                                android:progressTint="#F97316"
+                                android:thumbTint="#F97316"
+                                android:layout_marginTop="2dp" />
+                        </LinearLayout>
+
                         <!-- 2. Binaural Crossfeed / Soundstage Expansion -->
                         <LinearLayout
                             android:layout_width="match_parent"

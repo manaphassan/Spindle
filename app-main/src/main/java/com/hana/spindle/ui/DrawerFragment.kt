@@ -889,11 +889,36 @@ class DrawerFragment : Fragment() {
                 }.show()
                 return@setOnCheckedChangeListener
             }
+            binding.seekTapeSaturationDrive.isEnabled = isChecked
+            binding.containerTapeSaturationDrive.alpha = if (isChecked) 1.0f else 0.4f
             app.audioEngine.setTapeSaturation(isChecked)
             app.audioEngine.foleyEngine.playSwitchSnap()
             val msg = if (isChecked) "Harmonic Tape Saturation Active (+3.2dB @ 63Hz Warmth)" else "Tape Saturation DSP Disabled"
             Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
         }
+
+        // 5c. Tape Saturation Drive Gain Control (0.0 to +6.0 dB)
+        val initialDriveDb = fxController.tapeSaturationDriveDb
+        val initialDriveProgress = (initialDriveDb * 10f).toInt().coerceIn(0, 60)
+        binding.seekTapeSaturationDrive.progress = initialDriveProgress
+        binding.tvTapeSaturationDrive.text = String.format(Locale.US, "+%.1f dB", initialDriveDb)
+        binding.seekTapeSaturationDrive.isEnabled = app.audioEngine.isTapeSaturationEnabled
+        binding.containerTapeSaturationDrive.alpha = if (app.audioEngine.isTapeSaturationEnabled) 1.0f else 0.4f
+
+        binding.seekTapeSaturationDrive.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                val driveDb = progress / 10.0f
+                binding.tvTapeSaturationDrive.text = String.format(Locale.US, "+%.1f dB", driveDb)
+                if (fromUser) {
+                    fxController.setTapeSaturationDriveDb(driveDb)
+                    updateBiquadVisualizer()
+                }
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                seekBar?.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            }
+        })
 
         // 6. Binaural Crossfeed / Soundstage Fader
         binding.seekCrossfeed.progress = fxController.crossfeedStrength / 10
@@ -2162,6 +2187,8 @@ class DrawerFragment : Fragment() {
             updateThemeButtonsVisual()
             (requireActivity().application as? SpindleApp)?.audioEngine?.let { engine ->
                 binding.switchTapeSaturation.isChecked = engine.isTapeSaturationEnabled
+                binding.seekTapeSaturationDrive.isEnabled = engine.isTapeSaturationEnabled
+                binding.containerTapeSaturationDrive.alpha = if (engine.isTapeSaturationEnabled) 1.0f else 0.4f
             }
         }
 

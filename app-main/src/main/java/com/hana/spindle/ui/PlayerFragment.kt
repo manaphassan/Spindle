@@ -219,12 +219,14 @@ class PlayerFragment : Fragment() {
                     _binding?.verticalDeckView?.setCoverAccentColor(accentColor)
 
                     if (isJCardVisible) {
+                        val usbDac = app.audioEngine.metricsTracker.queryActiveUsbDac()
                         _binding?.jCardLinerView?.setQueueData(
                             queue = audioEngine.currentQueueFlow.value,
                             activeIndex = audioEngine.currentQueueIndexFlow.value,
                             albumCover = coverBitmap,
                             audioFormat = currentFormatString,
-                            theme = themeManager.currentTheme.value
+                            theme = themeManager.currentTheme.value,
+                            usbDacInfo = usbDac
                         )
                     }
                 }
@@ -288,6 +290,14 @@ class PlayerFragment : Fragment() {
                     b.verticalDeckView.bluetoothBatteryPct = metrics.bluetoothBatteryPct
                     b.verticalDeckView.isBluetoothConnected = metrics.isBluetoothConnected
                     b.verticalDeckView.bluetoothConnectionStatus = metrics.bluetoothConnectionStatus
+                    b.verticalDeckView.isUsbDacConnected = metrics.isUsbDacConnected
+                    b.verticalDeckView.usbDacName = metrics.usbDacName
+                    b.verticalDeckView.usbDacBrandBadge = metrics.usbDacBrandBadge
+                    b.verticalDeckView.usbDacMaxSampleRateHz = metrics.usbDacMaxSampleRateHz
+                    b.verticalDeckView.usbDacBitDepthBits = metrics.usbDacBitDepthBits
+
+                    val usbDac = app.audioEngine.metricsTracker.queryActiveUsbDac()
+                    b.jCardLinerView.updateUsbDacInfo(usbDac)
                 }
             }
         }
@@ -508,7 +518,8 @@ class PlayerFragment : Fragment() {
         val cover = currentAlbumCoverBitmap
         val format = currentFormatString
         val theme = themeManager.currentTheme.value
-        jcard.setQueueData(queue, activeIdx, cover, format, theme)
+        val usbDac = audioEngine.metricsTracker.queryActiveUsbDac()
+        jcard.setQueueData(queue, activeIdx, cover, format, theme, usbDac)
 
         if (!animate) {
             deck.visibility = View.GONE
