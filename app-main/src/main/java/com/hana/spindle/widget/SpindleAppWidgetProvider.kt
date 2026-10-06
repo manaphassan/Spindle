@@ -110,7 +110,7 @@ class SpindleAppWidgetProvider : AppWidgetProvider() {
                         views.setTextViewText(R.id.widgetTvFormat, formatStr)
                         views.setViewVisibility(R.id.widgetTvFormat, View.VISIBLE)
 
-                        val coverBitmap = app.imageLoader.loadCover(track.path, 160, 160)
+                        val coverBitmap = app.imageLoader.loadCover(track.path, 160, 160, track.album, track.artist)
                         if (coverBitmap != null) {
                             views.setImageViewBitmap(R.id.widgetIvCover, coverBitmap)
                         } else {

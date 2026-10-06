@@ -74,7 +74,8 @@ data class CueTrack(
             hasLyrics = File(audioFile.parentFile, "${audioFile.nameWithoutExtension}.lrc").exists(),
             channels = channels,
             discNumber = discNumber,
-            composer = composer
+            composer = composer,
+            hasCoverArt = TagParser.isFolderArtPresent(audioFile.parentFile)
         )
     }
 }

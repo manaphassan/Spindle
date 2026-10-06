@@ -1844,7 +1844,7 @@ class VaultFragment : Fragment() {
 
                             // Load circular cover art, ambient backdrop, and extract accent color
                             viewLifecycleOwner.lifecycleScope.launch {
-                                val cover = app.imageLoader.loadCover(track.path, 500, 500)
+                                val cover = app.imageLoader.loadCover(track.path, 500, 500, track.album, track.artist)
                                 b.circularCoverArcView.coverBitmap = cover
                                 b.ivNpAmbientArt.setImageBitmap(cover)
                                 if (b.nowPlayingSingleContainer.visibility == View.VISIBLE) {
@@ -1882,7 +1882,7 @@ class VaultFragment : Fragment() {
                             currentMiniTrackId = track.id
                             viewLifecycleOwner.lifecycleScope.launch {
                                 val isEink = app.themeManager.currentTheme.value.id == CassetteTheme.MONOCHROME_EINK.id
-                                val thumb = app.imageLoader.loadCover(track.path, 96, 96)
+                                val thumb = app.imageLoader.loadCover(track.path, 96, 96, track.album, track.artist)
                                 if (thumb != null) {
                                     b.ivMiniArt.imageTintList = null
                                     b.ivMiniArt.setPadding(0, 0, 0, 0)
@@ -2207,7 +2207,7 @@ class VaultFragment : Fragment() {
                 binding.tvNpAlbumHeader.text = if (track.year > 0) "${track.album.uppercase(Locale.ROOT)} (${track.year})" else track.album.uppercase(Locale.ROOT)
                 val app = requireActivity().application as SpindleApp
                 viewLifecycleOwner.lifecycleScope.launch {
-                    val cover = app.imageLoader.loadCover(track.path, 500, 500)
+                    val cover = app.imageLoader.loadCover(track.path, 500, 500, track.album, track.artist)
                     _binding?.ivNpAmbientArt?.setImageBitmap(cover)
                 }
             }
@@ -2778,7 +2778,7 @@ class VaultFragment : Fragment() {
             val artistAlbum = if (track.album.isNotBlank()) "${track.artist} • ${track.album}" else track.artist
             pBinding.tvPanoramaNpArtist.text = artistAlbum
             viewLifecycleOwner.lifecycleScope.launch {
-                val cover = app.imageLoader.loadCover(track.path, 400, 400)
+                val cover = app.imageLoader.loadCover(track.path, 400, 400, track.album, track.artist)
                 if (cover != null) {
                     pBinding.ivPanoramaArt.setImageBitmap(cover)
                 } else {

@@ -211,7 +211,7 @@ class PlayerFragment : Fragment() {
 
                 // Dynamic cover art bitmap & accent color
                 viewLifecycleOwner.lifecycleScope.launch {
-                    val coverBitmap = app.imageLoader.loadCover(song.path, 160, 160)
+                    val coverBitmap = app.imageLoader.loadCover(song.path, 160, 160, song.album, song.artist)
                     currentAlbumCoverBitmap = coverBitmap
                     _binding?.verticalDeckView?.albumArtBitmap = coverBitmap
                     val accentColor = app.imageLoader.extractAccentColor(song.path)

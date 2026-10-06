@@ -14,6 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.Locale
@@ -35,7 +36,8 @@ data class ScanProgress(
  */
 class MusicScanner(
     private val context: Context,
-    private val trackDao: TrackDao
+    private val trackDao: TrackDao,
+    private val imageLoader: ImageLoader? = null
 ) {
     val songDao: TrackDao get() = trackDao
 
@@ -178,6 +180,44 @@ class MusicScanner(
 
         Log.d(TAG, "Music library scan completed! Total tracks: $totalFound")
         _progress.value = ScanProgress(isScanning = false, tracksFound = totalFound, currentPath = "Scan complete")
+
+        // Pre-cache 300x300 WebP thumbnails into cacheDir/album_thumbs asynchronously
+        precacheAlbumArtwork()
+    }
+
+    /**
+     * Pre-generates 300x300 downsampled WebP thumbnails for all albums in the library.
+     * Uses cooperative multitasking (yield) so UI rendering and audio playback are not starved.
+     */
+    private suspend fun precacheAlbumArtwork() {
+        val loader = imageLoader ?: return
+        try {
+            val albums = trackDao.getAlbums().firstOrNull() ?: return
+            Log.d(TAG, "Starting background album artwork pre-caching for ${albums.size} albums...")
+            for (album in albums) {
+                if (album.isMixtape || album.representativePath.isBlank()) continue
+                // Skip if disk cover already exists
+                val albumDiskFile = loader.getDiskCoverFileForAlbum(album.album, album.artist)
+                if (albumDiskFile.exists() && albumDiskFile.length() > 0L) continue
+
+                val downloadedFile = loader.getCoverFileForAlbum(album.album, album.artist)
+                if (downloadedFile.exists() && downloadedFile.length() > 0L) continue
+
+                try {
+                    loader.loadCover(
+                        audioPath = album.representativePath,
+                        reqWidth = 300,
+                        reqHeight = 300,
+                        album = album.album,
+                        artist = album.artist
+                    )
+                } catch (_: Exception) {}
+                kotlinx.coroutines.yield()
+            }
+            Log.d(TAG, "Background album artwork pre-caching finished.")
+        } catch (e: Exception) {
+            Log.w(TAG, "Album artwork pre-caching encountered an issue", e)
+        }
     }
 
     /**
@@ -270,7 +310,8 @@ class MusicScanner(
                         dateAdded = System.currentTimeMillis(),
                         dateModified = dateModified,
                         bitrateKbps = bitrateKbps,
-                        hasLyrics = lrcFile.exists() || txtFile.exists() || EmbeddedLyricsExtractor.hasLyrics(file)
+                        hasLyrics = lrcFile.exists() || txtFile.exists() || EmbeddedLyricsExtractor.hasLyrics(file),
+                        hasCoverArt = TagParser.isFolderArtPresent(file.parentFile)
                     )
                 )
             }

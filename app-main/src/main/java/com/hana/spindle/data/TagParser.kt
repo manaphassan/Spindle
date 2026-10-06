@@ -33,6 +33,7 @@ object TagParser {
         var yearStr: String? = null
         var genre: String? = null
         var rawBitrate: Int? = null
+        var hasEmbeddedArt = false
 
         val retriever = MediaMetadataRetriever()
         try {
@@ -50,6 +51,7 @@ object TagParser {
                 ?: retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DATE)
             genre = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_GENRE)
             rawBitrate = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE)?.toIntOrNull()
+            hasEmbeddedArt = retriever.embeddedPicture != null
         } catch (e: Exception) {
             // MediaMetadataRetriever may fail on Android 8.0 for some FLAC/AIFF/DSF files
         } finally {
@@ -149,6 +151,9 @@ object TagParser {
         val txtFile = File(file.parentFile, "${file.nameWithoutExtension}.txt")
         val hasLyrics = lrcFile.exists() || txtFile.exists() || EmbeddedLyricsExtractor.hasLyrics(file)
 
+        val folderArtExists = isFolderArtPresent(file.parentFile)
+        val hasCover = hasEmbeddedArt || folderArtExists
+
         return TrackEntity(
             title = title.trim(),
             artist = artist.trim(),
@@ -172,8 +177,34 @@ object TagParser {
             bitrateKbps = bitrateKbps,
             hasLyrics = hasLyrics,
             channels = channels,
-            discNumber = discNumber
+            discNumber = discNumber,
+            hasCoverArt = hasCover
         )
+    }
+
+    private val folderArtPresentCache = android.util.LruCache<String, Boolean>(200)
+
+    fun isFolderArtPresent(parentDir: File?): Boolean {
+        if (parentDir == null || !parentDir.exists() || !parentDir.isDirectory) return false
+        val path = parentDir.absolutePath
+        folderArtPresentCache.get(path)?.let { return it }
+
+        val standardNames = arrayOf(
+            "cover.jpg", "cover.png", "cover.jpeg",
+            "folder.jpg", "folder.png", "folder.jpeg",
+            "album.jpg", "album.png", "album.jpeg",
+            "front.jpg", "front.png", "front.jpeg",
+            "artwork.jpg", "artwork.png"
+        )
+        for (name in standardNames) {
+            val candidate = File(parentDir, name)
+            if (candidate.exists() && candidate.isFile && candidate.length() > 512L) {
+                folderArtPresentCache.put(path, true)
+                return true
+            }
+        }
+        folderArtPresentCache.put(path, false)
+        return false
     }
 
     @Deprecated("Use parseTrack instead", ReplaceWith("parseTrack(file)"))

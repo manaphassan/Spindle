@@ -21,7 +21,7 @@ object CatalogCacheManager {
     private const val TAG = "SpindleCatalogCache"
     const val CACHE_FILE_NAME = ".spindle_catalog.bin"
     private const val MAGIC_HEADER = "SPNDLCAT"
-    private const val CURRENT_VERSION = 1
+    private const val CURRENT_VERSION = 2
 
     data class CacheResult(
         val timestamp: Long,
@@ -105,6 +105,7 @@ object CatalogCacheManager {
                     dos.writeBoolean(track.hasLyrics)
                     dos.writeInt(track.channels)
                     dos.writeInt(track.discNumber)
+                    dos.writeBoolean(track.hasCoverArt)
                 }
                 dos.flush()
             }
@@ -154,7 +155,7 @@ object CatalogCacheManager {
                 }
 
                 val version = dis.readInt()
-                if (version != CURRENT_VERSION) {
+                if (version != 1 && version != 2) {
                     Log.w(TAG, "Unsupported catalog cache version: $version")
                     return@use null
                 }
@@ -191,6 +192,7 @@ object CatalogCacheManager {
                     val hasLyrics = dis.readBoolean()
                     val channels = dis.readInt()
                     val discNumber = dis.readInt()
+                    val hasCoverArt = if (version >= 2) dis.readBoolean() else false
 
                     val absolutePath = resolveAbsolutePath(rootCanonical, relPath)
 
@@ -215,7 +217,8 @@ object CatalogCacheManager {
                             bitrateKbps = bitrateKbps,
                             hasLyrics = hasLyrics,
                             channels = channels,
-                            discNumber = discNumber
+                            discNumber = discNumber,
+                            hasCoverArt = hasCoverArt
                         )
                     )
                 }
