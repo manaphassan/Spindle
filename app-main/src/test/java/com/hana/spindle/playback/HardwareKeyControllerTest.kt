@@ -276,6 +276,61 @@ class HardwareKeyControllerTest {
     }
 
     // =========================================================================
+    // 7. WALKMAN HOLD SWITCH & ROTARY JOG DIAL TESTS
+    // =========================================================================
+
+    @Test
+    fun testWalkmanHoldSwitch_locksKeysWhenActive() {
+        val controller = HardwareKeyController()
+
+        // 1. Initially HOLD is OFF
+        assertFalse("Hold switch starts OFF", controller.isHoldSwitchEngaged)
+
+        // 2. Engaging HOLD switch
+        val holdHandled = controller.onKeyDown(KeyEvent.KEYCODE_SCROLL_LOCK, null, fakeContext, fakeTransport)
+        assertTrue(holdHandled)
+        assertTrue("Hold switch is now ON", controller.isHoldSwitchEngaged)
+
+        // 3. When HOLD is ON, hardware media transport buttons must be blocked
+        fakePrefs.edit().putBoolean("pref_walkman_hold_lock_keys", true).apply()
+        val nextHandled = controller.onKeyDown(KeyEvent.KEYCODE_MEDIA_NEXT, null, fakeContext, fakeTransport)
+        assertTrue("Blocked key event is consumed", nextHandled)
+        assertEquals("Transport method should NOT be invoked while HOLD is active", 0, fakeTransport.nextCount)
+
+        // 4. Toggle HOLD switch OFF
+        controller.onKeyDown(KeyEvent.KEYCODE_SCROLL_LOCK, null, fakeContext, fakeTransport)
+        assertFalse("Hold switch is now OFF", controller.isHoldSwitchEngaged)
+
+        // 5. Buttons function normally again
+        controller.onKeyDown(KeyEvent.KEYCODE_MEDIA_NEXT, null, fakeContext, fakeTransport)
+        assertEquals("Transport method invoked when HOLD is released", 1, fakeTransport.nextCount)
+    }
+
+    @Test
+    fun testRotaryJogDial_navigationAndSeek() {
+        val controller = HardwareKeyController()
+
+        // 1. Jog dial mode = TRACK (default)
+        fakePrefs.edit().putString("pref_jog_dial_mode", "TRACK").apply()
+        controller.onKeyDown(KeyEvent.KEYCODE_NAVIGATE_NEXT, null, fakeContext, fakeTransport)
+        assertEquals(1, fakeTransport.nextCount)
+
+        controller.onKeyDown(KeyEvent.KEYCODE_NAVIGATE_PREVIOUS, null, fakeContext, fakeTransport)
+        assertEquals(1, fakeTransport.prevCount)
+
+        controller.onKeyDown(KeyEvent.KEYCODE_NAVIGATE_IN, null, fakeContext, fakeTransport)
+        assertEquals(1, fakeTransport.toggleCount)
+
+        // 2. Jog dial mode = SEEK
+        fakePrefs.edit().putString("pref_jog_dial_mode", "SEEK").apply()
+        controller.onKeyDown(KeyEvent.KEYCODE_NAVIGATE_NEXT, null, fakeContext, fakeTransport)
+        assertEquals(1, fakeTransport.ffCount)
+
+        controller.onKeyDown(KeyEvent.KEYCODE_NAVIGATE_PREVIOUS, null, fakeContext, fakeTransport)
+        assertEquals(1, fakeTransport.rewCount)
+    }
+
+    // =========================================================================
     // TEST DOUBLES
     // =========================================================================
 

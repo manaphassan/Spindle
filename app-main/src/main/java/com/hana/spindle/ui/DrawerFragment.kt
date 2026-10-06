@@ -1201,6 +1201,27 @@ class DrawerFragment : Fragment() {
             Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
         }
 
+        // 0c. Cassette Battery Saver (30 FPS)
+        binding.switchBatterySaverKinematics.isChecked = prefs.getBoolean("pref_battery_saver_kinematics", false)
+        binding.switchBatterySaverKinematics.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean("pref_battery_saver_kinematics", isChecked).apply()
+            val msg = if (isChecked) "Cassette Battery Saver: 30 FPS Active 🔋" else "Cassette High-Performance: 60 FPS ✨"
+            Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+        }
+
+        // 0d. Walkman Physical HOLD Switch Lock
+        binding.switchWalkmanHold.isChecked = prefs.getBoolean("pref_walkman_hold_lock_keys", true)
+        binding.switchWalkmanHold.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean("pref_walkman_hold_lock_keys", isChecked).apply()
+        }
+
+        // 0e. MicroSD Low-RAM Buffer Tuning
+        binding.switchLowRamBuffer.isChecked = prefs.getBoolean("pref_low_ram_audio_buffer", true)
+        binding.switchLowRamBuffer.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean("pref_low_ram_audio_buffer", isChecked).apply()
+            Toast.makeText(requireContext(), "Buffer setting will apply on next playback session", Toast.LENGTH_SHORT).show()
+        }
+
         // 1. Volume Long-Press Skip
         binding.switchVolumeSkip.isChecked = prefs.getBoolean("pref_volume_skip", true)
         binding.switchVolumeSkip.setOnCheckedChangeListener { _, isChecked ->

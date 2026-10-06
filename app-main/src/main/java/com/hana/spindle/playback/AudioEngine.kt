@@ -269,15 +269,17 @@ class AudioEngine(
             .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
             .build()
 
-        // Standard load control: stable buffering for local high-bitrate MicroSD FLAC playback
+        // Adaptive Audiophile MicroSD load control: tuned for local high-res audio on low-spec hardware
+        val isLowRamBuffer = prefs.getBoolean("pref_low_ram_audio_buffer", true)
+        val minBufMs = if (isLowRamBuffer) 4_000 else 15_000
+        val maxBufMs = if (isLowRamBuffer) 12_000 else 50_000
+        val bufPlaybackMs = if (isLowRamBuffer) 250 else 500
+        val bufRebufferMs = if (isLowRamBuffer) 500 else 1_000
+        val targetBufBytes = if (isLowRamBuffer) 4 * 1024 * 1024 else 16 * 1024 * 1024
+
         val lControl = DefaultLoadControl.Builder()
-            .setBufferDurationsMs(
-                15_000, // minBufferMs: 15s
-                50_000, // maxBufferMs: 50s
-                500,    // bufferForPlaybackMs: 500ms
-                1_000   // bufferForPlaybackAfterRebufferMs: 1s
-            )
-            .setTargetBufferBytes(16 * 1024 * 1024) // 16MB buffer for 24-bit 96/192kHz hi-res audio
+            .setBufferDurationsMs(minBufMs, maxBufMs, bufPlaybackMs, bufRebufferMs)
+            .setTargetBufferBytes(targetBufBytes)
             .setPrioritizeTimeOverSizeThresholds(true)
             .build()
 
@@ -333,7 +335,10 @@ class AudioEngine(
 
     private fun attachPlayerListeners(player: ExoPlayer) {
         player.repeatMode = if (_playbackState.value.repeatMode == RepeatMode.ONE) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
-        player.addAnalyticsListener(androidx.media3.exoplayer.util.EventLogger("SpindlePlayer"))
+        val prefs = context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+        if (com.hana.spindle.BuildConfig.DEBUG && prefs.getBoolean("pref_enable_audio_debug_logs", false)) {
+            player.addAnalyticsListener(androidx.media3.exoplayer.util.EventLogger("SpindlePlayer"))
+        }
         player.addListener(object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 if (player !== exoPlayer) return

@@ -25,24 +25,25 @@ class SpindleKinematics(
 ) {
 
     data class SpoolState(
-        val leftRadius: Float,        // Supply spool radius in pixels
-        val rightRadius: Float,       // Take-up spool radius in pixels
-        val leftAngularSpeed: Float,  // Relative rotational speed for left reel
-        val rightAngularSpeed: Float  // Relative rotational speed for right reel
+        var leftRadius: Float = 0f,        // Supply spool radius in pixels
+        var rightRadius: Float = 0f,       // Take-up spool radius in pixels
+        var leftAngularSpeed: Float = 0f,  // Relative rotational speed for left reel
+        var rightAngularSpeed: Float = 0f  // Relative rotational speed for right reel
     )
 
     data class ReelInertia(
-        val leftInertia: Float,        // Normalized rotational inertia of left reel (0.25 bare hub .. 1.0 full spool)
-        val rightInertia: Float,       // Normalized rotational inertia of right reel (0.25 bare hub .. 1.0 full spool)
-        val leftDecayTimeSec: Float,   // Deceleration coast-down damping time constant (seconds)
-        val rightDecayTimeSec: Float   // Deceleration coast-down damping time constant (seconds)
+        var leftInertia: Float = 0.6f,        // Normalized rotational inertia of left reel (0.25 bare hub .. 1.0 full spool)
+        var rightInertia: Float = 0.6f,       // Normalized rotational inertia of right reel (0.25 bare hub .. 1.0 full spool)
+        var leftDecayTimeSec: Float = 0.26f,   // Deceleration coast-down damping time constant (seconds)
+        var rightDecayTimeSec: Float = 0.26f   // Deceleration coast-down damping time constant (seconds)
     )
 
     /**
      * Calculates rotational inertia and coast-down damping time constants for both reels.
      * Full spools possess significantly greater physical mass and rotational momentum than bare hubs.
+     * Reuses [out] instance if provided to guarantee zero heap allocations.
      */
-    fun calculateInertia(progress: Float): ReelInertia {
+    fun calculateInertia(progress: Float, out: ReelInertia = ReelInertia()): ReelInertia {
         val p = progress.coerceIn(0f, 1f)
         val leftI = (0.25f + 0.75f * (1f - p)).coerceIn(0.25f, 1.0f)
         val rightI = (0.25f + 0.75f * p).coerceIn(0.25f, 1.0f)
@@ -51,12 +52,11 @@ class SpindleKinematics(
         val leftDecay = 0.12f + 0.24f * leftI
         val rightDecay = 0.12f + 0.24f * rightI
 
-        return ReelInertia(
-            leftInertia = leftI,
-            rightInertia = rightI,
-            leftDecayTimeSec = leftDecay,
-            rightDecayTimeSec = rightDecay
-        )
+        out.leftInertia = leftI
+        out.rightInertia = rightI
+        out.leftDecayTimeSec = leftDecay
+        out.rightDecayTimeSec = rightDecay
+        return out
     }
 
     /**
@@ -110,11 +110,13 @@ class SpindleKinematics(
 
     /**
      * Calculates reel radii and angular velocities based on playback progress.
+     * Reuses [out] instance if provided to guarantee zero heap allocations.
      *
      * @param progress Playback progress normalized between 0.0f (start) and 1.0f (end).
      * @param baseDimension The base reference radius dimension in pixels.
+     * @param out Reusable SpoolState instance to write results into.
      */
-    fun calculate(progress: Float, baseDimension: Float): SpoolState {
+    fun calculate(progress: Float, baseDimension: Float, out: SpoolState = SpoolState()): SpoolState {
         val p = progress.coerceIn(0f, 1f)
         val rHub = hubRadiusRatio * baseDimension
         val rMax = maxTapeRadiusRatio * baseDimension
@@ -133,12 +135,11 @@ class SpindleKinematics(
         val speedLeft = rHub / rLeft
         val speedRight = rHub / rRight
 
-        return SpoolState(
-            leftRadius = rLeft,
-            rightRadius = rRight,
-            leftAngularSpeed = speedLeft,
-            rightAngularSpeed = speedRight
-        )
+        out.leftRadius = rLeft
+        out.rightRadius = rRight
+        out.leftAngularSpeed = speedLeft
+        out.rightAngularSpeed = speedRight
+        return out
     }
 
     /**

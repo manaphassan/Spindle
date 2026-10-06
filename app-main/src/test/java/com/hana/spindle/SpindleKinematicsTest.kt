@@ -148,5 +148,29 @@ class SpindleKinematicsTest {
             trackerHeavy.currentSpeed > trackerLight.currentSpeed
         )
     }
+
+    @Test
+    fun testZeroAllocationKinematicsReusedInstances() {
+        val reusableSpool = SpindleKinematics.SpoolState()
+        val reusableInertia = SpindleKinematics.ReelInertia()
+
+        val state1 = kinematics.calculate(0.2f, 100f, reusableSpool)
+        assertTrue("Must return same instance passed in", state1 === reusableSpool)
+        val leftR1 = state1.leftRadius
+        val rightR1 = state1.rightRadius
+
+        val state2 = kinematics.calculate(0.8f, 100f, reusableSpool)
+        assertTrue("Must return same instance passed in", state2 === reusableSpool)
+        assertTrue("Takeup radius at 80% must exceed takeup radius at 20%", state2.rightRadius > rightR1)
+        assertTrue("Supply radius at 80% must be smaller than supply radius at 20%", state2.leftRadius < leftR1)
+
+        val inertia1 = kinematics.calculateInertia(0.1f, reusableInertia)
+        assertTrue("Must return same instance passed in", inertia1 === reusableInertia)
+        val leftI1 = inertia1.leftInertia
+
+        val inertia2 = kinematics.calculateInertia(0.9f, reusableInertia)
+        assertTrue("Must return same instance passed in", inertia2 === reusableInertia)
+        assertTrue("Supply inertia at 90% must be smaller than at 10%", inertia2.leftInertia < leftI1)
+    }
 }
 

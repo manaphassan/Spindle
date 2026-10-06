@@ -35,6 +35,9 @@ class HardwareKeyController(
     var isSeekLongPress: Boolean = false
         private set
 
+    var isHoldSwitchEngaged: Boolean = false
+        private set
+
     private var wasSyntheticDownHandled: Boolean = false
 
     fun onKeyDown(
@@ -44,6 +47,58 @@ class HardwareKeyController(
         audioEngine: AudioTransport
     ): Boolean {
         val prefs = context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+
+        // 0. Walkman Physical HOLD Switch Interception (§Hardware Matrix)
+        if (keyCode == KeyEvent.KEYCODE_SCROLL_LOCK || keyCode == 301 /* KEYCODE_HOLD */) {
+            isHoldSwitchEngaged = !isHoldSwitchEngaged
+            val msg = if (isHoldSwitchEngaged) "Walkman HOLD: ON 🔒" else "Walkman HOLD: OFF 🔓"
+            try {
+                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+            } catch (_: Throwable) {
+                // Ignore in headless/mock test environments
+            }
+            return true
+        }
+
+        if (isHoldSwitchEngaged && prefs.getBoolean("pref_walkman_hold_lock_keys", true)) {
+            // Physical keys locked by hardware HOLD switch
+            return true
+        }
+
+        // 0b. Rotary Jog Dial / Hardware Volume Wheel Events
+        when (keyCode) {
+            KeyEvent.KEYCODE_NAVIGATE_NEXT,
+            KeyEvent.KEYCODE_PAGE_DOWN -> {
+                val jogMode = prefs.getString("pref_jog_dial_mode", "TRACK")
+                when (jogMode) {
+                    "VOLUME" -> {
+                        val am = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+                        am?.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
+                    }
+                    "SEEK" -> audioEngine.fastForward(10_000L)
+                    else -> audioEngine.playNext()
+                }
+                return true
+            }
+            KeyEvent.KEYCODE_NAVIGATE_PREVIOUS,
+            KeyEvent.KEYCODE_PAGE_UP -> {
+                val jogMode = prefs.getString("pref_jog_dial_mode", "TRACK")
+                when (jogMode) {
+                    "VOLUME" -> {
+                        val am = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+                        am?.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI)
+                    }
+                    "SEEK" -> audioEngine.rewind(10_000L)
+                    else -> audioEngine.playPrevious(forcePreviousSong = false)
+                }
+                return true
+            }
+            KeyEvent.KEYCODE_NAVIGATE_IN -> {
+                audioEngine.togglePlayPause()
+                return true
+            }
+        }
+
         val isDapMode = prefs.getBoolean("pref_dap_hardware_mode", false)
 
         // 1. Dedicated Audiophile DAP Hardware Mode Interception
@@ -195,19 +250,26 @@ class HardwareKeyController(
         context: Context,
         audioEngine: AudioTransport
     ): Boolean {
-        // Transport keys hold = continuous seek (±5000ms)
+        // Transport keys hold = continuous progressive accelerated seek (5s -> 15s -> 30s)
+        val durationMs = if (event != null) (event.eventTime - event.downTime) else 0L
+        val seekStepMs = when {
+            durationMs > 4000L -> 30_000L
+            durationMs > 1800L -> 15_000L
+            else -> SpindleGlossary.SEEK_STEP_MANUAL_MS
+        }
+
         when (keyCode) {
             KeyEvent.KEYCODE_MEDIA_NEXT,
             KeyEvent.KEYCODE_MEDIA_FAST_FORWARD -> {
                 isSeekLongPress = true
-                audioEngine.fastForward(SpindleGlossary.SEEK_STEP_MANUAL_MS)
+                audioEngine.fastForward(seekStepMs)
                 showToast(context, R.string.toast_fast_forward)
                 return true
             }
             KeyEvent.KEYCODE_MEDIA_PREVIOUS,
             KeyEvent.KEYCODE_MEDIA_REWIND -> {
                 isSeekLongPress = true
-                audioEngine.rewind(SpindleGlossary.SEEK_STEP_MANUAL_MS)
+                audioEngine.rewind(seekStepMs)
                 showToast(context, R.string.toast_rewind)
                 return true
             }
@@ -319,6 +381,22 @@ class HardwareKeyController(
             return true
         }
 
+        // Block key up if HOLD switch is active
+        if (isHoldSwitchEngaged && prefs.getBoolean("pref_walkman_hold_lock_keys", true)) {
+            return true
+        }
+
+        // Consume rotary dial keys on key-up
+        when (keyCode) {
+            KeyEvent.KEYCODE_NAVIGATE_NEXT,
+            KeyEvent.KEYCODE_NAVIGATE_PREVIOUS,
+            KeyEvent.KEYCODE_NAVIGATE_IN,
+            KeyEvent.KEYCODE_PAGE_UP,
+            KeyEvent.KEYCODE_PAGE_DOWN,
+            KeyEvent.KEYCODE_SCROLL_LOCK,
+            301 /* KEYCODE_HOLD */ -> return true
+        }
+
         return false
     }
 
@@ -355,6 +433,40 @@ class HardwareKeyController(
             val prefs = context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
             val isDapMode = prefs.getBoolean("pref_dap_hardware_mode", false)
             val cameraKeyRemap = prefs.getBoolean("pref_camera_key_play_pause", true)
+
+            // Rotary Jog Dial / Hardware Volume Wheel Events
+            when (keyCode) {
+                KeyEvent.KEYCODE_NAVIGATE_NEXT,
+                KeyEvent.KEYCODE_PAGE_DOWN -> {
+                    val jogMode = prefs.getString("pref_jog_dial_mode", "TRACK")
+                    when (jogMode) {
+                        "VOLUME" -> {
+                            val am = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+                            am?.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
+                        }
+                        "SEEK" -> audioEngine.fastForward(10_000L)
+                        else -> audioEngine.playNext()
+                    }
+                    return true
+                }
+                KeyEvent.KEYCODE_NAVIGATE_PREVIOUS,
+                KeyEvent.KEYCODE_PAGE_UP -> {
+                    val jogMode = prefs.getString("pref_jog_dial_mode", "TRACK")
+                    when (jogMode) {
+                        "VOLUME" -> {
+                            val am = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+                            am?.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI)
+                        }
+                        "SEEK" -> audioEngine.rewind(10_000L)
+                        else -> audioEngine.playPrevious(forcePreviousSong = false)
+                    }
+                    return true
+                }
+                KeyEvent.KEYCODE_NAVIGATE_IN -> {
+                    audioEngine.togglePlayPause()
+                    return true
+                }
+            }
 
             when (keyCode) {
                 KeyEvent.KEYCODE_CAMERA -> {

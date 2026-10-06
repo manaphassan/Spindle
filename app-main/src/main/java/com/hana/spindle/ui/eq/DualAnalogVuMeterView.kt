@@ -125,6 +125,13 @@ class DualAnalogVuMeterView @JvmOverloads constructor(
     private val glassPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val dividerPaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
+    // Pre-computed Zero-Allocation Backlight Glow Shaders
+    private var leftDialGlowShader: RadialGradient? = null
+    private var rightDialGlowShader: RadialGradient? = null
+
+    // Window Visibility & Deep Sleep State
+    private var isSuspendedForVisibility = false
+
     init {
         setLayerType(LAYER_TYPE_HARDWARE, null)
         initPaints()
@@ -276,6 +283,45 @@ class DualAnalogVuMeterView @JvmOverloads constructor(
         needleShadowPaint.color = Color.argb(85, 0, 0, 0)
         pivotOuterPaint.color = Color.parseColor("#383C4E")
         pivotCapPaint.color = Color.parseColor("#13151D")
+
+        updateGlowShaders()
+    }
+
+    private fun updateGlowShaders() {
+        if (isEink || leftDialRect.isEmpty || rightDialRect.isEmpty) {
+            leftDialGlowShader = null
+            rightDialGlowShader = null
+            return
+        }
+        val glowRadius = leftDialRect.width() * 0.8f
+        leftDialGlowShader = RadialGradient(
+            leftDialRect.centerX(), leftDialRect.top + leftDialRect.height() * 0.35f, glowRadius,
+            currentBacklight.bgGlow,
+            currentBacklight.bgDark,
+            Shader.TileMode.CLAMP
+        )
+        rightDialGlowShader = RadialGradient(
+            rightDialRect.centerX(), rightDialRect.top + rightDialRect.height() * 0.35f, glowRadius,
+            currentBacklight.bgGlow,
+            currentBacklight.bgDark,
+            Shader.TileMode.CLAMP
+        )
+    }
+
+    override fun onWindowVisibilityChanged(visibility: Int) {
+        super.onWindowVisibilityChanged(visibility)
+        if (visibility == VISIBLE) {
+            isSuspendedForVisibility = false
+            lastUpdateTime = SystemClock.uptimeMillis()
+            postInvalidateOnAnimation()
+        } else {
+            isSuspendedForVisibility = true
+        }
+    }
+
+    override fun onDetachedFromWindow() {
+        isSuspendedForVisibility = true
+        super.onDetachedFromWindow()
     }
 
     /**
@@ -293,7 +339,9 @@ class DualAnalogVuMeterView @JvmOverloads constructor(
             rightPeakActiveUntil = now + 160L
         }
 
-        postInvalidateOnAnimation()
+        if (!isSuspendedForVisibility && windowVisibility == VISIBLE) {
+            postInvalidateOnAnimation()
+        }
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -323,6 +371,9 @@ class DualAnalogVuMeterView @JvmOverloads constructor(
         // Pre-compute arc rects
         computeArcRect(leftDialRect, arcRectLeft)
         computeArcRect(rightDialRect, arcRectRight)
+
+        // Pre-compute zero-allocation glow shaders
+        updateGlowShaders()
     }
 
     private fun computeArcRect(dialRect: RectF, outArcRect: RectF) {
@@ -373,7 +424,7 @@ class DualAnalogVuMeterView @JvmOverloads constructor(
         val isMoving = abs(leftVelocity) > 0.05f || abs(rightVelocity) > 0.05f ||
                 abs(targetLeftLevel) > 0.01f || abs(targetRightLevel) > 0.01f ||
                 now < leftPeakActiveUntil || now < rightPeakActiveUntil
-        if (isMoving) {
+        if (isMoving && !isSuspendedForVisibility && windowVisibility == VISIBLE) {
             postInvalidateOnAnimation()
         }
     }
@@ -395,17 +446,13 @@ class DualAnalogVuMeterView @JvmOverloads constructor(
         canvas.save()
         canvas.clipPath(clipPath)
 
-        // Dial Background with subtle incandescent lamp glow
+        // Dial Background with subtle incandescent lamp glow (Pre-computed Zero-Allocation)
         canvas.drawRect(rect, dialBgPaint)
         if (!isEink) {
-            val glowRadius = rect.width() * 0.8f
-            dialGlowPaint.shader = RadialGradient(
-                cx, rect.top + rect.height() * 0.35f, glowRadius,
-                currentBacklight.bgGlow,
-                currentBacklight.bgDark,
-                Shader.TileMode.CLAMP
-            )
-            canvas.drawRect(rect, dialGlowPaint)
+            dialGlowPaint.shader = if (rect === leftDialRect) leftDialGlowShader else rightDialGlowShader
+            if (dialGlowPaint.shader != null) {
+                canvas.drawRect(rect, dialGlowPaint)
+            }
         }
 
         // Inner Bevel Stroke
