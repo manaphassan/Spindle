@@ -39,26 +39,48 @@ object M3uManager {
     data class ImportResult(
         val playlistId: Long,
         val playlistName: String,
-        val tracksCount: Int
+        val tracksCount: Int,
+        val tapeCapacityMinutes: Int? = null,
+        val splitIndex: Int? = null,
+        val tapeFormulation: String? = null
     )
 
     /**
-     * Exports a single mixtape to standard Extended M3U8 format with portable relative paths.
+     * Exports a single mixtape to standard Extended M3U8 format with portable relative paths
+     * and Spindle extended cassette tape metadata directives (#SPINDLE-TAPE-*).
      */
     suspend fun exportMixtape(
         file: File,
         mixtapeName: String,
         tracks: List<TrackEntity>,
-        useRelativePaths: Boolean = true
+        useRelativePaths: Boolean = true,
+        tapeCapacity: MixtapePartition.TapeCapacity = MixtapePartition.TapeCapacity.DEFAULT,
+        tapeFormulation: String = "TYPE_I_FERRIC",
+        splitIndex: Int = -1
     ): Boolean = withContext(Dispatchers.IO) {
         try {
             file.parentFile?.mkdirs()
             val baseDir = file.parentFile ?: File(".")
+            val effectiveSplit = if (splitIndex in 1 until tracks.size) {
+                splitIndex
+            } else {
+                MixtapePartition.partition(tracks, tapeCapacity).splitIndex
+            }
 
             file.printWriter(Charsets.UTF_8).use { writer ->
                 writer.println("#EXTM3U")
                 writer.println("#PLAYLIST:$mixtapeName")
-                for (track in tracks) {
+                writer.println("#SPINDLE-TAPE-NAME:$mixtapeName")
+                writer.println("#SPINDLE-TAPE-FORMULATION:$tapeFormulation")
+                writer.println("#SPINDLE-TAPE-CAPACITY:${tapeCapacity.totalMinutes}")
+                writer.println("#SPINDLE-TAPE-SPLIT-INDEX:$effectiveSplit")
+                for (i in tracks.indices) {
+                    val track = tracks[i]
+                    if (i == 0) {
+                        writer.println("#SPINDLE-TAPE-SIDE:A")
+                    } else if (i == effectiveSplit) {
+                        writer.println("#SPINDLE-TAPE-SIDE:B")
+                    }
                     val durationSec = TimeUnit.MILLISECONDS.toSeconds(track.durationMs)
                     val extInfArtist = track.artist.replace(',', ' ')
                     val extInfTitle = track.title.replace(',', ' ')
@@ -92,6 +114,7 @@ object M3uManager {
         destDir.mkdirs()
 
         val playlists = database.playlistDao().getAllPlaylists().first()
+        val prefs = context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
         var exportedPlaylists = 0
         var totalTracks = 0
 
@@ -102,7 +125,12 @@ object M3uManager {
             val safeName = playlist.name.replace(Regex("[^a-zA-Z0-9._ -]"), "_").trim()
             val targetFile = File(destDir, "$safeName.m3u8")
 
-            if (exportMixtape(targetFile, playlist.name, tracks, useRelativePaths = true)) {
+            val capMins = prefs.getInt("mixtape_${playlist.id}_capacity", 90)
+            val cap = MixtapePartition.TapeCapacity.fromMinutes(capMins)
+            val splitIdx = prefs.getInt("mixtape_${playlist.id}_split_index", -1)
+            val formulation = prefs.getString("mixtape_${playlist.id}_formulation", "TYPE_I_FERRIC") ?: "TYPE_I_FERRIC"
+
+            if (exportMixtape(targetFile, playlist.name, tracks, useRelativePaths = true, tapeCapacity = cap, tapeFormulation = formulation, splitIndex = splitIdx)) {
                 exportedPlaylists++
                 totalTracks += tracks.size
             }
@@ -121,11 +149,11 @@ object M3uManager {
      */
     suspend fun importMixtape(
         file: File,
-        database: SpindleDatabase
+        database: SpindleDatabase,
+        context: Context? = null
     ): ImportResult? = withContext(Dispatchers.IO) {
         if (!file.exists() || !file.canRead()) return@withContext null
 
-        val name = file.nameWithoutExtension.ifBlank { "Imported Mixtape" }
         val lines = file.readLines(Charsets.UTF_8)
 
         data class ParsedEntry(
@@ -137,12 +165,36 @@ object M3uManager {
         val entries = mutableListOf<ParsedEntry>()
         var lastArtist: String? = null
         var lastTitle: String? = null
+        var tapeName: String? = null
+        var tapeFormulation: String? = null
+        var tapeCapacityMinutes: Int? = null
+        var tapeSplitIndex: Int? = null
+        var sideBSplitIndex: Int? = null
 
         for (line in lines) {
             val trimmed = line.trim()
             if (trimmed.isEmpty()) continue
 
-            if (trimmed.startsWith("#EXTINF:", ignoreCase = true)) {
+            if (trimmed.startsWith("#SPINDLE-TAPE-NAME:", ignoreCase = true)) {
+                val tagVal = trimmed.substringAfter("#SPINDLE-TAPE-NAME:").trim()
+                if (tagVal.isNotBlank()) tapeName = tagVal
+            } else if (trimmed.startsWith("#SPINDLE-TAPE-FORMULATION:", ignoreCase = true)) {
+                val tagVal = trimmed.substringAfter("#SPINDLE-TAPE-FORMULATION:").trim()
+                if (tagVal.isNotBlank()) tapeFormulation = tagVal
+            } else if (trimmed.startsWith("#SPINDLE-TAPE-CAPACITY:", ignoreCase = true)) {
+                val tagVal = trimmed.substringAfter("#SPINDLE-TAPE-CAPACITY:").trim()
+                tapeCapacityMinutes = tagVal.toIntOrNull()
+            } else if (trimmed.startsWith("#SPINDLE-TAPE-SPLIT-INDEX:", ignoreCase = true)) {
+                val tagVal = trimmed.substringAfter("#SPINDLE-TAPE-SPLIT-INDEX:").trim()
+                tapeSplitIndex = tagVal.toIntOrNull()
+            } else if (trimmed.equals("#SPINDLE-TAPE-SIDE:B", ignoreCase = true)) {
+                if (sideBSplitIndex == null) {
+                    sideBSplitIndex = entries.size
+                }
+            } else if (trimmed.startsWith("#PLAYLIST:", ignoreCase = true)) {
+                val tagVal = trimmed.substringAfter("#PLAYLIST:").trim()
+                if (tagVal.isNotBlank() && tapeName == null) tapeName = tagVal
+            } else if (trimmed.startsWith("#EXTINF:", ignoreCase = true)) {
                 // Parse #EXTINF:seconds,Artist - Title
                 val metadata = trimmed.substringAfter("#EXTINF:", "").substringAfter(",", "")
                 if (metadata.contains(" - ")) {
@@ -157,6 +209,8 @@ object M3uManager {
                 lastTitle = null
             }
         }
+
+        val name = tapeName ?: file.nameWithoutExtension.ifBlank { "Imported Mixtape" }
 
         if (entries.isEmpty()) return@withContext null
 
@@ -234,8 +288,18 @@ object M3uManager {
             )
         }
 
-        Log.d(TAG, "Imported mixtape '$name' with ${matchedTrackIds.size} tracks from ${file.name}")
-        ImportResult(playlistId, name, matchedTrackIds.size)
+        val effectiveSplit = tapeSplitIndex ?: sideBSplitIndex
+        if (context != null) {
+            val prefs = context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+            val editor = prefs.edit()
+            tapeCapacityMinutes?.let { editor.putInt("mixtape_${playlistId}_capacity", it) }
+            effectiveSplit?.let { editor.putInt("mixtape_${playlistId}_split_index", it) }
+            tapeFormulation?.let { editor.putString("mixtape_${playlistId}_formulation", it) }
+            editor.apply()
+        }
+
+        Log.d(TAG, "Imported mixtape '$name' with ${matchedTrackIds.size} tracks from ${file.name} (Split: $effectiveSplit, Cap: $tapeCapacityMinutes m, Form: $tapeFormulation)")
+        ImportResult(playlistId, name, matchedTrackIds.size, tapeCapacityMinutes, effectiveSplit, tapeFormulation)
     }
 
     /**
@@ -252,7 +316,7 @@ object M3uManager {
         val importedNames = mutableListOf<String>()
 
         for (file in playlistFiles) {
-            val result = importMixtape(file, database)
+            val result = importMixtape(file, database, context)
             if (result != null && result.tracksCount > 0) {
                 importedCount++
                 totalTracks += result.tracksCount

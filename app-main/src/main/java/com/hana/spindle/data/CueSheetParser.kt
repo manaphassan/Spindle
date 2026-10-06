@@ -23,7 +23,9 @@ data class CueTrack(
     val genre: String? = null,
     val year: Int = 0,
     val discNumber: Int = 1,
-    val composer: String? = null
+    val composer: String? = null,
+    val pregapMs: Long? = null,
+    val subIndices: Map<Int, Long> = emptyMap()
 ) {
     /**
      * Converts a CueTrack into a standard Spindle TrackEntity.
@@ -59,7 +61,7 @@ data class CueTrack(
             album = album,
             albumArtist = albumArtist,
             durationMs = durationMs,
-            path = CueSheetParser.formatVirtualPath(audioFilePath, trackNumber, startTimeMs),
+            path = CueSheetParser.formatVirtualPath(audioFilePath, trackNumber, startTimeMs, pregapMs),
             trackNumber = trackNumber,
             year = year,
             genre = genre,
@@ -381,8 +383,13 @@ object CueSheetParser {
                         val indexId = tokens[1]
                         val timeStr = tokens[2]
                         val ms = parseTimeToMs(timeStr)
-                        if (indexId == "01" && activeTrack != null) {
+                        val idxNum = indexId.toIntOrNull() ?: 1
+                        if (idxNum == 0 && activeTrack != null) {
+                            activeTrack.pregapMs = ms
+                        } else if (idxNum == 1 && activeTrack != null) {
                             activeTrack.startTimeMs = ms
+                        } else if (idxNum > 1 && activeTrack != null) {
+                            activeTrack.subIndices[idxNum] = ms
                         }
                     }
                 }
@@ -438,7 +445,9 @@ object CueSheetParser {
                     genre = cur.genre ?: albumGenre,
                     year = if (cur.year > 0) cur.year else albumYear,
                     discNumber = if (cur.discNumber > 0) cur.discNumber else albumDiscNumber,
-                    composer = cur.composer ?: albumSongwriter
+                    composer = cur.composer ?: albumSongwriter,
+                    pregapMs = cur.pregapMs,
+                    subIndices = cur.subIndices.toMap()
                 )
             )
         }
@@ -473,10 +482,14 @@ object CueSheetParser {
 
     /**
      * Formats virtual path containing audio file path and cue seek offset:
-     * `<audioPath>#cue:<trackNumber>:<startTimeMs>`
+     * `<audioPath>#cue:<trackNumber>:<startTimeMs>` or `<audioPath>#cue:<trackNumber>:<startTimeMs>:<pregapMs>`
      */
-    fun formatVirtualPath(audioPath: String, trackNumber: Int, startTimeMs: Long): String {
-        return "$audioPath$CUE_PREFIX$trackNumber:$startTimeMs"
+    fun formatVirtualPath(audioPath: String, trackNumber: Int, startTimeMs: Long, pregapMs: Long? = null): String {
+        return if (pregapMs != null) {
+            "$audioPath$CUE_PREFIX$trackNumber:$startTimeMs:$pregapMs"
+        } else {
+            "$audioPath$CUE_PREFIX$trackNumber:$startTimeMs"
+        }
     }
 
     /**
@@ -505,6 +518,16 @@ object CueSheetParser {
         val cueInfo = path.substringAfter(CUE_PREFIX)
         val parts = cueInfo.split(":")
         return if (parts.size >= 2) parts[1].toLongOrNull() ?: 0L else 0L
+    }
+
+    /**
+     * Extracts the optional pregap offset in milliseconds from a virtual CUE path.
+     */
+    fun getCuePregapMs(path: String): Long? {
+        if (!isCueVirtualPath(path)) return null
+        val cueInfo = path.substringAfter(CUE_PREFIX)
+        val parts = cueInfo.split(":")
+        return if (parts.size >= 3) parts[2].toLongOrNull() else null
     }
 
     /**
@@ -567,6 +590,8 @@ object CueSheetParser {
         var genre: String? = null,
         var year: Int = 0,
         var discNumber: Int = 1,
-        var composer: String? = null
+        var composer: String? = null,
+        var pregapMs: Long? = null,
+        val subIndices: MutableMap<Int, Long> = mutableMapOf()
     )
 }

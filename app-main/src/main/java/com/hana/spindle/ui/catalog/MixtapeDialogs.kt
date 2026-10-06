@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.view.LayoutInflater
+import android.view.View
 import android.widget.*
 import com.hana.spindle.R
 import com.hana.spindle.data.db.PlaylistEntity
@@ -297,6 +298,257 @@ object MixtapeDialogs {
         }
     }
 
+    private fun formatDuration(ms: Long): String {
+        val totalSec = ms / 1000
+        val min = totalSec / 60
+        val sec = totalSec % 60
+        return String.format(java.util.Locale.US, "%02d:%02d", min, sec)
+    }
+
+    /**
+     * Interactive Split Point & Tape Capacity Editor Dialog for Side A and Side B tape partitions.
+     */
+    fun showEditMixtapeSplitDialog(
+        context: Context,
+        database: SpindleDatabase,
+        scope: CoroutineScope,
+        playlistId: Long,
+        playlistName: String,
+        tracks: List<TrackEntity>,
+        onUpdated: (() -> Unit)? = null
+    ) {
+        if (tracks.size <= 1) {
+            Toast.makeText(context, "Mixtape must have at least 2 tracks to split into Side A & B", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val prefs = context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+        val initialCapMins = prefs.getInt("mixtape_${playlistId}_capacity", 90)
+        var selectedCapacity = com.hana.spindle.data.MixtapePartition.TapeCapacity.fromMinutes(initialCapMins)
+        val savedSplit = prefs.getInt("mixtape_${playlistId}_split_index", -1)
+        val autoSplit = com.hana.spindle.data.MixtapePartition.calculateAutoSplitIndex(tracks)
+        var currentSplit = if (savedSplit in 1 until tracks.size) savedSplit else autoSplit
+
+        val scrollView = ScrollView(context).apply {
+            setBackgroundColor(Color.parseColor("#161822"))
+        }
+
+        val container = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            val pad = (16 * context.resources.displayMetrics.density).toInt()
+            setPadding(pad, pad, pad, pad)
+        }
+        scrollView.addView(container)
+
+        // Title
+        val titleView = TextView(context).apply {
+            text = "CASSETTE SIDE A / SIDE B EDITOR"
+            textSize = 15f
+            setTextColor(Color.WHITE)
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            setPadding(0, 0, 0, (4 * context.resources.displayMetrics.density).toInt())
+        }
+        container.addView(titleView)
+
+        val subView = TextView(context).apply {
+            text = "$playlistName • ${tracks.size} Tracks"
+            textSize = 12f
+            setTextColor(Color.parseColor("#94A3B8"))
+            setPadding(0, 0, 0, (14 * context.resources.displayMetrics.density).toInt())
+        }
+        container.addView(subView)
+
+        // Section: Tape Length
+        val capLabel = TextView(context).apply {
+            text = "TAPE CAPACITY (TOTAL RUNTIME)"
+            textSize = 11f
+            setTextColor(Color.parseColor("#F97316")) // Brand Orange
+            typeface = android.graphics.Typeface.MONOSPACE
+            setPadding(0, 0, 0, (6 * context.resources.displayMetrics.density).toInt())
+        }
+        container.addView(capLabel)
+
+        val capRow = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(0, 0, 0, (12 * context.resources.displayMetrics.density).toInt())
+        }
+
+        val capButtons = mutableListOf<Button>()
+        val capacities = com.hana.spindle.data.MixtapePartition.TapeCapacity.values()
+
+        // Readout Views to be updated dynamically
+        val splitLabel = TextView(context).apply {
+            textSize = 11f
+            setTextColor(Color.parseColor("#38BDF8")) // Neon Cyan
+            typeface = android.graphics.Typeface.MONOSPACE
+            setPadding(0, 0, 0, (6 * context.resources.displayMetrics.density).toInt())
+        }
+
+        val card = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            val cardPad = (12 * context.resources.displayMetrics.density).toInt()
+            setPadding(cardPad, cardPad, cardPad, cardPad)
+            setBackgroundColor(Color.parseColor("#1E202B"))
+        }
+
+        val tvSideA = TextView(context).apply {
+            textSize = 12f
+            setTextColor(Color.WHITE)
+            typeface = android.graphics.Typeface.MONOSPACE
+        }
+        val tvSideATracks = TextView(context).apply {
+            textSize = 10f
+            setTextColor(Color.parseColor("#94A3B8"))
+            setPadding(0, 0, 0, (8 * context.resources.displayMetrics.density).toInt())
+        }
+
+        val tvSideB = TextView(context).apply {
+            textSize = 12f
+            setTextColor(Color.WHITE)
+            typeface = android.graphics.Typeface.MONOSPACE
+        }
+        val tvSideBTracks = TextView(context).apply {
+            textSize = 10f
+            setTextColor(Color.parseColor("#94A3B8"))
+            setPadding(0, 0, 0, (8 * context.resources.displayMetrics.density).toInt())
+        }
+
+        val tvWarning = TextView(context).apply {
+            textSize = 11f
+            setTextColor(Color.parseColor("#FB7185")) // Warning Red
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            visibility = View.GONE
+        }
+
+        card.addView(tvSideA)
+        card.addView(tvSideATracks)
+        card.addView(tvSideB)
+        card.addView(tvSideBTracks)
+        card.addView(tvWarning)
+
+        fun updateReadout() {
+            val part = com.hana.spindle.data.MixtapePartition.partition(tracks, selectedCapacity, currentSplit)
+            splitLabel.text = "SPLIT BOUNDARY: TRACK ${currentSplit} / ${tracks.size}"
+
+            val aDurStr = formatDuration(part.sideADurationMs)
+            val bDurStr = formatDuration(part.sideBDurationMs)
+            val maxSideMin = selectedCapacity.sideMinutes
+
+            tvSideA.text = "SIDE A: ${part.sideA.size} Tracks • $aDurStr / ${maxSideMin}:00"
+            val lastTrackA = if (currentSplit - 1 in tracks.indices) tracks[currentSplit - 1].title else ""
+            tvSideATracks.text = "Start: ${tracks[0].title} → End: $lastTrackA"
+
+            tvSideB.text = "SIDE B: ${part.sideB.size} Tracks • $bDurStr / ${maxSideMin}:00"
+            val firstTrackB = if (currentSplit in tracks.indices) tracks[currentSplit].title else ""
+            tvSideBTracks.text = "Start: $firstTrackB → End: ${tracks.last().title}"
+
+            if (part.isOverCapacity) {
+                val warnSb = StringBuilder("⚠️ EXCEEDS ${selectedCapacity.label} CAPACITY!")
+                if (part.isSideAOverCapacity) {
+                    val aOver = formatDuration(part.sideAOvertimeMs)
+                    warnSb.append("\n• Side A is $aOver past the tape leader!")
+                }
+                if (part.isSideBOverCapacity) {
+                    val bOver = formatDuration(part.sideBOvertimeMs)
+                    warnSb.append("\n• Side B is $bOver past the tape leader!")
+                }
+                tvWarning.text = warnSb.toString()
+                tvWarning.visibility = View.VISIBLE
+            } else {
+                tvWarning.visibility = View.GONE
+            }
+
+            capButtons.forEachIndexed { idx, btn ->
+                val cap = capacities[idx]
+                if (cap == selectedCapacity) {
+                    btn.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#F97316"))
+                    btn.setTextColor(Color.BLACK)
+                } else {
+                    btn.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#272932"))
+                    btn.setTextColor(Color.WHITE)
+                }
+            }
+        }
+
+        capacities.forEach { cap ->
+            val btn = Button(context).apply {
+                text = "${cap.label}\n(${cap.sideMinutes}m)"
+                textSize = 10f
+                layoutParams = LinearLayout.LayoutParams(0, (44 * context.resources.displayMetrics.density).toInt(), 1f).apply {
+                    marginEnd = (4 * context.resources.displayMetrics.density).toInt()
+                }
+                setPadding(0, 0, 0, 0)
+                setOnClickListener {
+                    selectedCapacity = cap
+                    updateReadout()
+                }
+            }
+            capButtons.add(btn)
+            capRow.addView(btn)
+        }
+        container.addView(capRow)
+
+        container.addView(splitLabel)
+
+        // Split Slider
+        val seekBar = SeekBar(context).apply {
+            max = tracks.size - 2
+            progress = (currentSplit - 1).coerceIn(0, max)
+            setPadding(
+                (12 * context.resources.displayMetrics.density).toInt(),
+                (8 * context.resources.displayMetrics.density).toInt(),
+                (12 * context.resources.displayMetrics.density).toInt(),
+                (12 * context.resources.displayMetrics.density).toInt()
+            )
+            setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(sb: SeekBar?, prog: Int, fromUser: Boolean) {
+                    if (fromUser) {
+                        currentSplit = (prog + 1).coerceIn(1, tracks.size - 1)
+                        updateReadout()
+                    }
+                }
+                override fun onStartTrackingTouch(sb: SeekBar?) {}
+                override fun onStopTrackingTouch(sb: SeekBar?) {}
+            })
+        }
+        container.addView(seekBar)
+
+        container.addView(card)
+
+        // Auto-Balance Button
+        val btnAutoBalance = Button(context).apply {
+            text = "AUTO-BALANCE DURATION"
+            textSize = 11f
+            setTextColor(Color.parseColor("#38BDF8"))
+            backgroundTintList = ColorStateList.valueOf(Color.parseColor("#272932"))
+            val mTop = (12 * context.resources.displayMetrics.density).toInt()
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, (38 * context.resources.displayMetrics.density).toInt()).apply {
+                topMargin = mTop
+            }
+            setOnClickListener {
+                currentSplit = autoSplit
+                seekBar.progress = (currentSplit - 1).coerceIn(0, seekBar.max)
+                updateReadout()
+            }
+        }
+        container.addView(btnAutoBalance)
+
+        updateReadout()
+
+        AlertDialog.Builder(context)
+            .setView(scrollView)
+            .setPositiveButton("SAVE CASSETTE") { _, _ ->
+                prefs.edit()
+                    .putInt("mixtape_${playlistId}_capacity", selectedCapacity.totalMinutes)
+                    .putInt("mixtape_${playlistId}_split_index", currentSplit)
+                    .apply()
+                Toast.makeText(context, "Saved $playlistName tape settings (Split: Track $currentSplit • ${selectedCapacity.label})", Toast.LENGTH_SHORT).show()
+                onUpdated?.invoke()
+            }
+            .setNegativeButton(R.string.action_cancel, null)
+            .show()
+    }
+
     fun exportMixtape(
         context: Context,
         database: SpindleDatabase,
@@ -313,13 +565,28 @@ object MixtapeDialogs {
                 }
                 return@launch
             }
+
+            val prefs = context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+            val capMins = prefs.getInt("mixtape_${playlistId}_capacity", 90)
+            val cap = com.hana.spindle.data.MixtapePartition.TapeCapacity.fromMinutes(capMins)
+            val splitIdx = prefs.getInt("mixtape_${playlistId}_split_index", -1)
+            val formulation = prefs.getString("mixtape_${playlistId}_formulation", "TYPE_I_FERRIC") ?: "TYPE_I_FERRIC"
+
             val dir = com.hana.spindle.data.M3uManager.getDefaultPlaylistDirectory()
             val sanitizedName = playlistName.replace(Regex("[^a-zA-Z0-9._ -]"), "_")
             val targetFile = java.io.File(dir, "$sanitizedName.m3u8")
-            val success = com.hana.spindle.data.M3uManager.exportMixtape(targetFile, playlistName, tracks, useRelativePaths = true)
+            val success = com.hana.spindle.data.M3uManager.exportMixtape(
+                targetFile,
+                playlistName,
+                tracks,
+                useRelativePaths = true,
+                tapeCapacity = cap,
+                tapeFormulation = formulation,
+                splitIndex = splitIdx
+            )
             withContext(Dispatchers.Main) {
                 if (success) {
-                    Toast.makeText(context, "Exported portable mixtape to:\n${targetFile.name}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, "Exported portable mixtape with tape tags to:\n${targetFile.name}", Toast.LENGTH_LONG).show()
                     onExported?.invoke(targetFile)
                 } else {
                     Toast.makeText(context, "Failed to export mixtape", Toast.LENGTH_SHORT).show()

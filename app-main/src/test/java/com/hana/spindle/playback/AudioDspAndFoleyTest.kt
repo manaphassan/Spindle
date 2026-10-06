@@ -764,6 +764,50 @@ class AudioDspAndFoleyTest {
         assertEquals(2, partition.sideB.size)
         assertEquals(720000L, partition.sideADurationMs)
         assertEquals(460000L, partition.sideBDurationMs)
+        assertEquals(MixtapePartition.TapeCapacity.C90, partition.capacity)
+        assertFalse(partition.isOverCapacity)
+    }
+
+    @Test
+    fun testMixtapePartitionCapacitiesAndCustomSplit() {
+        val tracks = listOf(
+            TrackEntity(title = "T1", artist = "A", album = "Alb", durationMs = 1800000L, path = "/t1.flac"), // 30 min
+            TrackEntity(title = "T2", artist = "A", album = "Alb", durationMs = 600000L, path = "/t2.flac"),  // 10 min
+            TrackEntity(title = "T3", artist = "A", album = "Alb", durationMs = 1200000L, path = "/t3.flac")  // 20 min
+        ) // Total = 60 min
+
+        // 1. C-46 capacity (23 min per side = 1,380,000 ms)
+        val partC46 = MixtapePartition.partition(tracks, MixtapePartition.TapeCapacity.C46)
+        assertEquals(1, partC46.splitIndex)
+        assertEquals(1800000L, partC46.sideADurationMs)
+        assertEquals(1800000L, partC46.sideBDurationMs)
+        assertTrue(partC46.isSideAOverCapacity) // 30m > 23m
+        assertTrue(partC46.isSideBOverCapacity) // 30m > 23m
+        assertTrue(partC46.isOverCapacity)
+        assertEquals(420000L, partC46.sideAOvertimeMs) // 30m - 23m = 7m = 420,000 ms
+
+        // 2. C-90 capacity (45 min per side = 2,700,000 ms)
+        val partC90 = MixtapePartition.partition(tracks, MixtapePartition.TapeCapacity.C90)
+        assertFalse(partC90.isOverCapacity)
+        assertFalse(partC90.isSideAOverCapacity)
+        assertFalse(partC90.isSideBOverCapacity)
+        assertEquals(0L, partC90.sideAOvertimeMs)
+
+        // 3. Custom split index override
+        val customPart = MixtapePartition.partition(tracks, MixtapePartition.TapeCapacity.C90, customSplitIndex = 2)
+        assertEquals(2, customPart.splitIndex)
+        assertEquals(2, customPart.sideA.size) // T1 + T2 = 40 min
+        assertEquals(1, customPart.sideB.size) // T3 = 20 min
+        assertEquals(2400000L, customPart.sideADurationMs)
+        assertEquals(1200000L, customPart.sideBDurationMs)
+
+        // 4. TapeCapacity parsing helpers
+        assertEquals(MixtapePartition.TapeCapacity.C46, MixtapePartition.TapeCapacity.fromMinutes(46))
+        assertEquals(MixtapePartition.TapeCapacity.C60, MixtapePartition.TapeCapacity.fromMinutes(60))
+        assertEquals(MixtapePartition.TapeCapacity.C90, MixtapePartition.TapeCapacity.fromMinutes(90))
+        assertEquals(MixtapePartition.TapeCapacity.C120, MixtapePartition.TapeCapacity.fromMinutes(120))
+        assertEquals(MixtapePartition.TapeCapacity.C60, MixtapePartition.TapeCapacity.fromLabel("C-60"))
+        assertEquals(MixtapePartition.TapeCapacity.C90, MixtapePartition.TapeCapacity.fromLabel("C90"))
     }
 
     @Test

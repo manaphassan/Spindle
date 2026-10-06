@@ -332,6 +332,11 @@ class VaultFragment : Fragment() {
             imageLoader = app.imageLoader,
             onTrackClicked = { track, index ->
                 currentDisplayedTracks = currentAlbumTracks
+                if (currentAlbumItem?.isMixtape == true) {
+                    audioEngine.setMixtapeSplitIndex(albumTracksAdapter.splitIndex)
+                } else {
+                    audioEngine.setMixtapeSplitIndex(-1)
+                }
                 audioEngine.playQueue(currentAlbumTracks, index)
                 showNowPlayingSingleAudio(true)
             },
@@ -2296,18 +2301,47 @@ class VaultFragment : Fragment() {
         val durationFormatted = formatTime(totalDurationMs)
         val yearStr = if (album.year > 0 && !album.isMixtape) "${album.year} • " else ""
 
+        val playlistId = album.year.toLong()
+        val prefs = requireContext().getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+        val capMins = prefs.getInt("mixtape_${playlistId}_capacity", 90)
+        val tapeCap = com.hana.spindle.data.MixtapePartition.TapeCapacity.fromMinutes(capMins)
+        val savedSplit = prefs.getInt("mixtape_${playlistId}_split_index", -1)
+
         val mixtapePartition = if (album.isMixtape && tracks.size > 1) {
-            com.hana.spindle.data.MixtapePartition.partition(tracks)
+            com.hana.spindle.data.MixtapePartition.partition(tracks, tapeCap, savedSplit)
         } else null
 
         if (mixtapePartition != null) {
             val sideADur = formatTime(mixtapePartition.sideADurationMs)
             val sideBDur = formatTime(mixtapePartition.sideBDurationMs)
-            binding.tvAlbumDetailMeta.text = "$yearStr${tracks.size} Tracks • $durationFormatted\nSIDE A: ${mixtapePartition.sideA.size} trk ($sideADur) • SIDE B: ${mixtapePartition.sideB.size} trk ($sideBDur)"
+            val overWarning = if (mixtapePartition.isOverCapacity) {
+                val overSides = mutableListOf<String>()
+                if (mixtapePartition.isSideAOverCapacity) overSides.add("A: +${formatTime(mixtapePartition.sideAOvertimeMs)}")
+                if (mixtapePartition.isSideBOverCapacity) overSides.add("B: +${formatTime(mixtapePartition.sideBOvertimeMs)}")
+                "\n⚠️ OVER ${mixtapePartition.capacity.label} (${overSides.joinToString(", ")})"
+            } else ""
+
+            binding.tvAlbumDetailMeta.text = "$yearStr${tracks.size} Tracks • $durationFormatted\nSIDE A: ${mixtapePartition.sideA.size} trk ($sideADur) • SIDE B: ${mixtapePartition.sideB.size} trk ($sideBDur)$overWarning\n[TAP TO EDIT SIDE A/B SPLIT]"
+            binding.tvAlbumDetailMeta.isClickable = true
+            binding.tvAlbumDetailMeta.setOnClickListener {
+                app.audioEngine.foleyEngine.playTilePress()
+                MixtapeDialogs.showEditMixtapeSplitDialog(
+                    requireContext(),
+                    app.database,
+                    viewLifecycleOwner.lifecycleScope,
+                    playlistId,
+                    album.album,
+                    tracks
+                ) {
+                    showAlbumDetail(album, tracks)
+                }
+            }
             albumTracksAdapter.showSideLetters = true
             albumTracksAdapter.splitIndex = mixtapePartition.splitIndex
         } else {
             binding.tvAlbumDetailMeta.text = "$yearStr${tracks.size} Tracks • $durationFormatted"
+            binding.tvAlbumDetailMeta.isClickable = false
+            binding.tvAlbumDetailMeta.setOnClickListener(null)
             albumTracksAdapter.showSideLetters = false
             albumTracksAdapter.splitIndex = -1
         }
