@@ -23,7 +23,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
       - name: Unit tests (app-main, app-lite, core)
         run: ./gradlew :app-main:testDebugUnitTest :app-lite:testDebugUnitTest :core:test --stacktrace
       - name: Lint (app-main, against baseline)
