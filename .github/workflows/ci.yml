@@ -36,7 +36,7 @@ jobs:
             echo "Secret key material is tracked"; exit 1; fi
       - name: Upload test and lint reports on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: reports
           path: |
