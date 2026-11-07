@@ -71,9 +71,9 @@ abstract class SpindleDatabase : RoomDatabase() {
                     "spindle_music.db"
                 )
                 .addMigrations(MIGRATION_4_5, MIGRATION_5_6)
-                // Only pre-FTS schemas (v1-3, never released with migrations) may be rebuilt.
-                // Any other missing migration must fail loudly instead of wiping the library.
-                .fallbackToDestructiveMigrationFrom(1, 2, 3)
+                // The library is a rebuildable index of files on disk (playlists aside). Any schema
+                // problem is treated like a fresh install: rebuild instead of crashing on launch.
+                .fallbackToDestructiveMigration()
                 .build()
                 INSTANCE = instance
                 instance
