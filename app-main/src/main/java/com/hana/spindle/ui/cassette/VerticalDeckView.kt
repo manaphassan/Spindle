@@ -66,7 +66,11 @@ class VerticalDeckView @JvmOverloads constructor(
                     startRotation()
                 }
             } else {
-                stopRotation()
+                if (!isEinkMode && rotationAnimator?.isRunning != true && flywheelTracker.currentSpeed > 0f) {
+                    startRotation()
+                } else if (isEinkMode) {
+                    stopRotation()
+                }
             }
             invalidate()
         }
@@ -188,6 +192,41 @@ class VerticalDeckView @JvmOverloads constructor(
             invalidate()
         }
 
+    var isUsbDacConnected: Boolean = false
+        set(value) {
+            field = value
+            fitStudioLabelText()
+            invalidate()
+        }
+
+    var usbDacName: String? = null
+        set(value) {
+            field = value
+            fitStudioLabelText()
+            invalidate()
+        }
+
+    var usbDacBrandBadge: String? = null
+        set(value) {
+            field = value
+            fitStudioLabelText()
+            invalidate()
+        }
+
+    var usbDacMaxSampleRateHz: Int = 0
+        set(value) {
+            field = value
+            fitStudioLabelText()
+            invalidate()
+        }
+
+    var usbDacBitDepthBits: Int = 0
+        set(value) {
+            field = value
+            fitStudioLabelText()
+            invalidate()
+        }
+
     var durationMs: Long = 0L
         set(value) {
             field = value
@@ -289,6 +328,10 @@ class VerticalDeckView @JvmOverloads constructor(
     private var holdTapeBadgeRunnable: Runnable? = null
     private var pendingSingleTapRunnable: Runnable? = null
     private var isHoldSeeking = false
+    private var isHoldSeekingFwd = false
+    private var holdSeekSpeedMultiplier = 1.0f
+    private val flywheelTracker = SpindleKinematics.FlywheelInertiaTracker()
+    private var lastFrameTimeMs = 0L
     private var isHoldEjecting = false
     private var isHoldTapeBadge = false
     private var isTouchingTapeBadge = false
@@ -2375,6 +2418,13 @@ class VerticalDeckView @JvmOverloads constructor(
     }
 
     private fun getRouteRowText(): String {
+        if (isUsbDacConnected) {
+            val brand = usbDacBrandBadge?.takeIf { it.isNotBlank() } ?: "USB DAC"
+            val bitStr = if (usbDacBitDepthBits > 0) "${usbDacBitDepthBits}-bit / " else ""
+            val rateStr = if (usbDacMaxSampleRateHz > 0) "${usbDacMaxSampleRateHz / 1000}kHz" else ""
+            val caps = if (rateStr.isNotBlank()) " • $bitStr$rateStr" else ""
+            return if (isBitPerfect) "$brand DIRECT$caps" else "$brand • USB DAC"
+        }
         return when {
             outputRoute.contains("USB", ignoreCase = true) -> if (isBitPerfect) "USB DIRECT" else "USB DAC"
             outputRoute.contains("3.5mm", ignoreCase = true) -> if (isBitPerfect) "3.5mm DIRECT" else "3.5mm OUTPUT"
@@ -2894,23 +2944,22 @@ class VerticalDeckView @JvmOverloads constructor(
                             override fun run() {
                                 if (!isHoldSeeking) {
                                     isHoldSeeking = true
+                                    isHoldSeekingFwd = isFwd
                                     onHoldSeekStart?.invoke(isFwd)
                                 }
                                 seekTicks++
-                                val speedMultiplier = (1.0f + seekTicks * 0.22f).coerceAtMost(6.5f)
-                                val pitch = (0.92f + (speedMultiplier - 1.0f) * 0.12f).coerceIn(0.92f, 1.65f)
+                                holdSeekSpeedMultiplier = (1.0f + seekTicks * 0.22f).coerceAtMost(6.5f)
+                                val pitch = (0.92f + (holdSeekSpeedMultiplier - 1.0f) * 0.12f).coerceIn(0.92f, 1.65f)
                                 onHoldSeekProgress?.invoke(pitch)
 
                                 if (isFwd) {
                                     onHoldSeekForward?.invoke()
-                                    topReelAngle = (topReelAngle + 18f * speedMultiplier) % 360f
-                                    bottomReelAngle = (bottomReelAngle + 18f * speedMultiplier) % 360f
-                                    tapeTravelOffset = (tapeTravelOffset + 6f * speedMultiplier) % 40f
                                 } else {
                                     onHoldSeekRewind?.invoke()
-                                    topReelAngle = (topReelAngle - 18f * speedMultiplier + 360f) % 360f
-                                    bottomReelAngle = (bottomReelAngle - 18f * speedMultiplier + 360f) % 360f
-                                    tapeTravelOffset = (tapeTravelOffset - 6f * speedMultiplier + 40f) % 40f
+                                }
+
+                                if (rotationAnimator?.isRunning != true && !isEinkMode) {
+                                    startRotation()
                                 }
 
                                 // Boundary check: Auto-stop if reaching leader boundaries
@@ -3001,6 +3050,8 @@ class VerticalDeckView @JvmOverloads constructor(
                                 com.hana.spindle.playback.AudioFxController.TapeFormulation.TYPE_I_NORMAL ->
                                     com.hana.spindle.playback.AudioFxController.TapeFormulation.TYPE_II_CHROME
                                 com.hana.spindle.playback.AudioFxController.TapeFormulation.TYPE_II_CHROME ->
+                                    com.hana.spindle.playback.AudioFxController.TapeFormulation.TYPE_III_FERRICHROME
+                                com.hana.spindle.playback.AudioFxController.TapeFormulation.TYPE_III_FERRICHROME ->
                                     com.hana.spindle.playback.AudioFxController.TapeFormulation.TYPE_IV_METAL
                                 com.hana.spindle.playback.AudioFxController.TapeFormulation.TYPE_IV_METAL ->
                                     com.hana.spindle.playback.AudioFxController.TapeFormulation.TYPE_I_NORMAL
@@ -3026,6 +3077,7 @@ class VerticalDeckView @JvmOverloads constructor(
 
                         if (isHoldSeeking) {
                             isHoldSeeking = false
+                            holdSeekSpeedMultiplier = 1.0f
                             onHoldSeekStop?.invoke()
                             onHoldSeekEnd?.invoke()
                             return true
@@ -3120,17 +3172,39 @@ class VerticalDeckView @JvmOverloads constructor(
             return
         }
         if (rotationAnimator?.isRunning == true) return
-        rotationAnimator = ValueAnimator.ofFloat(0f, 360f).apply {
-            duration = 1200L
+        lastFrameTimeMs = SystemClock.uptimeMillis()
+        rotationAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 1000L
             repeatCount = ValueAnimator.INFINITE
             interpolator = LinearInterpolator()
             addUpdateListener {
-                val timeSec = (SystemClock.uptimeMillis() % 60000L) / 1000f
+                val now = SystemClock.uptimeMillis()
+                val deltaSec = if (lastFrameTimeMs > 0L) {
+                    ((now - lastFrameTimeMs) / 1000f).coerceIn(0.001f, 0.050f)
+                } else {
+                    0.016f
+                }
+                lastFrameTimeMs = now
+
+                val inertia = kinematics.calculateInertia(progress)
+                val targetSpeed = when {
+                    isHoldSeeking -> if (isHoldSeekingFwd) holdSeekSpeedMultiplier else -holdSeekSpeedMultiplier
+                    isPlaying -> 1.0f
+                    else -> 0.0f
+                }
+                val effectiveSpeed = flywheelTracker.step(targetSpeed, deltaSec, (inertia.leftInertia + inertia.rightInertia) * 0.5f)
+
+                if (effectiveSpeed == 0f && !isPlaying && !isHoldSeeking) {
+                    stopRotation()
+                    return@addUpdateListener
+                }
+
+                val timeSec = (now % 60000L) / 1000f
                 val wowFlutterMod = kinematics.getWowFlutterMultiplier(timeSec)
                 val spoolState = kinematics.calculate(progress, baseHubDimension)
-                topReelAngle = (topReelAngle + 4.5f * spoolState.leftAngularSpeed * wowFlutterMod) % 360f
-                bottomReelAngle = (bottomReelAngle + 4.5f * spoolState.rightAngularSpeed * wowFlutterMod) % 360f
-                tapeTravelOffset = (tapeTravelOffset + 2.8f * spoolState.leftAngularSpeed * wowFlutterMod) % 40f
+                topReelAngle = (topReelAngle + 4.5f * spoolState.leftAngularSpeed * wowFlutterMod * effectiveSpeed + 360f) % 360f
+                bottomReelAngle = (bottomReelAngle + 4.5f * spoolState.rightAngularSpeed * wowFlutterMod * effectiveSpeed + 360f) % 360f
+                tapeTravelOffset = (tapeTravelOffset + 2.8f * spoolState.leftAngularSpeed * wowFlutterMod * effectiveSpeed + 40f) % 40f
                 invalidate()
             }
             start()
@@ -3219,6 +3293,7 @@ class VerticalDeckView @JvmOverloads constructor(
         rotationAnimator?.cancel()
         rotationAnimator = null
         lastMarqueeTime = 0L
+        lastFrameTimeMs = 0L
         invalidate()
     }
 

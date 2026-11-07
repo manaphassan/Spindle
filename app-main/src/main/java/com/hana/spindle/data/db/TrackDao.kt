@@ -23,7 +23,7 @@ interface TrackDao {
     fun getTracksByArtist(artist: String): Flow<List<TrackEntity>>
 
     @Query("""
-        SELECT album, COALESCE(albumArtist, artist) as artist, COUNT(*) as trackCount, MIN(path) as representativePath, MAX(year) as year, MIN(fileFormat) as format
+        SELECT album, COALESCE(albumArtist, artist) as artist, COUNT(*) as trackCount, MIN(path) as representativePath, MAX(year) as year, MIN(fileFormat) as format, MAX(hasCoverArt) as hasCoverArt
         FROM songs 
         GROUP BY album, COALESCE(albumArtist, artist)
         ORDER BY album COLLATE NOCASE ASC
@@ -31,7 +31,7 @@ interface TrackDao {
     fun getAlbums(): Flow<List<AlbumItem>>
 
     @Query("""
-        SELECT album, COALESCE(albumArtist, artist) as artist, COUNT(*) as trackCount, MIN(path) as representativePath, MAX(year) as year, MIN(fileFormat) as format
+        SELECT album, COALESCE(albumArtist, artist) as artist, COUNT(*) as trackCount, MIN(path) as representativePath, MAX(year) as year, MIN(fileFormat) as format, MAX(hasCoverArt) as hasCoverArt
         FROM songs 
         WHERE artist = :artist OR albumArtist = :artist
         GROUP BY album, COALESCE(albumArtist, artist)
@@ -113,7 +113,7 @@ interface TrackDao {
     suspend fun searchTracksFtsList(ftsQuery: String, limit: Int = 20): List<TrackEntity>
 
     @Query("""
-        SELECT DISTINCT songs.album as album, COALESCE(songs.albumArtist, songs.artist) as artist, COUNT(*) as trackCount, MIN(songs.path) as representativePath, MAX(songs.year) as year, MIN(songs.fileFormat) as format
+        SELECT DISTINCT songs.album as album, COALESCE(songs.albumArtist, songs.artist) as artist, COUNT(*) as trackCount, MIN(songs.path) as representativePath, MAX(songs.year) as year, MIN(songs.fileFormat) as format, MAX(songs.hasCoverArt) as hasCoverArt
         FROM songs
         JOIN songs_fts ON songs.id = songs_fts.docid
         WHERE songs_fts MATCH :ftsQuery

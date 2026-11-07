@@ -25,19 +25,98 @@ class SpindleKinematics(
 ) {
 
     data class SpoolState(
-        val leftRadius: Float,        // Supply spool radius in pixels
-        val rightRadius: Float,       // Take-up spool radius in pixels
-        val leftAngularSpeed: Float,  // Relative rotational speed for left reel
-        val rightAngularSpeed: Float  // Relative rotational speed for right reel
+        var leftRadius: Float = 0f,        // Supply spool radius in pixels
+        var rightRadius: Float = 0f,       // Take-up spool radius in pixels
+        var leftAngularSpeed: Float = 0f,  // Relative rotational speed for left reel
+        var rightAngularSpeed: Float = 0f  // Relative rotational speed for right reel
+    )
+
+    data class ReelInertia(
+        var leftInertia: Float = 0.6f,        // Normalized rotational inertia of left reel (0.25 bare hub .. 1.0 full spool)
+        var rightInertia: Float = 0.6f,       // Normalized rotational inertia of right reel (0.25 bare hub .. 1.0 full spool)
+        var leftDecayTimeSec: Float = 0.26f,   // Deceleration coast-down damping time constant (seconds)
+        var rightDecayTimeSec: Float = 0.26f   // Deceleration coast-down damping time constant (seconds)
     )
 
     /**
+     * Calculates rotational inertia and coast-down damping time constants for both reels.
+     * Full spools possess significantly greater physical mass and rotational momentum than bare hubs.
+     * Reuses [out] instance if provided to guarantee zero heap allocations.
+     */
+    fun calculateInertia(progress: Float, out: ReelInertia = ReelInertia()): ReelInertia {
+        val p = progress.coerceIn(0f, 1f)
+        val leftI = (0.25f + 0.75f * (1f - p)).coerceIn(0.25f, 1.0f)
+        val rightI = (0.25f + 0.75f * p).coerceIn(0.25f, 1.0f)
+
+        // Baseline decay time: 0.12s + up to 0.24s inertia scaling (150ms bare hub .. 360ms full spool)
+        val leftDecay = 0.12f + 0.24f * leftI
+        val rightDecay = 0.12f + 0.24f * rightI
+
+        out.leftInertia = leftI
+        out.rightInertia = rightI
+        out.leftDecayTimeSec = leftDecay
+        out.rightDecayTimeSec = rightDecay
+        return out
+    }
+
+    /**
+     * Flywheel kinetic momentum tracker simulating physical motor spin-up,
+     * frictional coast-down damping, and smooth fast-wind release transitions.
+     * Zero-heap-allocation per frame.
+     */
+    class FlywheelInertiaTracker(
+        var currentSpeed: Float = 0f,
+        val accelerationTimeSec: Float = 0.16f,
+        val baseDecayTimeSec: Float = 0.26f
+    ) {
+        /**
+         * Step physics simulation forward by [deltaSec].
+         *
+         * @param targetSpeed Normalized target speed (0.0f = stop, 1.0f = play, >1.0f = fast wind).
+         * @param deltaSec Elapsed time in seconds.
+         * @param inertia Reel inertia factor (0.25 to 1.0).
+         * @return Updated [currentSpeed].
+         */
+        fun step(targetSpeed: Float, deltaSec: Float, inertia: Float = 0.6f): Float {
+            val clampedInertia = inertia.coerceIn(0.2f, 1.2f)
+            val diff = targetSpeed - currentSpeed
+            if (kotlin.math.abs(diff) < 0.0005f) {
+                currentSpeed = targetSpeed
+                return currentSpeed
+            }
+
+            val isAccelerating = kotlin.math.abs(targetSpeed) > kotlin.math.abs(currentSpeed)
+            val tau = if (isAccelerating) {
+                accelerationTimeSec * clampedInertia
+            } else {
+                baseDecayTimeSec * clampedInertia
+            }
+
+            // Exponential damping: alpha = 1 - exp(-dt / tau)
+            val alpha = (1.0f - kotlin.math.exp(-deltaSec / tau)).coerceIn(0f, 1f)
+            currentSpeed += alpha * diff
+
+            // Snap to exact target when close enough to avoid endless micro-renderings
+            if (kotlin.math.abs(targetSpeed - currentSpeed) < 0.01f && kotlin.math.abs(targetSpeed) < 0.01f) {
+                currentSpeed = 0f
+            }
+            return currentSpeed
+        }
+
+        fun reset(speed: Float = 0f) {
+            currentSpeed = speed
+        }
+    }
+
+    /**
      * Calculates reel radii and angular velocities based on playback progress.
+     * Reuses [out] instance if provided to guarantee zero heap allocations.
      *
      * @param progress Playback progress normalized between 0.0f (start) and 1.0f (end).
      * @param baseDimension The base reference radius dimension in pixels.
+     * @param out Reusable SpoolState instance to write results into.
      */
-    fun calculate(progress: Float, baseDimension: Float): SpoolState {
+    fun calculate(progress: Float, baseDimension: Float, out: SpoolState = SpoolState()): SpoolState {
         val p = progress.coerceIn(0f, 1f)
         val rHub = hubRadiusRatio * baseDimension
         val rMax = maxTapeRadiusRatio * baseDimension
@@ -56,12 +135,11 @@ class SpindleKinematics(
         val speedLeft = rHub / rLeft
         val speedRight = rHub / rRight
 
-        return SpoolState(
-            leftRadius = rLeft,
-            rightRadius = rRight,
-            leftAngularSpeed = speedLeft,
-            rightAngularSpeed = speedRight
-        )
+        out.leftRadius = rLeft
+        out.rightRadius = rRight
+        out.leftAngularSpeed = speedLeft
+        out.rightAngularSpeed = speedRight
+        return out
     }
 
     /**

@@ -332,6 +332,11 @@ class VaultFragment : Fragment() {
             imageLoader = app.imageLoader,
             onTrackClicked = { track, index ->
                 currentDisplayedTracks = currentAlbumTracks
+                if (currentAlbumItem?.isMixtape == true) {
+                    audioEngine.setMixtapeSplitIndex(albumTracksAdapter.splitIndex)
+                } else {
+                    audioEngine.setMixtapeSplitIndex(-1)
+                }
                 audioEngine.playQueue(currentAlbumTracks, index)
                 showNowPlayingSingleAudio(true)
             },
@@ -1844,7 +1849,7 @@ class VaultFragment : Fragment() {
 
                             // Load circular cover art, ambient backdrop, and extract accent color
                             viewLifecycleOwner.lifecycleScope.launch {
-                                val cover = app.imageLoader.loadCover(track.path, 500, 500)
+                                val cover = app.imageLoader.loadCover(track.path, 500, 500, track.album, track.artist)
                                 b.circularCoverArcView.coverBitmap = cover
                                 b.ivNpAmbientArt.setImageBitmap(cover)
                                 if (b.nowPlayingSingleContainer.visibility == View.VISIBLE) {
@@ -1882,7 +1887,7 @@ class VaultFragment : Fragment() {
                             currentMiniTrackId = track.id
                             viewLifecycleOwner.lifecycleScope.launch {
                                 val isEink = app.themeManager.currentTheme.value.id == CassetteTheme.MONOCHROME_EINK.id
-                                val thumb = app.imageLoader.loadCover(track.path, 96, 96)
+                                val thumb = app.imageLoader.loadCover(track.path, 96, 96, track.album, track.artist)
                                 if (thumb != null) {
                                     b.ivMiniArt.imageTintList = null
                                     b.ivMiniArt.setPadding(0, 0, 0, 0)
@@ -2207,7 +2212,7 @@ class VaultFragment : Fragment() {
                 binding.tvNpAlbumHeader.text = if (track.year > 0) "${track.album.uppercase(Locale.ROOT)} (${track.year})" else track.album.uppercase(Locale.ROOT)
                 val app = requireActivity().application as SpindleApp
                 viewLifecycleOwner.lifecycleScope.launch {
-                    val cover = app.imageLoader.loadCover(track.path, 500, 500)
+                    val cover = app.imageLoader.loadCover(track.path, 500, 500, track.album, track.artist)
                     _binding?.ivNpAmbientArt?.setImageBitmap(cover)
                 }
             }
@@ -2296,18 +2301,47 @@ class VaultFragment : Fragment() {
         val durationFormatted = formatTime(totalDurationMs)
         val yearStr = if (album.year > 0 && !album.isMixtape) "${album.year} • " else ""
 
+        val playlistId = album.year.toLong()
+        val prefs = requireContext().getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+        val capMins = prefs.getInt("mixtape_${playlistId}_capacity", 90)
+        val tapeCap = com.hana.spindle.data.MixtapePartition.TapeCapacity.fromMinutes(capMins)
+        val savedSplit = prefs.getInt("mixtape_${playlistId}_split_index", -1)
+
         val mixtapePartition = if (album.isMixtape && tracks.size > 1) {
-            com.hana.spindle.data.MixtapePartition.partition(tracks)
+            com.hana.spindle.data.MixtapePartition.partition(tracks, tapeCap, savedSplit)
         } else null
 
         if (mixtapePartition != null) {
             val sideADur = formatTime(mixtapePartition.sideADurationMs)
             val sideBDur = formatTime(mixtapePartition.sideBDurationMs)
-            binding.tvAlbumDetailMeta.text = "$yearStr${tracks.size} Tracks • $durationFormatted\nSIDE A: ${mixtapePartition.sideA.size} trk ($sideADur) • SIDE B: ${mixtapePartition.sideB.size} trk ($sideBDur)"
+            val overWarning = if (mixtapePartition.isOverCapacity) {
+                val overSides = mutableListOf<String>()
+                if (mixtapePartition.isSideAOverCapacity) overSides.add("A: +${formatTime(mixtapePartition.sideAOvertimeMs)}")
+                if (mixtapePartition.isSideBOverCapacity) overSides.add("B: +${formatTime(mixtapePartition.sideBOvertimeMs)}")
+                "\n⚠️ OVER ${mixtapePartition.capacity.label} (${overSides.joinToString(", ")})"
+            } else ""
+
+            binding.tvAlbumDetailMeta.text = "$yearStr${tracks.size} Tracks • $durationFormatted\nSIDE A: ${mixtapePartition.sideA.size} trk ($sideADur) • SIDE B: ${mixtapePartition.sideB.size} trk ($sideBDur)$overWarning\n[TAP TO EDIT SIDE A/B SPLIT]"
+            binding.tvAlbumDetailMeta.isClickable = true
+            binding.tvAlbumDetailMeta.setOnClickListener {
+                app.audioEngine.foleyEngine.playTilePress()
+                MixtapeDialogs.showEditMixtapeSplitDialog(
+                    requireContext(),
+                    app.database,
+                    viewLifecycleOwner.lifecycleScope,
+                    playlistId,
+                    album.album,
+                    tracks
+                ) {
+                    showAlbumDetail(album, tracks)
+                }
+            }
             albumTracksAdapter.showSideLetters = true
             albumTracksAdapter.splitIndex = mixtapePartition.splitIndex
         } else {
             binding.tvAlbumDetailMeta.text = "$yearStr${tracks.size} Tracks • $durationFormatted"
+            binding.tvAlbumDetailMeta.isClickable = false
+            binding.tvAlbumDetailMeta.setOnClickListener(null)
             albumTracksAdapter.showSideLetters = false
             albumTracksAdapter.splitIndex = -1
         }
@@ -2778,7 +2812,7 @@ class VaultFragment : Fragment() {
             val artistAlbum = if (track.album.isNotBlank()) "${track.artist} • ${track.album}" else track.artist
             pBinding.tvPanoramaNpArtist.text = artistAlbum
             viewLifecycleOwner.lifecycleScope.launch {
-                val cover = app.imageLoader.loadCover(track.path, 400, 400)
+                val cover = app.imageLoader.loadCover(track.path, 400, 400, track.album, track.artist)
                 if (cover != null) {
                     pBinding.ivPanoramaArt.setImageBitmap(cover)
                 } else {

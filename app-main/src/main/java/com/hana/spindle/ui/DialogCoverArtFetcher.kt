@@ -80,7 +80,7 @@ class DialogCoverArtFetcher(
 
             val missingCount = withContext(Dispatchers.IO) {
                 albums.count { album ->
-                    !app.imageLoader.hasCover(album.representativePath, album.album, album.artist)
+                    !album.hasCoverArt && !app.imageLoader.hasCover(album.representativePath, album.album, album.artist)
                 }
             }
 

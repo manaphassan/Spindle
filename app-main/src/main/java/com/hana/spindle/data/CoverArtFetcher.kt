@@ -279,7 +279,7 @@ class CoverArtFetcher(
 
         // Filter strictly albums without local cover art
         val missingAlbums = albums.filter { album ->
-            !imageLoader.hasCover(album.representativePath, album.album, album.artist)
+            !album.hasCoverArt && !imageLoader.hasCover(album.representativePath, album.album, album.artist)
         }
 
         var downloadedCount = 0

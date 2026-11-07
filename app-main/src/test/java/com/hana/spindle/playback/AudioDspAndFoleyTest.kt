@@ -176,6 +176,12 @@ class AudioDspAndFoleyTest {
         assertTrue("Type I must have warm low-end boost", fx.isoBandsGainDb[0] > 2.0f)
         assertTrue("Type I must roll off upper treble", fx.isoBandsGainDb[9] < -2.0f)
 
+        // Switch to Type III Ferrichrome: dual-layer hybrid (warm bass + crisp highs)
+        fx.setTapeFormulation(AudioFxController.TapeFormulation.TYPE_III_FERRICHROME)
+        assertEquals(AudioFxController.TapeFormulation.TYPE_III_FERRICHROME, fx.currentTapeFormulation)
+        assertTrue("Type III must have rich bass punch", fx.isoBandsGainDb[0] >= 1.5f)
+        assertTrue("Type III must have extended top-end air", fx.isoBandsGainDb[8] >= 0.5f)
+
         // Switch to Type IV Metal (Extralloy Metal-XR): extended high-frequency response
         fx.setTapeFormulation(AudioFxController.TapeFormulation.TYPE_IV_METAL)
         assertEquals(AudioFxController.TapeFormulation.TYPE_IV_METAL, fx.currentTapeFormulation)
@@ -758,6 +764,50 @@ class AudioDspAndFoleyTest {
         assertEquals(2, partition.sideB.size)
         assertEquals(720000L, partition.sideADurationMs)
         assertEquals(460000L, partition.sideBDurationMs)
+        assertEquals(MixtapePartition.TapeCapacity.C90, partition.capacity)
+        assertFalse(partition.isOverCapacity)
+    }
+
+    @Test
+    fun testMixtapePartitionCapacitiesAndCustomSplit() {
+        val tracks = listOf(
+            TrackEntity(title = "T1", artist = "A", album = "Alb", durationMs = 1800000L, path = "/t1.flac"), // 30 min
+            TrackEntity(title = "T2", artist = "A", album = "Alb", durationMs = 600000L, path = "/t2.flac"),  // 10 min
+            TrackEntity(title = "T3", artist = "A", album = "Alb", durationMs = 1200000L, path = "/t3.flac")  // 20 min
+        ) // Total = 60 min
+
+        // 1. C-46 capacity (23 min per side = 1,380,000 ms)
+        val partC46 = MixtapePartition.partition(tracks, MixtapePartition.TapeCapacity.C46)
+        assertEquals(1, partC46.splitIndex)
+        assertEquals(1800000L, partC46.sideADurationMs)
+        assertEquals(1800000L, partC46.sideBDurationMs)
+        assertTrue(partC46.isSideAOverCapacity) // 30m > 23m
+        assertTrue(partC46.isSideBOverCapacity) // 30m > 23m
+        assertTrue(partC46.isOverCapacity)
+        assertEquals(420000L, partC46.sideAOvertimeMs) // 30m - 23m = 7m = 420,000 ms
+
+        // 2. C-90 capacity (45 min per side = 2,700,000 ms)
+        val partC90 = MixtapePartition.partition(tracks, MixtapePartition.TapeCapacity.C90)
+        assertFalse(partC90.isOverCapacity)
+        assertFalse(partC90.isSideAOverCapacity)
+        assertFalse(partC90.isSideBOverCapacity)
+        assertEquals(0L, partC90.sideAOvertimeMs)
+
+        // 3. Custom split index override
+        val customPart = MixtapePartition.partition(tracks, MixtapePartition.TapeCapacity.C90, customSplitIndex = 2)
+        assertEquals(2, customPart.splitIndex)
+        assertEquals(2, customPart.sideA.size) // T1 + T2 = 40 min
+        assertEquals(1, customPart.sideB.size) // T3 = 20 min
+        assertEquals(2400000L, customPart.sideADurationMs)
+        assertEquals(1200000L, customPart.sideBDurationMs)
+
+        // 4. TapeCapacity parsing helpers
+        assertEquals(MixtapePartition.TapeCapacity.C46, MixtapePartition.TapeCapacity.fromMinutes(46))
+        assertEquals(MixtapePartition.TapeCapacity.C60, MixtapePartition.TapeCapacity.fromMinutes(60))
+        assertEquals(MixtapePartition.TapeCapacity.C90, MixtapePartition.TapeCapacity.fromMinutes(90))
+        assertEquals(MixtapePartition.TapeCapacity.C120, MixtapePartition.TapeCapacity.fromMinutes(120))
+        assertEquals(MixtapePartition.TapeCapacity.C60, MixtapePartition.TapeCapacity.fromLabel("C-60"))
+        assertEquals(MixtapePartition.TapeCapacity.C90, MixtapePartition.TapeCapacity.fromLabel("C90"))
     }
 
     @Test
@@ -1031,6 +1081,146 @@ class AudioDspAndFoleyTest {
         } finally {
             tempAiff.delete()
         }
+    }
+
+    @Test
+    fun testTapeSaturationModelingAndTanhCompression() {
+        // 1. Verify driveDbToAlpha conversion
+        val alpha0Db = com.hana.spindle.core.AudioDspConstants.driveDbToAlpha(0.0f)
+        assertEquals(1.0f, alpha0Db, 0.001f)
+
+        val alpha6Db = com.hana.spindle.core.AudioDspConstants.driveDbToAlpha(6.0f)
+        assertTrue(alpha6Db in 1.99f..2.01f)
+
+        // 2. Odd-harmonic symmetry: sat(-x) == -sat(x)
+        val alpha = com.hana.spindle.core.AudioDspConstants.driveDbToAlpha(3.0f)
+        val posSample = 0.5f
+        val negSample = -0.5f
+        val satPos = com.hana.spindle.core.AudioDspConstants.evaluateTapeSaturationTanh(posSample, alpha)
+        val satNeg = com.hana.spindle.core.AudioDspConstants.evaluateTapeSaturationTanh(negSample, alpha)
+        assertEquals(satPos, -satNeg, 0.0001f)
+
+        // 3. Small-signal linearity (saturation preserves low-level dynamics with smooth slope)
+        val tinySample = 0.02f
+        val satTiny = com.hana.spindle.core.AudioDspConstants.evaluateTapeSaturationTanh(tinySample, alpha)
+        val expectedTiny = tinySample * (alpha / kotlin.math.tanh(alpha.toDouble()).toFloat())
+        assertEquals(expectedTiny, satTiny, 0.001f)
+
+        // 4. Large-signal compression (saturation approaches 1/tanh(alpha) asymptote and soft-knee limiter compresses)
+        val bigSample = 1.5f
+        val satBig = com.hana.spindle.core.AudioDspConstants.evaluateTapeSaturationTanh(bigSample, alpha)
+        val maxAsymptote = 1.0f / kotlin.math.tanh(alpha.toDouble()).toFloat()
+        assertTrue("Saturated output must approach 1/tanh(alpha) asymptote", satBig <= maxAsymptote)
+
+        val fxForLimiter = AudioFxController()
+        fxForLimiter.setTapeSaturationEnabled(true)
+        fxForLimiter.setTapeSaturationDriveDb(3.0f)
+        val limited = fxForLimiter.applyTapeSaturation(bigSample)
+        assertTrue("Limited output must be compressed within soft-knee threshold bounds", limited <= 1.15f)
+
+        // 5. Tape Saturation Warmth Gains scale with driveDb
+        val gains0Db = com.hana.spindle.core.AudioDspConstants.computeTapeSaturationGains(0.0f)
+        val gains3Db = com.hana.spindle.core.AudioDspConstants.computeTapeSaturationGains(3.0f)
+        val gains6Db = com.hana.spindle.core.AudioDspConstants.computeTapeSaturationGains(6.0f)
+
+        assertEquals(10, gains0Db.size)
+        assertEquals(10, gains3Db.size)
+        assertEquals(10, gains6Db.size)
+
+        // Low bass (63Hz, index 1) head bump increases with drive
+        assertTrue(gains0Db[1] < gains3Db[1])
+        assertTrue(gains3Db[1] < gains6Db[1])
+        // Treble rolloff (16kHz, index 9) steepens with drive
+        assertTrue(gains6Db[9] < gains3Db[9])
+    }
+
+    @Test
+    fun testExpandedAutoEqTargetCurves() {
+        val curves = listOf(
+            com.hana.spindle.core.AudioDspConstants.CURVE_HARMAN_OVER_EAR_2020,
+            com.hana.spindle.core.AudioDspConstants.CURVE_CRINACLE_IEF_BASS,
+            com.hana.spindle.core.AudioDspConstants.CURVE_ETYMOTIC_ER4,
+            com.hana.spindle.core.AudioDspConstants.CURVE_SONY_MDR7506,
+            com.hana.spindle.core.AudioDspConstants.CURVE_SENNHEISER_HD650
+        )
+
+        for (curve in curves) {
+            assertEquals(10, curve.size)
+            for (gain in curve) {
+                assertTrue("Gain $gain out of bounds", gain in -15.0f..15.0f)
+            }
+        }
+
+        // Harman 2020 should have sub-bass rise (+6.0dB at 31Hz) and ear-gain at 4kHz
+        assertTrue(com.hana.spindle.core.AudioDspConstants.CURVE_HARMAN_OVER_EAR_2020[0] >= 5.0f)
+        assertTrue(com.hana.spindle.core.AudioDspConstants.CURVE_HARMAN_OVER_EAR_2020[7] >= 3.5f)
+
+        // Crinacle IEF Bass should have Harman-style bass boost (+5.5dB at 31Hz)
+        assertTrue(com.hana.spindle.core.AudioDspConstants.CURVE_CRINACLE_IEF_BASS[0] >= 5.0f)
+
+        // Etymotic ER4 has flat sub-bass (<= 0.0dB) and acute 2.8k-4k ear resonance
+        assertTrue(com.hana.spindle.core.AudioDspConstants.CURVE_ETYMOTIC_ER4[0] <= 0.0f)
+        assertTrue(com.hana.spindle.core.AudioDspConstants.CURVE_ETYMOTIC_ER4[7] >= 3.5f)
+
+        // AudioFxController preset application
+        val fx = AudioFxController()
+        fx.applyPreset("HARMAN_2020")
+        assertArrayEquals(com.hana.spindle.core.AudioDspConstants.CURVE_HARMAN_OVER_EAR_2020, fx.isoBandsGainDb, 0.001f)
+
+        fx.applyPreset("CRINACLE_BASS")
+        assertArrayEquals(com.hana.spindle.core.AudioDspConstants.CURVE_CRINACLE_IEF_BASS, fx.isoBandsGainDb, 0.001f)
+
+        fx.applyPreset("ETYMOTIC")
+        assertArrayEquals(com.hana.spindle.core.AudioDspConstants.CURVE_ETYMOTIC_ER4, fx.isoBandsGainDb, 0.001f)
+
+        fx.applyPreset("SONY_MDR7506")
+        assertArrayEquals(com.hana.spindle.core.AudioDspConstants.CURVE_SONY_MDR7506, fx.isoBandsGainDb, 0.001f)
+
+        fx.applyPreset("HD650")
+        assertArrayEquals(com.hana.spindle.core.AudioDspConstants.CURVE_SENNHEISER_HD650, fx.isoBandsGainDb, 0.001f)
+    }
+
+    @Test
+    fun testUserEqPresetCsvImportExport() {
+        val manager = UserEqPresetManager()
+
+        val samplePreset = UserEqPreset(
+            name = "Studio Reference Target",
+            description = "Custom calibrated diffuse field curve",
+            gainsDb = listOf(5.0f, 3.5f, 1.0f, 0.0f, 0.5f, 1.2f, 2.8f, 4.0f, 1.5f, -1.0f),
+            qFactors = List(10) { 1.414f },
+            centerFreqsHz = com.hana.spindle.core.AudioDspConstants.ISO_FREQUENCIES.toList(),
+            isParametric = false,
+            bassBoost = 250,
+            crossfeedStrength = 180,
+            isBuiltIn = false
+        )
+
+        // 1. Export to CSV
+        val csvOutput = manager.exportPresetToCsv(samplePreset)
+        assertTrue(csvOutput.contains("# Name: Studio Reference Target"))
+        assertTrue(csvOutput.contains("# Description: Custom calibrated diffuse field curve"))
+        assertTrue(csvOutput.contains("31,5.0,1.414"))
+        assertTrue(csvOutput.contains("1000,1.2,1.414"))
+
+        // 2. Parse from CSV directly
+        val parsedPreset = manager.parsePresetFromCsv(csvOutput, "Fallback Name")
+        assertNotNull(parsedPreset)
+        assertEquals("Studio Reference Target", parsedPreset!!.name)
+        assertEquals("Custom calibrated diffuse field curve", parsedPreset.description)
+        assertEquals(250, parsedPreset.bassBoost)
+        assertEquals(180, parsedPreset.crossfeedStrength)
+        assertEquals(10, parsedPreset.gainsDb.size)
+
+        // Verified interpolated gains match closely
+        for (i in 0 until 10) {
+            assertEquals(samplePreset.gainsDb[i], parsedPreset.gainsDb[i], 0.1f)
+        }
+
+        // 3. Import via generic importPreset
+        val importedViaGeneric = manager.importPreset(csvOutput, "Generic Test")
+        assertNotNull(importedViaGeneric)
+        assertEquals("Studio Reference Target", importedViaGeneric!!.name)
     }
 }
 

@@ -48,5 +48,6 @@ data class TrackEntity(
     val bitrateKbps: Int = 0,
     val hasLyrics: Boolean = false,
     val channels: Int = 2,
-    val discNumber: Int = 1
+    val discNumber: Int = 1,
+    val hasCoverArt: Boolean = false
 )

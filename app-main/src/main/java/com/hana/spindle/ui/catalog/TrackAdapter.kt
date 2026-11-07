@@ -149,7 +149,7 @@ class TrackAdapter(
             b.ivSongThumb.imageTintList = ColorStateList.valueOf(if (isEinkMode) Color.BLACK else Color.parseColor("#64748B"))
 
             holder.loadJob = scope.launch {
-                val thumb = imageLoader.loadCover(track.path, 96, 96)
+                val thumb = imageLoader.loadCover(track.path, 96, 96, track.album, track.artist)
                 if (b.ivSongThumb.tag == track.path) {
                     withContext(Dispatchers.Main) {
                         if (b.ivSongThumb.tag == track.path) {

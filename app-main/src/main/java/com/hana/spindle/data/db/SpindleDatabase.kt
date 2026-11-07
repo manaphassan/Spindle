@@ -12,8 +12,8 @@ import androidx.room.RoomDatabase
         PlaylistEntity::class,
         PlaylistSongCrossRef::class
     ],
-    version = 5,
-    exportSchema = false
+    version = 6,
+    exportSchema = true
 )
 abstract class SpindleDatabase : RoomDatabase() {
 
@@ -57,6 +57,12 @@ abstract class SpindleDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_5_6 = object : androidx.room.migration.Migration(5, 6) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `songs` ADD COLUMN `hasCoverArt` INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
         fun getInstance(context: Context): SpindleDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -64,7 +70,9 @@ abstract class SpindleDatabase : RoomDatabase() {
                     SpindleDatabase::class.java,
                     "spindle_music.db"
                 )
-                .addMigrations(MIGRATION_4_5)
+                .addMigrations(MIGRATION_4_5, MIGRATION_5_6)
+                // The library is a rebuildable index of files on disk (playlists aside). Any schema
+                // problem is treated like a fresh install: rebuild instead of crashing on launch.
                 .fallbackToDestructiveMigration()
                 .build()
                 INSTANCE = instance

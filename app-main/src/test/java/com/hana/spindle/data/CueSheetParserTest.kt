@@ -301,4 +301,55 @@ class CueSheetParserTest {
         assertEquals("Freddie Freeloader", tracks[1].title)
         assertEquals(562000L, tracks[1].startTimeMs)
     }
+
+    @Test
+    fun testParseCueText_pregapAndSubIndices() {
+        val cueData = """
+            PERFORMER "Various Artists"
+            TITLE "Live Concert"
+            FILE "live.flac" WAVE
+              TRACK 01 AUDIO
+                TITLE "Intro & Movement 1"
+                INDEX 00 00:00:00
+                INDEX 01 00:02:00
+                INDEX 02 01:15:00
+                INDEX 03 02:30:00
+              TRACK 02 AUDIO
+                TITLE "Movement 2"
+                INDEX 00 04:58:00
+                INDEX 01 05:00:00
+        """.trimIndent()
+
+        val tracks = CueSheetParser.parseCueText(
+            text = cueData,
+            baseDir = null,
+            cuePath = null,
+            totalAudioDurationMs = 600000L
+        )
+
+        assertEquals(2, tracks.size)
+
+        // Track 1: Pregap at 0ms, start at 2000ms (00:02:00)
+        val t1 = tracks[0]
+        assertEquals(0L, t1.pregapMs)
+        assertEquals(2000L, t1.startTimeMs)
+        assertEquals(2, t1.subIndices.size)
+        // INDEX 02 at 01:15:00 = 75,000 ms
+        assertEquals(75000L, t1.subIndices[2])
+        // INDEX 03 at 02:30:00 = 150,000 ms
+        assertEquals(150000L, t1.subIndices[3])
+
+        // Track 2: Pregap at 04:58:00 = 298,000 ms, start at 05:00:00 = 300,000 ms
+        val t2 = tracks[1]
+        assertEquals(298000L, t2.pregapMs)
+        assertEquals(300000L, t2.startTimeMs)
+        assertTrue(t2.subIndices.isEmpty())
+
+        // Test virtual path encoding with pregap
+        val entity = t1.toTrackEntity()
+        assertTrue(CueSheetParser.isCueVirtualPath(entity.path))
+        assertEquals(2000L, CueSheetParser.getCueStartTimeMs(entity.path))
+        assertEquals(1, CueSheetParser.getCueTrackNumber(entity.path))
+        assertEquals(0L, CueSheetParser.getCuePregapMs(entity.path))
+    }
 }

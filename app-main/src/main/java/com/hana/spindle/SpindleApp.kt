@@ -16,7 +16,7 @@ class SpindleApp : Application() {
     }
 
     val musicScanner: com.hana.spindle.data.MusicScanner by lazy {
-        com.hana.spindle.data.MusicScanner(this, database.trackDao())
+        com.hana.spindle.data.MusicScanner(this, database.trackDao(), imageLoader)
     }
 
     val audioEngine: com.hana.spindle.playback.AudioEngine by lazy {
@@ -61,6 +61,19 @@ class SpindleApp : Application() {
         super.onCreate()
         instance = this
         createNotificationChannel()
+    }
+
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        // Drop decoded bitmaps / caches when the UI is hidden or the system is under pressure.
+        if (level >= TRIM_MEMORY_UI_HIDDEN) {
+            imageLoader.clearMemoryCache()
+        }
+    }
+
+    override fun onLowMemory() {
+        super.onLowMemory()
+        imageLoader.clearMemoryCache()
     }
 
     private fun createNotificationChannel() {

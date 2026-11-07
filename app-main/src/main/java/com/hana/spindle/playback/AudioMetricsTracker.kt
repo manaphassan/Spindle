@@ -23,7 +23,7 @@ data class AudioMetrics(
     val replayGainOffsetDb: Float = 0.0f,
     val outputRoute: String = "3.5mm Headphone Jack",
     val outputSampleRate: Int = 96000,
-    val isBitPerfect: Boolean = true,
+    val isBitPerfect: Boolean = false,
     val bluetoothDeviceName: String? = null,
     val bluetoothBatteryPct: Int? = null,
     val isBluetoothConnected: Boolean = false,
@@ -54,6 +54,22 @@ class AudioMetricsTracker(private val context: Context) {
 
     private val _metrics = MutableStateFlow(AudioMetrics())
     val metrics: StateFlow<AudioMetrics> = _metrics.asStateFlow()
+
+    companion object {
+        /**
+         * "Direct / bit-perfect" may only be claimed when the user wants it, the route is a direct
+         * wired output AND no DSP stage is in the path. Android's mixer can still resample on
+         * some devices, so this is "direct, no DSP", never a guarantee of exclusive-mode output.
+         */
+        fun computeDirectNoDsp(prefEnabled: Boolean, directRoute: Boolean, dspActive: Boolean): Boolean =
+            prefEnabled && directRoute && !dspActive
+    }
+
+    private fun isDspActive(): Boolean {
+        val fx = (context.applicationContext as? com.hana.spindle.SpindleApp)?.audioEngine?.audioFxController
+            ?: return true
+        return !fx.isBypassEnabled || fx.isTapeSaturationEnabled || fx.crossfeedStrength > 0
+    }
 
     fun queryActiveUsbDac(): UsbDacInfo? {
         val app = context.applicationContext as? com.hana.spindle.SpindleApp
@@ -135,7 +151,7 @@ class AudioMetricsTracker(private val context: Context) {
             }
             context.registerReceiver(bluetoothReceiver, filter)
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.w("AudioMetricsTracker", "Non-fatal", e)
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -154,7 +170,7 @@ class AudioMetricsTracker(private val context: Context) {
                     audioManager.registerAudioDeviceCallback(callback, null)
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.w("AudioMetricsTracker", "Non-fatal", e)
             }
         }
 
@@ -298,11 +314,7 @@ class AudioMetricsTracker(private val context: Context) {
         val prefs = context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
         val bitPerfectPref = prefs.getBoolean("pref_bitperfect_direct", true)
         val isDirectRoute = (activeUsb != null) || route.contains("USB DAC") || route.contains("3.5mm")
-        val isBitPerfect = if (bitPerfectPref && isDirectRoute) {
-            true
-        } else {
-            (_metrics.value.sampleRate == _metrics.value.outputSampleRate) || (_metrics.value.sampleRate <= 48000)
-        }
+        val isBitPerfect = computeDirectNoDsp(bitPerfectPref, isDirectRoute, isDspActive())
 
         val hasBt = hasConnectedBluetoothAudioDevice()
         val btName = if (hasBt) (_metrics.value.bluetoothDeviceName ?: queryConnectedBluetoothDeviceName()) else null
@@ -348,11 +360,7 @@ class AudioMetricsTracker(private val context: Context) {
         val prefs = context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
         val bitPerfectPref = prefs.getBoolean("pref_bitperfect_direct", true)
         val isDirectRoute = (activeUsb != null) || outputRoute.contains("USB DAC") || outputRoute.contains("3.5mm")
-        val isBitPerfect = if (bitPerfectPref && isDirectRoute) {
-            true
-        } else {
-            (sampleRate == _metrics.value.outputSampleRate) || (sampleRate <= 48000)
-        }
+        val isBitPerfect = computeDirectNoDsp(bitPerfectPref, isDirectRoute, isDspActive())
 
         val hasBt = hasConnectedBluetoothAudioDevice()
         val btName = if (hasBt) (_metrics.value.bluetoothDeviceName ?: queryConnectedBluetoothDeviceName()) else null

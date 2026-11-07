@@ -129,6 +129,7 @@ class VolumioRestClient {
     }
 
     private fun getHttp(urlStr: String): String? {
+        if (!RemoteHostPolicy.isAllowedUrl(urlStr)) return null
         var conn: HttpURLConnection? = null
         return try {
             val url = URL(urlStr)

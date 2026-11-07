@@ -97,8 +97,8 @@ class DialogFileSpecs(
         val routeText = metrics?.outputRoute ?: "3.5mm Headphone Jack"
         binding.tvSpecOutputRoute.text = routeText
 
-        val isBitPerfect = metrics?.isBitPerfect ?: true
-        binding.tvSpecBitPerfectBadge.text = if (isBitPerfect) "BIT-PERFECT" else "RESAMPLED"
+        val isBitPerfect = metrics?.isBitPerfect ?: false
+        binding.tvSpecBitPerfectBadge.text = if (isBitPerfect) "DIRECT · NO DSP" else "DSP / MIXER ACTIVE"
         binding.tvSpecBitPerfectBadge.setTextColor(
             if (isBitPerfect) android.graphics.Color.parseColor("#00E676") else android.graphics.Color.parseColor("#FFB74D")
         )

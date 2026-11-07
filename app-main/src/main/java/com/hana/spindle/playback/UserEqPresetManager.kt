@@ -149,7 +149,13 @@ class UserEqPresetManager(
             val fromJson = importPresetFromJson(trimmed)
             if (fromJson != null) return fromJson
         }
-        return parseAutoEqGraphicEq(trimmed, fallbackName)
+        if (trimmed.startsWith("#") || trimmed.contains("Frequency", ignoreCase = true) || trimmed.contains("Hz,", ignoreCase = true)) {
+            val fromCsv = parsePresetFromCsv(trimmed, fallbackName)
+            if (fromCsv != null) return fromCsv
+        }
+        val fromGraphicEq = parseAutoEqGraphicEq(trimmed, fallbackName)
+        if (fromGraphicEq != null) return fromGraphicEq
+        return parsePresetFromCsv(trimmed, fallbackName)
     }
 
     /**
@@ -231,6 +237,124 @@ class UserEqPresetManager(
         }
     }
 
+    /**
+     * Exports a 10-band EQ preset to a standardized, human-readable CSV format.
+     */
+    fun exportPresetToCsv(preset: UserEqPreset): String {
+        val sb = StringBuilder()
+        sb.appendLine("# Spindle 10-Band EQ Curve Preset")
+        sb.appendLine("# Name: ${preset.name}")
+        if (preset.description.isNotBlank()) {
+            sb.appendLine("# Description: ${preset.description}")
+        }
+        sb.appendLine("# Parametric: ${preset.isParametric}")
+        sb.appendLine("# BassBoost: ${preset.bassBoost}")
+        sb.appendLine("# Crossfeed: ${preset.crossfeedStrength}")
+        sb.appendLine("FrequencyHz,GainDb,QFactor")
+        for (i in 0 until 10) {
+            val freq = preset.centerFreqsHz.getOrElse(i) { com.hana.spindle.core.AudioDspConstants.ISO_FREQUENCIES[i] }
+            val gain = preset.gainsDb.getOrElse(i) { 0.0f }
+            val q = preset.qFactors.getOrElse(i) { 1.414f }
+            sb.appendLine("$freq,$gain,$q")
+        }
+        return sb.toString()
+    }
+
+    /**
+     * Imports a 10-band EQ preset from plain text CSV / tabular format.
+     * Supports metadata header comments (# Name:, # Description:, etc.) and
+     * lines formatted as: Frequency,Gain[,Q].
+     */
+    fun parsePresetFromCsv(csvText: String, defaultName: String = "Imported Curve"): UserEqPreset? {
+        try {
+            var name = defaultName
+            var description = "Imported from CSV"
+            var isParametric = false
+            var bassBoost = 0
+            var crossfeed = 0
+
+            val rawPoints = mutableListOf<Triple<Float, Float, Float>>()
+
+            for (line in csvText.lines()) {
+                val trimmed = line.trim()
+                if (trimmed.isEmpty()) continue
+                if (trimmed.startsWith("#")) {
+                    val comment = trimmed.removePrefix("#").trim()
+                    when {
+                        comment.startsWith("Name:", ignoreCase = true) -> {
+                            name = comment.substring(5).trim().ifBlank { defaultName }
+                        }
+                        comment.startsWith("Description:", ignoreCase = true) -> {
+                            description = comment.substring(12).trim()
+                        }
+                        comment.startsWith("Parametric:", ignoreCase = true) -> {
+                            isParametric = comment.substring(11).trim().toBooleanStrictOrNull() ?: false
+                        }
+                        comment.startsWith("BassBoost:", ignoreCase = true) -> {
+                            bassBoost = comment.substring(10).trim().toIntOrNull()?.coerceIn(0, 1000) ?: 0
+                        }
+                        comment.startsWith("Crossfeed:", ignoreCase = true) -> {
+                            crossfeed = comment.substring(10).trim().toIntOrNull()?.coerceIn(0, 1000) ?: 0
+                        }
+                    }
+                    continue
+                }
+
+                if (trimmed.startsWith("Freq", ignoreCase = true) || trimmed.startsWith("Hz", ignoreCase = true)) {
+                    continue
+                }
+
+                val tokens = trimmed.split(Regex("[,;\\t\\s]+")).filter { it.isNotEmpty() }
+                if (tokens.size >= 2) {
+                    val freq = tokens[0].toFloatOrNull()
+                    val gain = tokens[1].toFloatOrNull()
+                    val q = if (tokens.size >= 3) tokens[2].toFloatOrNull() ?: 1.414f else 1.414f
+                    if (freq != null && gain != null && freq > 0f) {
+                        rawPoints.add(Triple(freq, gain, q))
+                    }
+                }
+            }
+
+            if (rawPoints.size < 3) {
+                Log.w(TAG, "CSV curve contained insufficient measurement points: ${rawPoints.size}")
+                return null
+            }
+
+            rawPoints.sortBy { it.first }
+
+            val isoCenterFreqs = com.hana.spindle.core.AudioDspConstants.ISO_FREQUENCIES
+            val calculatedGains = mutableListOf<Float>()
+            val calculatedQs = mutableListOf<Float>()
+            val pointsPair = rawPoints.map { Pair(it.first, it.second) }
+
+            for (i in 0 until 10) {
+                val targetFreq = isoCenterFreqs[i].toFloat()
+                val gain = interpolateGainAtFrequency(pointsPair, targetFreq)
+                val clamped = gain.coerceIn(-15.0f, 15.0f)
+                val rounded = Math.round(clamped * 10f) / 10f
+                calculatedGains.add(rounded)
+
+                val closest = rawPoints.minByOrNull { kotlin.math.abs(it.first - targetFreq) }
+                calculatedQs.add(closest?.third ?: 1.414f)
+            }
+
+            return UserEqPreset(
+                name = name,
+                description = description,
+                gainsDb = calculatedGains,
+                qFactors = calculatedQs,
+                centerFreqsHz = isoCenterFreqs.toList(),
+                isParametric = isParametric,
+                bassBoost = bassBoost,
+                crossfeedStrength = crossfeed,
+                isBuiltIn = false
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Error parsing CSV curve", e)
+            return null
+        }
+    }
+
     private fun interpolateGainAtFrequency(points: List<Pair<Float, Float>>, targetFreq: Float): Float {
         if (targetFreq <= points.first().first) return points.first().second
         if (targetFreq >= points.last().first) return points.last().second
@@ -290,6 +414,61 @@ class UserEqPresetManager(
      */
     private fun createDefaultReferencePresets(): List<UserEqPreset> {
         return listOf(
+            UserEqPreset(
+                name = "Harman Over-Ear 2020",
+                description = "Harman acoustic research target with controlled sub-bass shelf & ear-canal gain",
+                gainsDb = com.hana.spindle.core.AudioDspConstants.CURVE_HARMAN_OVER_EAR_2020.toList(),
+                qFactors = List(10) { 1.414f },
+                centerFreqsHz = com.hana.spindle.core.AudioDspConstants.ISO_FREQUENCIES.toList(),
+                isParametric = false,
+                bassBoost = 250,
+                crossfeedStrength = 200,
+                isBuiltIn = true
+            ),
+            UserEqPreset(
+                name = "Crinacle IEF Neutral + Bass",
+                description = "Crinacle IEF Neutral Studio Target with +6dB Harman-style sub-bass shelf",
+                gainsDb = com.hana.spindle.core.AudioDspConstants.CURVE_CRINACLE_IEF_BASS.toList(),
+                qFactors = List(10) { 1.414f },
+                centerFreqsHz = com.hana.spindle.core.AudioDspConstants.ISO_FREQUENCIES.toList(),
+                isParametric = false,
+                bassBoost = 150,
+                crossfeedStrength = 150,
+                isBuiltIn = true
+            ),
+            UserEqPreset(
+                name = "Etymotic ER4 Studio Target",
+                description = "Reference Studio diffuse-field target with ear-canal acoustic resonance tuning",
+                gainsDb = com.hana.spindle.core.AudioDspConstants.CURVE_ETYMOTIC_ER4.toList(),
+                qFactors = List(10) { 1.414f },
+                centerFreqsHz = com.hana.spindle.core.AudioDspConstants.ISO_FREQUENCIES.toList(),
+                isParametric = false,
+                bassBoost = 0,
+                crossfeedStrength = 100,
+                isBuiltIn = true
+            ),
+            UserEqPreset(
+                name = "Sony MDR-7506 Studio Monitor",
+                description = "Industry standard broadcast monitor target with punchy bass & analytical highs",
+                gainsDb = com.hana.spindle.core.AudioDspConstants.CURVE_SONY_MDR7506.toList(),
+                qFactors = List(10) { 1.414f },
+                centerFreqsHz = com.hana.spindle.core.AudioDspConstants.ISO_FREQUENCIES.toList(),
+                isParametric = false,
+                bassBoost = 100,
+                crossfeedStrength = 150,
+                isBuiltIn = true
+            ),
+            UserEqPreset(
+                name = "Sennheiser HD 650 / HD 6XX",
+                description = "Mid-centric audiophile reference: lush vocal intimacy & smooth treble roll-off",
+                gainsDb = com.hana.spindle.core.AudioDspConstants.CURVE_SENNHEISER_HD650.toList(),
+                qFactors = List(10) { 1.414f },
+                centerFreqsHz = com.hana.spindle.core.AudioDspConstants.ISO_FREQUENCIES.toList(),
+                isParametric = false,
+                bassBoost = 200,
+                crossfeedStrength = 250,
+                isBuiltIn = true
+            ),
             UserEqPreset(
                 name = "Sennheiser HD 600",
                 description = "Harman Target with sub-bass extension & smooth treble",

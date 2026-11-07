@@ -889,11 +889,36 @@ class DrawerFragment : Fragment() {
                 }.show()
                 return@setOnCheckedChangeListener
             }
+            binding.seekTapeSaturationDrive.isEnabled = isChecked
+            binding.containerTapeSaturationDrive.alpha = if (isChecked) 1.0f else 0.4f
             app.audioEngine.setTapeSaturation(isChecked)
             app.audioEngine.foleyEngine.playSwitchSnap()
             val msg = if (isChecked) "Harmonic Tape Saturation Active (+3.2dB @ 63Hz Warmth)" else "Tape Saturation DSP Disabled"
             Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
         }
+
+        // 5c. Tape Saturation Drive Gain Control (0.0 to +6.0 dB)
+        val initialDriveDb = fxController.tapeSaturationDriveDb
+        val initialDriveProgress = (initialDriveDb * 10f).toInt().coerceIn(0, 60)
+        binding.seekTapeSaturationDrive.progress = initialDriveProgress
+        binding.tvTapeSaturationDrive.text = String.format(Locale.US, "+%.1f dB", initialDriveDb)
+        binding.seekTapeSaturationDrive.isEnabled = app.audioEngine.isTapeSaturationEnabled
+        binding.containerTapeSaturationDrive.alpha = if (app.audioEngine.isTapeSaturationEnabled) 1.0f else 0.4f
+
+        binding.seekTapeSaturationDrive.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                val driveDb = progress / 10.0f
+                binding.tvTapeSaturationDrive.text = String.format(Locale.US, "+%.1f dB", driveDb)
+                if (fromUser) {
+                    fxController.setTapeSaturationDriveDb(driveDb)
+                    updateBiquadVisualizer()
+                }
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                seekBar?.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            }
+        })
 
         // 6. Binaural Crossfeed / Soundstage Fader
         binding.seekCrossfeed.progress = fxController.crossfeedStrength / 10
@@ -1130,6 +1155,7 @@ class DrawerFragment : Fragment() {
         }
         binding.btnThemeSonyHf.setOnClickListener { switchTheme(CassetteTheme.SONY_HF_90) }
         binding.btnThemeDenonHd.setOnClickListener { switchTheme(CassetteTheme.DENON_HD8_100) }
+        binding.btnThemeMetal81.setOnClickListener { switchTheme(CassetteTheme.METAL_81_RED) }
     }
 
     private fun updateThemeButtonsVisual() {
@@ -1149,6 +1175,7 @@ class DrawerFragment : Fragment() {
         binding.btnThemeStudioReel.backgroundTintList = if (curId == CassetteTheme.REEL_TO_REEL_STUDIO.id) activeColor else ColorStateList.valueOf(Color.parseColor("#241B14"))
         binding.btnThemeSonyHf.backgroundTintList = if (curId == CassetteTheme.SONY_HF_90.id) activeColor else ColorStateList.valueOf(Color.parseColor("#181A20"))
         binding.btnThemeDenonHd.backgroundTintList = if (curId == CassetteTheme.DENON_HD8_100.id) activeColor else ColorStateList.valueOf(Color.parseColor("#141318"))
+        binding.btnThemeMetal81.backgroundTintList = if (curId == CassetteTheme.METAL_81_RED.id) activeColor else ColorStateList.valueOf(Color.parseColor("#261014"))
 
         binding.tvActiveThemeName.text = themeManager.currentTheme.value.name
     }
@@ -1172,6 +1199,27 @@ class DrawerFragment : Fragment() {
                 "DAP Hardware Mode Disabled"
             }
             Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+        }
+
+        // 0c. Cassette Battery Saver (30 FPS)
+        binding.switchBatterySaverKinematics.isChecked = prefs.getBoolean("pref_battery_saver_kinematics", false)
+        binding.switchBatterySaverKinematics.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean("pref_battery_saver_kinematics", isChecked).apply()
+            val msg = if (isChecked) "Cassette Battery Saver: 30 FPS Active 🔋" else "Cassette High-Performance: 60 FPS ✨"
+            Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+        }
+
+        // 0d. Walkman Physical HOLD Switch Lock
+        binding.switchWalkmanHold.isChecked = prefs.getBoolean("pref_walkman_hold_lock_keys", true)
+        binding.switchWalkmanHold.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean("pref_walkman_hold_lock_keys", isChecked).apply()
+        }
+
+        // 0e. MicroSD Low-RAM Buffer Tuning
+        binding.switchLowRamBuffer.isChecked = prefs.getBoolean("pref_low_ram_audio_buffer", true)
+        binding.switchLowRamBuffer.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean("pref_low_ram_audio_buffer", isChecked).apply()
+            Toast.makeText(requireContext(), "Buffer setting will apply on next playback session", Toast.LENGTH_SHORT).show()
         }
 
         // 1. Volume Long-Press Skip
@@ -1380,6 +1428,7 @@ class DrawerFragment : Fragment() {
         fun updateTapeBiasPills(formulation: AudioFxController.TapeFormulation) {
             val isType1 = formulation == AudioFxController.TapeFormulation.TYPE_I_NORMAL
             val isType2 = formulation == AudioFxController.TapeFormulation.TYPE_II_CHROME
+            val isType3 = formulation == AudioFxController.TapeFormulation.TYPE_III_FERRICHROME
             val isType4 = formulation == AudioFxController.TapeFormulation.TYPE_IV_METAL
 
             binding.btnTapeType1.setTextColor(if (isType1) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
@@ -1387,6 +1436,9 @@ class DrawerFragment : Fragment() {
 
             binding.btnTapeType2.setTextColor(if (isType2) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
             binding.btnTapeType2.backgroundTintList = ColorStateList.valueOf(if (isType2) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+
+            binding.btnTapeType3.setTextColor(if (isType3) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnTapeType3.backgroundTintList = ColorStateList.valueOf(if (isType3) Color.parseColor("#16261B") else Color.parseColor("#242731"))
 
             binding.btnTapeType4.setTextColor(if (isType4) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
             binding.btnTapeType4.backgroundTintList = ColorStateList.valueOf(if (isType4) Color.parseColor("#16261B") else Color.parseColor("#242731"))
@@ -1424,6 +1476,13 @@ class DrawerFragment : Fragment() {
             it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
             Toast.makeText(requireContext(), "Tape Bias: Type II Chrome (70µs)", Toast.LENGTH_SHORT).show()
         }
+        binding.btnTapeType3.setOnClickListener {
+            app.audioEngine.setTapeFormulation(AudioFxController.TapeFormulation.TYPE_III_FERRICHROME)
+            updateTapeBiasPills(AudioFxController.TapeFormulation.TYPE_III_FERRICHROME)
+            app.audioEngine.foleyEngine.playSwitchSnap()
+            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            Toast.makeText(requireContext(), "Tape Bias: Type III FeCr (70µs)", Toast.LENGTH_SHORT).show()
+        }
         binding.btnTapeType4.setOnClickListener {
             app.audioEngine.setTapeFormulation(AudioFxController.TapeFormulation.TYPE_IV_METAL)
             updateTapeBiasPills(AudioFxController.TapeFormulation.TYPE_IV_METAL)
@@ -1453,6 +1512,46 @@ class DrawerFragment : Fragment() {
             it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
             Toast.makeText(requireContext(), "Dolby NR: C (20dB High Shelf Cut)", Toast.LENGTH_SHORT).show()
         }
+
+        // 9b. VU Meter Illumination Modes
+        fun updateVuTonePills(tone: com.hana.spindle.ui.eq.DualAnalogVuMeterView.BacklightTone) {
+            val isAmber = tone == com.hana.spindle.ui.eq.DualAnalogVuMeterView.BacklightTone.WARM_TUNGSTEN
+            val isCyan = tone == com.hana.spindle.ui.eq.DualAnalogVuMeterView.BacklightTone.MCINTOSH_CYAN
+            val isGreen = tone == com.hana.spindle.ui.eq.DualAnalogVuMeterView.BacklightTone.STUDIO_MINT
+            val isCream = tone == com.hana.spindle.ui.eq.DualAnalogVuMeterView.BacklightTone.PARCHMENT
+
+            binding.btnVuToneAmber.setTextColor(if (isAmber) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnVuToneAmber.backgroundTintList = ColorStateList.valueOf(if (isAmber) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+
+            binding.btnVuToneCyan.setTextColor(if (isCyan) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnVuToneCyan.backgroundTintList = ColorStateList.valueOf(if (isCyan) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+
+            binding.btnVuToneGreen.setTextColor(if (isGreen) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnVuToneGreen.backgroundTintList = ColorStateList.valueOf(if (isGreen) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+
+            binding.btnVuToneCream.setTextColor(if (isCream) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnVuToneCream.backgroundTintList = ColorStateList.valueOf(if (isCream) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+        }
+
+        val currentSavedToneName = prefs.getString("pref_vu_backlight_tone", com.hana.spindle.ui.eq.DualAnalogVuMeterView.BacklightTone.WARM_TUNGSTEN.name)
+        val initialTone = try {
+            com.hana.spindle.ui.eq.DualAnalogVuMeterView.BacklightTone.valueOf(currentSavedToneName ?: "")
+        } catch (_: Exception) {
+            com.hana.spindle.ui.eq.DualAnalogVuMeterView.BacklightTone.WARM_TUNGSTEN
+        }
+        updateVuTonePills(initialTone)
+
+        fun selectVuTone(tone: com.hana.spindle.ui.eq.DualAnalogVuMeterView.BacklightTone) {
+            prefs.edit().putString("pref_vu_backlight_tone", tone.name).apply()
+            updateVuTonePills(tone)
+            app.audioEngine.foleyEngine.playSwitchSnap()
+            Toast.makeText(requireContext(), "VU Backlight: ${tone.nameLabel}", Toast.LENGTH_SHORT).show()
+        }
+
+        binding.btnVuToneAmber.setOnClickListener { selectVuTone(com.hana.spindle.ui.eq.DualAnalogVuMeterView.BacklightTone.WARM_TUNGSTEN) }
+        binding.btnVuToneCyan.setOnClickListener { selectVuTone(com.hana.spindle.ui.eq.DualAnalogVuMeterView.BacklightTone.MCINTOSH_CYAN) }
+        binding.btnVuToneGreen.setOnClickListener { selectVuTone(com.hana.spindle.ui.eq.DualAnalogVuMeterView.BacklightTone.STUDIO_MINT) }
+        binding.btnVuToneCream.setOnClickListener { selectVuTone(com.hana.spindle.ui.eq.DualAnalogVuMeterView.BacklightTone.PARCHMENT) }
     }
 
     private fun applyDrawerTheme(theme: CassetteTheme) {
@@ -2055,10 +2154,10 @@ class DrawerFragment : Fragment() {
                         }
 
                         if (metrics.isBitPerfect) {
-                            b.tvBitPerfectBadge.text = "● HI-RES PASSTHROUGH"
+                            b.tvBitPerfectBadge.text = "● DIRECT · NO DSP"
                             b.tvBitPerfectBadge.setTextColor(if (isEink) Color.BLACK else Color.parseColor("#00E676"))
                         } else {
-                            b.tvBitPerfectBadge.text = "AudioFlinger Resampled"
+                            b.tvBitPerfectBadge.text = "DSP / mixer active"
                             b.tvBitPerfectBadge.setTextColor(if (isEink) Color.BLACK else Color.parseColor("#F59E0B"))
                         }
                     }
@@ -2109,6 +2208,8 @@ class DrawerFragment : Fragment() {
             updateThemeButtonsVisual()
             (requireActivity().application as? SpindleApp)?.audioEngine?.let { engine ->
                 binding.switchTapeSaturation.isChecked = engine.isTapeSaturationEnabled
+                binding.seekTapeSaturationDrive.isEnabled = engine.isTapeSaturationEnabled
+                binding.containerTapeSaturationDrive.alpha = if (engine.isTapeSaturationEnabled) 1.0f else 0.4f
             }
         }
 

@@ -228,7 +228,7 @@ Executed the model drafted in `MASTER_DOCUMENTATION.md` §8.6, maintaining the o
 1. **Spindle Lite** — stays 100% free forever, sideload-only, zero ads, zero DRM.
 2. **Spindle Standard** — free core remains fully featured, zero ads, zero recurring fees.
 3. **Studio Collector** — one-time lifetime pass ($2.99 – $3.99 / $5.99 – $7.99) under `LICENSE-STUDIO.md`:
-   - `StudioUnlockManager.kt`: Implemented offline HMAC-SHA256 sponsor token validation (`SPINDLE-STUDIO-XXXX-YYYY`) alongside Google Play Billing fallback, ensuring full offline functionality on de-googled audiophile DAPs.
+   - `StudioUnlockManager.kt`: Implemented offline ECDSA P-256 signed sponsor token validation (`SPINDLE-STUDIO-<ID>-<signature>`) alongside Google Play Billing fallback, ensuring full offline functionality on de-googled audiophile DAPs.
    - `DialogStudioUnlock.kt`: Bespoke industrial modal presenting the Anti-Subscription manifesto, feature breakdown, token redemption, and sponsor links.
    - Gated features: Analog tape saturation DSP, personalized laser nameplate engraving, procedural cassette foley clacks, and studio collector skins.
 4. **Sponsorship channel** — direct PayPal and GitHub Sponsors pathways operational with zero platform lock-in.
@@ -278,4 +278,4 @@ Brand-Safety   Canonical Naming     Hygiene         Organization      Disclosure
 - **Phase 4:** "Bit-Perfect" label reflects verified state only; hardware EQ band count disclosed; Lite has MediaSession; crossfade and album-mode ReplayGain ported to Main.
 - **Phase 5:** Lite ships lyrics + widget; Main ships optional DAP Mode; EQ parametric mode added.
 - **Phase 6:** Every published screenshot uses only documented `BRANDING.md` tokens; Lite has a published screenshot set.
-- **Phase 7 (Completed):** Studio Collector live under `LICENSE-STUDIO.md` with dual Google Play In-App Billing + HMAC-SHA256 offline sponsor token verification (`SPINDLE-STUDIO-XXXX-YYYY`). Full v1.4.0-STUDIO suite delivered: 10.5" Studio Reel-to-Reel visual deck, harmonic analog tape saturation DSP (+3.2dB @ 63Hz flux bump), procedural foley engine with continuous pitch-ramping motor spool loop ($0.92\times \to 1.65\times$), and custom laser nameplate engraving. Unit tests passing 100%.
+- **Phase 7 (Completed):** Studio Collector live under `LICENSE-STUDIO.md` with dual Google Play In-App Billing + offline ECDSA-signed sponsor token verification. Full v1.4.0-STUDIO suite delivered: 10.5" Studio Reel-to-Reel visual deck, harmonic analog tape saturation DSP (+3.2dB @ 63Hz flux bump), procedural foley engine with continuous pitch-ramping motor spool loop ($0.92\times \to 1.65\times$), and custom laser nameplate engraving. Unit tests passing 100%.

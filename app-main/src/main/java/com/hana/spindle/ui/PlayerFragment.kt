@@ -139,6 +139,7 @@ class PlayerFragment : Fragment() {
         super.onResume()
         requireContext().registerReceiver(batteryReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
         syncState()
+        syncVuBacklightPreference()
     }
 
     override fun onPause() {
@@ -211,19 +212,21 @@ class PlayerFragment : Fragment() {
 
                 // Dynamic cover art bitmap & accent color
                 viewLifecycleOwner.lifecycleScope.launch {
-                    val coverBitmap = app.imageLoader.loadCover(song.path, 160, 160)
+                    val coverBitmap = app.imageLoader.loadCover(song.path, 160, 160, song.album, song.artist)
                     currentAlbumCoverBitmap = coverBitmap
                     _binding?.verticalDeckView?.albumArtBitmap = coverBitmap
                     val accentColor = app.imageLoader.extractAccentColor(song.path)
                     _binding?.verticalDeckView?.setCoverAccentColor(accentColor)
 
                     if (isJCardVisible) {
+                        val usbDac = app.audioEngine.metricsTracker.queryActiveUsbDac()
                         _binding?.jCardLinerView?.setQueueData(
                             queue = audioEngine.currentQueueFlow.value,
                             activeIndex = audioEngine.currentQueueIndexFlow.value,
                             albumCover = coverBitmap,
                             audioFormat = currentFormatString,
-                            theme = themeManager.currentTheme.value
+                            theme = themeManager.currentTheme.value,
+                            usbDacInfo = usbDac
                         )
                     }
                 }
@@ -287,6 +290,14 @@ class PlayerFragment : Fragment() {
                     b.verticalDeckView.bluetoothBatteryPct = metrics.bluetoothBatteryPct
                     b.verticalDeckView.isBluetoothConnected = metrics.isBluetoothConnected
                     b.verticalDeckView.bluetoothConnectionStatus = metrics.bluetoothConnectionStatus
+                    b.verticalDeckView.isUsbDacConnected = metrics.isUsbDacConnected
+                    b.verticalDeckView.usbDacName = metrics.usbDacName
+                    b.verticalDeckView.usbDacBrandBadge = metrics.usbDacBrandBadge
+                    b.verticalDeckView.usbDacMaxSampleRateHz = metrics.usbDacMaxSampleRateHz
+                    b.verticalDeckView.usbDacBitDepthBits = metrics.usbDacBitDepthBits
+
+                    val usbDac = app.audioEngine.metricsTracker.queryActiveUsbDac()
+                    b.jCardLinerView.updateUsbDacInfo(usbDac)
                 }
             }
         }
@@ -448,7 +459,7 @@ class PlayerFragment : Fragment() {
 
         // Metal-81 Red Controls
         binding.metal81ChassisView.onPlayClicked = { audioEngine.togglePlayPause() }
-        binding.metal81ChassisView.onStopClicked = { audioEngine.pause() }
+        binding.metal81ChassisView.onStopClicked = { audioEngine.stop() }
         binding.metal81ChassisView.onEjectClicked = {
             (activity as? MainActivity)?.navigateToVault()
         }
@@ -507,7 +518,8 @@ class PlayerFragment : Fragment() {
         val cover = currentAlbumCoverBitmap
         val format = currentFormatString
         val theme = themeManager.currentTheme.value
-        jcard.setQueueData(queue, activeIdx, cover, format, theme)
+        val usbDac = audioEngine.metricsTracker.queryActiveUsbDac()
+        jcard.setQueueData(queue, activeIdx, cover, format, theme, usbDac)
 
         if (!animate) {
             deck.visibility = View.GONE
@@ -885,6 +897,21 @@ class PlayerFragment : Fragment() {
 
     fun openQueueBottomSheet() {
         QueueBottomSheet().show(childFragmentManager, "QueueBottomSheet")
+    }
+
+    private fun syncVuBacklightPreference() {
+        val b = _binding ?: return
+        val prefs = requireContext().getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+        val savedToneName = prefs.getString("pref_vu_backlight_tone", DualAnalogVuMeterView.BacklightTone.WARM_TUNGSTEN.name)
+        val tone = try {
+            DualAnalogVuMeterView.BacklightTone.valueOf(savedToneName ?: "")
+        } catch (_: Exception) {
+            DualAnalogVuMeterView.BacklightTone.WARM_TUNGSTEN
+        }
+        if (b.vuMeterView.currentBacklight != tone) {
+            b.vuMeterView.currentBacklight = tone
+            updateVuBacklightButton(tone)
+        }
     }
 
     override fun onDestroyView() {

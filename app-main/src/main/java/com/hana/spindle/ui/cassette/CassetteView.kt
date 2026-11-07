@@ -70,7 +70,10 @@ class CassetteView @JvmOverloads constructor(
                     startRotation()
                 }
             } else {
-                stopRotation()
+                // If the flywheel still has momentum, let the animator continue coast-down damping
+                if (rotationAnimator?.isRunning != true && flywheelTracker.currentSpeed > 0f) {
+                    startRotation()
+                }
             }
             invalidate()
         }
@@ -81,11 +84,22 @@ class CassetteView @JvmOverloads constructor(
             invalidate()
         }
 
-    // Animation state
+    // Animation & Flywheel Inertia state
     private var reelAngle1 = 0f
     private var reelAngle2 = 0f
     private var tapeTravelOffset = 0f
     private var rotationAnimator: ValueAnimator? = null
+    private val flywheelTracker = SpindleKinematics.FlywheelInertiaTracker()
+    private var lastFrameTimeMs = 0L
+    private var lastDrawnFrameTimeMs = 0L
+
+    // Zero-allocation reusable state holders
+    private val cachedSpoolState = SpindleKinematics.SpoolState()
+    private val cachedInertia = SpindleKinematics.ReelInertia()
+
+    // Hardware & Battery Conservation (30 FPS vs 60 FPS throttle & Screen-off suspend)
+    var batterySaverMode: Boolean = false
+    private var isSuspendedForVisibility = false
 
     // Pre-allocated Paints (Zero allocation in onDraw)
     private val shellPaint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -283,17 +297,49 @@ class CassetteView @JvmOverloads constructor(
         }
     }
 
+
     private fun startRotation() {
         if (rotationAnimator?.isRunning == true) return
-        rotationAnimator = ValueAnimator.ofFloat(0f, 360f).apply {
-            duration = 2000L
+        if (windowVisibility != VISIBLE) {
+            isSuspendedForVisibility = true
+            return
+        }
+        lastFrameTimeMs = android.os.SystemClock.uptimeMillis()
+        lastDrawnFrameTimeMs = lastFrameTimeMs
+        rotationAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 1000L
             repeatCount = ValueAnimator.INFINITE
             interpolator = LinearInterpolator()
             addUpdateListener {
-                val kinematicsState = kinematics.calculate(progress, baseRadius)
-                reelAngle1 = (reelAngle1 + 4f * kinematicsState.leftAngularSpeed) % 360f
-                reelAngle2 = (reelAngle2 + 4f * kinematicsState.rightAngularSpeed) % 360f
-                tapeTravelOffset = (tapeTravelOffset + 2.8f * kinematicsState.leftAngularSpeed) % 40f
+                val now = android.os.SystemClock.uptimeMillis()
+
+                // Battery Saver Mode: Throttle from 60 FPS down to 30 FPS (~33ms) to save CPU & GPU compositing power
+                if (batterySaverMode && (now - lastDrawnFrameTimeMs) < 32L) {
+                    return@addUpdateListener
+                }
+                lastDrawnFrameTimeMs = now
+
+                val deltaSec = if (lastFrameTimeMs > 0L) {
+                    ((now - lastFrameTimeMs) / 1000f).coerceIn(0.001f, 0.050f)
+                } else {
+                    0.016f
+                }
+                lastFrameTimeMs = now
+
+                // Zero-heap allocation: Reuse pre-allocated state instances
+                kinematics.calculateInertia(progress, cachedInertia)
+                val targetSpeed = if (isPlaying) 1.0f else 0.0f
+                val effectiveSpeed = flywheelTracker.step(targetSpeed, deltaSec, (cachedInertia.leftInertia + cachedInertia.rightInertia) * 0.5f)
+
+                if (effectiveSpeed <= 0f && !isPlaying) {
+                    stopRotation()
+                    return@addUpdateListener
+                }
+
+                kinematics.calculate(progress, baseRadius, cachedSpoolState)
+                reelAngle1 = (reelAngle1 + 4f * cachedSpoolState.leftAngularSpeed * effectiveSpeed) % 360f
+                reelAngle2 = (reelAngle2 + 4f * cachedSpoolState.rightAngularSpeed * effectiveSpeed) % 360f
+                tapeTravelOffset = (tapeTravelOffset + 2.8f * cachedSpoolState.leftAngularSpeed * effectiveSpeed) % 40f
                 invalidate()
             }
             start()
@@ -303,6 +349,7 @@ class CassetteView @JvmOverloads constructor(
     private fun stopRotation() {
         rotationAnimator?.cancel()
         rotationAnimator = null
+        lastFrameTimeMs = 0L
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -552,7 +599,9 @@ class CassetteView @JvmOverloads constructor(
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        if (isPlaying && rotationAnimator?.isRunning != true) {
+        val prefs = context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+        batterySaverMode = prefs.getBoolean("pref_battery_saver_kinematics", false)
+        if (windowVisibility == View.VISIBLE && (isPlaying || flywheelTracker.currentSpeed > 0f) && rotationAnimator?.isRunning != true) {
             startRotation()
         }
     }
@@ -560,27 +609,43 @@ class CassetteView @JvmOverloads constructor(
     override fun onVisibilityAggregated(isVisible: Boolean) {
         super.onVisibilityAggregated(isVisible)
         if (isVisible) {
-            if (isPlaying && rotationAnimator?.isRunning != true) {
-                startRotation()
+            if (isSuspendedForVisibility || isPlaying || flywheelTracker.currentSpeed > 0f) {
+                isSuspendedForVisibility = false
+                if (rotationAnimator?.isRunning != true) {
+                    lastFrameTimeMs = android.os.SystemClock.uptimeMillis()
+                    lastDrawnFrameTimeMs = lastFrameTimeMs
+                    startRotation()
+                }
             }
         } else {
-            stopRotation()
+            if (rotationAnimator?.isRunning == true) {
+                isSuspendedForVisibility = true
+                stopRotation()
+            }
         }
     }
 
     override fun onWindowVisibilityChanged(visibility: Int) {
         super.onWindowVisibilityChanged(visibility)
         if (visibility == View.VISIBLE) {
-            if (isPlaying && rotationAnimator?.isRunning != true) {
-                startRotation()
+            if (isSuspendedForVisibility || isPlaying || flywheelTracker.currentSpeed > 0f) {
+                isSuspendedForVisibility = false
+                if (rotationAnimator?.isRunning != true) {
+                    lastFrameTimeMs = android.os.SystemClock.uptimeMillis()
+                    lastDrawnFrameTimeMs = lastFrameTimeMs
+                    startRotation()
+                }
             }
         } else {
-            stopRotation()
+            if (rotationAnimator?.isRunning == true) {
+                isSuspendedForVisibility = true
+                stopRotation()
+            }
         }
     }
 
     override fun onDetachedFromWindow() {
-        super.onDetachedFromWindow()
         stopRotation()
+        super.onDetachedFromWindow()
     }
 }

@@ -9,7 +9,8 @@ data class AlbumItem(
     val trackCount: Int,
     val representativePath: String,
     val year: Int = 0,
-    val format: String = "FLAC"
+    val format: String = "FLAC",
+    val hasCoverArt: Boolean = false
 ) {
     val isMixtape: Boolean get() = format == FORMAT_MIXTAPE || format == FORMAT_SMART_MIXTAPE
     val isSmartMixtape: Boolean get() = format == FORMAT_SMART_MIXTAPE

@@ -38,7 +38,7 @@
 
 ### 5. 🛡️ Fair Ownership & Anti-Subscription Licensing
 - **No Recurring Fees:** Lifetime collector pass ($2.99 – $3.99) with zero subscription lock-in.
-- **Dual Verification:** Supports Google Play In-App Billing AND cryptographic offline HMAC-SHA256 sponsor tokens (`SPINDLE-STUDIO-XXXX-YYYY`) for de-googled audiophile DAPs (Fiio, Hiby, Cayin, Astell&Kern).
+- **Dual Verification:** Supports Google Play In-App Billing AND offline ECDSA-signed sponsor tokens (`SPINDLE-STUDIO-<ID>-<signature>`; v1.4.0 originally shipped a weaker scheme, replaced in 1.7.x) for de-googled audiophile DAPs (Fiio, Hiby, Cayin, Astell&Kern).
 - **Personal Laser Nameplate Engraving:** Custom callsign or serial number engraved directly onto the player faceplate.
 
 ---

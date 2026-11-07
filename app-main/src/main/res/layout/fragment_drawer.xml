@@ -757,6 +757,55 @@
                                 android:checked="false" />
                         </LinearLayout>
 
+                        <!-- 1b. Tape Saturation Drive Gain Control (0.0 to +6.0 dB) -->
+                        <LinearLayout
+                            android:id="@+id/containerTapeSaturationDrive"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:layout_marginTop="2dp"
+                            android:layout_marginBottom="8dp"
+                            android:paddingHorizontal="2dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical">
+
+                                <TextView
+                                    android:id="@+id/tvTapeSaturationDriveLabel"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="TAPE DRIVE / FLUX LEVEL"
+                                    android:textColor="#71717A"
+                                    android:textStyle="bold"
+                                    android:textSize="9.5sp"
+                                    android:fontFamily="monospace" />
+
+                                <TextView
+                                    android:id="@+id/tvTapeSaturationDrive"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="+3.0 dB"
+                                    android:textColor="#F97316"
+                                    android:textStyle="bold"
+                                    android:textSize="10.5sp"
+                                    android:fontFamily="monospace" />
+                            </LinearLayout>
+
+                            <SeekBar
+                                android:id="@+id/seekTapeSaturationDrive"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:max="60"
+                                android:progress="30"
+                                android:progressTint="#F97316"
+                                android:thumbTint="#F97316"
+                                android:layout_marginTop="2dp" />
+                        </LinearLayout>
+
                         <!-- 2. Binaural Crossfeed / Soundstage Expansion -->
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -1348,6 +1397,21 @@
                                     android:paddingHorizontal="10dp"
                                     android:layout_marginStart="5dp"
                                     app:cornerRadius="8dp" />
+
+                                <Button
+                                    android:id="@+id/btnThemeMetal81"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="38dp"
+                                    android:text="METAL-81 RED"
+                                    android:textColor="#EF4444"
+                                    android:textSize="9.5sp"
+                                    android:textStyle="bold"
+                                    android:backgroundTint="#261014"
+                                    android:insetTop="0dp"
+                                    android:insetBottom="0dp"
+                                    android:paddingHorizontal="10dp"
+                                    android:layout_marginStart="5dp"
+                                    app:cornerRadius="8dp" />
                             </LinearLayout>
                         </HorizontalScrollView>
 
@@ -1509,6 +1573,135 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:checked="false" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="#1E2026"
+                            android:layout_marginVertical="12dp" />
+
+                        <!-- Cassette Battery Saver 30 FPS Mode -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Cassette Battery Saver (30 FPS)"
+                                    android:textColor="@color/white"
+                                    android:textStyle="bold"
+                                    android:textSize="13.5sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Throttle tape kinematics from 60 FPS to 30 FPS to save CPU and battery power."
+                                    android:textColor="#A1A1AA"
+                                    android:textSize="11sp"
+                                    android:layout_marginTop="2dp" />
+                            </LinearLayout>
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/switchBatterySaverKinematics"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:checked="false" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="#1E2026"
+                            android:layout_marginVertical="12dp" />
+
+                        <!-- Walkman HOLD Switch Lock -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Walkman HOLD Switch Lock"
+                                    android:textColor="@color/white"
+                                    android:textStyle="bold"
+                                    android:textSize="13.5sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Lock hardware buttons against accidental pocket presses when HOLD is active."
+                                    android:textColor="#A1A1AA"
+                                    android:textSize="11sp"
+                                    android:layout_marginTop="2dp" />
+                            </LinearLayout>
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/switchWalkmanHold"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:checked="true" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="#1E2026"
+                            android:layout_marginVertical="12dp" />
+
+                        <!-- MicroSD Low-RAM Audio Buffer -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="MicroSD Low-RAM Buffer"
+                                    android:textColor="@color/white"
+                                    android:textStyle="bold"
+                                    android:textSize="13.5sp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Compact 4MB heap buffer for smooth gapless MicroSD playback with low memory footprint."
+                                    android:textColor="#A1A1AA"
+                                    android:textSize="11sp"
+                                    android:layout_marginTop="2dp" />
+                            </LinearLayout>
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/switchLowRamBuffer"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:checked="true" />
                         </LinearLayout>
 
                         <View
@@ -2218,9 +2411,9 @@
                                 android:layout_width="0dp"
                                 android:layout_height="36dp"
                                 android:layout_weight="1"
-                                android:text="TYPE I (NORM)"
+                                android:text="TYPE I"
                                 android:textColor="@color/white"
-                                android:textSize="10sp"
+                                android:textSize="9.5sp"
                                 android:textStyle="bold"
                                 android:backgroundTint="#242731"
                                 android:insetTop="0dp"
@@ -2233,10 +2426,26 @@
                                 android:layout_width="0dp"
                                 android:layout_height="36dp"
                                 android:layout_weight="1"
-                                android:layout_marginStart="6dp"
-                                android:text="TYPE II (CrO2)"
+                                android:layout_marginStart="4dp"
+                                android:text="TYPE II"
                                 android:textColor="@color/white"
-                                android:textSize="10sp"
+                                android:textSize="9.5sp"
+                                android:textStyle="bold"
+                                android:backgroundTint="#242731"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="8dp" />
+
+                            <Button
+                                android:id="@+id/btnTapeType3"
+                                android:layout_width="0dp"
+                                android:layout_height="36dp"
+                                android:layout_weight="1"
+                                android:layout_marginStart="4dp"
+                                android:text="TYPE III"
+                                android:textColor="@color/white"
+                                android:textSize="9.5sp"
                                 android:textStyle="bold"
                                 android:backgroundTint="#242731"
                                 android:insetTop="0dp"
@@ -2249,10 +2458,10 @@
                                 android:layout_width="0dp"
                                 android:layout_height="36dp"
                                 android:layout_weight="1"
-                                android:layout_marginStart="6dp"
-                                android:text="TYPE IV (METAL)"
+                                android:layout_marginStart="4dp"
+                                android:text="TYPE IV"
                                 android:textColor="@color/white"
-                                android:textSize="10sp"
+                                android:textSize="9.5sp"
                                 android:textStyle="bold"
                                 android:backgroundTint="#242731"
                                 android:insetTop="0dp"
@@ -2324,6 +2533,94 @@
                                 android:text="DOLBY C"
                                 android:textColor="@color/white"
                                 android:textSize="11sp"
+                                android:textStyle="bold"
+                                android:backgroundTint="#242731"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="8dp" />
+                        </LinearLayout>
+
+                        <!-- VU Meter Illumination (Backlight Tone) -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="VU Meter Illumination"
+                            android:textColor="@color/white"
+                            android:textStyle="bold"
+                            android:textSize="13.5sp"
+                            android:layout_marginTop="14dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Dual analog galvanometer dial backlighting mode."
+                            android:textColor="#A1A1AA"
+                            android:textSize="11sp"
+                            android:layout_marginTop="2dp"
+                            android:layout_marginBottom="8dp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <Button
+                                android:id="@+id/btnVuToneAmber"
+                                android:layout_width="0dp"
+                                android:layout_height="36dp"
+                                android:layout_weight="1"
+                                android:text="TUNGSTEN"
+                                android:textColor="@color/white"
+                                android:textSize="9.5sp"
+                                android:textStyle="bold"
+                                android:backgroundTint="#242731"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="8dp" />
+
+                            <Button
+                                android:id="@+id/btnVuToneCyan"
+                                android:layout_width="0dp"
+                                android:layout_height="36dp"
+                                android:layout_weight="1"
+                                android:layout_marginStart="4dp"
+                                android:text="MCINTOSH"
+                                android:textColor="@color/white"
+                                android:textSize="9.5sp"
+                                android:textStyle="bold"
+                                android:backgroundTint="#242731"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="8dp" />
+
+                            <Button
+                                android:id="@+id/btnVuToneGreen"
+                                android:layout_width="0dp"
+                                android:layout_height="36dp"
+                                android:layout_weight="1"
+                                android:layout_marginStart="4dp"
+                                android:text="NAGRA"
+                                android:textColor="@color/white"
+                                android:textSize="9.5sp"
+                                android:textStyle="bold"
+                                android:backgroundTint="#242731"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="8dp" />
+
+                            <Button
+                                android:id="@+id/btnVuToneCream"
+                                android:layout_width="0dp"
+                                android:layout_height="36dp"
+                                android:layout_weight="1"
+                                android:layout_marginStart="4dp"
+                                android:text="VINTAGE"
+                                android:textColor="@color/white"
+                                android:textSize="9.5sp"
                                 android:textStyle="bold"
                                 android:backgroundTint="#242731"
                                 android:insetTop="0dp"
