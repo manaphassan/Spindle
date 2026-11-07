@@ -260,7 +260,7 @@ class AudioEngine(
                 IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY)
             )
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.w("AudioEngine", "Could not register becoming-noisy receiver", e)
         }
 
         // High-resolution audio attributes

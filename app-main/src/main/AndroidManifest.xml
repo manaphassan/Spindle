@@ -26,10 +26,6 @@
     <!-- Haptic Feedback for Mechanical Button Clicks -->
     <uses-permission android:name="android.permission.VIBRATE" />
 
-    <!-- Battery Telemetry for Metal-81 Hardware LED -->
-    <uses-permission android:name="android.permission.BATTERY_STATS"
-        tools:ignore="ProtectedPermissions" />
-
     <!-- Bluetooth Audio & Battery Telemetry -->
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
@@ -42,7 +38,9 @@
 
     <application
         android:name=".SpindleApp"
-        android:allowBackup="true"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -72,7 +70,7 @@
         <!-- Dedicated Full-Screen Retro Cassette Keyguard Lockscreen Activity -->
         <activity
             android:name=".ui.LockscreenActivity"
-            android:exported="true"
+            android:exported="false"
             android:launchMode="singleInstance"
             android:showWhenLocked="true"
             android:turnScreenOn="true"
@@ -98,14 +96,16 @@
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
                 <action android:name="com.hana.spindle.widget.ACTION_UPDATE_WIDGET" />
-                <action android:name="com.hana.spindle.widget.ACTION_WIDGET_PLAY_PAUSE" />
-                <action android:name="com.hana.spindle.widget.ACTION_WIDGET_PREV" />
-                <action android:name="com.hana.spindle.widget.ACTION_WIDGET_NEXT" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/spindle_widget_info" />
         </receiver>
+
+        <!-- Widget transport buttons: private, reachable only via this app's own PendingIntents -->
+        <receiver
+            android:name=".widget.WidgetControlReceiver"
+            android:exported="false" />
 
         <!-- Dedicated Hardware Button Receiver for DAP & Pocket Screen-Off Control (§8.2) -->
         <receiver

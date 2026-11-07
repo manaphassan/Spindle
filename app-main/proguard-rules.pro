@@ -15,7 +15,6 @@
 -keep class com.hana.spindle.ui.catalog.** { *; }
 
 # 2. Room Database Models & DAOs
--keep class androidx.room.** { *; }
 -keep class * extends androidx.room.RoomDatabase
 -keep @androidx.room.Dao interface * { *; }
 -keep @androidx.room.Entity class * { *; }
@@ -23,10 +22,7 @@
 -dontwarn androidx.room.paging.**
 
 # 3. AndroidX Media3 Audio Architecture
--keep class androidx.media3.session.** { *; }
--keep class androidx.media3.exoplayer.** { *; }
--keep class androidx.media3.extractor.** { *; }
--keep class androidx.media3.common.** { *; }
+# Media3 ships its own consumer ProGuard rules; blanket keeps defeated R8 shrinking.
 -dontwarn androidx.media3.**
 
 # 4. Spindle Audio Engine & DSP Controllers

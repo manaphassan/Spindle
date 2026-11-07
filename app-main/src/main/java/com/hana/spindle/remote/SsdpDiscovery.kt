@@ -173,6 +173,7 @@ class SsdpDiscovery(
     }
 
     private fun parseDeviceDescription(locationUrl: String): RemoteDevice? {
+        if (!RemoteHostPolicy.isAllowedUrl(locationUrl)) return null
         var conn: HttpURLConnection? = null
         return try {
             val url = URL(locationUrl)

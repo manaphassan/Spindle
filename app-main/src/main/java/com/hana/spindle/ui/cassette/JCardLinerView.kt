@@ -233,7 +233,7 @@ class JCardLinerView @JvmOverloads constructor(
             val brand = dac.brandBadge.takeIf { it.isNotBlank() } ?: "USB DAC"
             val bitStr = if (dac.bitDepthBits > 0) "${dac.bitDepthBits}-bit / " else ""
             val rateStr = if (dac.maxSampleRateHz > 0) "${dac.maxSampleRateHz / 1000}kHz" else ""
-            val dacSpec = if (bitStr.isNotEmpty() || rateStr.isNotEmpty()) "$bitStr$rateStr" else "BIT-PERFECT"
+            val dacSpec = if (bitStr.isNotEmpty() || rateStr.isNotEmpty()) "$bitStr$rateStr" else "DIRECT"
             tvJCardAudioSpecs.text = "$fmt • $brand DIRECT • $dacSpec"
         } else {
             tvJCardAudioSpecs.text = "$fmt • Direct PCM"

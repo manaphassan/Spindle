@@ -2154,10 +2154,10 @@ class DrawerFragment : Fragment() {
                         }
 
                         if (metrics.isBitPerfect) {
-                            b.tvBitPerfectBadge.text = "● HI-RES PASSTHROUGH"
+                            b.tvBitPerfectBadge.text = "● DIRECT · NO DSP"
                             b.tvBitPerfectBadge.setTextColor(if (isEink) Color.BLACK else Color.parseColor("#00E676"))
                         } else {
-                            b.tvBitPerfectBadge.text = "AudioFlinger Resampled"
+                            b.tvBitPerfectBadge.text = "DSP / mixer active"
                             b.tvBitPerfectBadge.setTextColor(if (isEink) Color.BLACK else Color.parseColor("#F59E0B"))
                         }
                     }

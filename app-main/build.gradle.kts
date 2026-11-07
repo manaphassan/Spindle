@@ -66,6 +66,15 @@ android {
         buildConfig = true
     }
 
+    lint {
+        // Existing findings are frozen in the baseline; CI fails only on NEW errors.
+        baseline = file("lint-baseline.xml")
+    }
+
+    kapt {
+        arguments { arg("room.schemaLocation", "$projectDir/schemas") }
+    }
+
     testOptions {
         unitTests.isReturnDefaultValues = true
     }
@@ -86,7 +95,6 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
-    implementation("androidx.palette:palette-ktx:1.0.0")
 
     // Room Database (Offline indexing for 128GB MicroSD)
     val roomVersion = "2.6.1"

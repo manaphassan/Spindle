@@ -13,7 +13,7 @@ import androidx.room.RoomDatabase
         PlaylistSongCrossRef::class
     ],
     version = 6,
-    exportSchema = false
+    exportSchema = true
 )
 abstract class SpindleDatabase : RoomDatabase() {
 
@@ -71,7 +71,9 @@ abstract class SpindleDatabase : RoomDatabase() {
                     "spindle_music.db"
                 )
                 .addMigrations(MIGRATION_4_5, MIGRATION_5_6)
-                .fallbackToDestructiveMigration()
+                // Only pre-FTS schemas (v1-3, never released with migrations) may be rebuilt.
+                // Any other missing migration must fail loudly instead of wiping the library.
+                .fallbackToDestructiveMigrationFrom(1, 2, 3)
                 .build()
                 INSTANCE = instance
                 instance

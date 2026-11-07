@@ -321,7 +321,7 @@ class AudioFxController {
             // Re-apply cached settings
             applyEq()
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.w("AudioFxController", "Non-fatal", e)
         }
     }
 
@@ -337,7 +337,7 @@ class AudioFxController {
                 virtualizer?.setStrength(crossfeedStrength.toShort())
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.w("AudioFxController", "Non-fatal", e)
         }
     }
 
@@ -415,7 +415,7 @@ class AudioFxController {
             try {
                 bassBoost?.setStrength(bassBoostStrength.toShort())
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.w("AudioFxController", "Non-fatal", e)
             }
         }
     }
@@ -434,7 +434,7 @@ class AudioFxController {
             try {
                 virtualizer?.setStrength(crossfeedStrength.toShort())
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.w("AudioFxController", "Non-fatal", e)
             }
         }
     }
@@ -644,7 +644,7 @@ class AudioFxController {
                 eq.setBandLevel(hwBand.toShort(), millibels)
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.w("AudioFxController", "Non-fatal", e)
         }
     }
 
@@ -693,7 +693,7 @@ class AudioFxController {
             bassBoost?.release()
             virtualizer?.release()
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.w("AudioFxController", "Non-fatal", e)
         }
         equalizer = null
         bassBoost = null
