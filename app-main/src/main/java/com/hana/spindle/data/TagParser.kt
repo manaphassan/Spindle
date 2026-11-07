@@ -196,15 +196,14 @@ object TagParser {
             "front.jpg", "front.png", "front.jpeg",
             "artwork.jpg", "artwork.png"
         )
-        for (name in standardNames) {
-            val candidate = File(parentDir, name)
-            if (candidate.exists() && candidate.isFile && candidate.length() > 512L) {
-                folderArtPresentCache.put(path, true)
-                return true
-            }
-        }
-        folderArtPresentCache.put(path, false)
-        return false
+        // Case-insensitive match: Android/Linux file systems are case-sensitive, so "FRONT.PNG"
+        // or "Cover.JPG" would be missed by an exact-name lookup.
+        val names = standardNames.toHashSet()
+        val found = parentDir.listFiles()?.any { f ->
+            f.isFile && f.name.lowercase(java.util.Locale.ROOT) in names && f.length() > 512L
+        } ?: false
+        folderArtPresentCache.put(path, found)
+        return found
     }
 
     @Deprecated("Use parseTrack instead", ReplaceWith("parseTrack(file)"))
