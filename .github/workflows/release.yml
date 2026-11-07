@@ -51,7 +51,7 @@ jobs:
             if [ -z "${!v}" ]; then echo "Missing signing secret ($v); refusing to publish a debug-signed release."; exit 1; fi
           done
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: 17
