@@ -1260,7 +1260,17 @@ class DrawerFragment : Fragment() {
             prefs.edit().putBoolean(com.hana.spindle.playback.PREF_BITPERFECT_MIXER, isChecked).apply()
             val track = app.audioEngine.playbackState.value.currentTrack
             app.audioEngine.applyBitPerfectMixer(track?.sampleRate ?: 0, track?.bitDepth ?: 16)
+            app.audioEngine.refreshDopPolicy()
+            binding.switchDsdDop.isEnabled = isChecked && com.hana.spindle.playback.BitPerfectMixerController.isOsSupported
             app.audioEngine.metricsTracker.updateRouteTelemetry()
+        }
+        // 4b'. DSD over PCM (needs the bit-perfect mixer path; applies from the next DSD track)
+        binding.switchDsdDop.isChecked = prefs.getBoolean(com.hana.spindle.playback.extractor.PREF_DSD_DOP, false)
+        binding.switchDsdDop.isEnabled = binding.switchBitPerfectMixer.isChecked &&
+            com.hana.spindle.playback.BitPerfectMixerController.isOsSupported
+        binding.switchDsdDop.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean(com.hana.spindle.playback.extractor.PREF_DSD_DOP, isChecked).apply()
+            app.audioEngine.refreshDopPolicy()
         }
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {

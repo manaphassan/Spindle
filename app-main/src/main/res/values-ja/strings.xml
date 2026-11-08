@@ -20,4 +20,6 @@
     <string name="peq_reset">リセット</string>
     <string name="peq_parse_error">有効なフィルターが見つかりません</string>
     <string name="peq_applied">%1$d 件のフィルターを適用しました</string>
+    <string name="dsd_dop_title">DSD over PCM (DoP)</string>
+    <string name="dsd_dop_desc">DSDファイルをPCMへ変換せず、DoP対応USB DACへネイティブDSDとして送ります。ビットパーフェクト ミキサーのスイッチと、DoPレートに対応したDACが必要です。DoP中は音量、ReplayGain、フェードが無効になります。先に音量を下げてください。DoP非対応のDACでは大きなノイズとして再生されます。</string>
 </resources>

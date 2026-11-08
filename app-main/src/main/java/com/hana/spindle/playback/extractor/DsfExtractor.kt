@@ -38,6 +38,8 @@ class DsfExtractor : Extractor {
     private var pcmSampleRate: Int = 88200   // 88.2 kHz output PCM
     private var decimationRatio: Int = 32    // 2822400 / 88200 = 32
     private var blockSizePerChannel: Int = 4096
+    private var useDop: Boolean = false      // DoP 1.1 passthrough instead of PCM decimation
+    private var dopMarkerPhase: Int = 0
     private var totalSampleCount: Long = 0L
     private var durationUs: Long = 0L
 
@@ -167,6 +169,9 @@ class DsfExtractor : Extractor {
                 // Decimation configuration: target 88.2 kHz for DSD64/DSD128
                 decimationRatio = (dsdSampleRate / 88200).coerceAtLeast(32)
                 pcmSampleRate = dsdSampleRate / decimationRatio
+                useDop = DsdOutput.tryEnableDop(dsdSampleRate)
+                dopMarkerPhase = 0
+                if (useDop) pcmSampleRate = DopPacker.pcmRateFor(dsdSampleRate)
                 durationUs = if (dsdSampleRate > 0) {
                     (totalSampleCount * 1_000_000L) / dsdSampleRate
                 } else 0L
@@ -190,7 +195,7 @@ class DsfExtractor : Extractor {
                 dsdBlockBuffer = ByteArray(totalBlockSize)
 
                 // 24-bit PCM: 3 bytes per sample * (samples per channel) * channelCount
-                val pcmSamplesPerChannel = blockSizePerChannel * 8 / decimationRatio
+                val pcmSamplesPerChannel = if (useDop) blockSizePerChannel / 2 else blockSizePerChannel * 8 / decimationRatio
                 val pcmBlockBytes = pcmSamplesPerChannel * channelCount * 3
                 pcmOutputBuffer = ByteArray(pcmBlockBytes)
                 parsablePcm.reset(pcmOutputBuffer)
@@ -232,6 +237,20 @@ class DsfExtractor : Extractor {
                 }
 
                 remainingDataBytes -= toRead
+
+                if (useDop) {
+                    val perChannel = toRead / channelCount
+                    val (written, nextPhase) = DopPacker.pack(
+                        dsdBlockBuffer, 0, blockSizePerChannel, channelCount, perChannel,
+                        lsbFirst = true, markerPhase = dopMarkerPhase, out = pcmOutputBuffer
+                    )
+                    dopMarkerPhase = nextPhase
+                    parsablePcm.reset(pcmOutputBuffer, written)
+                    trackOutput?.sampleData(parsablePcm, written)
+                    trackOutput?.sampleMetadata(currentPositionUs, C.BUFFER_FLAG_KEY_FRAME, written, 0, null)
+                    currentPositionUs += ((perChannel / 2) * 1_000_000L) / pcmSampleRate
+                    return Extractor.RESULT_CONTINUE
+                }
 
                 // Perform hardware-accelerated LUT decimation
                 val pcmSamplesPerChannel = (toRead / channelCount) * 8 / decimationRatio
@@ -299,6 +318,7 @@ class DsfExtractor : Extractor {
             STATE_STREAM_DATA
         }
         currentPositionUs = timeUs
+        dopMarkerPhase = 0
         if (position > dataStartPosition) {
             val offset = position - dataStartPosition
             remainingDataBytes = (dataLengthBytes - offset).coerceAtLeast(0L)
