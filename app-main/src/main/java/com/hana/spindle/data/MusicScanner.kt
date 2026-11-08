@@ -63,10 +63,10 @@ class MusicScanner(
     private val _progress = MutableStateFlow(ScanProgress())
     val progress: StateFlow<ScanProgress> = _progress.asStateFlow()
 
-    // Only formats Media3 (plus Spindle's AIFF/DSF extractors) can actually decode.
-    // "ape" and "wv" were listed before but have no extractor, so they indexed and then failed to play.
+    // Only formats Media3 or Spindle's own extractors (AIFF, DSF, WavPack) can actually decode.
+    // "ape" is not listed: there is no Monkey's Audio decoder, so those files would index and fail to play.
     private val supportedExtensions = setOf(
-        "flac", "wav", "aif", "aiff", "alac", "m4a", "mp3", "ogg", "opus", "dsf", "dff"
+        "flac", "wav", "aif", "aiff", "alac", "m4a", "mp3", "ogg", "opus", "dsf", "dff", "wv"
     )
 
     /**
