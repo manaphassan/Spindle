@@ -21,6 +21,7 @@ object TagParser {
         val wavInfo = if (format == "WAV") parseWavStreamInfo(file) else null
         val aiffInfo = if (format == "AIFF" || format == "AIF") parseAiffStreamInfo(file) else null
         val dsfInfo = if (format == "DSF" || format == "DSD") parseDsfStreamInfo(file) else null
+        val wvInfo = if (format == "WV") WavPackFileInfo.read(file) else null
 
         var title: String? = null
         var artist: String? = null
@@ -60,7 +61,24 @@ object TagParser {
             } catch (ignored: Exception) {}
         }
 
+        // WavPack: MediaMetadataRetriever cannot read it, so use the file's own header and APEv2 tags.
+        if (wvInfo != null) {
+            val t = wvInfo.tags
+            if (title.isNullOrBlank()) title = t["title"]
+            if (artist.isNullOrBlank()) artist = t["artist"]
+            if (album.isNullOrBlank()) album = t["album"]
+            if (albumArtist.isNullOrBlank()) albumArtist = t["album artist"]
+            if (composer.isNullOrBlank()) composer = t["composer"]
+            if (trackStr.isNullOrBlank()) trackStr = t["track"]
+            if (discStr.isNullOrBlank()) discStr = t["disc"]
+            if (yearStr.isNullOrBlank()) yearStr = t["year"]
+            if (genre.isNullOrBlank()) genre = t["genre"]
+        }
+
         var durationMs = durationStr?.toLongOrNull() ?: 0L
+        if (durationMs <= 0L && wvInfo != null && wvInfo.durationMs > 0L) {
+            durationMs = wvInfo.durationMs
+        }
         if (durationMs <= 0L && flacInfo != null && flacInfo.durationMs > 0L) {
             durationMs = flacInfo.durationMs
         }
@@ -124,6 +142,7 @@ object TagParser {
             wavInfo != null && wavInfo.sampleRate > 0 -> wavInfo.sampleRate
             aiffInfo != null && aiffInfo.sampleRate > 0 -> aiffInfo.sampleRate
             dsfInfo != null && dsfInfo.sampleRate > 0 -> dsfInfo.sampleRate
+            wvInfo != null && wvInfo.sampleRate > 0 -> wvInfo.sampleRate
             else -> {
                 when {
                     format == "FLAC" && bitrateKbps > 2000 -> 96000
@@ -141,10 +160,11 @@ object TagParser {
             wavInfo != null && wavInfo.bitDepth > 0 -> wavInfo.bitDepth
             aiffInfo != null && aiffInfo.bitDepth > 0 -> aiffInfo.bitDepth
             dsfInfo != null && dsfInfo.bitDepth > 0 -> dsfInfo.bitDepth
+            wvInfo != null && wvInfo.bitDepth > 0 -> wvInfo.bitDepth
             else -> estimateBitDepth(format, bitrateKbps, sampleRate)
         }
 
-        val channels = flacInfo?.channels ?: wavInfo?.channels ?: aiffInfo?.channels ?: dsfInfo?.channels ?: 2
+        val channels = flacInfo?.channels ?: wavInfo?.channels ?: aiffInfo?.channels ?: dsfInfo?.channels ?: wvInfo?.channels ?: 2
 
         // Check if lyrics exist (.lrc sidecar, .txt, or embedded ID3/Vorbis tags)
         val lrcFile = File(file.parentFile, "${file.nameWithoutExtension}.lrc")

@@ -186,4 +186,16 @@
     <string name="bitperfect_status_rejected">Android refused the bit-perfect request</string>
     <string name="bitperfect_status_active">Bit-perfect active: %1$d Hz / %2$d-bit</string>
     <string name="bitperfect_badge_verified">BIT-PERFECT · VERIFIED</string>
+    <string name="peq_title">Parametric EQ (software)</string>
+    <string name="peq_desc">Bell, shelf and pass filters in the audio path, importable from AutoEq text. Edits apply live; switching it on applies from the next track. Counts as DSP.</string>
+    <string name="peq_edit">Edit</string>
+    <string name="peq_dialog_title">Parametric EQ bands</string>
+    <string name="peq_dialog_hint">Paste AutoEq / Equalizer APO text, one filter per line (for example: Filter 1: ON PK Fc 1000 Hz Gain -3.0 dB Q 1.00).</string>
+    <string name="peq_apply">Apply</string>
+    <string name="peq_auto_preamp">Auto preamp</string>
+    <string name="peq_reset">Reset</string>
+    <string name="peq_parse_error">No valid filters found</string>
+    <string name="peq_applied">%1$d filters applied</string>
+    <string name="dsd_dop_title">DSD over PCM (DoP)</string>
+    <string name="dsd_dop_desc">Send DSD files to a DoP-capable USB DAC as native DSD instead of converting to PCM. Needs the bit-perfect mixer switch and a DAC that accepts the DoP rate. Volume, ReplayGain and fades are disabled during DoP. Lower your volume first: a DAC without DoP support plays it as loud noise.</string>
 </resources>
