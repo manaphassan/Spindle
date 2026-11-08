@@ -177,4 +177,13 @@
     <string name="toast_will_play_next">Will play next: %1$s</string>
     <string name="toast_removed_from_mixtape">Removed \'%1$s\' from mixtape</string>
     <string name="toast_deleted_mixtape">Deleted mixtape \'%1$s\'</string>
+    <string name="bitperfect_mixer_title">Bit-perfect mixer (Android 14+)</string>
+    <string name="bitperfect_mixer_desc">Ask Android to pass the exact sample rate and bit depth to a USB or wired DAC. Turns off float output; applies from the next track. EQ and effects are bypassed by the platform.</string>
+    <string name="bitperfect_status_off">Bit-perfect mixer: off</string>
+    <string name="bitperfect_status_unsupported">Needs Android 14 or newer</string>
+    <string name="bitperfect_status_no_device">No USB or wired DAC connected</string>
+    <string name="bitperfect_status_no_match">DAC cannot carry this track untouched; Android will resample</string>
+    <string name="bitperfect_status_rejected">Android refused the bit-perfect request</string>
+    <string name="bitperfect_status_active">Bit-perfect active: %1$d Hz / %2$d-bit</string>
+    <string name="bitperfect_badge_verified">BIT-PERFECT · VERIFIED</string>
 </resources>

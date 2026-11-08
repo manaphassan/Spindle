@@ -1,4 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">スピンドル</string>
+    <string name="bitperfect_mixer_title">ビットパーフェクト ミキサー (Android 14以降)</string>
+    <string name="bitperfect_mixer_desc">USB／有線DACへサンプルレートとビット深度をそのまま渡すようAndroidに要求します。フロート出力は無効になり、次のトラックから有効です。EQとエフェクトはシステム側でバイパスされます。</string>
+    <string name="bitperfect_status_off">ビットパーフェクト ミキサー: オフ</string>
+    <string name="bitperfect_status_unsupported">Android 14以降が必要です</string>
+    <string name="bitperfect_status_no_device">USB／有線DACが接続されていません</string>
+    <string name="bitperfect_status_no_match">このトラックをDACへそのまま渡せません。Androidがリサンプリングします</string>
+    <string name="bitperfect_status_rejected">Androidがビットパーフェクト要求を拒否しました</string>
+    <string name="bitperfect_status_active">ビットパーフェクト有効: %1$d Hz / %2$d-bit</string>
+    <string name="bitperfect_badge_verified">ビットパーフェクト · 検証済み</string>
 </resources>

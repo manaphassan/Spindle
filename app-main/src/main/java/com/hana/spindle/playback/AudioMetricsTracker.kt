@@ -24,6 +24,7 @@ data class AudioMetrics(
     val outputRoute: String = "3.5mm Headphone Jack",
     val outputSampleRate: Int = 96000,
     val isBitPerfect: Boolean = false,
+    val isBitPerfectVerified: Boolean = false,
     val bluetoothDeviceName: String? = null,
     val bluetoothBatteryPct: Int? = null,
     val isBluetoothConnected: Boolean = false,
@@ -61,9 +62,16 @@ class AudioMetricsTracker(private val context: Context) {
          * wired output AND no DSP stage is in the path. Android's mixer can still resample on
          * some devices, so this is "direct, no DSP", never a guarantee of exclusive-mode output.
          */
+        /** Strongest claim: platform confirmed a bit-perfect mixer path AND no DSP stage is active. */
+        fun computeVerifiedBitPerfect(mixerVerified: Boolean, dspActive: Boolean): Boolean =
+            mixerVerified && !dspActive
+
         fun computeDirectNoDsp(prefEnabled: Boolean, directRoute: Boolean, dspActive: Boolean): Boolean =
             prefEnabled && directRoute && !dspActive
     }
+
+    private fun isMixerVerified(): Boolean =
+        (context.applicationContext as? com.hana.spindle.SpindleApp)?.audioEngine?.bitPerfectMixer?.state?.value?.isVerifiedActive == true
 
     private fun isDspActive(): Boolean {
         val fx = (context.applicationContext as? com.hana.spindle.SpindleApp)?.audioEngine?.audioFxController
@@ -326,6 +334,7 @@ class AudioMetricsTracker(private val context: Context) {
         _metrics.value = _metrics.value.copy(
             outputRoute = route,
             isBitPerfect = isBitPerfect,
+            isBitPerfectVerified = computeVerifiedBitPerfect(isMixerVerified(), isDspActive()),
             bluetoothDeviceName = btName,
             bluetoothBatteryPct = btBattery,
             isBluetoothConnected = btConnected,
@@ -377,6 +386,7 @@ class AudioMetricsTracker(private val context: Context) {
             replayGainOffsetDb = replayGainDb,
             outputRoute = outputRoute,
             isBitPerfect = isBitPerfect,
+            isBitPerfectVerified = computeVerifiedBitPerfect(isMixerVerified(), isDspActive()),
             bluetoothDeviceName = btName,
             bluetoothBatteryPct = btBattery,
             isBluetoothConnected = btConnected,

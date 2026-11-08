@@ -23,6 +23,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
+    <!-- Bit-perfect mixer attributes (Android 14+) and audio routing -->
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+
     <!-- Haptic Feedback for Mechanical Button Clicks -->
     <uses-permission android:name="android.permission.VIBRATE" />
 

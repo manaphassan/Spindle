@@ -129,7 +129,7 @@
         errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/playback/AudioMetricsTracker.kt"
-            line="272"
+            line="280"
             column="36"/>
     </issue>
 
@@ -140,7 +140,7 @@
         errorLine2="                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/playback/AudioMetricsTracker.kt"
-            line="293"
+            line="301"
             column="44"/>
     </issue>
 
@@ -151,7 +151,7 @@
         errorLine2="                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/playback/AudioMetricsTracker.kt"
-            line="435"
+            line="445"
             column="44"/>
     </issue>
 
@@ -195,7 +195,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/AndroidManifest.xml"
-            line="75"
+            line="78"
             column="13"/>
     </issue>
 
@@ -206,7 +206,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/AndroidManifest.xml"
-            line="76"
+            line="79"
             column="13"/>
     </issue>
 
@@ -437,7 +437,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/AndroidManifest.xml"
-            line="59"
+            line="62"
             column="13"/>
     </issue>
 
@@ -448,7 +448,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/AndroidManifest.xml"
-            line="78"
+            line="81"
             column="13"/>
     </issue>
 
@@ -459,7 +459,7 @@
         errorLine2="                                                       ~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/playback/AudioEngine.kt"
-            line="1535"
+            line="1548"
             column="56"/>
     </issue>
 
@@ -470,7 +470,7 @@
         errorLine2="                  ~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/playback/AudioEngine.kt"
-            line="1559"
+            line="1572"
             column="19"/>
     </issue>
 
@@ -481,7 +481,7 @@
         errorLine2="                  ~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/playback/AudioEngine.kt"
-            line="1560"
+            line="1573"
             column="19"/>
     </issue>
 
@@ -492,7 +492,7 @@
         errorLine2="                  ~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/playback/AudioEngine.kt"
-            line="1561"
+            line="1574"
             column="19"/>
     </issue>
 
@@ -503,7 +503,7 @@
         errorLine2="                                                                                               ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/playback/AudioMetricsTracker.kt"
-            line="161"
+            line="169"
             column="96"/>
     </issue>
 
@@ -675,11 +675,22 @@
     <issue
         id="UnsafeOptInUsageError"
         message="This declaration is opt-in and its usage should be marked with `@androidx.media3.common.util.UnstableApi` or `@OptIn(markerClass = androidx.media3.common.util.UnstableApi.class)`"
+        errorLine1="            app.audioEngine.applyBitPerfectMixer(track?.sampleRate ?: 0, track?.bitDepth ?: 16)"
+        errorLine2="                            ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
+            line="1262"
+            column="29"/>
+    </issue>
+
+    <issue
+        id="UnsafeOptInUsageError"
+        message="This declaration is opt-in and its usage should be marked with `@androidx.media3.common.util.UnstableApi` or `@OptIn(markerClass = androidx.media3.common.util.UnstableApi.class)`"
         errorLine1="            app.audioEngine.setReplayGainMode(ReplayGainMode.OFF)"
         errorLine2="                            ~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1372"
+            line="1397"
             column="29"/>
     </issue>
 
@@ -690,7 +701,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1378"
+            line="1403"
             column="29"/>
     </issue>
 
@@ -701,7 +712,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1384"
+            line="1409"
             column="29"/>
     </issue>
 
@@ -712,7 +723,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1409"
+            line="1434"
             column="29"/>
     </issue>
 
@@ -723,7 +734,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1415"
+            line="1440"
             column="29"/>
     </issue>
 
@@ -734,7 +745,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1421"
+            line="1446"
             column="29"/>
     </issue>
 
@@ -745,7 +756,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1466"
+            line="1491"
             column="29"/>
     </issue>
 
@@ -756,7 +767,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1473"
+            line="1498"
             column="29"/>
     </issue>
 
@@ -767,7 +778,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1480"
+            line="1505"
             column="29"/>
     </issue>
 
@@ -778,7 +789,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1487"
+            line="1512"
             column="29"/>
     </issue>
 
@@ -789,7 +800,7 @@
         errorLine2="                            ~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1495"
+            line="1520"
             column="29"/>
     </issue>
 
@@ -800,7 +811,7 @@
         errorLine2="                            ~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1502"
+            line="1527"
             column="29"/>
     </issue>
 
@@ -811,7 +822,7 @@
         errorLine2="                            ~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1509"
+            line="1534"
             column="29"/>
     </issue>
 
@@ -822,7 +833,7 @@
         errorLine2="            ~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1694"
+            line="1719"
             column="13"/>
     </issue>
 
@@ -833,7 +844,7 @@
         errorLine2="                        ~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1697"
+            line="1722"
             column="25"/>
     </issue>
 
@@ -844,7 +855,7 @@
         errorLine2="                        ~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1701"
+            line="1726"
             column="25"/>
     </issue>
 
@@ -855,7 +866,7 @@
         errorLine2="                        ~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1705"
+            line="1730"
             column="25"/>
     </issue>
 
@@ -866,7 +877,7 @@
         errorLine2="                        ~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1709"
+            line="1734"
             column="25"/>
     </issue>
 
@@ -877,7 +888,7 @@
         errorLine2="                        ~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1713"
+            line="1738"
             column="25"/>
     </issue>
 
@@ -888,7 +899,7 @@
         errorLine2="                        ~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1717"
+            line="1742"
             column="25"/>
     </issue>
 
@@ -899,7 +910,7 @@
         errorLine2="                                                                               ~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="2209"
+            line="2237"
             column="80"/>
     </issue>
 
@@ -910,7 +921,7 @@
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="2210"
+            line="2238"
             column="17"/>
     </issue>
 
@@ -921,7 +932,7 @@
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="2211"
+            line="2239"
             column="17"/>
     </issue>
 
@@ -1999,7 +2010,7 @@
         errorLine2="                                                                             ~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/data/TagParser.kt"
-            line="481"
+            line="480"
             column="78"/>
     </issue>
 
@@ -2010,7 +2021,7 @@
         errorLine2="                                                                                           ~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/data/TagParser.kt"
-            line="481"
+            line="480"
             column="92"/>
     </issue>
 
@@ -2571,7 +2582,7 @@
         errorLine2="                ~~~~">
         <location
             file="src/main/java/com/hana/spindle/playback/AudioMetricsTracker.kt"
-            line="219"
+            line="227"
             column="17"/>
     </issue>
 
@@ -2582,7 +2593,7 @@
         errorLine2="                ~~~~">
         <location
             file="src/main/java/com/hana/spindle/playback/AudioMetricsTracker.kt"
-            line="413"
+            line="423"
             column="17"/>
     </issue>
 
@@ -2593,7 +2604,7 @@
         errorLine2="                ~~~~">
         <location
             file="src/main/java/com/hana/spindle/playback/AudioMetricsTracker.kt"
-            line="420"
+            line="430"
             column="17"/>
     </issue>
 
@@ -2615,7 +2626,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/AndroidManifest.xml"
-            line="59"
+            line="62"
             column="13"/>
     </issue>
 
@@ -2626,7 +2637,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/AndroidManifest.xml"
-            line="78"
+            line="81"
             column="13"/>
     </issue>
 
@@ -4386,7 +4397,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/playback/AudioMetricsTracker.kt"
-            line="157"
+            line="165"
             column="13"/>
     </issue>
 
@@ -4397,7 +4408,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/playback/AudioMetricsTracker.kt"
-            line="216"
+            line="224"
             column="13"/>
     </issue>
 
@@ -4408,7 +4419,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/playback/AudioMetricsTracker.kt"
-            line="264"
+            line="272"
             column="13"/>
     </issue>
 
@@ -4419,7 +4430,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/playback/AudioMetricsTracker.kt"
-            line="283"
+            line="291"
             column="13"/>
     </issue>
 
@@ -4430,7 +4441,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/playback/AudioMetricsTracker.kt"
-            line="409"
+            line="419"
             column="13"/>
     </issue>
 
@@ -4441,7 +4452,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/playback/AudioMetricsTracker.kt"
-            line="458"
+            line="468"
             column="13"/>
     </issue>
 
@@ -5967,7 +5978,7 @@
         errorLine2="                             ~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2781"
+            line="2828"
             column="30"/>
     </issue>
 
@@ -6418,7 +6429,7 @@
         errorLine2="                                 ~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2226"
+            line="2273"
             column="34"/>
     </issue>
 
@@ -6429,7 +6440,7 @@
         errorLine2="                                 ~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2241"
+            line="2288"
             column="34"/>
     </issue>
 
@@ -6440,7 +6451,7 @@
         errorLine2="                                 ~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2257"
+            line="2304"
             column="34"/>
     </issue>
 
@@ -6451,7 +6462,7 @@
         errorLine2="                                 ~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2309"
+            line="2356"
             column="34"/>
     </issue>
 
@@ -6462,7 +6473,7 @@
         errorLine2="                                 ~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2324"
+            line="2371"
             column="34"/>
     </issue>
 
@@ -6473,41 +6484,8 @@
         errorLine2="                                 ~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2340"
+            line="2387"
             column="34"/>
-    </issue>
-
-    <issue
-        id="ButtonStyle"
-        message="Buttons in button bars should be borderless; use `style=&quot;?android:attr/buttonBarButtonStyle&quot;` (and `?android:attr/buttonBarStyle` on the parent)"
-        errorLine1="                            &lt;Button"
-        errorLine2="                             ~~~~~~">
-        <location
-            file="src/main/res/layout/fragment_drawer.xml"
-            line="2409"
-            column="30"/>
-    </issue>
-
-    <issue
-        id="ButtonStyle"
-        message="Buttons in button bars should be borderless; use `style=&quot;?android:attr/buttonBarButtonStyle&quot;` (and `?android:attr/buttonBarStyle` on the parent)"
-        errorLine1="                            &lt;Button"
-        errorLine2="                             ~~~~~~">
-        <location
-            file="src/main/res/layout/fragment_drawer.xml"
-            line="2424"
-            column="30"/>
-    </issue>
-
-    <issue
-        id="ButtonStyle"
-        message="Buttons in button bars should be borderless; use `style=&quot;?android:attr/buttonBarButtonStyle&quot;` (and `?android:attr/buttonBarStyle` on the parent)"
-        errorLine1="                            &lt;Button"
-        errorLine2="                             ~~~~~~">
-        <location
-            file="src/main/res/layout/fragment_drawer.xml"
-            line="2440"
-            column="30"/>
     </issue>
 
     <issue
@@ -6528,7 +6506,7 @@
         errorLine2="                             ~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2496"
+            line="2471"
             column="30"/>
     </issue>
 
@@ -6539,7 +6517,7 @@
         errorLine2="                             ~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2511"
+            line="2487"
             column="30"/>
     </issue>
 
@@ -6550,7 +6528,7 @@
         errorLine2="                             ~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2527"
+            line="2503"
             column="30"/>
     </issue>
 
@@ -6561,7 +6539,7 @@
         errorLine2="                             ~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2568"
+            line="2543"
             column="30"/>
     </issue>
 
@@ -6572,7 +6550,7 @@
         errorLine2="                             ~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2583"
+            line="2558"
             column="30"/>
     </issue>
 
@@ -6583,7 +6561,7 @@
         errorLine2="                             ~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2599"
+            line="2574"
             column="30"/>
     </issue>
 
@@ -6605,7 +6583,7 @@
         errorLine2="                             ~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2696"
+            line="2630"
             column="30"/>
     </issue>
 
@@ -6616,7 +6594,7 @@
         errorLine2="                             ~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2711"
+            line="2646"
             column="30"/>
     </issue>
 
@@ -6627,7 +6605,7 @@
         errorLine2="                             ~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2727"
+            line="2662"
             column="30"/>
     </issue>
 
@@ -6649,7 +6627,7 @@
         errorLine2="                             ~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2766"
+            line="2758"
             column="30"/>
     </issue>
 
@@ -6660,7 +6638,7 @@
         errorLine2="                             ~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2781"
+            line="2774"
             column="30"/>
     </issue>
 
@@ -6671,7 +6649,7 @@
         errorLine2="                             ~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3062"
+            line="2790"
             column="30"/>
     </issue>
 
@@ -6682,7 +6660,7 @@
         errorLine2="                             ~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3077"
+            line="2813"
             column="30"/>
     </issue>
 
@@ -6693,7 +6671,7 @@
         errorLine2="                             ~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3150"
+            line="2828"
             column="30"/>
     </issue>
 
@@ -6704,7 +6682,40 @@
         errorLine2="                             ~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3165"
+            line="3109"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="ButtonStyle"
+        message="Buttons in button bars should be borderless; use `style=&quot;?android:attr/buttonBarButtonStyle&quot;` (and `?android:attr/buttonBarStyle` on the parent)"
+        errorLine1="                            &lt;Button"
+        errorLine2="                             ~~~~~~">
+        <location
+            file="src/main/res/layout/fragment_drawer.xml"
+            line="3124"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="ButtonStyle"
+        message="Buttons in button bars should be borderless; use `style=&quot;?android:attr/buttonBarButtonStyle&quot;` (and `?android:attr/buttonBarStyle` on the parent)"
+        errorLine1="                            &lt;Button"
+        errorLine2="                             ~~~~~~">
+        <location
+            file="src/main/res/layout/fragment_drawer.xml"
+            line="3197"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="ButtonStyle"
+        message="Buttons in button bars should be borderless; use `style=&quot;?android:attr/buttonBarButtonStyle&quot;` (and `?android:attr/buttonBarStyle` on the parent)"
+        errorLine1="                            &lt;Button"
+        errorLine2="                             ~~~~~~">
+        <location
+            file="src/main/res/layout/fragment_drawer.xml"
+            line="3212"
             column="30"/>
     </issue>
 
@@ -8255,7 +8266,7 @@
         errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="1945"
+            line="1992"
             column="37"/>
     </issue>
 
@@ -8266,7 +8277,7 @@
         errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="1956"
+            line="2003"
             column="37"/>
     </issue>
 
@@ -8277,7 +8288,7 @@
         errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="1998"
+            line="2045"
             column="37"/>
     </issue>
 
@@ -8288,7 +8299,7 @@
         errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2009"
+            line="2056"
             column="37"/>
     </issue>
 
@@ -8299,7 +8310,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2382"
+            line="2429"
             column="29"/>
     </issue>
 
@@ -8310,7 +8321,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2416"
+            line="2463"
             column="33"/>
     </issue>
 
@@ -8321,7 +8332,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2432"
+            line="2479"
             column="33"/>
     </issue>
 
@@ -8332,7 +8343,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2448"
+            line="2495"
             column="33"/>
     </issue>
 
@@ -8343,7 +8354,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2464"
+            line="2511"
             column="33"/>
     </issue>
 
@@ -8354,7 +8365,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2575"
+            line="2622"
             column="33"/>
     </issue>
 
@@ -8365,7 +8376,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2591"
+            line="2638"
             column="33"/>
     </issue>
 
@@ -8376,7 +8387,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2607"
+            line="2654"
             column="33"/>
     </issue>
 
@@ -8387,7 +8398,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2623"
+            line="2670"
             column="33"/>
     </issue>
 
@@ -8398,7 +8409,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2664"
+            line="2711"
             column="33"/>
     </issue>
 
@@ -8409,7 +8420,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2829"
+            line="2876"
             column="33"/>
     </issue>
 
@@ -8420,7 +8431,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2840"
+            line="2887"
             column="33"/>
     </issue>
 
@@ -8431,7 +8442,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2852"
+            line="2899"
             column="29"/>
     </issue>
 
@@ -8442,7 +8453,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2919"
+            line="2966"
             column="33"/>
     </issue>
 
@@ -8453,7 +8464,7 @@
         errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2946"
+            line="2993"
             column="37"/>
     </issue>
 
@@ -8464,7 +8475,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2976"
+            line="3023"
             column="33"/>
     </issue>
 
@@ -8475,7 +8486,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2997"
+            line="3044"
             column="33"/>
     </issue>
 
@@ -8486,7 +8497,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3034"
+            line="3081"
             column="29"/>
     </issue>
 
@@ -8495,53 +8506,9 @@
         message="Avoid using sizes smaller than `11sp`: `10.5sp`"
         errorLine1="                                android:textSize=&quot;10.5sp&quot;"
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/fragment_drawer.xml"
-            line="3157"
-            column="33"/>
-    </issue>
-
-    <issue
-        id="SmallSp"
-        message="Avoid using sizes smaller than `11sp`: `10.5sp`"
-        errorLine1="                                android:textSize=&quot;10.5sp&quot;"
-        errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/fragment_drawer.xml"
-            line="3173"
-            column="33"/>
-    </issue>
-
-    <issue
-        id="SmallSp"
-        message="Avoid using sizes smaller than `11sp`: `10.5sp`"
-        errorLine1="                            android:textSize=&quot;10.5sp&quot;"
-        errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/fragment_drawer.xml"
-            line="3189"
-            column="29"/>
-    </issue>
-
-    <issue
-        id="SmallSp"
-        message="Avoid using sizes smaller than `11sp`: `10.5sp`"
-        errorLine1="                            android:textSize=&quot;10.5sp&quot;"
-        errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
             line="3204"
-            column="29"/>
-    </issue>
-
-    <issue
-        id="SmallSp"
-        message="Avoid using sizes smaller than `11sp`: `10.5sp`"
-        errorLine1="                                android:textSize=&quot;10.5sp&quot;"
-        errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/fragment_drawer.xml"
-            line="3244"
             column="33"/>
     </issue>
 
@@ -8552,18 +8519,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3253"
-            column="33"/>
-    </issue>
-
-    <issue
-        id="SmallSp"
-        message="Avoid using sizes smaller than `11sp`: `10sp`"
-        errorLine1="                                android:textSize=&quot;10sp&quot;"
-        errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/fragment_drawer.xml"
-            line="3269"
+            line="3220"
             column="33"/>
     </issue>
 
@@ -8574,7 +8530,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3319"
+            line="3236"
             column="29"/>
     </issue>
 
@@ -8585,8 +8541,30 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3412"
+            line="3251"
             column="29"/>
+    </issue>
+
+    <issue
+        id="SmallSp"
+        message="Avoid using sizes smaller than `11sp`: `10.5sp`"
+        errorLine1="                                android:textSize=&quot;10.5sp&quot;"
+        errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/layout/fragment_drawer.xml"
+            line="3291"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="SmallSp"
+        message="Avoid using sizes smaller than `11sp`: `10.5sp`"
+        errorLine1="                                android:textSize=&quot;10.5sp&quot;"
+        errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/layout/fragment_drawer.xml"
+            line="3300"
+            column="33"/>
     </issue>
 
     <issue
@@ -8594,9 +8572,42 @@
         message="Avoid using sizes smaller than `11sp`: `10sp`"
         errorLine1="                                android:textSize=&quot;10sp&quot;"
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/layout/fragment_drawer.xml"
+            line="3316"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="SmallSp"
+        message="Avoid using sizes smaller than `11sp`: `10.5sp`"
+        errorLine1="                            android:textSize=&quot;10.5sp&quot;"
+        errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/layout/fragment_drawer.xml"
+            line="3366"
+            column="29"/>
+    </issue>
+
+    <issue
+        id="SmallSp"
+        message="Avoid using sizes smaller than `11sp`: `10.5sp`"
+        errorLine1="                            android:textSize=&quot;10.5sp&quot;"
+        errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
             line="3459"
+            column="29"/>
+    </issue>
+
+    <issue
+        id="SmallSp"
+        message="Avoid using sizes smaller than `11sp`: `10sp`"
+        errorLine1="                                android:textSize=&quot;10sp&quot;"
+        errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/layout/fragment_drawer.xml"
+            line="3506"
             column="33"/>
     </issue>
 
@@ -8607,7 +8618,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3468"
+            line="3515"
             column="33"/>
     </issue>
 
@@ -8618,7 +8629,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3524"
+            line="3571"
             column="29"/>
     </issue>
 
@@ -9817,7 +9828,7 @@
         errorLine2="                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DialogFileSpecs.kt"
-            line="107"
+            line="111"
             column="44"/>
     </issue>
 
@@ -9828,7 +9839,7 @@
         errorLine2="                                                                ~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DialogFileSpecs.kt"
-            line="107"
+            line="111"
             column="65"/>
     </issue>
 
@@ -9839,7 +9850,7 @@
         errorLine2="                                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DialogFileSpecs.kt"
-            line="112"
+            line="116"
             column="50"/>
     </issue>
 
@@ -9850,7 +9861,7 @@
         errorLine2="                                                  ~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DialogFileSpecs.kt"
-            line="112"
+            line="116"
             column="51"/>
     </issue>
 
@@ -9861,7 +9872,7 @@
         errorLine2="                                                                       ~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DialogFileSpecs.kt"
-            line="112"
+            line="116"
             column="72"/>
     </issue>
 
@@ -9872,7 +9883,7 @@
         errorLine2="                                                ~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DialogFileSpecs.kt"
-            line="118"
+            line="122"
             column="49"/>
     </issue>
 
@@ -9883,7 +9894,7 @@
         errorLine2="                                                ~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DialogFileSpecs.kt"
-            line="121"
+            line="125"
             column="49"/>
     </issue>
 
@@ -9894,7 +9905,7 @@
         errorLine2="                                                ~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DialogFileSpecs.kt"
-            line="124"
+            line="128"
             column="49"/>
     </issue>
 
@@ -10730,7 +10741,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1270"
+            line="1295"
             column="61"/>
     </issue>
 
@@ -10741,7 +10752,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1273"
+            line="1298"
             column="29"/>
     </issue>
 
@@ -10752,7 +10763,7 @@
         errorLine2="                                                   ~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1273"
+            line="1298"
             column="52"/>
     </issue>
 
@@ -10763,7 +10774,7 @@
         errorLine2="                                                                       ~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1273"
+            line="1298"
             column="72"/>
     </issue>
 
@@ -10774,7 +10785,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1275"
+            line="1300"
             column="61"/>
     </issue>
 
@@ -10785,7 +10796,7 @@
         errorLine2="                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1278"
+            line="1303"
             column="30"/>
     </issue>
 
@@ -10796,7 +10807,7 @@
         errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1296"
+            line="1321"
             column="62"/>
     </issue>
 
@@ -10807,7 +10818,7 @@
         errorLine2="                                                                                   ~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1296"
+            line="1321"
             column="84"/>
     </issue>
 
@@ -10818,7 +10829,7 @@
         errorLine2="                                                                ~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1298"
+            line="1323"
             column="65"/>
     </issue>
 
@@ -10829,7 +10840,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1301"
+            line="1326"
             column="29"/>
     </issue>
 
@@ -10840,7 +10851,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1303"
+            line="1328"
             column="63"/>
     </issue>
 
@@ -10851,7 +10862,7 @@
         errorLine2="                                                                ~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1305"
+            line="1330"
             column="65"/>
     </issue>
 
@@ -10862,7 +10873,7 @@
         errorLine2="                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1308"
+            line="1333"
             column="30"/>
     </issue>
 
@@ -10873,7 +10884,7 @@
         errorLine2="                                                         ~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1737"
+            line="1762"
             column="58"/>
     </issue>
 
@@ -10884,7 +10895,7 @@
         errorLine2="                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1779"
+            line="1804"
             column="40"/>
     </issue>
 
@@ -10895,7 +10906,7 @@
         errorLine2="                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1779"
+            line="1804"
             column="47"/>
     </issue>
 
@@ -10906,7 +10917,7 @@
         errorLine2="                                             ~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1800"
+            line="1825"
             column="46"/>
     </issue>
 
@@ -10917,7 +10928,7 @@
         errorLine2="                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1806"
+            line="1831"
             column="44"/>
     </issue>
 
@@ -10928,7 +10939,7 @@
         errorLine2="                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1806"
+            line="1831"
             column="51"/>
     </issue>
 
@@ -10939,7 +10950,7 @@
         errorLine2="                                                 ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1808"
+            line="1833"
             column="50"/>
     </issue>
 
@@ -10950,7 +10961,7 @@
         errorLine2="                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1831"
+            line="1856"
             column="44"/>
     </issue>
 
@@ -10961,7 +10972,7 @@
         errorLine2="                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1831"
+            line="1856"
             column="51"/>
     </issue>
 
@@ -10972,7 +10983,7 @@
         errorLine2="                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1966"
+            line="1991"
             column="32"/>
     </issue>
 
@@ -10983,7 +10994,7 @@
         errorLine2="                                                                                                              ~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1966"
+            line="1991"
             column="111"/>
     </issue>
 
@@ -10994,7 +11005,7 @@
         errorLine2="                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1972"
+            line="1997"
             column="32"/>
     </issue>
 
@@ -11005,7 +11016,7 @@
         errorLine2="                            ~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="1985"
+            line="2010"
             column="29"/>
     </issue>
 
@@ -11016,7 +11027,7 @@
         errorLine2="                            ~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="2006"
+            line="2031"
             column="29"/>
     </issue>
 
@@ -11027,7 +11038,7 @@
         errorLine2="                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="2111"
+            line="2136"
             column="49"/>
     </issue>
 
@@ -11038,7 +11049,7 @@
         errorLine2="                                                                                                   ~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="2111"
+            line="2136"
             column="100"/>
     </issue>
 
@@ -11049,7 +11060,7 @@
         errorLine2="                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="2112"
+            line="2137"
             column="53"/>
     </issue>
 
@@ -11060,7 +11071,7 @@
         errorLine2="                                                                        ~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="2112"
+            line="2137"
             column="73"/>
     </issue>
 
@@ -11071,7 +11082,7 @@
         errorLine2="                                                                                                                                              ~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="2112"
+            line="2137"
             column="143"/>
     </issue>
 
@@ -11082,7 +11093,7 @@
         errorLine2="                                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="2113"
+            line="2138"
             column="50"/>
     </issue>
 
@@ -11093,7 +11104,7 @@
         errorLine2="                                                                               ~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="2113"
+            line="2138"
             column="80"/>
     </issue>
 
@@ -11104,7 +11115,7 @@
         errorLine2="                                                       ~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="2119"
+            line="2144"
             column="56"/>
     </issue>
 
@@ -11115,7 +11126,7 @@
         errorLine2="                                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="2130"
+            line="2155"
             column="60"/>
     </issue>
 
@@ -11126,7 +11137,7 @@
         errorLine2="                                                            ~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="2130"
+            line="2155"
             column="61"/>
     </issue>
 
@@ -11137,7 +11148,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="2135"
+            line="2160"
             column="61"/>
     </issue>
 
@@ -11148,7 +11159,7 @@
         errorLine2="                                                       ~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="2139"
+            line="2164"
             column="56"/>
     </issue>
 
@@ -11159,7 +11170,7 @@
         errorLine2="                                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="2141"
+            line="2166"
             column="56"/>
     </issue>
 
@@ -11170,8 +11181,19 @@
         errorLine2="                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="2143"
+            line="2168"
             column="57"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        message="Do not concatenate text displayed with `setText`. Use resource string with placeholders."
+        errorLine1="                            b.tvBitPerfectBadge.text = &quot;● &quot; + getString(R.string.bitperfect_badge_verified)"
+        errorLine2="                                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
+            line="2182"
+            column="56"/>
     </issue>
 
     <issue
@@ -11181,7 +11203,7 @@
         errorLine2="                                                        ~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="2157"
+            line="2185"
             column="57"/>
     </issue>
 
@@ -11192,7 +11214,7 @@
         errorLine2="                                                        ~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="2160"
+            line="2188"
             column="57"/>
     </issue>
 
@@ -11203,7 +11225,7 @@
         errorLine2="                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="2171"
+            line="2199"
             column="43"/>
     </issue>
 
@@ -11214,7 +11236,7 @@
         errorLine2="                                           ~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="2171"
+            line="2199"
             column="44"/>
     </issue>
 
@@ -11225,7 +11247,7 @@
         errorLine2="                                                                                                   ~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/hana/spindle/ui/DrawerFragment.kt"
-            line="2171"
+            line="2199"
             column="100"/>
     </issue>
 
@@ -15823,7 +15845,7 @@
         errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="1943"
+            line="1990"
             column="37"/>
     </issue>
 
@@ -15834,7 +15856,7 @@
         errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="1954"
+            line="2001"
             column="37"/>
     </issue>
 
@@ -15845,7 +15867,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="1969"
+            line="2016"
             column="33"/>
     </issue>
 
@@ -15856,7 +15878,7 @@
         errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="1996"
+            line="2043"
             column="37"/>
     </issue>
 
@@ -15867,7 +15889,7 @@
         errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2007"
+            line="2054"
             column="37"/>
     </issue>
 
@@ -15878,7 +15900,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2022"
+            line="2069"
             column="33"/>
     </issue>
 
@@ -15889,7 +15911,7 @@
         errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2051"
+            line="2098"
             column="37"/>
     </issue>
 
@@ -15900,7 +15922,7 @@
         errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2059"
+            line="2106"
             column="37"/>
     </issue>
 
@@ -15911,7 +15933,7 @@
         errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2094"
+            line="2141"
             column="37"/>
     </issue>
 
@@ -15922,7 +15944,7 @@
         errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2102"
+            line="2149"
             column="37"/>
     </issue>
 
@@ -15933,7 +15955,7 @@
         errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2132"
+            line="2179"
             column="37"/>
     </issue>
 
@@ -15944,7 +15966,7 @@
         errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2140"
+            line="2187"
             column="37"/>
     </issue>
 
@@ -15955,7 +15977,7 @@
         errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2170"
+            line="2217"
             column="37"/>
     </issue>
 
@@ -15966,7 +15988,7 @@
         errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2178"
+            line="2225"
             column="37"/>
     </issue>
 
@@ -15977,7 +15999,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2207"
+            line="2254"
             column="33"/>
     </issue>
 
@@ -15988,7 +16010,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2215"
+            line="2262"
             column="33"/>
     </issue>
 
@@ -15999,7 +16021,7 @@
         errorLine2="                                    ~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2231"
+            line="2278"
             column="37"/>
     </issue>
 
@@ -16010,7 +16032,7 @@
         errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2247"
+            line="2294"
             column="37"/>
     </issue>
 
@@ -16021,7 +16043,7 @@
         errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2263"
+            line="2310"
             column="37"/>
     </issue>
 
@@ -16032,7 +16054,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2290"
+            line="2337"
             column="33"/>
     </issue>
 
@@ -16043,7 +16065,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2298"
+            line="2345"
             column="33"/>
     </issue>
 
@@ -16054,7 +16076,7 @@
         errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2314"
+            line="2361"
             column="37"/>
     </issue>
 
@@ -16065,7 +16087,7 @@
         errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2330"
+            line="2377"
             column="37"/>
     </issue>
 
@@ -16076,7 +16098,7 @@
         errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2346"
+            line="2393"
             column="37"/>
     </issue>
 
@@ -16087,7 +16109,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2379"
+            line="2426"
             column="29"/>
     </issue>
 
@@ -16098,7 +16120,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2389"
+            line="2436"
             column="29"/>
     </issue>
 
@@ -16109,7 +16131,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2397"
+            line="2444"
             column="29"/>
     </issue>
 
@@ -16120,7 +16142,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2414"
+            line="2461"
             column="33"/>
     </issue>
 
@@ -16131,7 +16153,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2430"
+            line="2477"
             column="33"/>
     </issue>
 
@@ -16142,7 +16164,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2446"
+            line="2493"
             column="33"/>
     </issue>
 
@@ -16153,7 +16175,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2462"
+            line="2509"
             column="33"/>
     </issue>
 
@@ -16164,7 +16186,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2477"
+            line="2524"
             column="29"/>
     </issue>
 
@@ -16175,7 +16197,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2485"
+            line="2532"
             column="29"/>
     </issue>
 
@@ -16186,7 +16208,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2501"
+            line="2548"
             column="33"/>
     </issue>
 
@@ -16197,7 +16219,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2517"
+            line="2564"
             column="33"/>
     </issue>
 
@@ -16208,7 +16230,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2533"
+            line="2580"
             column="33"/>
     </issue>
 
@@ -16219,7 +16241,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2548"
+            line="2595"
             column="29"/>
     </issue>
 
@@ -16230,7 +16252,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2557"
+            line="2604"
             column="29"/>
     </issue>
 
@@ -16241,7 +16263,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2573"
+            line="2620"
             column="33"/>
     </issue>
 
@@ -16252,7 +16274,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2589"
+            line="2636"
             column="33"/>
     </issue>
 
@@ -16263,7 +16285,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2605"
+            line="2652"
             column="33"/>
     </issue>
 
@@ -16274,7 +16296,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2621"
+            line="2668"
             column="33"/>
     </issue>
 
@@ -16285,7 +16307,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2661"
+            line="2708"
             column="33"/>
     </issue>
 
@@ -16296,7 +16318,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2671"
+            line="2718"
             column="33"/>
     </issue>
 
@@ -16307,7 +16329,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2684"
+            line="2731"
             column="29"/>
     </issue>
 
@@ -16318,7 +16340,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2701"
+            line="2748"
             column="33"/>
     </issue>
 
@@ -16329,7 +16351,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2717"
+            line="2764"
             column="33"/>
     </issue>
 
@@ -16340,7 +16362,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2733"
+            line="2780"
             column="33"/>
     </issue>
 
@@ -16351,7 +16373,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2749"
+            line="2796"
             column="33"/>
     </issue>
 
@@ -16362,7 +16384,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2771"
+            line="2818"
             column="33"/>
     </issue>
 
@@ -16373,7 +16395,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2826"
+            line="2873"
             column="33"/>
     </issue>
 
@@ -16384,7 +16406,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2836"
+            line="2883"
             column="33"/>
     </issue>
 
@@ -16395,7 +16417,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2850"
+            line="2897"
             column="29"/>
     </issue>
 
@@ -16406,7 +16428,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2859"
+            line="2906"
             column="29"/>
     </issue>
 
@@ -16417,7 +16439,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2870"
+            line="2917"
             column="29"/>
     </issue>
 
@@ -16428,7 +16450,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2881"
+            line="2928"
             column="29"/>
     </issue>
 
@@ -16439,7 +16461,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2898"
+            line="2945"
             column="29"/>
     </issue>
 
@@ -16450,7 +16472,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2916"
+            line="2963"
             column="33"/>
     </issue>
 
@@ -16461,7 +16483,7 @@
         errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2933"
+            line="2980"
             column="37"/>
     </issue>
 
@@ -16472,7 +16494,7 @@
         errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2942"
+            line="2989"
             column="37"/>
     </issue>
 
@@ -16483,7 +16505,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2953"
+            line="3000"
             column="33"/>
     </issue>
 
@@ -16494,7 +16516,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2973"
+            line="3020"
             column="33"/>
     </issue>
 
@@ -16505,7 +16527,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2983"
+            line="3030"
             column="33"/>
     </issue>
 
@@ -16516,7 +16538,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="2994"
+            line="3041"
             column="33"/>
     </issue>
 
@@ -16527,7 +16549,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3031"
+            line="3078"
             column="29"/>
     </issue>
 
@@ -16538,7 +16560,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3040"
+            line="3087"
             column="29"/>
     </issue>
 
@@ -16549,7 +16571,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3049"
+            line="3096"
             column="29"/>
     </issue>
 
@@ -16560,7 +16582,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3067"
+            line="3114"
             column="33"/>
     </issue>
 
@@ -16571,7 +16593,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3082"
+            line="3129"
             column="33"/>
     </issue>
 
@@ -16582,7 +16604,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3103"
+            line="3150"
             column="29"/>
     </issue>
 
@@ -16593,7 +16615,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3112"
+            line="3159"
             column="29"/>
     </issue>
 
@@ -16604,7 +16626,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3132"
+            line="3179"
             column="29"/>
     </issue>
 
@@ -16615,7 +16637,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3155"
+            line="3202"
             column="33"/>
     </issue>
 
@@ -16626,7 +16648,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3171"
+            line="3218"
             column="33"/>
     </issue>
 
@@ -16637,7 +16659,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3187"
+            line="3234"
             column="29"/>
     </issue>
 
@@ -16648,7 +16670,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3202"
+            line="3249"
             column="29"/>
     </issue>
 
@@ -16659,7 +16681,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3241"
+            line="3288"
             column="33"/>
     </issue>
 
@@ -16670,7 +16692,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3251"
+            line="3298"
             column="33"/>
     </issue>
 
@@ -16681,7 +16703,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3267"
+            line="3314"
             column="33"/>
     </issue>
 
@@ -16692,7 +16714,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3316"
+            line="3363"
             column="29"/>
     </issue>
 
@@ -16703,7 +16725,7 @@
         errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3339"
+            line="3386"
             column="37"/>
     </issue>
 
@@ -16714,7 +16736,7 @@
         errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3347"
+            line="3394"
             column="37"/>
     </issue>
 
@@ -16725,7 +16747,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3369"
+            line="3416"
             column="29"/>
     </issue>
 
@@ -16736,7 +16758,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3378"
+            line="3425"
             column="29"/>
     </issue>
 
@@ -16747,7 +16769,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3409"
+            line="3456"
             column="29"/>
     </issue>
 
@@ -16758,7 +16780,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3418"
+            line="3465"
             column="29"/>
     </issue>
 
@@ -16769,7 +16791,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3427"
+            line="3474"
             column="29"/>
     </issue>
 
@@ -16780,7 +16802,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3456"
+            line="3503"
             column="33"/>
     </issue>
 
@@ -16791,7 +16813,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3476"
+            line="3523"
             column="29"/>
     </issue>
 
@@ -16802,7 +16824,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3485"
+            line="3532"
             column="29"/>
     </issue>
 
@@ -16813,7 +16835,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3500"
+            line="3547"
             column="29"/>
     </issue>
 
@@ -16824,7 +16846,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3521"
+            line="3568"
             column="29"/>
     </issue>
 
@@ -16835,7 +16857,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3531"
+            line="3578"
             column="29"/>
     </issue>
 
@@ -16846,7 +16868,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3540"
+            line="3587"
             column="29"/>
     </issue>
 
@@ -16857,7 +16879,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3551"
+            line="3598"
             column="29"/>
     </issue>
 
@@ -16868,7 +16890,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_drawer.xml"
-            line="3567"
+            line="3614"
             column="29"/>
     </issue>
 
