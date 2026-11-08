@@ -98,7 +98,11 @@ class DialogFileSpecs(
         binding.tvSpecOutputRoute.text = routeText
 
         val isBitPerfect = metrics?.isBitPerfect ?: false
-        binding.tvSpecBitPerfectBadge.text = if (isBitPerfect) "DIRECT · NO DSP" else "DSP / MIXER ACTIVE"
+        binding.tvSpecBitPerfectBadge.text = when {
+            metrics?.isBitPerfectVerified == true -> getString(com.hana.spindle.R.string.bitperfect_badge_verified)
+            isBitPerfect -> "DIRECT · NO DSP"
+            else -> "DSP / MIXER ACTIVE"
+        }
         binding.tvSpecBitPerfectBadge.setTextColor(
             if (isBitPerfect) android.graphics.Color.parseColor("#00E676") else android.graphics.Color.parseColor("#FFB74D")
         )

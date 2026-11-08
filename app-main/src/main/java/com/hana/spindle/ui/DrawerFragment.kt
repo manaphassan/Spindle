@@ -1253,6 +1253,31 @@ class DrawerFragment : Fragment() {
             app.audioEngine.metricsTracker.updateRouteTelemetry()
         }
 
+        // 4b. Bit-perfect mixer (Android 14+), verified from the platform's own answer
+        binding.switchBitPerfectMixer.isChecked = prefs.getBoolean(com.hana.spindle.playback.PREF_BITPERFECT_MIXER, false)
+        binding.switchBitPerfectMixer.isEnabled = com.hana.spindle.playback.BitPerfectMixerController.isOsSupported
+        binding.switchBitPerfectMixer.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean(com.hana.spindle.playback.PREF_BITPERFECT_MIXER, isChecked).apply()
+            val track = app.audioEngine.playbackState.value.currentTrack
+            app.audioEngine.applyBitPerfectMixer(track?.sampleRate ?: 0, track?.bitDepth ?: 16)
+            app.audioEngine.metricsTracker.updateRouteTelemetry()
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+                app.audioEngine.bitPerfectMixer.state.collect { st ->
+                    binding.tvBitPerfectMixerStatus.text = when (st.status) {
+                        com.hana.spindle.playback.BitPerfectStatus.OFF -> getString(R.string.bitperfect_status_off)
+                        com.hana.spindle.playback.BitPerfectStatus.UNSUPPORTED_OS -> getString(R.string.bitperfect_status_unsupported)
+                        com.hana.spindle.playback.BitPerfectStatus.NO_DEVICE -> getString(R.string.bitperfect_status_no_device)
+                        com.hana.spindle.playback.BitPerfectStatus.NO_MATCH -> getString(R.string.bitperfect_status_no_match)
+                        com.hana.spindle.playback.BitPerfectStatus.REJECTED -> getString(R.string.bitperfect_status_rejected)
+                        com.hana.spindle.playback.BitPerfectStatus.ACTIVE ->
+                            getString(R.string.bitperfect_status_active, st.format?.sampleRateHz ?: 0, st.format?.bitDepth ?: 0)
+                    }
+                }
+            }
+        }
+
         binding.btnUsbDacProbe.setOnClickListener {
             val dac = app.usbDacManager.refreshUsbDacTelemetry()
             app.audioEngine.metricsTracker.updateRouteTelemetry()
@@ -2153,7 +2178,10 @@ class DrawerFragment : Fragment() {
                             b.layoutJackTelemetry.visibility = View.GONE
                         }
 
-                        if (metrics.isBitPerfect) {
+                        if (metrics.isBitPerfectVerified) {
+                            b.tvBitPerfectBadge.text = "● " + getString(R.string.bitperfect_badge_verified)
+                            b.tvBitPerfectBadge.setTextColor(if (isEink) Color.BLACK else Color.parseColor("#00E676"))
+                        } else if (metrics.isBitPerfect) {
                             b.tvBitPerfectBadge.text = "● DIRECT · NO DSP"
                             b.tvBitPerfectBadge.setTextColor(if (isEink) Color.BLACK else Color.parseColor("#00E676"))
                         } else {

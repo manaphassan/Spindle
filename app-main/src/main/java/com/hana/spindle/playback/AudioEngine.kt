@@ -92,7 +92,8 @@ data class PlaybackState(
 @UnstableApi
 class AudioEngine(
     private val context: Context,
-    val metricsTracker: AudioMetricsTracker = AudioMetricsTracker(context)
+    val metricsTracker: AudioMetricsTracker = AudioMetricsTracker(context),
+    val bitPerfectMixer: BitPerfectMixerController = BitPerfectMixerController(context)
 ) : AudioTransport {
 
     override val isPlaying: Boolean get() = _playbackState.value.isPlaying
@@ -316,7 +317,11 @@ class AudioEngine(
             }
         }.apply {
             setEnableDecoderFallback(true)
-            setEnableAudioFloatOutput(true)
+            // Float output converts 24/32-bit PCM, which can never match a bit-perfect mixer format.
+            setEnableAudioFloatOutput(
+                !context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+                    .getBoolean(PREF_BITPERFECT_MIXER, false)
+            )
             setEnableAudioTrackPlaybackParams(false)
         }
 
@@ -388,6 +393,12 @@ class AudioEngine(
         })
     }
 
+    /** Requests the platform bit-perfect mixer path (Android 14+) for this track format. */
+    fun applyBitPerfectMixer(sampleRateHz: Int, bitDepth: Int) {
+        val prefs = context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+        bitPerfectMixer.apply(prefs.getBoolean(PREF_BITPERFECT_MIXER, false), sampleRateHz, bitDepth)
+    }
+
     private fun onTrackStarted(track: TrackEntity, reason: Int = -1, isUserInitiated: Boolean = false) {
         val physicalPath = CueSheetParser.getAudioFilePath(track.path)
         val file = File(physicalPath)
@@ -411,6 +422,7 @@ class AudioEngine(
             activeLyricIndex = -1
         )
         loadLyricsForTrack(track, physicalPath)
+        applyBitPerfectMixer(track.sampleRate, track.bitDepth)
         metricsTracker.updateSourceSpecs(
             format = track.fileFormat,
             bitDepth = track.bitDepth,
@@ -1493,6 +1505,7 @@ class AudioEngine(
     }
 
     fun release() {
+        bitPerfectMixer.clear()
         try {
             context.unregisterReceiver(becomingNoisyReceiver)
         } catch (ignored: Exception) {}
