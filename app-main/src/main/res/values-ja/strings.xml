@@ -10,4 +10,14 @@
     <string name="bitperfect_status_rejected">Androidがビットパーフェクト要求を拒否しました</string>
     <string name="bitperfect_status_active">ビットパーフェクト有効: %1$d Hz / %2$d-bit</string>
     <string name="bitperfect_badge_verified">ビットパーフェクト · 検証済み</string>
+    <string name="peq_title">パラメトリックEQ (ソフトウェア)</string>
+    <string name="peq_desc">ベル、シェルフ、パスフィルターをオーディオ経路で処理し、AutoEqテキストを読み込めます。編集は即時反映、オンにした場合は次のトラックから有効です。DSPとして扱われます。</string>
+    <string name="peq_edit">編集</string>
+    <string name="peq_dialog_title">パラメトリックEQ バンド</string>
+    <string name="peq_dialog_hint">AutoEq / Equalizer APO のテキストを1行1フィルターで貼り付けてください (例: Filter 1: ON PK Fc 1000 Hz Gain -3.0 dB Q 1.00)。</string>
+    <string name="peq_apply">適用</string>
+    <string name="peq_auto_preamp">自動プリアンプ</string>
+    <string name="peq_reset">リセット</string>
+    <string name="peq_parse_error">有効なフィルターが見つかりません</string>
+    <string name="peq_applied">%1$d 件のフィルターを適用しました</string>
 </resources>

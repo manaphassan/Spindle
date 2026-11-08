@@ -21,6 +21,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.Renderer
 import androidx.media3.exoplayer.audio.AudioRendererEventListener
 import androidx.media3.exoplayer.audio.AudioSink
+import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.audio.MediaCodecAudioRenderer
 import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
@@ -287,6 +288,7 @@ class AudioEngine(
         this.playerAudioAttributes = audioAttrs
         this.playerLoadControl = lControl
 
+        ParametricEq.load(context)
         exoPlayer = createPlayerInstance()
         audioFxController.attachSession(exoPlayer.audioSessionId)
         restoreLastPlayedTrack()
@@ -294,6 +296,17 @@ class AudioEngine(
 
     private fun createPlayerInstance(): ExoPlayer {
         val renderersFactory = object : DefaultRenderersFactory(context) {
+            override fun buildAudioSink(
+                context: Context,
+                enableFloatOutput: Boolean,
+                enableAudioTrackPlaybackParams: Boolean
+            ): AudioSink = DefaultAudioSink.Builder(context)
+                .setEnableFloatOutput(enableFloatOutput)
+                .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
+                // One processor instance per sink (crossfade uses two players); shared settings.
+                .setAudioProcessors(arrayOf<androidx.media3.common.audio.AudioProcessor>(ParametricEqProcessor()))
+                .build()
+
             override fun buildAudioRenderers(
                 context: Context,
                 extensionRendererMode: Int,

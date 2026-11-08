@@ -1278,6 +1278,17 @@ class DrawerFragment : Fragment() {
             }
         }
 
+        // 4c. Software parametric EQ
+        binding.switchPeq.isChecked = com.hana.spindle.playback.ParametricEq.settings.value.enabled
+        binding.switchPeq.setOnCheckedChangeListener { _, isChecked ->
+            val cur = com.hana.spindle.playback.ParametricEq.settings.value
+            com.hana.spindle.playback.ParametricEq.update(cur.copy(enabled = isChecked), requireContext())
+            app.audioEngine.metricsTracker.updateRouteTelemetry()
+        }
+        binding.btnPeqEdit.setOnClickListener {
+            com.hana.spindle.ui.DialogParametricEq().show(childFragmentManager, "peq")
+        }
+
         binding.btnUsbDacProbe.setOnClickListener {
             val dac = app.usbDacManager.refreshUsbDacTelemetry()
             app.audioEngine.metricsTracker.updateRouteTelemetry()

@@ -76,7 +76,7 @@ class AudioMetricsTracker(private val context: Context) {
     private fun isDspActive(): Boolean {
         val fx = (context.applicationContext as? com.hana.spindle.SpindleApp)?.audioEngine?.audioFxController
             ?: return true
-        return !fx.isBypassEnabled || fx.isTapeSaturationEnabled || fx.crossfeedStrength > 0
+        return !fx.isBypassEnabled || fx.isTapeSaturationEnabled || fx.crossfeedStrength > 0 || ParametricEq.isActive
     }
 
     fun queryActiveUsbDac(): UsbDacInfo? {
