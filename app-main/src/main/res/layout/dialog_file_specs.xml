@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/surface_container"
+    android:fillViewport="false"
+    android:scrollbars="vertical">
+
+<LinearLayout
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -28,9 +35,10 @@
         <Button
             android:id="@+id/btnCloseSpecs"
             android:layout_width="wrap_content"
-            android:layout_height="32dp"
+            android:layout_height="48dp"
+            android:minWidth="48dp"
             android:text="@string/action_close"
-            android:textSize="11sp"
+            android:textSize="12sp"
             android:textStyle="bold"
             android:textColor="@color/white"
             android:backgroundTint="@color/surface_elevated"
@@ -59,7 +67,7 @@
             android:layout_height="wrap_content"
             android:text="@string/specs_stream_header"
             android:textColor="@color/text_secondary"
-            android:textSize="11sp"
+            android:textSize="12sp"
             android:textStyle="bold"
             android:letterSpacing="0.1" />
 
@@ -80,7 +88,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/specs_format_codec"
                     android:textColor="@color/text_secondary"
-                    android:textSize="10sp" />
+                    android:textSize="12sp" />
 
                 <TextView
                     android:id="@+id/tvSpecFormat"
@@ -104,7 +112,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/specs_bitrate"
                     android:textColor="@color/text_secondary"
-                    android:textSize="10sp" />
+                    android:textSize="12sp" />
 
                 <TextView
                     android:id="@+id/tvSpecBitrate"
@@ -135,7 +143,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/specs_sample_rate"
                     android:textColor="@color/text_secondary"
-                    android:textSize="10sp" />
+                    android:textSize="12sp" />
 
                 <TextView
                     android:id="@+id/tvSpecSampleRate"
@@ -159,7 +167,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/specs_bit_depth"
                     android:textColor="@color/text_secondary"
-                    android:textSize="10sp" />
+                    android:textSize="12sp" />
 
                 <TextView
                     android:id="@+id/tvSpecBitDepth"
@@ -190,7 +198,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/specs_channels"
                     android:textColor="@color/text_secondary"
-                    android:textSize="10sp" />
+                    android:textSize="12sp" />
 
                 <TextView
                     android:id="@+id/tvSpecChannels"
@@ -213,7 +221,7 @@
                     android:layout_height="wrap_content"
                     android:text="AUDIO QUALITY"
                     android:textColor="@color/text_secondary"
-                    android:textSize="10sp" />
+                    android:textSize="12sp" />
 
                 <TextView
                     android:id="@+id/tvSpecQuality"
@@ -241,7 +249,7 @@
             android:layout_height="wrap_content"
             android:text="@string/specs_fs_header"
             android:textColor="@color/text_secondary"
-            android:textSize="11sp"
+            android:textSize="12sp"
             android:textStyle="bold"
             android:letterSpacing="0.1" />
 
@@ -250,7 +258,7 @@
             android:layout_height="wrap_content"
             android:text="@string/specs_location_uri"
             android:textColor="@color/text_secondary"
-            android:textSize="10sp"
+            android:textSize="12sp"
             android:layout_marginTop="8dp" />
 
         <TextView
@@ -280,7 +288,7 @@
                 android:layout_height="wrap_content"
                 android:text="AUDIOPHILE CUE VIRTUAL SUB-TRACK"
                 android:textColor="@color/vfd_cyan"
-                android:textSize="10sp"
+                android:textSize="12sp"
                 android:textStyle="bold"
                 android:letterSpacing="0.08" />
 
@@ -300,7 +308,7 @@
                 android:layout_height="wrap_content"
                 android:text="Physical File: Album.flac"
                 android:textColor="@color/text_secondary"
-                android:textSize="10sp"
+                android:textSize="12sp"
                 android:fontFamily="monospace"
                 android:ellipsize="middle"
                 android:singleLine="true"
@@ -324,7 +332,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/specs_file_size"
                     android:textColor="@color/text_secondary"
-                    android:textSize="10sp" />
+                    android:textSize="12sp" />
 
                 <TextView
                     android:id="@+id/tvSpecSize"
@@ -347,7 +355,7 @@
                     android:layout_height="wrap_content"
                     android:text="LYRICS STATUS"
                     android:textColor="@color/text_secondary"
-                    android:textSize="10sp" />
+                    android:textSize="12sp" />
 
                 <TextView
                     android:id="@+id/tvSpecLyrics"
@@ -383,7 +391,7 @@
                 android:layout_weight="1"
                 android:text="OUTPUT HARDWARE &amp; DAC"
                 android:textColor="@color/text_secondary"
-                android:textSize="11sp"
+                android:textSize="12sp"
                 android:textStyle="bold"
                 android:letterSpacing="0.1" />
 
@@ -393,7 +401,7 @@
                 android:layout_height="wrap_content"
                 android:text="BIT-PERFECT"
                 android:textColor="@color/vfd_emerald"
-                android:textSize="10sp"
+                android:textSize="12sp"
                 android:textStyle="bold"
                 android:background="#1B382B"
                 android:paddingHorizontal="6dp"
@@ -417,7 +425,7 @@
                     android:layout_height="wrap_content"
                     android:text="ACTIVE ROUTE"
                     android:textColor="@color/text_secondary"
-                    android:textSize="10sp" />
+                    android:textSize="12sp" />
 
                 <TextView
                     android:id="@+id/tvSpecOutputRoute"
@@ -440,7 +448,7 @@
                     android:layout_height="wrap_content"
                     android:text="HARDWARE DAC"
                     android:textColor="@color/text_secondary"
-                    android:textSize="10sp" />
+                    android:textSize="12sp" />
 
                 <TextView
                     android:id="@+id/tvSpecDacStatus"
@@ -470,7 +478,7 @@
                 android:layout_height="wrap_content"
                 android:text="FiiO KA3 High-Resolution DAC"
                 android:textColor="@color/white"
-                android:textSize="11.5sp"
+                android:textSize="12sp"
                 android:textStyle="bold" />
 
             <TextView
@@ -479,7 +487,7 @@
                 android:layout_height="wrap_content"
                 android:text="VID: 0x2972 • PID: 0x0047 • UAC 2.0 High-Speed"
                 android:textColor="#A1A1AA"
-                android:textSize="10sp"
+                android:textSize="12sp"
                 android:fontFamily="monospace"
                 android:layout_marginTop="2dp" />
 
@@ -489,10 +497,40 @@
                 android:layout_height="wrap_content"
                 android:text="Direct ALSA PCM • Up to 32-bit/768kHz • Asynchronous"
                 android:textColor="@color/vfd_emerald"
-                android:textSize="10sp"
+                android:textSize="12sp"
                 android:fontFamily="monospace"
                 android:layout_marginTop="2dp" />
         </LinearLayout>
     </LinearLayout>
 
+    <!-- Signal path: source > decode > DSP > output, built from the live engine state -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@color/surface_card"
+        android:padding="14dp"
+        android:layout_marginTop="12dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/signal_path_title"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.1" />
+
+        <TextView
+            android:id="@+id/tvSpecSignalPath"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:fontFamily="monospace"
+            android:lineSpacingExtra="2dp"
+            android:textColor="@color/text_primary"
+            android:textSize="12sp" />
+    </LinearLayout>
+
 </LinearLayout>
+</ScrollView>
