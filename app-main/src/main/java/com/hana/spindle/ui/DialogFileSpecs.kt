@@ -130,9 +130,54 @@ class DialogFileSpecs(
             }
         }
 
+        renderSignalPath(app, song, metrics)
+
         binding.btnCloseSpecs.setOnClickListener {
             dismiss()
         }
+    }
+
+    @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+    private fun renderSignalPath(
+        app: com.hana.spindle.SpindleApp?,
+        track: TrackEntity,
+        metrics: com.hana.spindle.playback.AudioMetrics?
+    ) {
+        val engine = app?.audioEngine ?: return
+        val fx = engine.audioFxController
+        val peq = com.hana.spindle.playback.ParametricEq.settings.value
+        val rgOn = engine.replayGainMode != com.hana.spindle.core.ReplayGainMode.OFF
+        val stages = com.hana.spindle.playback.SignalPathBuilder.build(
+            com.hana.spindle.playback.SignalPathInput(
+                format = track.fileFormat,
+                bitDepth = track.bitDepth,
+                sampleRateHz = track.sampleRate,
+                dopActive = engine.isDopActive,
+                equalizerActive = !fx.isBypassEnabled,
+                parametricBands = if (peq.isEffective) peq.bands.count { it.enabled } else 0,
+                tapeSaturation = fx.isTapeSaturationEnabled,
+                crossfeed = fx.crossfeedStrength > 0,
+                replayGainDb = if (rgOn) engine.currentReplayGainDb + engine.replayGainPreampDb else null,
+                mixer = engine.bitPerfectMixer.state.value,
+                outputRoute = metrics?.outputRoute ?: "3.5mm Headphone Jack"
+            )
+        )
+        val sb = StringBuilder()
+        stages.forEachIndexed { i, stage ->
+            if (i > 0) sb.append("\n")
+            val label = getString(
+                when (stage.kind) {
+                    com.hana.spindle.playback.SignalStageKind.SOURCE -> com.hana.spindle.R.string.signal_stage_source
+                    com.hana.spindle.playback.SignalStageKind.DECODE -> com.hana.spindle.R.string.signal_stage_decode
+                    com.hana.spindle.playback.SignalStageKind.DSP -> com.hana.spindle.R.string.signal_stage_dsp
+                    com.hana.spindle.playback.SignalStageKind.OUTPUT -> com.hana.spindle.R.string.signal_stage_output
+                }
+            )
+            val lines = if (stage.lines.isEmpty()) listOf(getString(com.hana.spindle.R.string.signal_dsp_none)) else stage.lines
+            sb.append(label).append("\n")
+            lines.forEach { sb.append("  ").append(it).append("\n") }
+        }
+        binding.tvSpecSignalPath.text = sb.toString().trimEnd()
     }
 
     override fun onDestroyView() {
