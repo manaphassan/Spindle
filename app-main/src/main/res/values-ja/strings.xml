@@ -37,4 +37,8 @@
     <string name="missing_track_later">後で</string>
     <string name="missing_track_scanning">ライブラリを再スキャン中…</string>
     <string name="missing_track_done">ライブラリを更新しました: %1$d トラック、見つからない %2$d 件を削除</string>
+    <string name="missing_card_title">SDカードが挿入されていません</string>
+    <string name="missing_card_message">「%1$s」は、現在挿入されていないSDカードにあります。再生するにはカードを挿入してください。\n\nそのカードをもう使わない場合は、ライブラリからトラックを削除できます。プレイリストからも削除されます。</string>
+    <string name="missing_card_keep">トラックを残す</string>
+    <string name="missing_card_remove">ライブラリから削除</string>
 </resources>
