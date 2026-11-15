@@ -252,9 +252,12 @@ class MainActivity : AppCompatActivity() {
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
+        if (!::binding.isInitialized) return
         if (hasFocus && isImmersiveModeEnabled) {
             applyImmersiveFlags()
         }
+        // Pages are laid out by now even after waking from the lock screen; reset their depth.
+        if (hasFocus) binding.viewPager.requestTransform()
     }
 
     private fun setupViewPager() {
@@ -301,6 +304,14 @@ class MainActivity : AppCompatActivity() {
         // Center default: Main Cassette Player screen
         binding.viewPager.setCurrentItem(1, false)
         binding.viewPager.offscreenPageLimit = 2
+        // Instant jumps and resumes don't always run the depth transformer, which can leave the
+        // shown page at its off-screen 0.96x scale / 75% alpha. Re-apply it whenever a page settles.
+        binding.viewPager.registerOnPageChangeCallback(object :
+            androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                binding.viewPager.post { binding.viewPager.requestTransform() }
+            }
+        })
     }
 
     private fun setupCatalogContainer() {
