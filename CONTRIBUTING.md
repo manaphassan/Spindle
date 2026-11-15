@@ -67,12 +67,13 @@ Always consult [docs/GLOSSARY.md](docs/GLOSSARY.md) before naming classes, varia
 ## 4. Legal & Trademark Safeguards
 
 Spindle respects third-party intellectual property.
-1. **Never use third-party trademarks** (including "Sony", "Walkman", "WM-2", "Walkman Cassette", "SoundAlive") anywhere in the repository, including code comments, XML layout IDs, drawable assets, test fixtures, and documentation.
+1. **Never use third-party trademarks** (including "Sony", "Walkman", "WM-2", "Walkman Cassette", "SoundAlive", and tape brands or product lines such as "TDK", "Maxell", "BASF", "Denon", "Metal-XR") anywhere in the repository, including code comments, XML layout IDs, drawable assets, test fixtures, and documentation.
 2. Pre-commit check:
    ```bash
    git grep -in "walkman" -- . ':!RELEASE_NOTES_*' ':!REMEDIATION_PLAN.md' ':!app-main/lint-baseline.xml'
    git grep -inw "sony" -- . ':!RELEASE_NOTES_*' ':!REMEDIATION_PLAN.md' ':!app-main/lint-baseline.xml'
    git grep -in "wm-2"
+   git grep -inwE "tdk|maxell|basf|denon|metal-?xr|extralloy" -- . ':!RELEASE_NOTES_*' ':!REMEDIATION_PLAN.md' ':!app-main/lint-baseline.xml' ':!app-main/src/main/java/com/hana/spindle/util/LegacyPrefsMigration*' ':!app-main/src/test/java/com/hana/spindle/util/LegacyPrefsMigration*'
    ```
    All checks must return zero matches, except:
    - **Historical text:** past release notes, the remediation plan and the lint baseline.
@@ -98,13 +99,12 @@ Before opening a pull request or merging changes:
   - `build-test`: unit tests for `app-main`, `app-lite` and `core`, `app-main` lint (existing findings frozen in `app-main/lint-baseline.xml`, only new errors fail), debug compile of both apps, and a check that no key material is tracked.
   - `startup-smoke`: `:app-main:connectedDebugAndroidTest` on an API 34 emulator (`app-main/src/androidTest/.../StartupSmokeTest.kt`). It boots `SpindleApp.audioEngine` and `MainActivity`, catching startup crashes that unit tests can't see.
 - **Merging:** use a merge commit or rebase, not squash, so per-area commits stay readable.
-- **Release** (`.github/workflows/release.yml`) is tag-driven. The tag must match the module's `versionName`:
-  - `git tag v1.7.0-STUDIO && git push origin v1.7.0-STUDIO` publishes Spindle Standard (signed APK + AAB).
-  - `git tag v1.1.1-LITE && git push origin v1.1.1-LITE` publishes Spindle Lite (signed APK).
+- **Release** (`.github/workflows/release.yml`) is **manually triggered** (Actions → Release → Run workflow, or `gh workflow run release.yml -f tag=v1.7.2-STUDIO`). Pushing a tag does not start it. The tag must match the module's `versionName`:
+  - `v<version>-STUDIO` publishes Spindle Standard (signed APK + AAB); `v<version>-LITE` publishes Spindle Lite (signed APK).
   - Notes come from `RELEASE_NOTES_<tag>.md` if present, otherwise they are generated.
   - Artifacts, `SHA256SUMS.txt` and the GitHub Release are produced by the workflow. Never commit binaries.
 - **Required repository secrets** (Settings → Secrets and variables → Actions): `SIGNING_KEYSTORE_BASE64` (`base64 -w0 spindle-release.jks`), `SIGNING_STORE_PASSWORD`, `SIGNING_KEY_ALIAS`, `SIGNING_KEY_PASSWORD`. The release job refuses to run without them and rejects debug-signed APKs.
-  - **Current state:** these secrets are not set, so a tag push fails at "Require signing secrets" before building. Standard releases since v1.7.0 are built and published from a maintainer machine instead:
+  - **Current state:** these secrets are not set, so the workflow can't be used yet. Standard releases since v1.7.0 are built and published from a maintainer machine:
     1. `./gradlew :app-main:assembleRelease :app-main:bundleRelease` with a local `keystore.properties` (never committed).
     2. `apksigner verify --print-certs` must show the HaNa Innovation certificate (SHA-256 `0c16968e…a7dc2`, same as v1.6.0), never "Android Debug".
     3. Smoke-test the minified release APK on a device (launch, play, VU meter).

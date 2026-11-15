@@ -1,7 +1,7 @@
 # Spindle — Canonical Glossary & Terminology Authority
 
 **Author:** HaNa Innovation Architecture Board  
-**Status:** Active Canonical Specification (v1.2, updated for v1.7.1-STUDIO)  
+**Status:** Active Canonical Specification (v1.3, updated for v1.7.2-STUDIO)  
 **Scope:** `core`, `app-main` (Spindle Standard), `app-lite` (Spindle Lite), documentation, UI strings, and marketing.
 
 ---
@@ -50,7 +50,7 @@ Historical drift across data layers, UI copy, DSP code, and documentation is per
 
 ### 3.4 Chassis vs. Theme vs. Deck Style
 - **Chassis**: Refers specifically to the vintage cassette deck enclosure (e.g., `METAL_81_RED`, `VINTAGE_SILVER`, `STUDIO_BLACK`).
-- **Skin**: Refers to the cassette shell visual design (e.g., `TDK_SA_90`, `MAXELL_XLII`, `BASF_CHROME`, `METAL_XR_TYPE4`). Skins restyle the classic deck only.
+- **Skin**: Refers to the cassette shell visual design (e.g., `PURE_METAL_TYPE4`, `TYPE2_HIGH_BIAS`, `TYPE2_AMBER_GOLD`, `TYPE2_ANTHRACITE_CHROME`). Skins restyle the classic deck only.
 - **Theme**: Refers exclusively to UI surface theming (Dark Mode, Light Mode, OLED Pure Black).
 - **Deck Style**: Chooses the faceplate deck or the classic deck (see §2). User-facing text says "faceplate", never a third-party product name (see CONTRIBUTING §4).
 
