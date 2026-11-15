@@ -12,24 +12,29 @@
 
 ## 🎧 What's New in v1.7.0-STUDIO
 
-### 📼 Walkman Deck Style
-- **Walkman faceplate player:** a painted Walkman deck (Silver '81 and Pro Black colorways) as the new default home deck, with cassette, level meter, tape and Dolby sliders, and a DIRECT lamp that lights only when nothing changes the sound. The classic vertical deck stays available under Settings › Display › Home Deck Style.
-- **Walkman radio deck:** FM and NET bands on one tuner. Without wired headphones FM shows NO ANT instead of silently switching to NET; NET shows stream buffer and link meters.
-- **System Deck drawer:** in deck style the drawer gets a SPINDLE band with a RUN lamp, a FUNCTION switch for Sound / Settings / Apps, an LCD settings menu, letter headers in the app list and a dial-needle alphabet rail.
-- **Zune pivots:** the classic style's Vault and drawer use rotating pivot headers and snapping full-width panels; settings open as a menu of short pages.
+### 📼 Faceplate Deck Style (new default)
+- **Faceplate player:** a painted portable-cassette faceplate in Silver '81 and Pro Black colorways, with a labelled cassette, a real LED level meter, TAPE EQ and DOLBY NR sliders, and a DIRECT lamp that lights only when nothing in the signal path changes the sound. The classic vertical deck is still available under Settings › Display › Home Deck Style.
+- **Faceplate radio:** FM and NET bands on one tuner. Without wired headphones FM shows NO ANT instead of silently switching to NET; NET shows a stream buffer (BUF) meter and a network LINK meter.
+- **System Deck drawer:** a SPINDLE band with a RUN lamp, a FUNCTION switch for Sound / Settings / Apps, an LCD settings menu, letter headers in the app list and a dial-needle alphabet rail.
+- **Metro pivots (classic style):** the Vault and drawer use rotating pivot headers and snapping full-width panels. Settings opens as a menu of eight short pages.
 
 ### 📊 Real Metering
-- VU meters now read the actual PCM output instead of a simulated needle, timed to what you hear.
+- VU and LED meters read the actual PCM output instead of a simulated needle, timed to what you hear.
 
 ### 🏛️ Audio Engine Additions
 - **Software parametric EQ** with AutoEq / Equalizer APO text import.
-- **Bit-perfect mixer mode** (Android 14+), with a badge only when the platform confirms it.
-- **DSD over PCM (DoP)** for DSF files on a verified bit-perfect path.
+- **Bit-perfect mixer mode** (Android 14+, USB or wired output). The "bit-perfect · verified" badge appears only when the platform confirms the mixer path and no DSP is active.
+- **DSD over PCM (DoP)** for DSF files, only over a verified bit-perfect path.
 - **WavPack (.wv)** lossless playback with a pure-Kotlin decoder.
+- **Signal path view** showing source, decode, DSP and output stages.
 - **FLAT reference tape** formulation as the new default.
 
+### 🔒 Security
+- Studio unlock now uses signed tokens. v1.6.0 accepted tokens that could be guessed, so v1.6.0 users should update.
+- Backups are off, the lock-screen activity and widget controls are no longer exported, and plain-HTTP remote control is limited to local-network hosts.
+
 ### 🛠️ Fixes
-- Fixed a crash on every launch caused by startup recursion between the audio engine and output telemetry.
+- Fixed a crash on every launch caused by startup recursion between the audio engine and output telemetry. A new emulator startup test in CI guards against it.
 - When a track's file is missing, Spindle offers to rescan the library. If its SD card is just not inserted, tracks are kept unless you choose to remove them.
 - Launching Spindle from another app while it is the home screen no longer creates a second copy.
 - Fixed the ghosted A–Z jump list, screens left shrunk and dimmed after page jumps, and the stretched cover in the Vault hub.
@@ -39,10 +44,10 @@
 
 ## 🎧 Also in v1.7.0-STUDIO
 
-### 1. 💎 Bit-Perfect 32-Bit Float PCM Pipeline & Studio Soft-Knee Limiter
+### 1. 💎 32-Bit Float PCM Pipeline & Studio Soft-Knee Limiter
 - **Direct 32-Bit Float AudioTrack Routing (`ENCODING_PCM_FLOAT`):** Configures Android's `DefaultAudioSink` and `AudioTrack` with `AudioFormat.ENCODING_PCM_FLOAT` (value 4) backed by Media3 extension preference. Decodes incoming streams directly into 32-bit single-precision IEEE 754 floating-point audio with $+140\text{ dB}$ of internal dynamic headroom.
 - **Sub-0 dBFS Precision:** Completely eliminates fixed-point integer rounding artifacts, LSB truncation, and digital distortion when applying high-gain equalization or pre-amp adjustments.
-- **Studio Soft-Knee Peak Limiter ($\tanh$ curve):** Implements an analog console-grade hyperbolic tangent saturation curve in `AudioDspConstants.kt` activating above threshold $T = 10^{-0.5 / 20} \approx 0.94406$ ($-0.5\text{ dBFS}$). Signals below threshold remain 100% bit-perfect and transparent; peaks exceeding threshold are smoothly compressed toward $1.0\text{ dBFS}$, replacing harsh digital square-wave clipping with warm, musical harmonic saturation.
+- **Studio Soft-Knee Peak Limiter ($\tanh$ curve):** Implements an analog console-grade hyperbolic tangent saturation curve in `AudioDspConstants.kt` activating above threshold $T = 10^{-0.5 / 20} \approx 0.94406$ ($-0.5\text{ dBFS}$). Signals below threshold pass through unchanged; peaks exceeding threshold are smoothly compressed toward $1.0\text{ dBFS}$, replacing harsh digital square-wave clipping with warm, musical harmonic saturation.
 
 ### 2. 🍎 Native Apple AIFF / AIFC Container Demuxer & 80-Bit Extended Float Decoder
 - **Zero-Dependency Media3 Extractor (`AiffExtractor.kt`):** Built-in extractor for Apple Audio Interchange File Format (`.aiff`, `.aif`, `.aifc`), demuxing standard `FORM`, `COMM`, and `SSND` chunks directly inside ExoPlayer/Media3 without external binary codecs.
@@ -50,7 +55,7 @@
 - **Fast Stream Info Parser:** Instant header metadata extraction via `TagParser.parseAiffStreamInfo()` in $<0.1\text{ ms}$.
 
 ### 3. 🎼 Native DSD / DSF 1-Bit Bitstream & 32-Tap LUT FIR Decimator
-- **Native DSD Demuxer (`DsfExtractor.kt`):** Seamless playback of Sony DSD Stream Files (`.dsf`) and DSDIFF (`.dff`) containing 1-bit Delta-Sigma modulated bitstreams at $2.8224\text{ MHz}$ (DSD64).
+- **Native DSD Demuxer (`DsfExtractor.kt`):** Seamless playback of DSD Stream Files (`.dsf`) and DSDIFF (`.dff`) containing 1-bit Delta-Sigma modulated bitstreams at $2.8224\text{ MHz}$ (DSD64).
 - **Pre-Calculated 32-Tap Hann FIR Decimation:** Decimates 1-bit DSD bitstreams down by factor $M = 32$ to studio-grade 24-bit $88.2\text{ kHz}$ linear PCM (`C.ENCODING_PCM_24BIT`), preserving high-frequency extension while suppressing ultrasonic delta-sigma quantization noise.
 - **Ultra-Fast 4 KB Look-Up Table (LUT):** Decomposes 32 FIR taps into 4 pre-calculated 256-float look-up tables (`LUT_STAGE_0..3`), replacing inner multiply loops with 4 table lookups and 3 additions per sample. Runs with $<1\%$ CPU load even on quad-core Cortex-A53 DAPs.
 - **Fast DSD Header Inspection:** `TagParser.parseDsfStreamInfo()` extracts DSD sample counts, channels, and duration instantly.

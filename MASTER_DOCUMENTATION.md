@@ -2,7 +2,7 @@
 **Product Name:** Spindle (Audiophile DAP Launcher)  
 **Package Name:** `com.hana.spindle`  
 **Hero Hardware Inspiration:** Classic 1980s Japanese Portable Cassette Decks & Modern Minimalist Audiophile Gear  
-**Version:** 1.7.0-STUDIO  
+**Version:** 1.7.0-STUDIO (current stable release, published 2026-11-16, `versionCode` 9)  
 **Author / Art Director & Lead Systems Architect:** Spindle Core Team  
 **Platform Target:** Android 8.0 (API 26) through Android 14/15 (API 34/35)  
 **Primary Hardware Targets:** Ultra-low-resource Android DAPs, Compact Smartphones with Hardware DACs, and E-Ink DAPs  
@@ -26,12 +26,15 @@ The hero aesthetic unites legendary Japanese industrial audio design with a pure
    - **Clean Light (Brushed Aluminum)**: Industrial silver and crisp white minimalist aesthetic.
 5. **Continuous Auto-Play & State Persistence**: Automatically sequences to the next track upon completion (`REPEAT_MODE_OFF`). Remembers and restores last-played track and seek position across system reboots.
 6. **Extreme Low-RAM Footprint**: Tailored specifically for legacy DAPs with as little as **1GB – 2GB of RAM** and weak quad-core Cortex-A53 processors. Idle footprint $< 25\text{MB}$.
+7. **Selectable Home Deck Styles**: Settings › Display › Home Deck Style switches the player, radio and drawer between the faceplate deck (Silver '81 or Pro Black colorway, default Silver '81) and the Classic vertical deck (§2.7).
 
 ---
 
 ## 2. Interface Architecture & Component Specifications
 
 ### 2.1 Flagship Cassette Deck (`VerticalDeckView.kt`)
+This is the **Classic vertical deck** style, selectable under Settings › Display › Home Deck Style. The default home deck is the faceplate deck (§2.7); `VerticalDeckView` remains available alongside it.
+
 The center home screen renders a custom hardware-accelerated Canvas deck:
 
 ```
@@ -68,7 +71,7 @@ The center home screen renders a custom hardware-accelerated Canvas deck:
    - Procedural foley engine loops motor spool whir with dynamic pitch ramping (0.9x to 1.65x).
    - Solenoid release click on key release, and heavy solenoid auto-stop clack when hitting reel limits.
 5. **Standardized Status Row & Interactive Badges**:
-   - Left-aligned tactile badges: `[TYPE I / II / IV]`, `[DOLBY B / C / OFF]`, and `[J-CARD]`.
+   - Left-aligned tactile badges: `[FLAT / TYPE I–IV]` (tape formulation, cycled by tap; FLAT is the default), `[DOLBY B / C / OFF]`, and `[J-CARD]`.
    - Right-aligned hardware status: dynamic `Battery` bar and green `Run` transport LED.
 6. **Transport Deck & Kinematics**:
    - `REW`, `FWD`, `PLAY / PAUSE`, and `⏏ EJECT` buttons with physical detent haptics.
@@ -84,8 +87,8 @@ Triggered by tapping the cassette body or the `[J-CARD]` badge on the deck:
    - **Dual-Column Tracklist**: Automatically splits album tracks into Side A and Side B with vintage numbering (`A01..`, `B01..`), individual track durations, and a glowing theme-accented active playing indicator (`▶`).
    - **Direct Touch-to-Play**: Tapping any track row instantly seeks and plays the selected song while seamlessly flipping back to the running tape deck.
 
-### 2.3 Dedicated Single Audio Now Playing (`CatalogFragment.kt`)
-Triggered by tapping the floating mini-player in the music catalog:
+### 2.3 Dedicated Single Audio Now Playing (`VaultFragment.kt`)
+Triggered by tapping the floating mini-player in the Vault (music catalog):
 1. **Circular Cover & Radial Arc (`CircularCoverArcView.kt`)**:
    - Custom view rendering a centered circular album artwork thumbnail.
    - Outer track is framed with a 360° progress arc that supports direct rotational touch scrubbing.
@@ -108,8 +111,14 @@ Triggered by tapping the floating mini-player in the music catalog:
    - Sort direction: Ascending / Descending toggle.
 3. **Format Filters**:
    - Instant filter chips for `All`, `Hi-Res (24-bit+)`, `Lossless (FLAC/WAV)`, and `MP3`.
+4. **Missing-File Handling (`MainActivity.kt`, `MusicScanner.kt`, `data/StorageVolumes.kt`)**:
+   - When playback fails with `ERROR_CODE_IO_FILE_NOT_FOUND`, `AudioEngine` emits a `MissingTrackEvent` and a single prompt offers to rescan the library.
+   - Confirming runs `MusicScanner.pruneMissingTracks()` (removes entries whose files are gone; playlist links go with them via foreign-key cascade), then `scanAll()`, and unloads the deck if its track was removed.
+   - If the file lives on a removable volume (`/storage/<id>`) that is not mounted, the prompt instead says the SD card is not inserted and keeps the tracks by default; they are removed only if the user picks **REMOVE FROM LIBRARY** (`pruneMissingTracks(includeUnmountedVolumes = true)`). A plain rescan never prunes tracks on an unmounted card.
 
 ### 2.5 Bauhaus Minimalist Radio with Hardware Antenna Detection (`RadioFragment.kt`)
+This describes the radio page in the Classic deck style. With a faceplate style selected, the same page shows the faceplate radio deck (§2.8).
+
 1. **Swipe-to-Tune**: Page 2 in the main launcher ViewPager.
 2. **Dedicated FM vs DIGI Modes**:
    - **FM Mode**: Local over-the-air analog FM receiver requiring 3.5mm wired headphones connected as an antenna, with safety guidance if unplugged.
@@ -120,8 +129,10 @@ Triggered by tapping the floating mini-player in the music catalog:
 6. **Vintage LCD Display**: Mint-green backlit panel showing frequency, RDS station info, and connection status.
 
 ### 2.6 Studio Sound Deck & DSP Touch Lock (`DrawerFragment.kt`)
+In faceplate styles these pages sit inside the System Deck drawer (§2.9).
+
 1. **Lockable Studio Parametric EQ & DSP**: Dedicated tactile `[LOCK]` button securing the 10-band ISO graphic equalizer and parametric DSP knobs against accidental palm and pocket touches during playback.
-2. **Dual Analog Ballistic VU Meters**: Dedicated left and right channel galvanometer needles with warm vintage dial face, +3dB redline scale, and glowing peak indicator LEDs.
+2. **Dual Analog Ballistic VU Meters**: Dedicated left and right channel galvanometer needles with warm vintage dial face, +3dB redline scale, and glowing peak indicator LEDs. Needles are driven by measured output RMS levels (§3.8) and rest at zero when no local PCM is playing.
 3. **10-Band ISO Graphic & Parametric Equalizer**:
    - **Dual Operating Modes**: Switch between `GRAPHIC` (standard 1-octave ISO interpolation) and `PARAMETRIC` mode (continuous multi-bell acoustic summation modeling).
    - **Multi-Bell Acoustic Curve**: Uses Gaussian log-frequency formulation:
@@ -138,6 +149,56 @@ Triggered by tapping the floating mini-player in the music catalog:
 5. **Hi-Res Passthrough (Device-Dependent)**: Direct hardware audio routing bypassing software DSP coloration when supported by device HAL and DAC.
 6. **ReplayGain Loudness Calibration**: 3-state normalization mode (`OFF`, `TRACK GAIN`, `ALBUM GAIN`) standardizing untrimmed master tracks to reference 89.0 dB SPL.
 7. **Equal-Power Crossfade & Gapless Transition**: 3-way transition selector (`GAPLESS 0s`, `FADE 2s`, `FADE 4s`) utilizing sinusoidal equal-power attenuation ($P_{\text{total}} = \cos^2\theta + \sin^2\theta = 1$) to eliminate transition volume dips.
+
+### 2.7 Home Deck Styles & Faceplate Deck (`ui/cassette/`)
+1. **Deck Style Selector**:
+   - Settings › Display › **Home Deck Style** cycles faceplate **Silver '81** → faceplate **Pro Black** → **Classic vertical deck** (pref key `pref_deck_style` in `spindle_prefs`; default Silver '81).
+   - `PlayerFragment`, `RadioFragment` and `DrawerFragment` listen for the key and restyle live, so the player, radio and drawer always follow the same style.
+   - Cassette shell models are offered only while the Classic deck is selected; the faceplate deck uses its two colorways.
+2. **Faceplate Deck (Player)** — the ui/cassette/ faceplate deck painters and view, drawn on a fixed 360 × 592 dp design canvas:
+   - Painted faceplate with a horizontal cassette behind a smoked door. The cassette label shows title, subtitle and the tape position line (`C-90 · 45 MIN PER SIDE · <POSITION>`).
+   - Mechanical counter with reset, a REVERSE control reflecting repeat mode (`OFF` / `ALL` / `ONE`), and five keys: `REW`, `PLAY`, `FF`, `STOP`, `EJECT`.
+   - **LED level meter**: 26-segment L/R peak meter on a dBFS scale (−48 to 0) with peak hold and clip indication, fed by `OutputLevelMeter.read()` (§3.8). It stays dark when no audible PCM is being metered.
+   - **TAPE EQ** slide switch: `FLAT`, `I`, `II`, `III`, `IV` (`AudioFxController.TapeFormulation`). **DOLBY NR** slide switch: `OFF`, `B`, `C`.
+   - **DIRECT lamp**: lit only when `AudioFxController.isTonallyFlat` is true — no EQ curve (user, tape or Dolby), no tape saturation, bass boost or crossfeed, and the software parametric EQ (§3.9) not active. DSP bypass also counts as flat, except for the software PEQ, which runs in the audio sink and ignores bypass.
+   - **LCD** with a format line and a rate line.
+   - **Accessibility**: an `ExploreByTouchHelper` exposes each key, switch, the counter, cassette and meter as virtual views with spoken descriptions and click / long-click actions.
+
+### 2.8 Faceplate Radio Deck (`ui/radio/RadioDeckView.kt`)
+1. **Components**:
+   - `RadioDeckView`: drawing and touch host; holds no radio logic. `RadioFragment` pushes a `RadioDeckModel` and reacts to callbacks.
+   - `RadioDeckPainter`: chassis, dial scale and recesses cached in a bitmap; needle, LCD, meters, switch knobs, lamps and keys painted per frame.
+   - `RadioDeckModel`: plain data class (equality skips redundant redraws) plus `RadioDeckMath` mapping helpers, covered by the unit test `RadioDeckMathTest`.
+   - `RadioDeckAccessibility`: exposes the Canvas-drawn controls to TalkBack and switch access.
+2. **Controls**: slide-rule dial and LCD, SEEK buttons around a tuning wheel, **BAND** (`FM` / `NET`) and **MODE** (`AUTO` / `MONO`) slide switches with a STEREO lamp, four preset keys plus SCAN. Shares the faceplate deck colorways.
+3. **FM Band**: SIG bar and centre-zero TUNE meter. Without a wired headset, FM stays selected and the LCD shows **NO ANT** (tuning controls stay inactive until headphones are plugged in) instead of silently falling back to NET as the Classic radio does.
+4. **NET Band**:
+   - **BUF** meter: stream audio buffered ahead divided by `RadioStreamEngine.MAX_BUFFER_MS` (8000 ms, also the stream player's maximum buffer), scaled 0–8 s.
+   - **LINK** meter: network link quality — Wi-Fi signal strength mapped from −100 dBm (empty) to −50 dBm (full) on Android 10+, otherwise full or empty depending on internet capability.
+   - The LCD shows `NO NET` when the device is offline.
+
+### 2.9 System Deck Drawer & Metro Pivot Navigation (`DrawerFragment.kt`)
+1. **System Deck (faceplate styles, `ui/SystemDeckHeaderView.kt`)**:
+   - SPINDLE band with a **RUN** lamp that follows the playback state.
+   - Draggable **FUNCTION** slide switch with `SOUND` / `SETTINGS` / `APPS` stops. The knob tracks the panorama scroll position and selecting a stop scrolls to that page; stops are exposed to accessibility services.
+   - Settings render as an LCD menu (numbered rows with title and summary; a row inverts while pressed or focused).
+   - A brushed chassis frame (drawn by the faceplate deck chassis drawable) surrounds the panorama.
+2. **Classic Style**:
+   - Metro pivot headers (`ui/ZunePivotHeader.kt`): the active pivot sits at the left edge and the others follow in order, wrapping around.
+   - `SnappingPanoramaView`: a `HorizontalScrollView` with full-width panels that always comes to rest on a panel edge (a flick moves exactly one panel, a slow drag settles on the nearest). Shared by the Vault hub and collection panoramas and the drawer.
+3. **Drawer Page Order**: sound, settings, apps (both styles).
+4. **Settings Menu**: settings open as a menu of pages — display, playback, sleep timer, output, library, radio, gestures, about (§9.4).
+
+### 2.10 Apps List Index & A–Z Jump Grid
+1. **Letter Headers (`launcher/AppLetterHeaderDecoration.kt`, deck style)**: an LCD-style divider (`C ───`) above the first app of each initial. It is an item decoration, so adapter positions stay 1:1 with the app list and A–Z jumps stay exact.
+2. **Alphabet Rail Dial Needle (`AlphabetIndexView.kt`, deck style)**: at rest a dial needle marks the letter of the first visible app and follows list scrolling.
+3. **A–Z Jump Grid (`ZuneJumpListDialog.kt`)**: 4-column grid of `#`, `A`–`Z` and `↑` tiles; letters absent from the list are dimmed and not clickable. In deck style the tiles are drawn as LCD print on the recess colour.
+   - The grid is opaque and does not dim the window behind it, so nothing can show through.
+   - Only one instance is shown at a time; a grid restored after activity recreation closes itself.
+
+### 2.11 Launcher Task & Page Behaviour (`MainActivity.kt`)
+1. **Single Home Instance**: when Spindle is the default home app, a launch without the HOME category (from another app's list, a widget, `am start`) is forwarded to the home task with its extras, and the extra copy finishes itself, so only one `MainActivity` exists.
+2. **Instant Page Jumps**: `jumpToPage()` calls `setCurrentItem(index, false)` and then posts `ViewPager2.requestTransform()`, re-running the depth page transformer so the target page is never left at its off-screen 0.96× scale and 75% alpha.
 
 ---
 
@@ -157,20 +218,25 @@ Triggered by tapping the floating mini-player in the music catalog:
   | (FLAC, MP3, WAV, AAC)|                                    | (SpindleExtractors)  |
   +----------+-----------+                                    +----------+-----------+
              |                                                           |
-             |                                           +---------------+---------------+
-             |                                           |                               |
-             |                                           v                               v
-             |                                +---------------------+         +---------------------+
-             |                                |   AiffExtractor.kt  |         |   DsfExtractor.kt   |
-             |                                |  (IFF COMM/SSND 80b)|         | (32-tap LUT Decim.) |
-             |                                +----------+----------+         +----------+----------+
-             |                                           |                               |
-             +--------------------+----------------------+-------------------------------+
+             |                    +---------------------+----------------+----+
+             |                    |                     |                     |
+             |                    v                     v                     v
+             |          +-------------------+ +-------------------+ +-------------------+
+             |          | AiffExtractor.kt  | | DsfExtractor.kt   | |WavPackExtractor.kt|
+             |          | (IFF COMM/SSND)   | | (LUT FIR or DoP)  | | (pure-Kotlin .wv) |
+             |          +---------+---------+ +---------+---------+ +---------+---------+
+             |                    |                     |                     |
+             +--------------------+---------------------+---------------------+
                                   |
                                   v
                    +------------------------------+
                    |  32-Bit Float PCM Processing |
                    |   (ENCODING_PCM_FLOAT = 4)   |
+                   +--------------+---------------+
+                                  |
+                   +--------------+---------------+
+                   | LevelTapAudioSink (metering) |
+                   | -> ParametricEqProcessor     |
                    +--------------+---------------+
                                   |
                    +--------------+---------------+
@@ -225,6 +291,7 @@ Triggered by tapping the floating mini-player in the music catalog:
    - Verified CPU overhead is $<1\%$ on quad-core ARM Cortex-A53 processors.
 3. **Fast Stream Header Parsing (`TagParser.parseDsfStreamInfo`)**:
    - Parses Sony DSF `'DSD '`, `'fmt '`, and `'data'` chunks, resolving sample rates ($2.8224\text{ MHz}$ / $5.6448\text{ MHz}$), channels (1 to 8), and bitstream duration.
+4. **Optional DoP Output**: when DSD over PCM is enabled and a verified bit-perfect mixer path is negotiated, `DsfExtractor` emits DoP frames instead of decimated PCM (§3.10).
 
 ### 3.6 Parametric Equalizer (PEQ) Architecture & Reference AutoEQ Workshop
 1. **Dynamic PEQ Center Frequencies (`centerFreqsHz`)**:
@@ -249,6 +316,38 @@ Triggered by tapping the floating mini-player in the music catalog:
 2. **State Persistence**:
    - Track ID, URI, position in milliseconds, and catalog shuffle state are written to `playback_state` SharedPreferences.
    - On launcher launch, the last played track is automatically restored and populated into the cassette deck and mini-player.
+
+### 3.8 Real Output Metering (`playback/PcmLevelTap.kt`)
+1. **Level Tap**: `LevelTapAudioSink` wraps the Media3 `DefaultAudioSink` (a `ForwardingAudioSink`) and measures decoded PCM where it enters the sink, before Android session effects. Supported encodings: 8/16/24/32-bit integer and float PCM.
+2. **Timestamped Blocks**: PCM is split into 512-frame blocks, each storing L/R peak and RMS and stamped with its presentation time, in a 512-entry ring buffer.
+3. **Audible-Only Reads**: `OutputLevelMeter.read(windowMs, out)` returns `[peakL, peakR, rmsL, rmsR]` from blocks whose timestamp has already become audible, so meters follow what is heard rather than the decoder, which runs ahead by the AudioTrack buffer length. It returns `false` (idle meter) when no PCM stream is being metered, e.g. paused, stopped, passthrough or offload.
+4. **DoP Rest**: while DoP is active (§3.10) the samples are not audio, so the tap stops measuring and the meters rest.
+5. **Replaces the Simulated VU**: the previous sine-wave meter simulation was removed; the faceplate LED meter, the player's VU meter and the drawer's dual analog VU all read this meter.
+
+### 3.9 Software Parametric EQ (`playback/ParametricEq.kt`)
+1. **Processor**: `ParametricEqProcessor` is a Media3 `AudioProcessor` installed in the audio sink (one instance per sink). Cascaded RBJ-cookbook biquads with double-precision state, up to 16 bands of type `PK`, `LSC`, `HSC`, `HPQ`, `LPQ`, plus a preamp.
+2. **Zero Cost When Flat**: the processor only joins the chain when the settings are effective at configure time (16-bit or float PCM). Band edits apply live; switching it on mid-track applies from the next track. Filter state is cleared on flush (seek / track change).
+3. **AutoEq / Equalizer APO Import**: `AutoEqParametricParser` reads `ParametricEQ.txt` lines (`Preamp:` and `Filter n: ON PK Fc … Gain … Q …`); `toAutoEqText()` writes the same format for copy / edit / re-import.
+4. **Editor & Persistence**: `ui/DialogParametricEq.kt` is the text-based editor, opened from the drawer's playback settings. Settings persist as JSON under `pref_peq_settings_json`.
+5. **Independent of DSP Bypass**: the software PEQ ignores the effect bypass, so it counts against the DIRECT lamp (§2.7).
+
+### 3.10 Bit-Perfect Mixer Mode (Android 14+) & DSD over PCM (DoP)
+1. **`BitPerfectMixerController.kt`**: opt-in (`pref_bitperfect_mixer`). Requests Android 14+ bit-perfect mixer behaviour (`AudioMixerAttributes`) for a wired / USB output.
+   - `BitPerfectMixerPolicy.select()` requires an exact sample-rate match; a 16-bit source needs a 16-bit format, deeper sources prefer 24-bit, then 32-bit, never fewer bits.
+   - Status is one of `OFF`, `UNSUPPORTED_OS`, `NO_DEVICE`, `NO_MATCH`, `REJECTED`, `ACTIVE`. It is `ACTIVE` only when the platform accepts the request and reports the preferred attributes back; it is never assumed.
+2. **DoP for DSF (`extractor/DsdOutput.kt`)**: opt-in (`pref_dsd_dop`) and only honoured together with the bit-perfect mixer mode.
+   - `DopPacker` implements DoP 1.1: each 24-bit word carries 16 DSD bits of one channel plus an alternating `0x05` / `0xFA` marker byte; DSD64 maps to 176.4 kHz.
+   - `DsdOutput.tryEnableDop()` succeeds only when the mixer confirms the exact DoP rate at 24-bit (up to 705.6 kHz); otherwise `DsfExtractor` falls back to the 32-tap PCM decimator, so a failed negotiation never emits DoP words.
+   - While DoP is active the player volume is held at unity (no ReplayGain or limiter gain) and the level meter rests.
+
+### 3.11 WavPack (`.wv`) Lossless Decoder (`extractor/WavPackDecoder.kt`, `WavPackExtractor.kt`)
+1. **Pure-Kotlin Decoder**: lossless integer WavPack 4.x, mono and stereo, 16 and 24-bit. Hybrid/lossy, float, 32-bit integer, DSD and multichannel streams are rejected with a clear unsupported-feature error instead of playing noise.
+2. **Media3 Extractor**: registered in `SpindleExtractorsFactory`; emits raw little-endian PCM through the normal audio sink (and the bit-perfect mixer path when enabled). On open it walks block headers once to build a block-accurate seek table.
+3. **Library Metadata**: `data/WavPackFileInfo.kt` reads stream facts and APEv2 tags, since `MediaMetadataRetriever` cannot parse WavPack.
+
+### 3.12 Signal Path View & FLAT Reference Tape
+1. **Signal Path (`playback/SignalPath.kt`)**: `SignalPathBuilder` describes the live chain as source → decode → DSP → output and is shown in the file specs dialog (`DialogFileSpecs.kt`). It lists only stages actually in the path (system equalizer, parametric EQ band count, tape saturation, crossfeed, ReplayGain) and reports bit-perfect output only when `BitPerfectMixerController` has confirmed it.
+2. **FLAT Reference Tape**: `TapeFormulation.FLAT` applies no tape curve and is the default formulation for `pref_tape_formulation`.
 
 ---
 
@@ -299,6 +398,7 @@ dap_launcher/
 ├── settings.gradle.kts                      # Module settings
 ├── MASTER_DOCUMENTATION.md                  # This master specification
 ├── README.md                                # Repository overview & quick start
+├── .github/workflows/                       # ci.yml (build-test, startup-smoke) & tag-driven release.yml
 ├── docs/                                    # GitHub Pages site & assets
 │   ├── index.html                           # Live project showcase website
 │   ├── BRANDING.md                          # Brand identity & color specifications
@@ -314,21 +414,29 @@ dap_launcher/
 │   ├── build.gradle.kts
 │   └── src/main/kotlin/com/hana/spindle/core/
 │       ├── ReplayGainMode.kt                # OFF, TRACK, ALBUM volume normalization modes
-│       └── CrossfadeMode.kt                 # GAPLESS (0s), CROSSFADE_2S, CROSSFADE_4S transitions
+│       ├── CrossfadeMode.kt                 # GAPLESS (0s), CROSSFADE_2S, CROSSFADE_4S transitions
+│       ├── AudioDspConstants.kt             # EQ / tape / Dolby curves, tanh soft-knee limiter & saturation math
+│       └── SpindleGlossary.kt               # Canonical shared constants
 ├── app-main/                                # Flagship modern Spindle DAP Launcher (:app-main)
 │   ├── build.gradle.kts                     # App dependencies (Media3, Room, Palette, R8)
 │   ├── proguard-rules.pro                   # R8 stripping rules for <4.5MB APK
+│   ├── lint-baseline.xml                    # Frozen existing lint findings (only new errors fail CI)
 │   └── src/
+│       ├── androidTest/java/com/hana/spindle/
+│       │   └── StartupSmokeTest.kt          # Emulator boot test: SpindleApp.audioEngine init & MainActivity launch
+│       ├── test/java/com/hana/spindle/      # JVM unit tests (e.g. RadioDeckMathTest, ParametricEqTest, WavPackDecoderTest, StorageVolumesTest)
 │       └── main/
 │           ├── AndroidManifest.xml          # Launcher intent, permissions, foreground service
 │           ├── java/com/hana/spindle/
 │           │   ├── SpindleApp.kt            # Application entrypoint & dependency container
 │           │   ├── data/                    # Storage, Database, Parsers & M3U
-│           │   │   ├── MusicScanner.kt      # High-speed SD card scanner
+│           │   │   ├── MusicScanner.kt      # High-speed SD card scanner & pruneMissingTracks()
+│           │   │   ├── StorageVolumes.kt    # Tells a missing file apart from an SD card that is not inserted
 │           │   │   ├── TagParser.kt         # Lightweight ID3/FLAC metadata & ReplayGain extractor
+│           │   │   ├── WavPackFileInfo.kt   # WavPack stream facts & APEv2 tags
 │           │   │   ├── M3uManager.kt        # M3U/M3U8 playlist import, export & track matching
 │           │   │   ├── LyricsParser.kt      # .lrc and embedded lyrics parser
-│           │   │   ├── ImageLoader.kt       # RGB_565 bounded thumbnail cache
+│           │   │   ├── ImageLoader.kt       # RGB_565 bounded thumbnail cache & album-art accent colour
 │           │   │   └── db/
 │           │   │       ├── SpindleDatabase.kt # Room Database with Playlist & Track entities
 │           │   │       ├── SongDao.kt       # Query operations for songs & albums
@@ -345,29 +453,44 @@ dap_launcher/
 │           │   │   ├── CassetteFoleyEngine.kt # Low-latency mechanical clicks, spool whirrs & eject thuds
 │           │   │   ├── RadioStreamEngine.kt # Low-latency online shoutcast stream player
 │           │   │   ├── AudioMetricsTracker.kt # Real-time sample rate & bit depth analyzer
+│           │   │   ├── PcmLevelTap.kt       # LevelTapAudioSink & OutputLevelMeter (real output metering)
+│           │   │   ├── ParametricEq.kt      # Software PEQ, ParametricEqProcessor & AutoEq / Equalizer APO parser
+│           │   │   ├── BitPerfectMixerController.kt # Android 14+ bit-perfect mixer negotiation
+│           │   │   ├── SignalPath.kt        # Source -> decode -> DSP -> output description
 │           │   │   └── extractor/           # Native Audio Extractor Subsystem
 │           │   │       ├── SpindleExtractorsFactory.kt # Unified Media3 extractors factory
 │           │   │       ├── AiffExtractor.kt # Native AIFF/AIFC demuxer with 80-bit float parsing
-│           │   │       └── DsfExtractor.kt  # Native DSD/DSF 1-bit bitstream & 32-tap LUT FIR decimator
+│           │   │       ├── DsfExtractor.kt  # Native DSD/DSF 1-bit bitstream & 32-tap LUT FIR decimator
+│           │   │       ├── DsdOutput.kt     # DoP policy & DopPacker
+│           │   │       ├── WavPackDecoder.kt # Pure-Kotlin lossless WavPack decoder
+│           │   │       └── WavPackExtractor.kt # Media3 extractor for .wv
 │           │   ├── launcher/                # Launcher Subsystem
 │           │   │   ├── AppListLoader.kt     # Installed apps fetcher (<2MB overhead)
-│           │   │   └── AppItem.kt           # App list item model
+│           │   │   ├── AppLetterHeaderDecoration.kt # LCD-style letter headers in the apps list
+│           │   │   └── AppInfo.kt           # App list item model
 │           │   ├── theme/                   # Parametric Theme Subsystem
 │           │   │   ├── CassetteTheme.kt     # Palettes for Dark Obsidian, E-Ink, and Light
-│           │   │   ├── ThemeManager.kt      # Theme selector & preferences store
-│           │   │   └── PaletteHelper.kt     # Dynamic album art color extractor
+│           │   │   └── ThemeManager.kt      # Theme selector & preferences store
 │           │   └── ui/
-│           │       ├── MainActivity.kt      # 3-Page ViewPager2 Launcher Controller
-│           │       ├── PlayerFragment.kt    # Home Screen Cassette Deck Controller
-│           │       ├── CatalogFragment.kt   # Music Catalog, Mixtape Reorder & Single Audio Now Playing Overlay
+│           │       ├── MainActivity.kt      # 3-Page ViewPager2 Launcher Controller, single home instance
+│           │       ├── PlayerFragment.kt    # Home Screen Cassette Deck Controller (faceplate or Classic deck)
+│           │       ├── VaultFragment.kt     # Vault: Music Catalog, Mixtape Reorder & Single Audio Now Playing Overlay
 │           │       ├── DrawerFragment.kt    # App Drawer, 10-Band EQ, Hardware Telemetry & Audio Settings
-│           │       ├── AlphabetIndexView.kt # Tactile vertical A-Z alphabet scroller
+│           │       ├── SystemDeckHeaderView.kt # System Deck SPINDLE band, RUN lamp & FUNCTION switch
+│           │       ├── SnappingPanoramaView.kt # Full-width snapping panels (Vault & drawer)
+│           │       ├── ZunePivotHeader.kt   # Metro pivot header arrangement
+│           │       ├── ZuneJumpListDialog.kt # A-Z jump grid
+│           │       ├── AlphabetIndexView.kt # Tactile vertical A-Z alphabet scroller with deck-style dial needle
 │           │       ├── LyricsAdapter.kt     # Real-time synced lyrics line adapter
-│           │       ├── DialogFileSpecs.kt   # Audiophile technical file specifications inspector
+│           │       ├── DialogFileSpecs.kt   # Audiophile technical file specifications inspector & signal path
+│           │       ├── DialogParametricEq.kt # Text-based software PEQ editor
 │           │       ├── cassette/            # Kinetic Cassette Deck Views
-│           │       │   ├── VerticalDeckView.kt  # Centered spindle deck with column telemetry
-│           │       │   ├── CassetteKinematics.kt # Reel angular velocity kinematics
-│           │       │   └── CassetteView.kt  # Custom Canvas tape spool rendering
+│           │       │   ├── VerticalDeckView.kt  # Classic deck: centered spindle deck with column telemetry
+│           │       │   ├── SpindleKinematics.kt # Reel angular velocity kinematics
+│           │       │   ├── CassetteView.kt  # Custom Canvas tape spool rendering
+│           │       │   ├── JCardLinerView.kt # 3D J-Card liner notes
+│           │       │   ├── Metal81ChassisView.kt # Metal-81 chassis view
+│           │       │   └── (6 files)        # Faceplate deck painters, chassis drawable, colorways, accessibility helper and view
 │           │       ├── catalog/             # Catalog Custom Views & Adapters
 │           │       │   ├── CircularCoverArcView.kt # Circular cover with radial progress arc
 │           │       │   ├── AudioWaveformView.kt    # Dynamic 24-band frequency visualizer
@@ -377,7 +500,11 @@ dap_launcher/
 │           │       │   ├── SongAdapter.kt          # Song list RecyclerView adapter
 │           │       │   └── AlbumAdapter.kt         # 2-column album grid adapter
 │           │       └── radio/               # Acoustic Radio Custom Views
-│           │           ├── RadioFragment.kt        # Online radio controller
+│           │           ├── RadioFragment.kt        # Radio controller (Classic radio or faceplate radio deck)
+│           │           ├── RadioDeckView.kt        # Faceplate radio deck view (no radio logic)
+│           │           ├── RadioDeckPainter.kt     # Faceplate radio deck drawing & geometry
+│           │           ├── RadioDeckModel.kt       # Deck model & RadioDeckMath helpers
+│           │           ├── RadioDeckAccessibility.kt # TalkBack / switch access for the radio deck
 │           │           ├── RadioSpeakerGrilleView.kt # Concentric acoustic hole grille
 │           │           └── RadioTuningDialView.kt  # 3D ribbed tuning cylinder
 │           └── res/                         # Hardware vector graphics, layouts, and styles
@@ -385,6 +512,15 @@ dap_launcher/
     ├── build.gradle.kts                     # Android 4.4+ target, zero-dependency MediaPlayer engine
     └── src/main/                            # Lightweight HVGA Canvas UI & hardware button matrix
 ```
+
+### 6.1 Continuous Integration & Tests (`.github/workflows/ci.yml`)
+CI runs on pushes to `main` and on pull requests (Markdown and `docs/` changes are ignored).
+1. **`build-test` job**:
+   - Unit tests: `:app-main:testDebugUnitTest`, `:app-lite:testDebugUnitTest`, `:core:test`.
+   - Lint: `:app-main:lintDebug` against `app-main/lint-baseline.xml` (existing findings frozen; only new errors fail).
+   - Debug assembles: `:app-main:assembleDebug`, `:app-lite:assembleDebug`.
+   - Fails if key material (`.jks`, `.keystore`, `.pem`, `.p12`, signing key files, `keystore.properties`) is tracked.
+2. **`startup-smoke` job**: runs `:app-main:connectedDebugAndroidTest` on an API 34 emulator. `app-main/src/androidTest/java/com/hana/spindle/StartupSmokeTest.kt` initialises `SpindleApp.audioEngine` on the main thread and launches `MainActivity` to `RESUMED`, catching startup wiring bugs that JVM unit tests cannot see (such as the v1.7.0 `AudioMetricsTracker` recursion, §8.7).
 
 ---
 
@@ -424,6 +560,8 @@ Spindle is maintained across two targeted build modules to optimize for modern a
      Procedural Foley      Type IV Foil          Queue Drawer          Headphone AutoEQ       Cross-Platform
 ```
 
+**Current stable release:** v1.7.0-STUDIO, published 2026-11-16 (§8.7).
+
 ### 8.1 v1.2.0-RELEASE (Flagship Base Stable)
 * **Flagship Cassette Deck**: Centered acrylic spindle window with kinetic differential spool physics ($v = 4.7625\text{ cm/s}$).
 * **Dedicated Single-Audio Now Playing**: 360° touch radial progress arc scrubber, dynamic 24-band frequency envelope visualizer, format telemetry pill, and synced `.lrc` lyrics drawer.
@@ -431,7 +569,7 @@ Spindle is maintained across two targeted build modules to optimize for modern a
 * **Bauhaus Minimalist Radio**: Concentric acoustic speaker grille and 3D cylindrical tuning dial.
 * **Dynamic Hardware Nameplate Engine**: Auto-detection and engraving of host device model.
 
-### 8.2 v1.3.0-alpha (Current Flagship Alpha)
+### 8.2 v1.3.0-alpha (Flagship Alpha)
 * **Kinetic Magnetic Ribbon & Reel Kinematics**: Real-time traveling magnetic tape ribbon with rotating anisotropic specular sheen glare cones, 3-spoke flange cutouts, and transparent polyfilm leader ribbon with 45° amber splice line.
 * **2-Row Real-Time Output Routing Badges**: Dynamic telemetry badge showing container, sample rate, bit depth, and physical output destination (e.g. `FLAC • 24-bit / 96kHz + 3.5mm DIRECT`).
 * **Dedicated Vintage Lock Screen Player**: Keyguard-bypassing transport deck with mechanical levers, digital counter, hardware battery diode telemetry, and upward dismiss gesture.
@@ -472,7 +610,8 @@ Spindle is maintained across two targeted build modules to optimize for modern a
 * **Persistent User EQ Preset Room DB**: Save, export, and recall unlimited custom parametric and graphic equalizer curves with instant JSON import/export.
 * **Artwork Studio & Folder Export**: Direct 512×512 square artwork export to music album folders as `cover.jpg` / `folder.jpg` for universal offline interoperability.
 
-### 8.7 v1.7.0-STUDIO (Audiophile Engine & Extended Format Expansion)
+### 8.7 v1.7.0-STUDIO (Current Stable Release — Audiophile Engine & Extended Format Expansion)
+* **Release Status**: Stable, published 2026-11-16 as tag `v1.7.0-STUDIO` (`versionCode` 9, `versionName` `1.7.0-STUDIO`). Signed with the same release key as v1.6.0, so it updates existing installs in place (per `RELEASE_NOTES_v1.7.0-STUDIO.md`).
 * **Bit-Perfect 32-Bit Float PCM Pipeline (`ENCODING_PCM_FLOAT`)**:
   - Direct 32-bit single-precision floating-point output routing to Android HAL / `AudioTrack`.
   - $+140\text{ dB}$ internal processing dynamic headroom preventing digital clipping and quantization degradation during aggressive tone sculpting.
@@ -490,6 +629,18 @@ Spindle is maintained across two targeted build modules to optimize for modern a
   - Arbitrary center frequency arrays (`centerFreqsHz`) for precision biquad filter targeting.
   - Factory reference profiles for Sennheiser HD 600, Sony WH-1000XM4/XM5, Audio-Technica ATH-M50x, HiFiMAN Sundara, Beyerdynamic DT 770/990, Sony IER-M9, and Moondrop Blessing 2.
   - Interactive AutoEQ horizontal pills in Cassette Deck and Equalizer drawers.
+* **Home Deck Styles (§2.7)**: faceplate deck (Silver '81, Pro Black) as the default home deck, with the Classic vertical deck selectable under Settings › Display › Home Deck Style; player, radio and drawer follow the same style.
+* **Faceplate Radio Deck (§2.8)**: FM and NET bands; `NO ANT` instead of a silent NET fallback without wired headphones; BUF and LINK meters on NET.
+* **System Deck Drawer & Metro Pivots (§2.9)**: SPINDLE band, RUN lamp, FUNCTION switch and LCD settings menu in faceplate styles; Metro pivot headers and full-width snapping panels in the Classic style; settings split into a menu of pages.
+* **Apps List Index (§2.10)**: letter headers, dial-needle alphabet rail and LCD-tile A–Z jump grid in deck style.
+* **Real Output Metering (§3.8)**: meters read measured PCM timed to what is audible, replacing the simulated sine-wave VU.
+* **Software Parametric EQ (§3.9)** with AutoEq / Equalizer APO text import.
+* **Bit-Perfect Mixer Mode (Android 14+) & DoP for DSF (§3.10)**, reported active only when the platform confirms it.
+* **WavPack (`.wv`) Lossless Playback (§3.11)** with a pure-Kotlin decoder.
+* **Signal Path View & FLAT Reference Tape (§3.12)**: FLAT is the new default tape formulation.
+* **Library Robustness (§2.4)**: rescan prompt on file-not-found, `MusicScanner.pruneMissingTracks()`, and tracks on an SD card that is not inserted kept unless explicitly removed.
+* **Launcher Fixes (§2.11)**: one `MainActivity` when Spindle is the default home app; instant page jumps re-run the depth transformer.
+* **Startup Crash Fix**: `AudioMetricsTracker`'s initial route-telemetry update read `SpindleApp.audioEngine` while that lazy was still being constructed, recursing until `StackOverflowError` on every launch. The first update is now deferred, and the CI `startup-smoke` job (§6.1) guards against regressions.
 
 ### 8.8 v2.0.0-ECOSYSTEM (Future Vision)
 * **Direct USB-OTG ALSA Driver**: Custom native user-space USB Audio Class 2.0 driver bypassing Android audio framework for bit-perfect DSD512 / 32-bit 768kHz output.
@@ -506,7 +657,7 @@ Spindle adopts a **"Fair Ownership & Anti-Subscription"** monetization architect
 │                   SPINDLE COMMERCIAL & DISTRIBUTION MATRIX                  │
 ├──────────────────────────┬─────────────────────────┬────────────────────────┤
 │     SPINDLE LITE         │    SPINDLE STANDARD     │    STUDIO COLLECTOR    │
-│      (v1.0.0-LITE)       │     (v1.4.0-alpha)      │   (One-Time Unlock)    │
+│      (v1.0.0-LITE)       │     (v1.7.0-STUDIO)     │   (One-Time Unlock)    │
 ├──────────────────────────┼─────────────────────────┼────────────────────────┤
 │ • Status: 100% Free      │ • Status: Free Core     │ • Status: $2.99 – $3.99│
 │ • Distribution: Sideload │ • Distribution: Direct  │ • Distribution: Play   │
@@ -565,16 +716,20 @@ To prevent visual jitter on legacy DAP displays with non-standard screen densiti
    - Extracted 40+ UI labels and messages across transport controls, queue sheet, file telemetry dialog, radio console, sort/group dialog, catalog headers, and drawer DSP controls into `strings.xml`.
 
 ### 9.4 Categorized Settings Architecture
-To guarantee effortless navigation on compact 3.5"–5.0" screens, the settings screen is organized into 5 clear visual groups with a segmented category switcher:
-1. **Audio Engine**: Sample rate, Hi-Res passthrough (device-dependent), ReplayGain loudness calibration (Track/Album modes), equal-power crossfade, and 10-band ISO EQ.
-2. **Interface & Themes**: Theme selector (Dark, Light, Mono), tape aesthetics, and haptic feedback.
-3. **Hardware Integration**: Custom engraved nameplate, volume button skipping, and headset auto-play.
-4. **Battery & Power**: Low-battery diode telemetry, screen timeout, and background throttling.
-5. **System & About**: Build info, source code links, and direct PayPal development support.
+To guarantee effortless navigation on compact 3.5"–5.0" screens, settings in the drawer open as a menu of short pages (`DrawerFragment.settingsPages()`); in faceplate styles the menu is drawn as numbered LCD rows (§2.9):
+1. **display**: deck style, theme, status bar.
+2. **playback**: buttons, DAC, bit-perfect, PEQ, ReplayGain, crossfade.
+3. **sleep timer**: fade out and stop.
+4. **output**: source, headphone jack, Bluetooth.
+5. **library**: music folders, rescan, art and lyrics.
+6. **radio**: internet stations.
+7. **gestures**: double tap and ambient mode.
+8. **about**: default launcher, studio, version.
 
 ### 9.5 App Drawer View Modes & Touch Alphabet Scroller
 - **View Modes**: Segmented switcher for **Grid** (3-column responsive icons), **List** (compact vertical layout), and **Recent** (most recently launched applications).
 - **Touch-Magnified Alphabet Rail**: The right-edge vertical indexer dynamically enlarges the selected letter upon touch, accompanied by a floating high-contrast center preview bubble and haptic ticks.
+- **Deck-Style Index**: in faceplate styles the rail shows a dial needle that tracks scrolling, the list gets LCD letter headers, and the A–Z jump grid uses LCD tiles (§2.10).
 
 ---
 

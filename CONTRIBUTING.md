@@ -82,19 +82,30 @@ Spindle respects third-party intellectual property.
 
 Before opening a pull request or merging changes:
 - [ ] `./gradlew :app-main:testDebugUnitTest` passes.
+- [ ] `./gradlew :app-main:lintDebug` passes (no new errors beyond `app-main/lint-baseline.xml`).
 - [ ] `./gradlew :app-main:assembleDebug` builds cleanly.
+- [ ] For startup, launcher or engine wiring changes: `./gradlew :app-main:connectedDebugAndroidTest` passes on a device or emulator.
 - [ ] All new UI strings are externalized in `strings.xml` (no hardcoded English strings in layout XML or Kotlin code).
 - [ ] All layout preview placeholders use `tools:text` instead of `android:text`.
 - [ ] Any shared constant added is defined in `:core` rather than duplicated across modules.
 
 ## 6. CI/CD
 
-- **CI** (`.github/workflows/ci.yml`) runs on every PR and push to `main`: unit tests for `app-main`, `app-lite` and `core`, `app-main` lint (existing findings frozen in `app-main/lint-baseline.xml`, only new errors fail), debug compile of both apps, and a check that no key material is tracked.
+- **CI** (`.github/workflows/ci.yml`) runs on every PR and push to `main`:
+  - `build-test`: unit tests for `app-main`, `app-lite` and `core`, `app-main` lint (existing findings frozen in `app-main/lint-baseline.xml`, only new errors fail), debug compile of both apps, and a check that no key material is tracked.
+  - `startup-smoke`: `:app-main:connectedDebugAndroidTest` on an API 34 emulator (`app-main/src/androidTest/.../StartupSmokeTest.kt`). It boots `SpindleApp.audioEngine` and `MainActivity`, catching startup crashes that unit tests can't see.
+- **Merging:** use a merge commit or rebase, not squash, so per-area commits stay readable.
 - **Release** (`.github/workflows/release.yml`) is tag-driven. The tag must match the module's `versionName`:
   - `git tag v1.7.0-STUDIO && git push origin v1.7.0-STUDIO` publishes Spindle Standard (signed APK + AAB).
   - `git tag v1.1.1-LITE && git push origin v1.1.1-LITE` publishes Spindle Lite (signed APK).
   - Notes come from `RELEASE_NOTES_<tag>.md` if present, otherwise they are generated.
   - Artifacts, `SHA256SUMS.txt` and the GitHub Release are produced by the workflow. Never commit binaries.
 - **Required repository secrets** (Settings → Secrets and variables → Actions): `SIGNING_KEYSTORE_BASE64` (`base64 -w0 spindle-release.jks`), `SIGNING_STORE_PASSWORD`, `SIGNING_KEY_ALIAS`, `SIGNING_KEY_PASSWORD`. The release job refuses to run without them and rejects debug-signed APKs.
+  - **Current state:** these secrets are not set, so a tag push fails at "Require signing secrets" before building. v1.7.0-STUDIO was built and published from a maintainer machine instead:
+    1. `./gradlew :app-main:assembleRelease :app-main:bundleRelease` with a local `keystore.properties` (never committed).
+    2. `apksigner verify --print-certs` must show the HaNa Innovation certificate (SHA-256 `0c16968e…a7dc2`, same as v1.6.0), never "Android Debug".
+    3. Smoke-test the minified release APK on a device (launch, play, VU meter).
+    4. `gh release create <tag> <apk> <aab> SHA256SUMS.txt --target <full main SHA> --notes-file RELEASE_NOTES_<tag>.md --latest`.
+    5. Point `docs/index.html` and `README.md` download links at the new release.
 - **Dependabot** opens weekly PRs for Gradle dependencies and GitHub Actions.
 - The Studio token **signing private key is not a CI secret** and must stay offline (see `tools/StudioTokenTool.java`).

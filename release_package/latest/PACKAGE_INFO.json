@@ -32,5 +32,5 @@
       ]
     }
   ],
-  "note": "Spindle Standard binaries were withdrawn: v1.6.0 shipped a bypassable Studio unlock and has been superseded by the source tree. Build and publish Standard via GitHub Releases from a clean signed build."
+  "note": "Spindle Standard is published only as signed GitHub Release assets. Current: v1.7.0-STUDIO (versionCode 9), https://github.com/manaphassan/Spindle/releases/tag/v1.7.0-STUDIO. It supersedes v1.6.0, which shipped a bypassable Studio unlock."
 }
