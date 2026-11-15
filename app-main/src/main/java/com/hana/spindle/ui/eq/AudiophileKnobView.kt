@@ -273,11 +273,15 @@ class AudiophileKnobView @JvmOverloads constructor(
         }
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
+                // Only the knob body turns the pot; touches beside it fall through so the page scrolls.
+                val dist = kotlin.math.hypot(event.x - cx, event.y - cy)
+                if (dist > knobRadius * 1.3f) return false
                 lastTouchY = event.y
                 isDragging = true
                 parent.requestDisallowInterceptTouchEvent(true)
                 return true
             }
+
             MotionEvent.ACTION_MOVE -> {
                 if (isDragging) {
                     val dy = lastTouchY - event.y // Dragging UP increases value
@@ -303,6 +307,7 @@ class AudiophileKnobView @JvmOverloads constructor(
                 }
                 return true
             }
+
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 isDragging = false
                 parent.requestDisallowInterceptTouchEvent(false)

@@ -469,18 +469,36 @@ class BiquadFrequencyVisualizerView @JvmOverloads constructor(
         canvas.drawText(hudText, hudRect.centerX(), textBaseline, hudTextPaint)
     }
 
+    private var probeDownX = 0f
+    private var probeDownY = 0f
+    private var probeClaimed = false
+    private val probeTouchSlop = android.view.ViewConfiguration.get(context).scaledTouchSlop
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
-                parent?.requestDisallowInterceptTouchEvent(true)
+                // Don't claim yet: a vertical swipe here should still scroll the Sound Deck.
+                probeDownX = event.x
+                probeDownY = event.y
+                probeClaimed = false
                 isProbing = true
                 updateProbeCoordinates(event.x)
-                performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                 invalidate()
                 return true
             }
+
             MotionEvent.ACTION_MOVE -> {
-                parent?.requestDisallowInterceptTouchEvent(true)
+                if (!probeClaimed) {
+                    val dx = kotlin.math.abs(event.x - probeDownX)
+                    val dy = kotlin.math.abs(event.y - probeDownY)
+                    if (dx > probeTouchSlop && dx > dy) {
+                        probeClaimed = true
+                        parent?.requestDisallowInterceptTouchEvent(true)
+                        performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                    } else {
+                        return true
+                    }
+                }
                 val prevFreq = probeFreqHz
                 updateProbeCoordinates(event.x)
 
@@ -494,8 +512,10 @@ class BiquadFrequencyVisualizerView @JvmOverloads constructor(
                 invalidate()
                 return true
             }
+
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                parent?.requestDisallowInterceptTouchEvent(false)
+                if (probeClaimed) parent?.requestDisallowInterceptTouchEvent(false)
+                probeClaimed = false
                 isProbing = false
                 invalidate()
                 return true

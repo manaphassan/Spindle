@@ -431,6 +431,12 @@ class Iso10BandEqView @JvmOverloads constructor(
         return closest
     }
 
+    private var grabbedThumb = false
+    private var bandDownX = 0f
+    private var bandDownY = 0f
+    private var bandMoved = false
+    private val bandTouchSlop = android.view.ViewConfiguration.get(context).scaledTouchSlop
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (isLocked) {
             if (event.actionMasked == MotionEvent.ACTION_DOWN) {
@@ -445,16 +451,28 @@ class Iso10BandEqView @JvmOverloads constructor(
 
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
+                // Dragging needs a grab on a fader thumb; anywhere else a vertical swipe scrolls
+                // the parent and a plain tap sets the band to the tapped level.
+                bandDownX = event.x
+                bandDownY = event.y
+                bandMoved = false
                 activeTouchBand = getBandIndexAtX(event.x)
-                if (activeTouchBand in 0 until NUM_BANDS) {
+                val grabRadius = 26f * resources.displayMetrics.density
+                grabbedThumb = activeTouchBand in 0 until NUM_BANDS &&
+                        abs(event.y - gainToY(bandGains[activeTouchBand])) <= grabRadius
+                if (grabbedThumb) {
                     parent.requestDisallowInterceptTouchEvent(true)
-                    bandGains[activeTouchBand] = yToGain(event.y)
-                    invalidate()
-                    onBandsChanged?.invoke(bandGains.clone())
                 }
                 return true
             }
+
             MotionEvent.ACTION_MOVE -> {
+                if (!grabbedThumb) {
+                    if (abs(event.x - bandDownX) > bandTouchSlop || abs(event.y - bandDownY) > bandTouchSlop) {
+                        bandMoved = true
+                    }
+                    return true
+                }
                 val band = getBandIndexAtX(event.x)
                 if (band in 0 until NUM_BANDS) {
                     bandGains[band] = yToGain(event.y)
@@ -464,10 +482,18 @@ class Iso10BandEqView @JvmOverloads constructor(
                 }
                 return true
             }
+
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                val tapped = event.actionMasked == MotionEvent.ACTION_UP && !grabbedThumb && !bandMoved
+                if (tapped && activeTouchBand in 0 until NUM_BANDS) {
+                    bandGains[activeTouchBand] = yToGain(event.y)
+                    invalidate()
+                    onBandsChanged?.invoke(bandGains.clone())
+                }
+                if (grabbedThumb) parent.requestDisallowInterceptTouchEvent(false)
+                if (grabbedThumb || tapped) onBandDragFinished?.invoke()
                 activeTouchBand = -1
-                parent.requestDisallowInterceptTouchEvent(false)
-                onBandDragFinished?.invoke()
+                grabbedThumb = false
                 return true
             }
         }

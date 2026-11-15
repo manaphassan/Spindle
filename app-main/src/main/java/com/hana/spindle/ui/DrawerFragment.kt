@@ -1216,10 +1216,21 @@ class DrawerFragment : Fragment() {
         }
 
         // 3. AutoEq Target Profile Buttons (DJ Console Strip)
+        // Claim the gesture only once it is clearly sideways, so vertical swipes still scroll the deck.
+        var pillsDownX = 0f
+        var pillsDownY = 0f
+        val pillsSlop = ViewConfiguration.get(requireContext()).scaledTouchSlop
         (binding.layoutAutoEqPills.parent as? ViewGroup)?.setOnTouchListener { v, event ->
             when (event.actionMasked) {
-                MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
-                    v.parent?.requestDisallowInterceptTouchEvent(true)
+                MotionEvent.ACTION_DOWN -> {
+                    pillsDownX = event.x
+                    pillsDownY = event.y
+                }
+
+                MotionEvent.ACTION_MOVE -> {
+                    val dx = kotlin.math.abs(event.x - pillsDownX)
+                    val dy = kotlin.math.abs(event.y - pillsDownY)
+                    if (dx > pillsSlop && dx > dy) v.parent?.requestDisallowInterceptTouchEvent(true)
                 }
 
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
