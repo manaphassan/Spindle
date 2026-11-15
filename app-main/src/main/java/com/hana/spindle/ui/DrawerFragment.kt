@@ -87,6 +87,7 @@ class DrawerFragment : Fragment() {
     private val dspPresets = listOf("FLAT", "BASS_BOOST", "HARMAN", "VOCAL", "CLUB")
     private var currentPresetIndex = 0
     private var currentTabIndex = PANEL_SOUND
+    private var openSettingsPage = -1
 
     private companion object {
         const val PANEL_SOUND = 0
@@ -98,6 +99,24 @@ class DrawerFragment : Fragment() {
     /** System Hub pivots are full pages: one panel per viewport width, no peek. */
     private fun drawerPanelWidth(): Int = resources.displayMetrics.widthPixels
 
+    /** One entry of the Zune settings menu and the cards its page shows. */
+    private class SettingsPage(val title: String, val summary: String, val cards: List<View>)
+
+    private fun settingsPages(): List<SettingsPage> =
+        listOf(
+            SettingsPage("display", "deck style, theme, status bar", listOf(binding.settingsCardDisplay)),
+            SettingsPage(
+                "playback",
+                "buttons, dac, replaygain, crossfade, sounds",
+                listOf(binding.settingsCardPlayback)
+            ),
+            SettingsPage("sleep timer", "fade out and stop", listOf(binding.settingsCardSleep)),
+            SettingsPage("output", "source, headphone jack, bluetooth", listOf(binding.settingsCardTelemetry)),
+            SettingsPage("library", "music folders, rescan, art and lyrics", listOf(binding.settingsCardLibrary)),
+            SettingsPage("radio", "internet stations", listOf(binding.settingsCardRadio)),
+            SettingsPage("gestures", "double tap and ambient mode", listOf(binding.settingsCardGestures)),
+            SettingsPage("about", "default launcher, studio, version", listOf(binding.settingsCardAbout))
+        )
 
     private var syncAllEqControlsAction: (() -> Unit)? = null
     private var audioManager: AudioManager? = null
@@ -155,6 +174,7 @@ class DrawerFragment : Fragment() {
 
         setupTabNavigation()
         setupDrawerPanorama()
+        setupSettingsMenu()
         setupAppDrawer()
         setupDjConsole(app)
         setupDefaultLauncher()
@@ -209,6 +229,7 @@ class DrawerFragment : Fragment() {
                     return
                 }
                 when {
+                    currentTabIndex == PANEL_SETTINGS && openSettingsPage >= 0 -> showSettingsMenu()
                     currentTabIndex != PANEL_SOUND -> selectTab(PANEL_SOUND)
                     else -> mainAct.navigateToPlayer()
                 }
@@ -354,6 +375,79 @@ class DrawerFragment : Fragment() {
         return "FX: " + parts.joinToString(" + ")
     }
 
+    // =========================================================================
+    // ZUNE SETTINGS MENU: lowercase text entries, each opening one short page
+    // =========================================================================
+    private fun setupSettingsMenu() {
+        buildSettingsMenu()
+        binding.tvSettingsPageTitle.setOnClickListener { showSettingsMenu() }
+        showSettingsMenu()
+    }
+
+    /** Builds the Zune settings menu: one lowercase text entry per page. */
+    private fun buildSettingsMenu() {
+        val ctx = requireContext()
+        val density = resources.displayMetrics.density
+        binding.settingsMenu.removeAllViews()
+        val primary = androidx.core.content.ContextCompat.getColor(ctx, R.color.text_primary)
+        val secondary = androidx.core.content.ContextCompat.getColor(ctx, R.color.text_secondary)
+        val ripple = android.util.TypedValue().also {
+            ctx.theme.resolveAttribute(android.R.attr.selectableItemBackground, it, true)
+        }.resourceId
+
+        settingsPages().forEachIndexed { index, page ->
+            val row = LinearLayout(ctx).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER_VERTICAL
+                minimumHeight = (56 * density).toInt()
+                setPadding(0, (6 * density).toInt(), 0, (6 * density).toInt())
+                setBackgroundResource(ripple)
+                isClickable = true
+                isFocusable = true
+                contentDescription = "${page.title}. ${page.summary}"
+                setOnClickListener { openSettingsPage(index) }
+            }
+            row.addView(TextView(ctx).apply {
+                text = page.title
+                textSize = 28f
+                typeface = Typeface.create("sans-serif-light", Typeface.NORMAL)
+                includeFontPadding = false
+                setTextColor(primary)
+            })
+            row.addView(TextView(ctx).apply {
+                text = page.summary
+                textSize = 12f
+                setTextColor(secondary)
+                setPadding(0, (2 * density).toInt(), 0, 0)
+            })
+            binding.settingsMenu.addView(row)
+        }
+    }
+
+
+
+    private fun settingsTitleText(title: String) = "‹ $title"
+
+    private fun showSettingsMenu() {
+        openSettingsPage = -1
+        binding.settingsMenu.visibility = View.VISIBLE
+        binding.tvSettingsPageTitle.visibility = View.GONE
+        settingsPages().forEach { page -> page.cards.forEach { it.visibility = View.GONE } }
+        binding.scrollSettingsContent.scrollTo(0, 0)
+    }
+
+    private fun openSettingsPage(index: Int) {
+        val pages = settingsPages()
+        val page = pages.getOrNull(index) ?: return
+        openSettingsPage = index
+        (activity?.application as? SpindleApp)?.audioEngine?.foleyEngine?.playMetroTick(1.0f)
+        binding.settingsMenu.visibility = View.GONE
+        binding.tvSettingsPageTitle.text = settingsTitleText(page.title)
+        binding.tvSettingsPageTitle.contentDescription = "${page.title}. Tap to go back to settings"
+        binding.tvSettingsPageTitle.visibility = View.VISIBLE
+        pages.forEach { p -> p.cards.forEach { it.visibility = if (p === page) View.VISIBLE else View.GONE } }
+        binding.scrollSettingsContent.post { _binding?.scrollSettingsContent?.scrollTo(0, 0) }
+    }
 
     // =========================================================================
     // 2. MINIMALIST APP DRAWER WITH NIAGARA-STYLE VERNIER WAVE SCROLLBAR
@@ -1680,6 +1774,7 @@ class DrawerFragment : Fragment() {
         updateCardsRecursively(binding.root, cardBg, primary, secondary, isDark, isEink)
         val headerColor = if (isDark) Color.WHITE else Color.BLACK
         binding.tvMetroHubTitle.setTextColor(headerColor)
+        binding.tvSettingsPageTitle.setTextColor(headerColor)
         selectTab(currentTabIndex)
         updateThemeButtonsVisual()
         val accent = if (isEink) Color.BLACK else theme.accentColor
