@@ -61,6 +61,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (forwardToHomeInstanceIfNeeded()) return
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -137,6 +138,29 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * As the default home app, Spindle lives in the home task. Launching it from another app (the
+     * app list, a widget, `am start`) without the HOME category would otherwise create a second
+     * MainActivity in a regular task: two decks, two drawers, and the home copy bleeding through
+     * translucent dialogs. Hand such launches to the home task instead and close this copy.
+     */
+    private fun forwardToHomeInstanceIfNeeded(): Boolean {
+        if (intent?.hasCategory(Intent.CATEGORY_HOME) == true) return false
+        val homeIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+        val home = packageManager.resolveActivity(homeIntent, PackageManager.MATCH_DEFAULT_ONLY)?.activityInfo
+        if (home?.packageName != packageName || home.name != MainActivity::class.java.name) return false
+
+        val forward = Intent(homeIntent).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        intent?.extras?.let { forward.putExtras(it) }
+        // Finish first: while this copy is still alive it is the top-most MainActivity, and the
+        // system would hand the forwarded intent straight back to it.
+        finishAndRemoveTask()
+        startActivity(forward)
+        @Suppress("DEPRECATION")
+        overridePendingTransition(0, 0)
+        return true
+    }
+
     private fun handlePlaybackIntent(intent: Intent?) {
         val playPath = intent?.getStringExtra("play_path")
         if (!playPath.isNullOrBlank()) {
@@ -148,7 +172,7 @@ class MainActivity : AppCompatActivity() {
                     if (track != null) {
                         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                             app.audioEngine.playTrack(track)
-                            binding.viewPager.setCurrentItem(1, false)
+                            jumpToPage(1)
                         }
                     } else {
                         android.util.Log.e("MainActivity", "Failed to parse track: $playPath")
@@ -187,6 +211,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        if (!::binding.isInitialized) return
         if (isImmersiveModeEnabled) {
             applyImmersiveFlags()
         }
@@ -385,7 +410,7 @@ class MainActivity : AppCompatActivity() {
 
     fun navigateToPlayer() {
         binding.viewPager.isUserInputEnabled = true
-        binding.viewPager.setCurrentItem(1, false)
+        jumpToPage(1)
         syncPlayerFragmentState()
         if (binding.catalogContainer.visibility == View.VISIBLE) {
             binding.catalogContainer.animate()
@@ -473,7 +498,7 @@ class MainActivity : AppCompatActivity() {
             supportFragmentManager.beginTransaction().remove(frag).commitAllowingStateLoss()
         }
         binding.viewPager.isUserInputEnabled = true
-        binding.viewPager.setCurrentItem(0, false)
+        jumpToPage(0)
     }
 
     fun navigateToDrawer() {
@@ -483,7 +508,17 @@ class MainActivity : AppCompatActivity() {
             supportFragmentManager.beginTransaction().remove(frag).commitAllowingStateLoss()
         }
         binding.viewPager.isUserInputEnabled = true
-        binding.viewPager.setCurrentItem(2, false)
+        jumpToPage(2)
+    }
+
+    /**
+     * Instant page switch. The depth transformer only runs on scroll callbacks, and a jump can
+     * leave the new page with the 0.96x / 75% alpha it had while off-screen, so the whole screen
+     * looks shrunk and dimmed. Re-run the transformer once the jump has been laid out.
+     */
+    private fun jumpToPage(index: Int) {
+        binding.viewPager.setCurrentItem(index, false)
+        binding.viewPager.post { binding.viewPager.requestTransform() }
     }
 
     private fun checkAndRequestStoragePermissions(app: SpindleApp) {
@@ -556,6 +591,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        if (!::binding.isInitialized) return // a copy that forwarded itself to the home task
         setIntent(intent)
         handlePlaybackIntent(intent)
         if (intent.getStringExtra("navigate") == "radio") {

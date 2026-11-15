@@ -63,6 +63,8 @@ class ZuneJumpListDialog : DialogFragment() {
             deckColorway: com.hana.spindle.ui.cassette.WalkmanColorway? = null,
             onLetterSelected: (String) -> Unit
         ): ZuneJumpListDialog {
+            // One grid at a time: a second tap while it is opening would otherwise stack another.
+            (fragmentManager.findFragmentByTag(TAG) as? ZuneJumpListDialog)?.let { return it }
             val dialog = ZuneJumpListDialog()
             dialog.availableLetters = availableLetters
             dialog.titleText = title
@@ -70,14 +72,19 @@ class ZuneJumpListDialog : DialogFragment() {
             dialog.accentColor = accentColor
             dialog.deckColorway = deckColorway
             dialog.onLetterSelected = onLetterSelected
-            dialog.show(fragmentManager, "ZuneJumpListDialog")
+            dialog.show(fragmentManager, TAG)
             return dialog
         }
+
+        private const val TAG = "ZuneJumpListDialog"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setStyle(STYLE_NORMAL, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+        // Letters and the jump callback live only in memory; a grid restored after the activity
+        // is recreated would be empty and dead, so close it instead.
+        if (savedInstanceState != null) dismissAllowingStateLoss()
     }
 
     override fun onCreateView(
@@ -94,6 +101,8 @@ class ZuneJumpListDialog : DialogFragment() {
         dialog?.window?.apply {
             setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
             setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            // The grid covers the whole screen, so dimming the window behind adds nothing.
+            clearFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND)
         }
     }
 
@@ -130,7 +139,9 @@ class ZuneJumpListDialog : DialogFragment() {
     }
 
     private fun applyDeckChrome(cw: com.hana.spindle.ui.cassette.WalkmanColorway) {
-        binding.root.setBackgroundColor(androidx.core.graphics.ColorUtils.setAlphaComponent(cw.glass, 245))
+        // Opaque on purpose: through a 96%-alpha backing, some devices (seen on an Android 8 Xperia)
+        // showed a stale, offset copy of this grid behind it.
+        binding.root.setBackgroundColor(cw.glass)
         val mono = android.graphics.Typeface.create(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.BOLD)
         binding.tvJumpTitle.text = titleText.uppercase()
         binding.tvJumpTitle.typeface = mono
