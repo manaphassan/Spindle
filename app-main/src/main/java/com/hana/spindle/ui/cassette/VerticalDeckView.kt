@@ -347,12 +347,16 @@ class VerticalDeckView @JvmOverloads constructor(
                 }
                 return false
             }
+
             override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
                 if (isTouchInsideButtonsOrProgress(e.x, e.y)) {
                     return false
                 }
                 if (isSongPresent() || isSongLoaded) {
-                    val isSpineArea = labelRect.contains(e.x, e.y) || (e.x <= centerWindowRect.left && e.y >= cassetteRect.top && e.y <= cassetteRect.bottom)
+                    val isSpineArea = labelRect.contains(
+                        e.x,
+                        e.y
+                    ) || (e.x <= centerWindowRect.left && e.y >= cassetteRect.top && e.y <= cassetteRect.bottom)
                     if (isSpineArea) {
                         performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                         // Upper half of spine is title/artwork; lower half is lyric ticker/specs
@@ -380,9 +384,11 @@ class VerticalDeckView @JvmOverloads constructor(
                 }
                 return false
             }
+
             override fun onLongPress(e: MotionEvent) {
                 if (pressedButtonIndex == -1 && !isDraggingProgress) {
-                    val inSpine = (e.x <= centerWindowRect.left && e.y >= centerWindowRect.top && e.y <= centerWindowRect.bottom)
+                    val inSpine =
+                        (e.x <= centerWindowRect.left && e.y >= centerWindowRect.top && e.y <= centerWindowRect.bottom)
                     if (inSpine && onLyricsClicked != null) {
                         performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
                         onLyricsClicked?.invoke()
@@ -390,7 +396,7 @@ class VerticalDeckView @JvmOverloads constructor(
                     }
                     val slop = 15f
                     val inJCard = e.x >= jCardBadgeRect.left - slop && e.x <= jCardBadgeRect.right + slop &&
-                                  e.y >= jCardBadgeRect.top - slop && e.y <= jCardBadgeRect.bottom + slop
+                            e.y >= jCardBadgeRect.top - slop && e.y <= jCardBadgeRect.bottom + slop
                     val isCassetteArea = centerWindowRect.contains(e.x, e.y) || cassetteRect.contains(e.x, e.y)
                     if (inJCard || isCassetteArea) {
                         performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
@@ -398,6 +404,7 @@ class VerticalDeckView @JvmOverloads constructor(
                     }
                 }
             }
+
             override fun onDown(e: MotionEvent): Boolean = true
         })
     }
@@ -405,22 +412,22 @@ class VerticalDeckView @JvmOverloads constructor(
     private fun isTouchInsideButtonsOrProgress(x: Float, y: Float): Boolean {
         val slop = 12f
         val inTape = x >= tapeTypeBadgeRect.left - slop && x <= tapeTypeBadgeRect.right + slop &&
-                     y >= tapeTypeBadgeRect.top - slop && y <= tapeTypeBadgeRect.bottom + slop
+                y >= tapeTypeBadgeRect.top - slop && y <= tapeTypeBadgeRect.bottom + slop
         val inDolby = x >= dolbyBadgeRect.left - slop && x <= dolbyBadgeRect.right + slop &&
-                      y >= dolbyBadgeRect.top - slop && y <= dolbyBadgeRect.bottom + slop
+                y >= dolbyBadgeRect.top - slop && y <= dolbyBadgeRect.bottom + slop
         val inJCard = x >= jCardBadgeRect.left - slop && x <= jCardBadgeRect.right + slop &&
-                      y >= jCardBadgeRect.top - slop && y <= jCardBadgeRect.bottom + slop
+                y >= jCardBadgeRect.top - slop && y <= jCardBadgeRect.bottom + slop
         val inVu = x >= vuBadgeRect.left - slop && x <= vuBadgeRect.right + slop &&
-                   y >= vuBadgeRect.top - slop && y <= vuBadgeRect.bottom + slop
+                y >= vuBadgeRect.top - slop && y <= vuBadgeRect.bottom + slop
         return btnRewRect.contains(x, y) ||
-               btnFwdRect.contains(x, y) ||
-               btnPlayRect.contains(x, y) ||
-               btnEjectRect.contains(x, y) ||
-               inTape ||
-               inDolby ||
-               inJCard ||
-               inVu ||
-               (y >= ledBarRect.top - 25f && y <= ledBarRect.bottom + 25f)
+                btnFwdRect.contains(x, y) ||
+                btnPlayRect.contains(x, y) ||
+                btnEjectRect.contains(x, y) ||
+                inTape ||
+                inDolby ||
+                inJCard ||
+                inVu ||
+                (y >= ledBarRect.top - 25f && y <= ledBarRect.bottom + 25f)
     }
 
 
@@ -585,14 +592,16 @@ class VerticalDeckView @JvmOverloads constructor(
 
     // Dedicated Paints for Two Small Precision Guide Rollers
     private val guideRollerBodyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
-    private val guideRollerRimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 1.6f }
+    private val guideRollerRimPaint =
+        Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 1.6f }
     private val guideRollerPinPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val guideRollerWellPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val guideRollerStrobePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
 
     // Dedicated Paints for Mumetal Magnetic Shield Plate behind felt pad & tape path
     private val magneticShieldPlatePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
-    private val magneticShieldBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 1.2f }
+    private val magneticShieldBorderPaint =
+        Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 1.2f }
     private val magneticShieldRect = RectF()
 
     // Tactile Cassette Tape Formulation & Dolby Noise Reduction Selectors
@@ -601,7 +610,8 @@ class VerticalDeckView @JvmOverloads constructor(
     private val jCardBadgeRect = RectF()
     private val vuBadgeRect = RectF()
     private val tapeBadgeBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
-    private val tapeBadgeBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 1.4f }
+    private val tapeBadgeBorderPaint =
+        Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 1.4f }
     private val tapeBadgeTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
         textAlign = Paint.Align.CENTER
@@ -818,18 +828,37 @@ class VerticalDeckView @JvmOverloads constructor(
             hubClutchDimplePaint.apply { color = Color.WHITE; style = Paint.Style.FILL }
             orangeNotchPaint.apply { color = Color.WHITE; style = Paint.Style.FILL }
 
-            tapeMotionSheenPaint.apply { color = Color.argb(120, 0, 0, 0); style = Paint.Style.STROKE; strokeWidth = 1.4f }
-            tapeSpoolSheenPaint.apply { color = Color.argb(90, 0, 0, 0); style = Paint.Style.STROKE; strokeWidth = 1.2f }
+            tapeMotionSheenPaint.apply {
+                color = Color.argb(120, 0, 0, 0); style = Paint.Style.STROKE; strokeWidth = 1.4f
+            }
+            tapeSpoolSheenPaint.apply {
+                color = Color.argb(90, 0, 0, 0); style = Paint.Style.STROKE; strokeWidth = 1.2f
+            }
             spoolFlangeSpokePaint.apply { color = Color.argb(120, 0, 0, 0); style = Paint.Style.FILL }
 
             clockGhostPaint.apply { color = Color.TRANSPARENT; style = Paint.Style.FILL }
             clockLitPaint.apply { color = Color.BLACK; style = Paint.Style.FILL }
 
-            titleTextPaint.apply { color = Color.BLACK; textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD) }
-            artistTextPaint.apply { color = Color.BLACK; textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL) }
-            spindleLogoPaint.apply { color = Color.BLACK; textAlign = Paint.Align.LEFT; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD); letterSpacing = 0.12f }
-            spindleSubtextPaint.apply { color = Color.BLACK; textAlign = Paint.Align.LEFT; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL); letterSpacing = 0.16f }
-            cassetteBadgePaint.apply { color = Color.BLACK; textAlign = Paint.Align.LEFT; typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD); letterSpacing = 0.08f }
+            titleTextPaint.apply {
+                color = Color.BLACK; textAlign = Paint.Align.CENTER; typeface =
+                Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+            }
+            artistTextPaint.apply {
+                color = Color.BLACK; textAlign = Paint.Align.CENTER; typeface =
+                Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
+            }
+            spindleLogoPaint.apply {
+                color = Color.BLACK; textAlign = Paint.Align.LEFT; typeface =
+                Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD); letterSpacing = 0.12f
+            }
+            spindleSubtextPaint.apply {
+                color = Color.BLACK; textAlign = Paint.Align.LEFT; typeface =
+                Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL); letterSpacing = 0.16f
+            }
+            cassetteBadgePaint.apply {
+                color = Color.BLACK; textAlign = Paint.Align.LEFT; typeface =
+                Typeface.create(Typeface.MONOSPACE, Typeface.BOLD); letterSpacing = 0.08f
+            }
 
             acrylicSheenPaint.apply { color = Color.TRANSPARENT; style = Paint.Style.FILL }
             acrylicLinePaint.apply { color = Color.TRANSPARENT; style = Paint.Style.STROKE; strokeWidth = 1f }
@@ -847,56 +876,99 @@ class VerticalDeckView @JvmOverloads constructor(
             ledPeakInactivePaint.apply { color = Color.WHITE; style = Paint.Style.FILL }
             ledBatteryAmberPaint.apply { color = Color.BLACK; style = Paint.Style.FILL }
             ledBatteryAmberGlowPaint.apply { color = Color.TRANSPARENT; style = Paint.Style.STROKE; strokeWidth = 1f }
-            statusLabelPaint.apply { color = Color.BLACK; style = Paint.Style.FILL; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD); letterSpacing = 0.05f }
+            statusLabelPaint.apply {
+                color = Color.BLACK; style = Paint.Style.FILL; typeface =
+                Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD); letterSpacing = 0.05f
+            }
 
             buttonBasePaint.apply { color = Color.WHITE; style = Paint.Style.FILL }
             buttonPressedPaint.apply { color = Color.BLACK; style = Paint.Style.FILL }
             buttonHighlightPaint.apply { color = Color.BLACK; style = Paint.Style.STROKE; strokeWidth = 2f }
             buttonBorderPaint.apply { color = Color.BLACK; style = Paint.Style.STROKE; strokeWidth = 2f }
-            buttonIconPaint.apply { color = Color.BLACK; style = Paint.Style.FILL; textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD) }
-            buttonLabelPaint.apply { color = Color.BLACK; style = Paint.Style.FILL; textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD) }
-            buttonMutedIconPaint.apply { color = Color.WHITE; style = Paint.Style.FILL; textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD) }
-            buttonMutedLabelPaint.apply { color = Color.WHITE; style = Paint.Style.FILL; textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD) }
+            buttonIconPaint.apply {
+                color = Color.BLACK; style = Paint.Style.FILL; textAlign = Paint.Align.CENTER; typeface =
+                Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+            }
+            buttonLabelPaint.apply {
+                color = Color.BLACK; style = Paint.Style.FILL; textAlign = Paint.Align.CENTER; typeface =
+                Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+            }
+            buttonMutedIconPaint.apply {
+                color = Color.WHITE; style = Paint.Style.FILL; textAlign = Paint.Align.CENTER; typeface =
+                Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+            }
+            buttonMutedLabelPaint.apply {
+                color = Color.WHITE; style = Paint.Style.FILL; textAlign = Paint.Align.CENTER; typeface =
+                Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+            }
         } else if (isLight) {
             // Sunny Mixtape / Dark Indigo Framing & Pale Warm Stone (HEX: #2A2E45, #F97316, #FB7185, #FDE68A, #FAFAF9)
             chassisPaint.apply { color = Color.parseColor("#FAFAF9"); style = Paint.Style.FILL }
-            chassisBevelPaint.apply { color = Color.parseColor("#E5E5E2"); style = Paint.Style.STROKE; strokeWidth = 3f }
+            chassisBevelPaint.apply {
+                color = Color.parseColor("#E5E5E2"); style = Paint.Style.STROKE; strokeWidth = 3f
+            }
             slotBevelPaint.apply { color = Color.parseColor("#2A2E45"); style = Paint.Style.STROKE; strokeWidth = 2.5f }
             slotShadowPaint.apply { color = Color.parseColor("#EDEDE8"); style = Paint.Style.FILL }
 
             screwWellPaint.apply { color = Color.parseColor("#E5E5E2"); style = Paint.Style.FILL }
             screwHeadPaint.apply { color = Color.parseColor("#F0F0ED"); style = Paint.Style.FILL }
             screwHighlightPaint.apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 2f }
-            screwGroovePaint.apply { color = Color.parseColor("#2A2E45"); style = Paint.Style.STROKE; strokeWidth = 2.5f }
+            screwGroovePaint.apply {
+                color = Color.parseColor("#2A2E45"); style = Paint.Style.STROKE; strokeWidth = 2.5f
+            }
 
             cassetteShellPaint.apply { color = Color.parseColor("#FAFAF9"); style = Paint.Style.FILL }
-            cassetteBorderPaint.apply { color = Color.parseColor("#2A2E45"); style = Paint.Style.STROKE; strokeWidth = 2.0f }
+            cassetteBorderPaint.apply {
+                color = Color.parseColor("#2A2E45"); style = Paint.Style.STROKE; strokeWidth = 2.0f
+            }
             cassetteHighlightLinePaint.apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 1.0f }
-            cassetteInnerLipPaint.apply { color = Color.parseColor("#3D4260"); style = Paint.Style.STROKE; strokeWidth = 1.5f }
-            cassetteOutlinePaint.apply { color = Color.parseColor("#2A2E45"); style = Paint.Style.STROKE; strokeWidth = 1.6f }
-            cassetteSubtleOutlinePaint.apply { color = Color.parseColor("#4A4F6B"); style = Paint.Style.STROKE; strokeWidth = 1.3f }
-            cassetteScrewBossPaint.apply { color = Color.parseColor("#3D4260"); style = Paint.Style.STROKE; strokeWidth = 1.5f }
+            cassetteInnerLipPaint.apply {
+                color = Color.parseColor("#3D4260"); style = Paint.Style.STROKE; strokeWidth = 1.5f
+            }
+            cassetteOutlinePaint.apply {
+                color = Color.parseColor("#2A2E45"); style = Paint.Style.STROKE; strokeWidth = 1.6f
+            }
+            cassetteSubtleOutlinePaint.apply {
+                color = Color.parseColor("#4A4F6B"); style = Paint.Style.STROKE; strokeWidth = 1.3f
+            }
+            cassetteScrewBossPaint.apply {
+                color = Color.parseColor("#3D4260"); style = Paint.Style.STROKE; strokeWidth = 1.5f
+            }
             cassetteCutoutPaint.apply { color = Color.parseColor("#E8E8E4"); style = Paint.Style.FILL }
-            cassetteGuidePaint.apply { color = Color.parseColor("#2A2E45"); style = Paint.Style.STROKE; strokeWidth = 1.5f }
+            cassetteGuidePaint.apply {
+                color = Color.parseColor("#2A2E45"); style = Paint.Style.STROKE; strokeWidth = 1.5f
+            }
 
             windowPanelPaint.apply { color = Color.parseColor("#F5F5F3"); style = Paint.Style.FILL }
-            windowPanelBorderPaint.apply { color = Color.parseColor("#2A2E45"); style = Paint.Style.STROKE; strokeWidth = 2f }
+            windowPanelBorderPaint.apply {
+                color = Color.parseColor("#2A2E45"); style = Paint.Style.STROKE; strokeWidth = 2f
+            }
             windowGlassHighlightPaint.apply { color = Color.argb(40, 255, 255, 255); style = Paint.Style.FILL }
 
             centerWindowPaint.apply { color = Color.parseColor("#FFFFFF"); style = Paint.Style.FILL }
-            centerWindowBorderPaint.apply { color = Color.parseColor("#2A2E45"); style = Paint.Style.STROKE; strokeWidth = 1.6f }
+            centerWindowBorderPaint.apply {
+                color = Color.parseColor("#2A2E45"); style = Paint.Style.STROKE; strokeWidth = 1.6f
+            }
 
             tapeSpoolPaint.apply { color = Color.parseColor("#4A2E20"); style = Paint.Style.FILL }
             tapeShellSpoolPaint.apply { color = Color.argb(195, 80, 50, 40); style = Paint.Style.FILL }
-            tapeTexturePaint.apply { color = Color.parseColor("#38231E"); style = Paint.Style.STROKE; strokeWidth = 1.2f }
+            tapeTexturePaint.apply {
+                color = Color.parseColor("#38231E"); style = Paint.Style.STROKE; strokeWidth = 1.2f
+            }
             tapeBridgePaint.apply { color = Color.parseColor("#2A211D"); style = Paint.Style.FILL }
             tapePathPaint.apply { color = Color.parseColor("#5A3624"); style = Paint.Style.STROKE; strokeWidth = 7.5f }
-            tapePathHighlightPaint.apply { color = Color.argb(130, 200, 150, 120); style = Paint.Style.STROKE; strokeWidth = 1.6f }
+            tapePathHighlightPaint.apply {
+                color = Color.argb(130, 200, 150, 120); style = Paint.Style.STROKE; strokeWidth = 1.6f
+            }
 
-            pressurePadSpringPaint.apply { color = Color.parseColor("#B45309"); style = Paint.Style.STROKE; strokeWidth = 2.5f }
+            pressurePadSpringPaint.apply {
+                color = Color.parseColor("#B45309"); style = Paint.Style.STROKE; strokeWidth = 2.5f
+            }
             pressurePadFeltPaint.apply { color = Color.parseColor("#FB7185"); style = Paint.Style.FILL }
             tapeHeadChassisPaint.apply { color = Color.parseColor("#5A5E78"); style = Paint.Style.FILL }
-            tapeHeadBevelPaint.apply { color = Color.parseColor("#E5E5E2"); style = Paint.Style.STROKE; strokeWidth = 2f }
+            tapeHeadBevelPaint.apply {
+                color = Color.parseColor("#E5E5E2"); style = Paint.Style.STROKE; strokeWidth = 2f
+            }
             tapeHeadCorePaint.apply { color = Color.parseColor("#2A2E45"); style = Paint.Style.FILL }
 
             hubRimPaint.apply { color = Color.parseColor("#2A2E45"); style = Paint.Style.FILL }
@@ -909,38 +981,80 @@ class VerticalDeckView @JvmOverloads constructor(
             clockGhostPaint.apply { color = Color.parseColor("#E5E5E2"); style = Paint.Style.FILL }
             clockLitPaint.apply { color = Color.parseColor("#2A2E45"); style = Paint.Style.FILL }
 
-            titleTextPaint.apply { color = Color.parseColor("#2A2E45"); textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD) }
-            artistTextPaint.apply { color = Color.parseColor("#5A5E78"); textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL) }
-            spindleLogoPaint.apply { color = Color.parseColor("#2A2E45"); textAlign = Paint.Align.LEFT; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD); letterSpacing = 0.12f }
-            spindleSubtextPaint.apply { color = Color.parseColor("#5A5E78"); textAlign = Paint.Align.LEFT; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL); letterSpacing = 0.16f }
-            cassetteBadgePaint.apply { color = Color.parseColor("#FB7185"); textAlign = Paint.Align.LEFT; typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD); letterSpacing = 0.08f }
+            titleTextPaint.apply {
+                color = Color.parseColor("#2A2E45"); textAlign = Paint.Align.CENTER; typeface =
+                Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+            }
+            artistTextPaint.apply {
+                color = Color.parseColor("#5A5E78"); textAlign = Paint.Align.CENTER; typeface =
+                Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
+            }
+            spindleLogoPaint.apply {
+                color = Color.parseColor("#2A2E45"); textAlign = Paint.Align.LEFT; typeface =
+                Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD); letterSpacing = 0.12f
+            }
+            spindleSubtextPaint.apply {
+                color = Color.parseColor("#5A5E78"); textAlign = Paint.Align.LEFT; typeface =
+                Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL); letterSpacing = 0.16f
+            }
+            cassetteBadgePaint.apply {
+                color = Color.parseColor("#FB7185"); textAlign = Paint.Align.LEFT; typeface =
+                Typeface.create(Typeface.MONOSPACE, Typeface.BOLD); letterSpacing = 0.08f
+            }
 
             acrylicSheenPaint.apply { color = Color.argb(10, 42, 46, 69); style = Paint.Style.FILL }
-            acrylicLinePaint.apply { color = Color.argb(30, 42, 46, 69); style = Paint.Style.STROKE; strokeWidth = 1.5f }
+            acrylicLinePaint.apply {
+                color = Color.argb(30, 42, 46, 69); style = Paint.Style.STROKE; strokeWidth = 1.5f
+            }
 
             ledInactivePaint.apply { color = Color.parseColor("#E5E5E2"); style = Paint.Style.FILL }
             ledActivePaint.apply { color = Color.parseColor("#F97316"); style = Paint.Style.FILL }
-            ledActiveGlowPaint.apply { color = Color.argb(90, 249, 115, 22); style = Paint.Style.STROKE; strokeWidth = 3f }
+            ledActiveGlowPaint.apply {
+                color = Color.argb(90, 249, 115, 22); style = Paint.Style.STROKE; strokeWidth = 3f
+            }
             ledBorderPaint.apply { color = Color.parseColor("#2A2E45"); style = Paint.Style.STROKE; strokeWidth = 1.5f }
 
             ledRunActivePaint.apply { color = Color.parseColor("#00E676"); style = Paint.Style.FILL }
-            ledRunActiveGlowPaint.apply { color = Color.argb(90, 0, 230, 118); style = Paint.Style.STROKE; strokeWidth = 2f }
+            ledRunActiveGlowPaint.apply {
+                color = Color.argb(90, 0, 230, 118); style = Paint.Style.STROKE; strokeWidth = 2f
+            }
             ledRunInactivePaint.apply { color = Color.parseColor("#A8CDB2"); style = Paint.Style.FILL }
             ledPeakActivePaint.apply { color = Color.parseColor("#EF4444"); style = Paint.Style.FILL }
-            ledPeakActiveGlowPaint.apply { color = Color.argb(90, 239, 68, 68); style = Paint.Style.STROKE; strokeWidth = 2f }
+            ledPeakActiveGlowPaint.apply {
+                color = Color.argb(90, 239, 68, 68); style = Paint.Style.STROKE; strokeWidth = 2f
+            }
             ledPeakInactivePaint.apply { color = Color.parseColor("#D9A4A8"); style = Paint.Style.FILL }
             ledBatteryAmberPaint.apply { color = Color.parseColor("#F59E0B"); style = Paint.Style.FILL }
-            ledBatteryAmberGlowPaint.apply { color = Color.argb(90, 245, 158, 11); style = Paint.Style.STROKE; strokeWidth = 2f }
-            statusLabelPaint.apply { color = Color.parseColor("#5A5E78"); style = Paint.Style.FILL; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD); letterSpacing = 0.05f }
+            ledBatteryAmberGlowPaint.apply {
+                color = Color.argb(90, 245, 158, 11); style = Paint.Style.STROKE; strokeWidth = 2f
+            }
+            statusLabelPaint.apply {
+                color = Color.parseColor("#5A5E78"); style = Paint.Style.FILL; typeface =
+                Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD); letterSpacing = 0.05f
+            }
 
             buttonBasePaint.apply { color = Color.parseColor("#FAFAF9"); style = Paint.Style.FILL }
             buttonPressedPaint.apply { color = Color.parseColor("#E5E5E2"); style = Paint.Style.FILL }
             buttonHighlightPaint.apply { color = Color.WHITE; style = Paint.Style.STROKE; strokeWidth = 2f }
-            buttonBorderPaint.apply { color = Color.parseColor("#2A2E45"); style = Paint.Style.STROKE; strokeWidth = 2f }
-            buttonIconPaint.apply { color = Color.parseColor("#2A2E45"); style = Paint.Style.FILL; textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD) }
-            buttonLabelPaint.apply { color = Color.parseColor("#5A5E78"); style = Paint.Style.FILL; textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD) }
-            buttonMutedIconPaint.apply { color = Color.parseColor("#F97316"); style = Paint.Style.FILL; textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD) }
-            buttonMutedLabelPaint.apply { color = Color.parseColor("#F97316"); style = Paint.Style.FILL; textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD) }
+            buttonBorderPaint.apply {
+                color = Color.parseColor("#2A2E45"); style = Paint.Style.STROKE; strokeWidth = 2f
+            }
+            buttonIconPaint.apply {
+                color = Color.parseColor("#2A2E45"); style = Paint.Style.FILL; textAlign =
+                Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+            }
+            buttonLabelPaint.apply {
+                color = Color.parseColor("#5A5E78"); style = Paint.Style.FILL; textAlign =
+                Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+            }
+            buttonMutedIconPaint.apply {
+                color = Color.parseColor("#F97316"); style = Paint.Style.FILL; textAlign =
+                Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+            }
+            buttonMutedLabelPaint.apply {
+                color = Color.parseColor("#F97316"); style = Paint.Style.FILL; textAlign =
+                Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+            }
         } else {
             // Dynamic Cassette Model (Dark, TDK, Maxell, BASF, Skeleton Reel)
             chassisPaint.apply { color = theme.chassisColor; style = Paint.Style.FILL }
@@ -950,16 +1064,26 @@ class VerticalDeckView @JvmOverloads constructor(
 
             screwWellPaint.apply { color = theme.diagonalBezelColor; style = Paint.Style.FILL }
             screwHeadPaint.apply { color = theme.surfaceColor; style = Paint.Style.FILL }
-            screwHighlightPaint.apply { color = Color.argb(60, 255, 255, 255); style = Paint.Style.STROKE; strokeWidth = 2f }
+            screwHighlightPaint.apply {
+                color = Color.argb(60, 255, 255, 255); style = Paint.Style.STROKE; strokeWidth = 2f
+            }
             screwGroovePaint.apply { color = theme.diagonalBezelColor; style = Paint.Style.STROKE; strokeWidth = 2.5f }
 
             cassetteShellPaint.apply { color = theme.shellColor; style = Paint.Style.FILL }
             cassetteBorderPaint.apply { color = theme.cardBorderColor; style = Paint.Style.STROKE; strokeWidth = 2.0f }
-            cassetteHighlightLinePaint.apply { color = Color.argb(120, 250, 250, 249); style = Paint.Style.STROKE; strokeWidth = 1.0f }
-            cassetteInnerLipPaint.apply { color = theme.cardBorderColor; style = Paint.Style.STROKE; strokeWidth = 1.5f }
+            cassetteHighlightLinePaint.apply {
+                color = Color.argb(120, 250, 250, 249); style = Paint.Style.STROKE; strokeWidth = 1.0f
+            }
+            cassetteInnerLipPaint.apply {
+                color = theme.cardBorderColor; style = Paint.Style.STROKE; strokeWidth = 1.5f
+            }
             cassetteOutlinePaint.apply { color = theme.cardBorderColor; style = Paint.Style.STROKE; strokeWidth = 1.6f }
-            cassetteSubtleOutlinePaint.apply { color = Color.argb(80, 255, 255, 255); style = Paint.Style.STROKE; strokeWidth = 1.3f }
-            cassetteScrewBossPaint.apply { color = theme.cardBorderColor; style = Paint.Style.STROKE; strokeWidth = 1.5f }
+            cassetteSubtleOutlinePaint.apply {
+                color = Color.argb(80, 255, 255, 255); style = Paint.Style.STROKE; strokeWidth = 1.3f
+            }
+            cassetteScrewBossPaint.apply {
+                color = theme.cardBorderColor; style = Paint.Style.STROKE; strokeWidth = 1.5f
+            }
             cassetteCutoutPaint.apply { color = theme.surfaceColor; style = Paint.Style.FILL }
             cassetteGuidePaint.apply { color = theme.cardBorderColor; style = Paint.Style.STROKE; strokeWidth = 1.5f }
 
@@ -968,19 +1092,36 @@ class VerticalDeckView @JvmOverloads constructor(
             windowGlassHighlightPaint.apply { color = theme.windowTint; style = Paint.Style.FILL }
 
             centerWindowPaint.apply { color = theme.surfaceColor; style = Paint.Style.FILL }
-            centerWindowBorderPaint.apply { color = theme.cardBorderColor; style = Paint.Style.STROKE; strokeWidth = 1.6f }
+            centerWindowBorderPaint.apply {
+                color = theme.cardBorderColor; style = Paint.Style.STROKE; strokeWidth = 1.6f
+            }
 
             tapeSpoolPaint.apply { color = Color.parseColor("#3D241A"); style = Paint.Style.FILL }
             tapeShellSpoolPaint.apply { color = Color.argb(195, 65, 38, 28); style = Paint.Style.FILL }
-            tapeTexturePaint.apply { color = Color.argb(45, 180, 140, 120); style = Paint.Style.STROKE; strokeWidth = 1.2f }
-            tapeBridgePaint.apply { color = Color.argb(180, Color.red(theme.tapeRibbonColor), Color.green(theme.tapeRibbonColor), Color.blue(theme.tapeRibbonColor)); style = Paint.Style.FILL }
+            tapeTexturePaint.apply {
+                color = Color.argb(45, 180, 140, 120); style = Paint.Style.STROKE; strokeWidth = 1.2f
+            }
+            tapeBridgePaint.apply {
+                color = Color.argb(
+                    180,
+                    Color.red(theme.tapeRibbonColor),
+                    Color.green(theme.tapeRibbonColor),
+                    Color.blue(theme.tapeRibbonColor)
+                ); style = Paint.Style.FILL
+            }
             tapePathPaint.apply { color = Color.parseColor("#4E2F20"); style = Paint.Style.STROKE; strokeWidth = 7.5f }
-            tapePathHighlightPaint.apply { color = Color.argb(130, 160, 110, 85); style = Paint.Style.STROKE; strokeWidth = 1.6f }
+            tapePathHighlightPaint.apply {
+                color = Color.argb(130, 160, 110, 85); style = Paint.Style.STROKE; strokeWidth = 1.6f
+            }
 
-            pressurePadSpringPaint.apply { color = Color.parseColor("#B45309"); style = Paint.Style.STROKE; strokeWidth = 2.5f }
+            pressurePadSpringPaint.apply {
+                color = Color.parseColor("#B45309"); style = Paint.Style.STROKE; strokeWidth = 2.5f
+            }
             pressurePadFeltPaint.apply { color = Color.parseColor("#FB7185"); style = Paint.Style.FILL }
             tapeHeadChassisPaint.apply { color = Color.parseColor("#788294"); style = Paint.Style.FILL }
-            tapeHeadBevelPaint.apply { color = Color.parseColor("#B0B4CE"); style = Paint.Style.STROKE; strokeWidth = 2f }
+            tapeHeadBevelPaint.apply {
+                color = Color.parseColor("#B0B4CE"); style = Paint.Style.STROKE; strokeWidth = 2f
+            }
             tapeHeadCorePaint.apply { color = Color.parseColor("#1E2132"); style = Paint.Style.FILL }
 
             hubRimPaint.apply { color = theme.reelHubColor; style = Paint.Style.FILL }
@@ -993,38 +1134,87 @@ class VerticalDeckView @JvmOverloads constructor(
             clockGhostPaint.apply { color = theme.surfaceColor; style = Paint.Style.FILL }
             clockLitPaint.apply { color = theme.vfdGlowColor; style = Paint.Style.FILL }
 
-            titleTextPaint.apply { color = theme.textPrimaryColor; textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD) }
-            artistTextPaint.apply { color = theme.textSecondaryColor; textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL) }
-            spindleLogoPaint.apply { color = theme.textPrimaryColor; textAlign = Paint.Align.LEFT; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD); letterSpacing = 0.12f }
-            spindleSubtextPaint.apply { color = theme.textSecondaryColor; textAlign = Paint.Align.LEFT; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL); letterSpacing = 0.16f }
-            cassetteBadgePaint.apply { color = theme.labelTextColor; textAlign = Paint.Align.LEFT; typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD); letterSpacing = 0.08f }
+            titleTextPaint.apply {
+                color = theme.textPrimaryColor; textAlign = Paint.Align.CENTER; typeface =
+                Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+            }
+            artistTextPaint.apply {
+                color = theme.textSecondaryColor; textAlign = Paint.Align.CENTER; typeface =
+                Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
+            }
+            spindleLogoPaint.apply {
+                color = theme.textPrimaryColor; textAlign = Paint.Align.LEFT; typeface =
+                Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD); letterSpacing = 0.12f
+            }
+            spindleSubtextPaint.apply {
+                color = theme.textSecondaryColor; textAlign = Paint.Align.LEFT; typeface =
+                Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL); letterSpacing = 0.16f
+            }
+            cassetteBadgePaint.apply {
+                color = theme.labelTextColor; textAlign = Paint.Align.LEFT; typeface =
+                Typeface.create(Typeface.MONOSPACE, Typeface.BOLD); letterSpacing = 0.08f
+            }
 
             acrylicSheenPaint.apply { color = Color.argb(14, 250, 250, 249); style = Paint.Style.FILL }
-            acrylicLinePaint.apply { color = Color.argb(45, 250, 250, 249); style = Paint.Style.STROKE; strokeWidth = 1.5f }
+            acrylicLinePaint.apply {
+                color = Color.argb(45, 250, 250, 249); style = Paint.Style.STROKE; strokeWidth = 1.5f
+            }
 
             ledInactivePaint.apply { color = theme.surfaceColor; style = Paint.Style.FILL }
             ledActivePaint.apply { color = theme.accentColor; style = Paint.Style.FILL }
-            ledActiveGlowPaint.apply { color = Color.argb(90, Color.red(theme.accentColor), Color.green(theme.accentColor), Color.blue(theme.accentColor)); style = Paint.Style.STROKE; strokeWidth = 3f }
+            ledActiveGlowPaint.apply {
+                color = Color.argb(
+                    90,
+                    Color.red(theme.accentColor),
+                    Color.green(theme.accentColor),
+                    Color.blue(theme.accentColor)
+                ); style = Paint.Style.STROKE; strokeWidth = 3f
+            }
             ledBorderPaint.apply { color = theme.cardBorderColor; style = Paint.Style.STROKE; strokeWidth = 1.5f }
 
             ledRunActivePaint.apply { color = Color.parseColor("#00E676"); style = Paint.Style.FILL }
-            ledRunActiveGlowPaint.apply { color = Color.argb(100, 0, 230, 118); style = Paint.Style.STROKE; strokeWidth = 2.5f }
+            ledRunActiveGlowPaint.apply {
+                color = Color.argb(100, 0, 230, 118); style = Paint.Style.STROKE; strokeWidth = 2.5f
+            }
             ledRunInactivePaint.apply { color = Color.parseColor("#143521"); style = Paint.Style.FILL }
             ledPeakActivePaint.apply { color = Color.parseColor("#EF4444"); style = Paint.Style.FILL }
-            ledPeakActiveGlowPaint.apply { color = Color.argb(100, 239, 68, 68); style = Paint.Style.STROKE; strokeWidth = 2.5f }
+            ledPeakActiveGlowPaint.apply {
+                color = Color.argb(100, 239, 68, 68); style = Paint.Style.STROKE; strokeWidth = 2.5f
+            }
             ledPeakInactivePaint.apply { color = Color.parseColor("#45181C"); style = Paint.Style.FILL }
             ledBatteryAmberPaint.apply { color = Color.parseColor("#F59E0B"); style = Paint.Style.FILL }
-            ledBatteryAmberGlowPaint.apply { color = Color.argb(100, 245, 158, 11); style = Paint.Style.STROKE; strokeWidth = 2.5f }
-            statusLabelPaint.apply { color = Color.parseColor("#94A3B8"); style = Paint.Style.FILL; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD); letterSpacing = 0.05f }
+            ledBatteryAmberGlowPaint.apply {
+                color = Color.argb(100, 245, 158, 11); style = Paint.Style.STROKE; strokeWidth = 2.5f
+            }
+            statusLabelPaint.apply {
+                color = Color.parseColor("#94A3B8"); style = Paint.Style.FILL; typeface =
+                Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD); letterSpacing = 0.05f
+            }
 
             buttonBasePaint.apply { color = Color.parseColor("#202334"); style = Paint.Style.FILL }
             buttonPressedPaint.apply { color = Color.parseColor("#151724"); style = Paint.Style.FILL }
-            buttonHighlightPaint.apply { color = Color.parseColor("#353A54"); style = Paint.Style.STROKE; strokeWidth = 2f }
-            buttonBorderPaint.apply { color = Color.parseColor("#151724"); style = Paint.Style.STROKE; strokeWidth = 2f }
-            buttonIconPaint.apply { color = Color.parseColor("#FAFAF9"); style = Paint.Style.FILL; textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD) }
-            buttonLabelPaint.apply { color = Color.parseColor("#B0B4CE"); style = Paint.Style.FILL; textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD) }
-            buttonMutedIconPaint.apply { color = Color.parseColor("#F97316"); style = Paint.Style.FILL; textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD) }
-            buttonMutedLabelPaint.apply { color = Color.parseColor("#F97316"); style = Paint.Style.FILL; textAlign = Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD) }
+            buttonHighlightPaint.apply {
+                color = Color.parseColor("#353A54"); style = Paint.Style.STROKE; strokeWidth = 2f
+            }
+            buttonBorderPaint.apply {
+                color = Color.parseColor("#151724"); style = Paint.Style.STROKE; strokeWidth = 2f
+            }
+            buttonIconPaint.apply {
+                color = Color.parseColor("#FAFAF9"); style = Paint.Style.FILL; textAlign =
+                Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+            }
+            buttonLabelPaint.apply {
+                color = Color.parseColor("#B0B4CE"); style = Paint.Style.FILL; textAlign =
+                Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+            }
+            buttonMutedIconPaint.apply {
+                color = Color.parseColor("#F97316"); style = Paint.Style.FILL; textAlign =
+                Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+            }
+            buttonMutedLabelPaint.apply {
+                color = Color.parseColor("#F97316"); style = Paint.Style.FILL; textAlign =
+                Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+            }
         }
 
         labelBgPaint.apply {
@@ -1151,7 +1341,10 @@ class VerticalDeckView @JvmOverloads constructor(
 
         // Expansive Studio Paper Label colors (Matching LiteDeckView exactly)
         val isMetal = theme.name.contains("METAL", ignoreCase = true) || theme.id.contains("metal", ignoreCase = true)
-        val isType1 = !isMetal && (theme.name.contains("NORMAL", ignoreCase = true) || (theme.name.contains("TYPE I", ignoreCase = true) && !theme.name.contains("TYPE II", ignoreCase = true)))
+        val isType1 = !isMetal && (theme.name.contains("NORMAL", ignoreCase = true) || (theme.name.contains(
+            "TYPE I",
+            ignoreCase = true
+        ) && !theme.name.contains("TYPE II", ignoreCase = true)))
         if (isMetal) {
             labelPaint.color = Color.parseColor("#FACC15")
             labelTitleTextPaint.color = Color.parseColor("#0F172A")
@@ -1275,7 +1468,8 @@ class VerticalDeckView @JvmOverloads constructor(
         if (maxLabelTextWidth <= 0f || lw <= 0f) return
 
         // Line 1: Track Title (top)
-        val displayTitle = if (isSongPresent()) trackTitle else if (deviceName.isNotBlank()) deviceName else com.hana.spindle.util.DeviceUtils.getHardwareDeviceName()
+        val displayTitle =
+            if (isSongPresent()) trackTitle else if (deviceName.isNotBlank()) deviceName else com.hana.spindle.util.DeviceUtils.getHardwareDeviceName()
         var targetTitleSize = lw * 0.17f
         labelTitleTextPaint.textSize = targetTitleSize
         val measuredTitle = labelTitleTextPaint.measureText(displayTitle)
@@ -1556,7 +1750,12 @@ class VerticalDeckView @JvmOverloads constructor(
         val padMidY = headCavityRect.centerY()
         pressurePadSpringPath.reset()
         pressurePadSpringPath.moveTo(headCavityRect.left + 3f, padMidY - headH * 0.28f)
-        pressurePadSpringPath.quadTo(headCavityRect.left + 12f, padMidY, headCavityRect.left + 3f, padMidY + headH * 0.28f)
+        pressurePadSpringPath.quadTo(
+            headCavityRect.left + 12f,
+            padMidY,
+            headCavityRect.left + 3f,
+            padMidY + headH * 0.28f
+        )
 
         // Pre-compute ruby red felt pressure pad
         val padW = cw * 0.020f
@@ -1945,7 +2144,12 @@ class VerticalDeckView @JvmOverloads constructor(
         val midY = (topHubCenter.y + bottomHubCenter.y) * 0.5f
         val ridgeW = baseHubDimension * 0.68f
         val ridgeH = ch * 0.052f
-        tempRectF.set(topHubCenter.x - ridgeW * 0.5f, midY - ridgeH * 0.5f, topHubCenter.x + ridgeW * 0.5f, midY + ridgeH * 0.5f)
+        tempRectF.set(
+            topHubCenter.x - ridgeW * 0.5f,
+            midY - ridgeH * 0.5f,
+            topHubCenter.x + ridgeW * 0.5f,
+            midY + ridgeH * 0.5f
+        )
         canvas.drawRoundRect(tempRectF, 3f, 3f, cassetteSubtleOutlinePaint)
 
         // 7. 4 Corner Screws with Molded Circular Bosses and Diagonal Corner Struts
@@ -1953,10 +2157,42 @@ class VerticalDeckView @JvmOverloads constructor(
         val csOffsetX = cw * 0.048f
         val csOffsetY = ch * 0.028f
 
-        drawCornerScrewWithBoss(canvas, cassetteRect.left + csOffsetX, cassetteRect.top + csOffsetY, cScrewR, innerShellRect.left, innerShellRect.top, 40f)
-        drawCornerScrewWithBoss(canvas, cassetteRect.right - csOffsetX, cassetteRect.top + csOffsetY, cScrewR, innerShellRect.right, innerShellRect.top, 80f)
-        drawCornerScrewWithBoss(canvas, cassetteRect.left + csOffsetX, cassetteRect.bottom - csOffsetY, cScrewR, innerShellRect.left, innerShellRect.bottom, 20f)
-        drawCornerScrewWithBoss(canvas, cassetteRect.right - csOffsetX, cassetteRect.bottom - csOffsetY, cScrewR, innerShellRect.right, innerShellRect.bottom, 60f)
+        drawCornerScrewWithBoss(
+            canvas,
+            cassetteRect.left + csOffsetX,
+            cassetteRect.top + csOffsetY,
+            cScrewR,
+            innerShellRect.left,
+            innerShellRect.top,
+            40f
+        )
+        drawCornerScrewWithBoss(
+            canvas,
+            cassetteRect.right - csOffsetX,
+            cassetteRect.top + csOffsetY,
+            cScrewR,
+            innerShellRect.right,
+            innerShellRect.top,
+            80f
+        )
+        drawCornerScrewWithBoss(
+            canvas,
+            cassetteRect.left + csOffsetX,
+            cassetteRect.bottom - csOffsetY,
+            cScrewR,
+            innerShellRect.left,
+            innerShellRect.bottom,
+            20f
+        )
+        drawCornerScrewWithBoss(
+            canvas,
+            cassetteRect.right - csOffsetX,
+            cassetteRect.bottom - csOffsetY,
+            cScrewR,
+            innerShellRect.right,
+            innerShellRect.bottom,
+            60f
+        )
 
         // 8. Dual-Stepped Trapezoid Faceplate Contours (Outer & Inner - 80% height length)
         canvas.drawPath(trapPath, cassetteOutlinePaint)
@@ -2006,7 +2242,10 @@ class VerticalDeckView @JvmOverloads constructor(
         )
 
         // 11. Specular Hot-Stamped Metallic Foil Stamping on Cassette Shell
-        val isMetalXr = (theme.id == com.hana.spindle.theme.CassetteTheme.METAL_XR_TYPE4.id || theme.name.contains("Metal-XR", ignoreCase = true))
+        val isMetalXr = (theme.id == com.hana.spindle.theme.CassetteTheme.METAL_XR_TYPE4.id || theme.name.contains(
+            "Metal-XR",
+            ignoreCase = true
+        ))
         val isTdk = (theme.id == com.hana.spindle.theme.CassetteTheme.TDK_SA_90.id)
         val isMaxell = (theme.id == com.hana.spindle.theme.CassetteTheme.MAXELL_XLII.id)
         val isBasf = (theme.id == com.hana.spindle.theme.CassetteTheme.BASF_CHROME.id)
@@ -2021,8 +2260,14 @@ class VerticalDeckView @JvmOverloads constructor(
             val foilX = cassetteRect.left + cw * 0.35f
             val foilY = cassetteRect.top + ch * 0.045f
 
-            val foilColor1 = if (isMetalXr) Color.parseColor("#EF4444") else if (isTdk) Color.parseColor("#FEF08A") else if (isMaxell) Color.parseColor("#FFFFFF") else Color.parseColor("#FEF08A")
-            val foilColor2 = if (isMetalXr) Color.parseColor("#F59E0B") else if (isTdk) Color.parseColor("#D4AF37") else if (isMaxell) Color.parseColor("#94A3B8") else Color.parseColor("#EAB308")
+            val foilColor1 =
+                if (isMetalXr) Color.parseColor("#EF4444") else if (isTdk) Color.parseColor("#FEF08A") else if (isMaxell) Color.parseColor(
+                    "#FFFFFF"
+                ) else Color.parseColor("#FEF08A")
+            val foilColor2 =
+                if (isMetalXr) Color.parseColor("#F59E0B") else if (isTdk) Color.parseColor("#D4AF37") else if (isMaxell) Color.parseColor(
+                    "#94A3B8"
+                ) else Color.parseColor("#EAB308")
 
             foilBadgePaint.shader = LinearGradient(
                 foilX, foilY, foilX + cw * 0.38f, foilY,
@@ -2104,7 +2349,13 @@ class VerticalDeckView @JvmOverloads constructor(
 
         // 1. Left-aligned Tactile Tape Formulation, Dolby Noise Reduction, and J-Card Selectors
         drawSelectorBadge(canvas, tapeTypeBadgeRect, tapeFormulation.tag, "BIAS / EQ", true)
-        drawSelectorBadge(canvas, dolbyBadgeRect, dolbyMode.badgeText, "NR SYSTEM", dolbyMode != com.hana.spindle.playback.AudioFxController.DolbyMode.OFF)
+        drawSelectorBadge(
+            canvas,
+            dolbyBadgeRect,
+            dolbyMode.badgeText,
+            "NR SYSTEM",
+            dolbyMode != com.hana.spindle.playback.AudioFxController.DolbyMode.OFF
+        )
         drawSelectorBadge(canvas, jCardBadgeRect, "J-CARD", "LINER", true)
         drawSelectorBadge(canvas, vuBadgeRect, "VU", "METER", true)
 
@@ -2124,6 +2375,7 @@ class VerticalDeckView @JvmOverloads constructor(
                 }
                 canvas.drawRoundRect(ledPeakRect, cornerR, cornerR, ledBorderPaint)
             }
+
             batteryLevel in 11..20 -> {
                 // Low: amber
                 if (isEink) {
@@ -2134,6 +2386,7 @@ class VerticalDeckView @JvmOverloads constructor(
                     canvas.drawRoundRect(ledPeakRect, cornerR, cornerR, ledBorderPaint)
                 }
             }
+
             batteryLevel in 6..10 -> {
                 // Critical low: red
                 if (isEink) {
@@ -2144,6 +2397,7 @@ class VerticalDeckView @JvmOverloads constructor(
                     canvas.drawRoundRect(ledPeakRect, cornerR, cornerR, ledBorderPaint)
                 }
             }
+
             else -> {
                 // Almost depleted (<= 5%): blinking red
                 val isBlinkOn = (System.currentTimeMillis() / 450L) % 2L == 0L
@@ -2249,10 +2503,22 @@ class VerticalDeckView @JvmOverloads constructor(
         if (rTopTape > hubOuterRadius + 8f) {
             val deltaR = rTopTape - hubOuterRadius
             for (g in 1..3) {
-                canvas.drawCircle(topHubCenter.x, topHubCenter.y, hubOuterRadius + deltaR * (g / 4f), tapeMicroGroovePaint)
+                canvas.drawCircle(
+                    topHubCenter.x,
+                    topHubCenter.y,
+                    hubOuterRadius + deltaR * (g / 4f),
+                    tapeMicroGroovePaint
+                )
             }
         }
-        drawSpoolRotatingSheenAndSpokes(canvas, topHubCenter.x + topWobbleX, topHubCenter.y + topWobbleY, hubOuterRadius, rTopTape, topReelAngle)
+        drawSpoolRotatingSheenAndSpokes(
+            canvas,
+            topHubCenter.x + topWobbleX,
+            topHubCenter.y + topWobbleY,
+            hubOuterRadius,
+            rTopTape,
+            topReelAngle
+        )
         if (progress <= 0.03f && rTopTape > hubOuterRadius + 4f) {
             canvas.drawCircle(topHubCenter.x, topHubCenter.y, rTopTape, leaderSpoolRingPaint)
         }
@@ -2265,10 +2531,22 @@ class VerticalDeckView @JvmOverloads constructor(
         if (rBottomTape > hubOuterRadius + 8f) {
             val deltaR = rBottomTape - hubOuterRadius
             for (g in 1..3) {
-                canvas.drawCircle(bottomHubCenter.x, bottomHubCenter.y, hubOuterRadius + deltaR * (g / 4f), tapeMicroGroovePaint)
+                canvas.drawCircle(
+                    bottomHubCenter.x,
+                    bottomHubCenter.y,
+                    hubOuterRadius + deltaR * (g / 4f),
+                    tapeMicroGroovePaint
+                )
             }
         }
-        drawSpoolRotatingSheenAndSpokes(canvas, bottomHubCenter.x + bottomWobbleX, bottomHubCenter.y + bottomWobbleY, hubOuterRadius, rBottomTape, bottomReelAngle)
+        drawSpoolRotatingSheenAndSpokes(
+            canvas,
+            bottomHubCenter.x + bottomWobbleX,
+            bottomHubCenter.y + bottomWobbleY,
+            hubOuterRadius,
+            rBottomTape,
+            bottomReelAngle
+        )
         if (progress >= 0.97f && rBottomTape > hubOuterRadius + 4f) {
             canvas.drawCircle(bottomHubCenter.x, bottomHubCenter.y, rBottomTape, leaderSpoolRingPaint)
         }
@@ -2277,15 +2555,33 @@ class VerticalDeckView @JvmOverloads constructor(
         drawHubMechanism(canvas, topHubCenter.x + topWobbleX, topHubCenter.y + topWobbleY, hubOuterRadius, topReelAngle)
 
         // Bottom Reel Hub Mechanism (White Delrin Spindle Drive Hub with kinetic wobble)
-        drawHubMechanism(canvas, bottomHubCenter.x + bottomWobbleX, bottomHubCenter.y + bottomWobbleY, hubOuterRadius, bottomReelAngle)
+        drawHubMechanism(
+            canvas,
+            bottomHubCenter.x + bottomWobbleX,
+            bottomHubCenter.y + bottomWobbleY,
+            hubOuterRadius,
+            bottomReelAngle
+        )
 
         // 4. Slit Graduation Scale (Ticks along window slit edges)
         val tickLen = 5.5f
         for (t in 0 until 5) {
             val ty = rulerTickYs[t]
             if (ty < bottomHubCenter.y - hubOuterRadius - 6f && ty > topHubCenter.y + hubOuterRadius + 6f) {
-                canvas.drawLine(centerWindowRect.left + 2f, ty, centerWindowRect.left + 2f + tickLen, ty, rulerTickPaint)
-                canvas.drawLine(centerWindowRect.right - 2f - tickLen, ty, centerWindowRect.right - 2f, ty, rulerTickPaint)
+                canvas.drawLine(
+                    centerWindowRect.left + 2f,
+                    ty,
+                    centerWindowRect.left + 2f + tickLen,
+                    ty,
+                    rulerTickPaint
+                )
+                canvas.drawLine(
+                    centerWindowRect.right - 2f - tickLen,
+                    ty,
+                    centerWindowRect.right - 2f,
+                    ty,
+                    rulerTickPaint
+                )
             }
         }
 
@@ -2430,9 +2726,11 @@ class VerticalDeckView @JvmOverloads constructor(
             outputRoute.contains("3.5mm", ignoreCase = true) -> if (isBitPerfect) "3.5mm DIRECT" else "3.5mm OUTPUT"
             outputRoute.contains("Bluetooth", ignoreCase = true) || isBluetoothConnected -> {
                 val btNameShort = bluetoothDeviceName?.takeIf { it.isNotBlank() } ?: "BLUETOOTH"
-                val batteryPart = if (bluetoothBatteryPct != null && bluetoothBatteryPct!! >= 0) " (${bluetoothBatteryPct}%)" else ""
+                val batteryPart =
+                    if (bluetoothBatteryPct != null && bluetoothBatteryPct!! >= 0) " (${bluetoothBatteryPct}%)" else ""
                 "$btNameShort$batteryPart"
             }
+
             outputRoute.contains("Speaker", ignoreCase = true) -> if (isBitPerfect) "SPEAKER DIRECT" else "SPEAKER"
             isBitPerfect -> "DIRECT ALSA"
             outputRoute.isNotBlank() -> outputRoute.uppercase(Locale.ROOT)
@@ -2575,7 +2873,8 @@ class VerticalDeckView @JvmOverloads constructor(
             currentLyricText
         } else if (hasSong) {
             val timeStr = formatPlaybackTime(currentTimeMs, durationMs)
-            val artistPart = if (artistName.isNotBlank() && artistName != "Unknown Artist") artistName else "Unknown Artist"
+            val artistPart =
+                if (artistName.isNotBlank() && artistName != "Unknown Artist") artistName else "Unknown Artist"
             "$artistPart • $timeStr"
         } else {
             "STUDIO MASTER • STEREO"
@@ -2713,6 +3012,7 @@ class VerticalDeckView @JvmOverloads constructor(
 
                 canvas.drawPath(btnIconPath, buttonIconPaint)
             }
+
             1 -> {
                 // FWD: two identical right-facing triangles, cleanly spaced and centered
                 val triW = s * 0.82f
@@ -2737,6 +3037,7 @@ class VerticalDeckView @JvmOverloads constructor(
 
                 canvas.drawPath(btnIconPath, buttonIconPaint)
             }
+
             3 -> {
                 // EJECT: upward-pointing triangle above a horizontal bar, perfectly centered
                 val triW = s * 1.40f
@@ -2850,7 +3151,8 @@ class VerticalDeckView @JvmOverloads constructor(
             MotionEvent.ACTION_DOWN -> {
                 // Check 12-LED progress bar seek
                 if (y >= ledBarRect.top - 25f && y <= ledBarRect.bottom + 25f &&
-                    x >= ledBarRect.left - 10f && x <= ledBarRect.right + 10f) {
+                    x >= ledBarRect.left - 10f && x <= ledBarRect.right + 10f
+                ) {
                     isDraggingProgress = true
                     parent?.requestDisallowInterceptTouchEvent(true)
                     updateProgressFromTouch(x)
@@ -2861,9 +3163,9 @@ class VerticalDeckView @JvmOverloads constructor(
                 // Check tape formulation selector badge touch (tap cycles, hold opens preset manager)
                 val badgeSlop = 12f
                 val inTapeBadge = x >= tapeTypeBadgeRect.left - badgeSlop &&
-                                  x <= tapeTypeBadgeRect.right + badgeSlop &&
-                                  y >= tapeTypeBadgeRect.top - badgeSlop &&
-                                  y <= tapeTypeBadgeRect.bottom + badgeSlop
+                        x <= tapeTypeBadgeRect.right + badgeSlop &&
+                        y >= tapeTypeBadgeRect.top - badgeSlop &&
+                        y <= tapeTypeBadgeRect.bottom + badgeSlop
 
                 if (inTapeBadge) {
                     isTouchingTapeBadge = true
@@ -2881,17 +3183,19 @@ class VerticalDeckView @JvmOverloads constructor(
 
                 // Check Dolby NR selector badge touch
                 val inDolbyBadge = x >= dolbyBadgeRect.left - badgeSlop &&
-                                   x <= dolbyBadgeRect.right + badgeSlop &&
-                                   y >= dolbyBadgeRect.top - badgeSlop &&
-                                   y <= dolbyBadgeRect.bottom + badgeSlop
+                        x <= dolbyBadgeRect.right + badgeSlop &&
+                        y >= dolbyBadgeRect.top - badgeSlop &&
+                        y <= dolbyBadgeRect.bottom + badgeSlop
 
                 if (inDolbyBadge) {
                     performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                     val nextDolby = when (dolbyMode) {
                         com.hana.spindle.playback.AudioFxController.DolbyMode.OFF ->
                             com.hana.spindle.playback.AudioFxController.DolbyMode.DOLBY_B
+
                         com.hana.spindle.playback.AudioFxController.DolbyMode.DOLBY_B ->
                             com.hana.spindle.playback.AudioFxController.DolbyMode.DOLBY_C
+
                         com.hana.spindle.playback.AudioFxController.DolbyMode.DOLBY_C ->
                             com.hana.spindle.playback.AudioFxController.DolbyMode.OFF
                     }
@@ -2903,9 +3207,9 @@ class VerticalDeckView @JvmOverloads constructor(
 
                 // Check 4 bottom buttons
                 val inJCardBadge = x >= jCardBadgeRect.left - badgeSlop &&
-                                   x <= jCardBadgeRect.right + badgeSlop &&
-                                   y >= jCardBadgeRect.top - badgeSlop &&
-                                   y <= jCardBadgeRect.bottom + badgeSlop
+                        x <= jCardBadgeRect.right + badgeSlop &&
+                        y >= jCardBadgeRect.top - badgeSlop &&
+                        y <= jCardBadgeRect.bottom + badgeSlop
                 if (inJCardBadge) {
                     performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                     onJCardClicked?.invoke()
@@ -2913,9 +3217,9 @@ class VerticalDeckView @JvmOverloads constructor(
                 }
 
                 val inVuBadge = x >= vuBadgeRect.left - badgeSlop &&
-                                x <= vuBadgeRect.right + badgeSlop &&
-                                y >= vuBadgeRect.top - badgeSlop &&
-                                y <= vuBadgeRect.bottom + badgeSlop
+                        x <= vuBadgeRect.right + badgeSlop &&
+                        y >= vuBadgeRect.top - badgeSlop &&
+                        y <= vuBadgeRect.bottom + badgeSlop
                 if (inVuBadge) {
                     performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                     onVuMeterClicked?.invoke()
@@ -3004,9 +3308,9 @@ class VerticalDeckView @JvmOverloads constructor(
                 if (isTouchingTapeBadge) {
                     val badgeSlop = 16f
                     val inTapeBadge = x >= tapeTypeBadgeRect.left - badgeSlop &&
-                                      x <= tapeTypeBadgeRect.right + badgeSlop &&
-                                      y >= tapeTypeBadgeRect.top - badgeSlop &&
-                                      y <= tapeTypeBadgeRect.bottom + badgeSlop
+                            x <= tapeTypeBadgeRect.right + badgeSlop &&
+                            y >= tapeTypeBadgeRect.top - badgeSlop &&
+                            y <= tapeTypeBadgeRect.bottom + badgeSlop
                     if (!inTapeBadge) {
                         holdTapeBadgeRunnable?.let { gestureHandler.removeCallbacks(it) }
                         holdTapeBadgeRunnable = null
@@ -3041,18 +3345,24 @@ class VerticalDeckView @JvmOverloads constructor(
                     if (!wasLongPress) {
                         val badgeSlop = 12f
                         val inTapeBadge = x >= tapeTypeBadgeRect.left - badgeSlop &&
-                                          x <= tapeTypeBadgeRect.right + badgeSlop &&
-                                          y >= tapeTypeBadgeRect.top - badgeSlop &&
-                                          y <= tapeTypeBadgeRect.bottom + badgeSlop
+                                x <= tapeTypeBadgeRect.right + badgeSlop &&
+                                y >= tapeTypeBadgeRect.top - badgeSlop &&
+                                y <= tapeTypeBadgeRect.bottom + badgeSlop
                         if (inTapeBadge) {
                             performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                             val nextType = when (tapeFormulation) {
+                                com.hana.spindle.playback.AudioFxController.TapeFormulation.FLAT ->
+                                    com.hana.spindle.playback.AudioFxController.TapeFormulation.TYPE_I_NORMAL
+
                                 com.hana.spindle.playback.AudioFxController.TapeFormulation.TYPE_I_NORMAL ->
                                     com.hana.spindle.playback.AudioFxController.TapeFormulation.TYPE_II_CHROME
+
                                 com.hana.spindle.playback.AudioFxController.TapeFormulation.TYPE_II_CHROME ->
                                     com.hana.spindle.playback.AudioFxController.TapeFormulation.TYPE_III_FERRICHROME
+
                                 com.hana.spindle.playback.AudioFxController.TapeFormulation.TYPE_III_FERRICHROME ->
                                     com.hana.spindle.playback.AudioFxController.TapeFormulation.TYPE_IV_METAL
+
                                 com.hana.spindle.playback.AudioFxController.TapeFormulation.TYPE_IV_METAL ->
                                     com.hana.spindle.playback.AudioFxController.TapeFormulation.TYPE_I_NORMAL
                             }
@@ -3192,7 +3502,8 @@ class VerticalDeckView @JvmOverloads constructor(
                     isPlaying -> 1.0f
                     else -> 0.0f
                 }
-                val effectiveSpeed = flywheelTracker.step(targetSpeed, deltaSec, (inertia.leftInertia + inertia.rightInertia) * 0.5f)
+                val effectiveSpeed =
+                    flywheelTracker.step(targetSpeed, deltaSec, (inertia.leftInertia + inertia.rightInertia) * 0.5f)
 
                 if (effectiveSpeed == 0f && !isPlaying && !isHoldSeeking) {
                     stopRotation()
@@ -3202,9 +3513,12 @@ class VerticalDeckView @JvmOverloads constructor(
                 val timeSec = (now % 60000L) / 1000f
                 val wowFlutterMod = kinematics.getWowFlutterMultiplier(timeSec)
                 val spoolState = kinematics.calculate(progress, baseHubDimension)
-                topReelAngle = (topReelAngle + 4.5f * spoolState.leftAngularSpeed * wowFlutterMod * effectiveSpeed + 360f) % 360f
-                bottomReelAngle = (bottomReelAngle + 4.5f * spoolState.rightAngularSpeed * wowFlutterMod * effectiveSpeed + 360f) % 360f
-                tapeTravelOffset = (tapeTravelOffset + 2.8f * spoolState.leftAngularSpeed * wowFlutterMod * effectiveSpeed + 40f) % 40f
+                topReelAngle =
+                    (topReelAngle + 4.5f * spoolState.leftAngularSpeed * wowFlutterMod * effectiveSpeed + 360f) % 360f
+                bottomReelAngle =
+                    (bottomReelAngle + 4.5f * spoolState.rightAngularSpeed * wowFlutterMod * effectiveSpeed + 360f) % 360f
+                tapeTravelOffset =
+                    (tapeTravelOffset + 2.8f * spoolState.leftAngularSpeed * wowFlutterMod * effectiveSpeed + 40f) % 40f
                 invalidate()
             }
             start()
@@ -3215,7 +3529,14 @@ class VerticalDeckView @JvmOverloads constructor(
      * Draws kinetic rotating elements on the tape pack: anisotropic specular sheen wedges,
      * classic 3-spoke flange strobe markers, and the physical tape anchor notch.
      */
-    private fun drawSpoolRotatingSheenAndSpokes(canvas: Canvas, cx: Float, cy: Float, innerR: Float, outerR: Float, rotationAngle: Float) {
+    private fun drawSpoolRotatingSheenAndSpokes(
+        canvas: Canvas,
+        cx: Float,
+        cy: Float,
+        innerR: Float,
+        outerR: Float,
+        rotationAngle: Float
+    ) {
         if (outerR <= innerR + 4f) return
 
         canvas.save()

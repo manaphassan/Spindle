@@ -360,6 +360,19 @@ class DrawerFragment : Fragment() {
         scrollToDrawerPanel(index)
     }
 
+    /** Preset name plus every other stage that colours the sound, so "FLAT" is never misleading. */
+    private fun fxLabel(fx: AudioFxController): String {
+        val parts = mutableListOf(fx.currentPresetName.replace("_", " "))
+        if (fx.currentTapeFormulation != AudioFxController.TapeFormulation.FLAT) parts += "TAPE ${
+            fx.currentTapeFormulation.tag.removePrefix(
+                "TYPE "
+            )
+        }"
+        if (fx.currentDolbyMode != AudioFxController.DolbyMode.OFF) parts += fx.currentDolbyMode.label
+        if (fx.isTapeSaturationEnabled) parts += "SAT"
+        return "FX: " + parts.joinToString(" + ")
+    }
+
     // =========================================================================
     // 2. MINIMALIST APP DRAWER WITH NIAGARA-STYLE VERNIER WAVE SCROLLBAR
     // =========================================================================
@@ -785,7 +798,7 @@ class DrawerFragment : Fragment() {
             updateEqModeVisual(fxController.isParametricMode)
             updateEqHeadroomLabel(fxController)
             updateBiquadVisualizer()
-            binding.btnFx.text = "FX: ${fxController.currentPresetName.replace("_", " ")}"
+            binding.btnFx.text = fxLabel(fxController)
             highlightCurve(fxController.currentPresetName)
             updateCustomPresetsBadge()
             refreshAutoEqPills()
@@ -998,22 +1011,15 @@ class DrawerFragment : Fragment() {
                     }
                 }
 
-                // 6. Realistic 15Hz Dynamic Ballistics Simulation for LED VU Meter & L/R Peak Meter
+                // 6. Analog VU needles driven by the measured RMS of the audible PCM signal.
+                // Radio streams play through a separate player that isn't metered, so the needles rest.
                 launch {
-                    var phase = 0.0
+                    val levels = FloatArray(4)
                     while (isActive) {
                         val isLocalPlaying = audioEngine.playbackState.value.isPlaying
-                        val isRadioPlaying = app.radioStreamEngine.radioState.value.isPlaying
-                        val isAudioActive = isLocalPlaying || isRadioPlaying
-
-                        if (isAudioActive) {
-                            phase += 0.4
-                            val baseLevel = 0.65f + 0.28f * sin(phase).toFloat()
-                            val peakJitter = (sin(phase * 2.3) * 0.12f).toFloat()
-                            val totalLevel = (baseLevel + peakJitter).coerceIn(0f, 1f)
-
-                            val (leftLvl, rightLvl) = audioEngine.getStereoLevels(totalLevel)
-                            _binding?.dualAnalogVuMeter?.setStereoLevels(leftLvl, rightLvl)
+                        if (isLocalPlaying && audioEngine.outputLevelMeter.read(66L, levels)) {
+                            val (lm, rm) = audioEngine.getStereoLevels(1f)
+                            _binding?.dualAnalogVuMeter?.setStereoLevels(levels[2] * lm, levels[3] * rm)
                         } else {
                             _binding?.dualAnalogVuMeter?.setStereoLevels(0.0f, 0.0f)
                         }
@@ -1425,7 +1431,10 @@ class DrawerFragment : Fragment() {
         }
 
         // 9. Tape Formulation (Bias) & Dolby NR
-        fun updateTapeBiasPills(formulation: AudioFxController.TapeFormulation) {
+        // Pills mirror what the DSP actually applied (changes are ignored while the EQ is locked).
+        fun updateTapeBiasPills(@Suppress("UNUSED_PARAMETER") requested: AudioFxController.TapeFormulation) {
+            val formulation = audioFxController.currentTapeFormulation
+            syncAllEqControlsAction?.invoke()
             val isType1 = formulation == AudioFxController.TapeFormulation.TYPE_I_NORMAL
             val isType2 = formulation == AudioFxController.TapeFormulation.TYPE_II_CHROME
             val isType3 = formulation == AudioFxController.TapeFormulation.TYPE_III_FERRICHROME
@@ -1444,7 +1453,9 @@ class DrawerFragment : Fragment() {
             binding.btnTapeType4.backgroundTintList = ColorStateList.valueOf(if (isType4) Color.parseColor("#16261B") else Color.parseColor("#242731"))
         }
 
-        fun updateDolbyPills(mode: AudioFxController.DolbyMode) {
+        fun updateDolbyPills(@Suppress("UNUSED_PARAMETER") requested: AudioFxController.DolbyMode) {
+            val mode = audioFxController.currentDolbyMode
+            syncAllEqControlsAction?.invoke()
             val isOff = mode == AudioFxController.DolbyMode.OFF
             val isB = mode == AudioFxController.DolbyMode.DOLBY_B
             val isC = mode == AudioFxController.DolbyMode.DOLBY_C

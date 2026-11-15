@@ -132,6 +132,7 @@ class AudioEngine(
 
     val audioFxController = AudioFxController()
     val foleyEngine = CassetteFoleyEngine(context)
+    val outputLevelMeter = OutputLevelMeter()
 
     // ReplayGain Audiophile Loudness Normalization (OFF, TRACK, ALBUM)
     var replayGainMode: com.hana.spindle.core.ReplayGainMode = com.hana.spindle.core.ReplayGainMode.TRACK
@@ -220,17 +221,19 @@ class AudioEngine(
 
         val savedCrossfade = prefs.getString("pref_crossfade_mode", com.hana.spindle.core.CrossfadeMode.GAPLESS.name)
         crossfadeMode = try {
-            com.hana.spindle.core.CrossfadeMode.valueOf(savedCrossfade ?: com.hana.spindle.core.CrossfadeMode.GAPLESS.name)
+            com.hana.spindle.core.CrossfadeMode.valueOf(
+                savedCrossfade ?: com.hana.spindle.core.CrossfadeMode.GAPLESS.name
+            )
         } catch (_: Exception) {
             com.hana.spindle.core.CrossfadeMode.GAPLESS
         }
         audioFxController.crossfadeMode = crossfadeMode
 
-        val savedTapeName = prefs.getString("pref_tape_formulation", AudioFxController.TapeFormulation.TYPE_IV_METAL.name)
+        val savedTapeName = prefs.getString("pref_tape_formulation", AudioFxController.TapeFormulation.FLAT.name)
         val formulation = try {
-            AudioFxController.TapeFormulation.valueOf(savedTapeName ?: AudioFxController.TapeFormulation.TYPE_IV_METAL.name)
+            AudioFxController.TapeFormulation.valueOf(savedTapeName ?: AudioFxController.TapeFormulation.FLAT.name)
         } catch (_: Exception) {
-            AudioFxController.TapeFormulation.TYPE_IV_METAL
+            AudioFxController.TapeFormulation.FLAT
         }
         audioFxController.setTapeFormulation(formulation)
 
@@ -314,6 +317,16 @@ class AudioEngine(
                     )
                 )
             }
+
+            override fun buildAudioSink(
+                context: Context,
+                enableFloatOutput: Boolean,
+                enableAudioTrackPlaybackParams: Boolean
+            ): AudioSink? {
+                val sink =
+                    super.buildAudioSink(context, enableFloatOutput, enableAudioTrackPlaybackParams) ?: return null
+                return LevelTapAudioSink(sink, outputLevelMeter)
+            }
         }.apply {
             setEnableDecoderFallback(true)
             setEnableAudioFloatOutput(true)
@@ -334,7 +347,8 @@ class AudioEngine(
     }
 
     private fun attachPlayerListeners(player: ExoPlayer) {
-        player.repeatMode = if (_playbackState.value.repeatMode == RepeatMode.ONE) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
+        player.repeatMode =
+            if (_playbackState.value.repeatMode == RepeatMode.ONE) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
         val prefs = context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
         if (com.hana.spindle.BuildConfig.DEBUG && prefs.getBoolean("pref_enable_audio_debug_logs", false)) {
             player.addAnalyticsListener(androidx.media3.exoplayer.util.EventLogger("SpindlePlayer"))
@@ -366,7 +380,8 @@ class AudioEngine(
                 val newIndex = exoPlayer.currentMediaItemIndex
                 if (newIndex in playlist.indices) {
                     val isNewTrack = (newIndex != currentIndex)
-                    val isAutoOrRepeat = (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO || reason == Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT)
+                    val isAutoOrRepeat =
+                        (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO || reason == Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT)
                     if (isNewTrack || isAutoOrRepeat) {
                         currentIndex = newIndex
                         val newTrack = playlist[newIndex]
@@ -376,7 +391,11 @@ class AudioEngine(
             }
 
             override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
-                android.util.Log.e("AudioEngine", "ExoPlayer error: ${error.errorCodeName} (code=${error.errorCode}) - ${error.message}", error)
+                android.util.Log.e(
+                    "AudioEngine",
+                    "ExoPlayer error: ${error.errorCodeName} (code=${error.errorCode}) - ${error.message}",
+                    error
+                )
                 if (player === secondaryPlayer) {
                     cancelCrossfade()
                 } else {
@@ -421,7 +440,8 @@ class AudioEngine(
             try {
                 val app = context.applicationContext as? com.hana.spindle.SpindleApp
                 app?.database?.trackDao()?.incrementPlayCount(track.id)
-            } catch (ignored: Exception) {}
+            } catch (ignored: Exception) {
+            }
         }
         saveLastPlayed(track.path, 0L)
         syncQueueState()
@@ -429,7 +449,8 @@ class AudioEngine(
     }
 
     private fun resyncExoPlayerPlaylist(resetPosition: Boolean = false) {
-        val curPos = if (resetPosition || exoPlayer.playbackState == Player.STATE_IDLE) 0L else exoPlayer.currentPosition
+        val curPos =
+            if (resetPosition || exoPlayer.playbackState == Player.STATE_IDLE) 0L else exoPlayer.currentPosition
         val wasPlaying = exoPlayer.isPlaying
         if (playlist.isNotEmpty()) {
             val safeIndex = currentIndex.coerceIn(0, playlist.size - 1)
@@ -441,7 +462,10 @@ class AudioEngine(
     }
 
     private fun handleTrackEnded() {
-        android.util.Log.d("AudioEngine", "handleTrackEnded: repeatMode=${_playbackState.value.repeatMode}, currentIndex=$currentIndex, size=${playlist.size}")
+        android.util.Log.d(
+            "AudioEngine",
+            "handleTrackEnded: repeatMode=${_playbackState.value.repeatMode}, currentIndex=$currentIndex, size=${playlist.size}"
+        )
         if (_sleepTimerState.value.isActive && _sleepTimerState.value.stopAfterCurrentTrack) {
             pause()
             seekTo(0)
@@ -457,7 +481,8 @@ class AudioEngine(
         // Vintage Cassette Side A -> Side B Auto-Reverse transition
         val nextIdx = currentIndex + 1
         val isCrossingToSideB = (nextIdx == mixtapeSplitIndex && mixtapeSplitIndex > 0 && nextIdx < playlist.size)
-        val isWrappingToSideA = (nextIdx >= playlist.size && mixtapeSplitIndex > 0 && _playbackState.value.repeatMode == RepeatMode.ALL)
+        val isWrappingToSideA =
+            (nextIdx >= playlist.size && mixtapeSplitIndex > 0 && _playbackState.value.repeatMode == RepeatMode.ALL)
 
         if (isCrossingToSideB || isWrappingToSideA) {
             val destinationIsSideA = isWrappingToSideA
@@ -478,9 +503,11 @@ class AudioEngine(
                 seekTo(0)
                 playCurrentTrack(isUserInitiated = false)
             }
+
             RepeatMode.ALL -> {
                 playNext(isUserInitiated = false)
             }
+
             RepeatMode.OFF -> {
                 if (currentIndex + 1 < playlist.size) {
                     playNext(isUserInitiated = false)
@@ -667,14 +694,17 @@ class AudioEngine(
                 currentSecs--
 
                 if (_sleepTimerState.value.stopAfterCurrentTrack) {
-                    val remMs = (_playbackState.value.durationMs - _playbackState.value.currentPositionMs).coerceAtLeast(0L)
+                    val remMs =
+                        (_playbackState.value.durationMs - _playbackState.value.currentPositionMs).coerceAtLeast(0L)
                     currentSecs = remMs / 1000L
                 }
 
                 // Smooth fade-out in final 10 seconds
                 if (currentSecs in 1..10) {
-                    val effectiveDb = if (replayGainMode == com.hana.spindle.core.ReplayGainMode.OFF) 0f else (currentReplayGainDb + replayGainPreampDb)
-                    val baseVol = if (effectiveDb == 0f) 1.0f else Math.pow(10.0, (effectiveDb / 20.0)).toFloat().coerceIn(0.1f, 1.0f)
+                    val effectiveDb =
+                        if (replayGainMode == com.hana.spindle.core.ReplayGainMode.OFF) 0f else (currentReplayGainDb + replayGainPreampDb)
+                    val baseVol = if (effectiveDb == 0f) 1.0f else Math.pow(10.0, (effectiveDb / 20.0)).toFloat()
+                        .coerceIn(0.1f, 1.0f)
                     val targetVol = (baseVol * (currentSecs.toFloat() / 10f)).coerceIn(0f, baseVol)
                     exoPlayer.volume = targetVol
                     isFadingOut = true
@@ -701,7 +731,8 @@ class AudioEngine(
     }
 
     private fun restoreBaseVolume() {
-        val effectiveDb = if (replayGainMode == com.hana.spindle.core.ReplayGainMode.OFF) 0f else (currentReplayGainDb + replayGainPreampDb)
+        val effectiveDb =
+            if (replayGainMode == com.hana.spindle.core.ReplayGainMode.OFF) 0f else (currentReplayGainDb + replayGainPreampDb)
         val rawLinear = if (effectiveDb == 0f) 1.0f else Math.pow(10.0, (effectiveDb / 20.0)).toFloat()
         exoPlayer.volume = applySoftKneeLimiter(rawLinear)
         isFadingOut = false
@@ -739,9 +770,10 @@ class AudioEngine(
 
     fun setTapeFormulation(formulation: AudioFxController.TapeFormulation) {
         audioFxController.setTapeFormulation(formulation)
+        // Persist what the controller actually applied (it ignores changes while the EQ is locked).
         context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
             .edit()
-            .putString("pref_tape_formulation", formulation.name)
+            .putString("pref_tape_formulation", audioFxController.currentTapeFormulation.name)
             .apply()
     }
 
@@ -749,7 +781,7 @@ class AudioEngine(
         audioFxController.setDolbyMode(mode)
         context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
             .edit()
-            .putString("pref_dolby_mode", mode.name)
+            .putString("pref_dolby_mode", audioFxController.currentDolbyMode.name)
             .apply()
     }
 
@@ -877,7 +909,8 @@ class AudioEngine(
         try {
             secondaryPlayer?.stop()
             secondaryPlayer?.clearMediaItems()
-        } catch (_: Exception) {}
+        } catch (_: Exception) {
+        }
         restoreBaseVolume()
     }
 
@@ -938,11 +971,15 @@ class AudioEngine(
         cancelCrossfade()
         try {
             (context.applicationContext as? com.hana.spindle.SpindleApp)?.radioStreamEngine?.pause()
-        } catch (_: Exception) {}
+        } catch (_: Exception) {
+        }
         val track = playlist[currentIndex]
         val physicalPath = CueSheetParser.getAudioFilePath(track.path)
         val file = File(physicalPath)
-        android.util.Log.d("AudioEngine", "playCurrentTrack: title='${track.title}', path='${track.path}', physical='$physicalPath', exists=${file.exists()}, length=${file.length()}")
+        android.util.Log.d(
+            "AudioEngine",
+            "playCurrentTrack: title='${track.title}', path='${track.path}', physical='$physicalPath', exists=${file.exists()}, length=${file.length()}"
+        )
 
         // Provide full playlist items with CUE-aware sample-accurate clipping
         val mediaItems = playlist.map { buildMediaItem(it) }
@@ -1005,7 +1042,10 @@ class AudioEngine(
         }
     }
 
-    @Deprecated("Use restoreLastPlayedTrack() in accordance with canonical glossary", ReplaceWith("restoreLastPlayedTrack()"))
+    @Deprecated(
+        "Use restoreLastPlayedTrack() in accordance with canonical glossary",
+        ReplaceWith("restoreLastPlayedTrack()")
+    )
     fun restoreLastPlayedSong() = restoreLastPlayedTrack()
 
     /**
@@ -1065,14 +1105,18 @@ class AudioEngine(
         exoPlayer.setMediaItems(mediaItems, currentIndex, initialPositionMs)
         exoPlayer.prepare()
         applyReplayGain(file)
-        val bitrate = if (track.bitrateKbps > 0) track.bitrateKbps else if (track.durationMs > 0 && file.exists()) ((file.length() * 8L) / track.durationMs).toInt() else 1411
+        val bitrate =
+            if (track.bitrateKbps > 0) track.bitrateKbps else if (track.durationMs > 0 && file.exists()) ((file.length() * 8L) / track.durationMs).toInt() else 1411
 
         _playbackState.value = _playbackState.value.copy(
             isPlaying = false,
             currentTrack = track,
             currentPositionMs = initialPositionMs,
             durationMs = track.durationMs,
-            progress = if (track.durationMs > 0) (initialPositionMs.toFloat() / track.durationMs).coerceIn(0f, 1f) else 0f,
+            progress = if (track.durationMs > 0) (initialPositionMs.toFloat() / track.durationMs).coerceIn(
+                0f,
+                1f
+            ) else 0f,
             currentLyrics = null,
             activeLyricIndex = -1
         )
@@ -1148,13 +1192,17 @@ class AudioEngine(
         when (mode) {
             ShuffleMode.OFF -> {
                 playlist = originalPlaylist.toMutableList()
-                currentIndex = if (currentTrack != null) playlist.indexOfFirst { it.id == currentTrack.id }.coerceAtLeast(0) else 0
+                currentIndex =
+                    if (currentTrack != null) playlist.indexOfFirst { it.id == currentTrack.id }.coerceAtLeast(0) else 0
             }
+
             ShuffleMode.ALL -> {
                 val remaining = originalPlaylist.filter { it.id != currentTrack?.id }.shuffled()
-                playlist = if (currentTrack != null) (listOf(currentTrack) + remaining).toMutableList() else remaining.toMutableList()
+                playlist =
+                    if (currentTrack != null) (listOf(currentTrack) + remaining).toMutableList() else remaining.toMutableList()
                 currentIndex = 0
             }
+
             ShuffleMode.ALBUM -> {
                 val currentAlbum = currentTrack?.album ?: ""
                 val albumSongs = originalPlaylist.filter { it.album == currentAlbum }
@@ -1392,8 +1440,10 @@ class AudioEngine(
 
         // True dual-player equal-power overlapping crossfade near track boundaries
         if (!isFadingOut) {
-            val effectiveDb = if (replayGainMode == com.hana.spindle.core.ReplayGainMode.OFF) 0f else (currentReplayGainDb + replayGainPreampDb)
-            val baseVol = if (effectiveDb == 0f) 1.0f else Math.pow(10.0, (effectiveDb / 20.0)).toFloat().coerceIn(0.1f, 1.0f)
+            val effectiveDb =
+                if (replayGainMode == com.hana.spindle.core.ReplayGainMode.OFF) 0f else (currentReplayGainDb + replayGainPreampDb)
+            val baseVol =
+                if (effectiveDb == 0f) 1.0f else Math.pow(10.0, (effectiveDb / 20.0)).toFloat().coerceIn(0.1f, 1.0f)
 
             if (crossfadeMode != com.hana.spindle.core.CrossfadeMode.GAPLESS && duration > crossfadeMode.durationMs * 2) {
                 val remainingMs = duration - current
@@ -1402,9 +1452,12 @@ class AudioEngine(
                 if (remainingMs in 1L..fadeMs) {
                     if (!isCrossfading) {
                         val nextIdx = (currentIndex + 1) % playlist.size
-                        val isCrossingToSideB = (nextIdx == mixtapeSplitIndex && mixtapeSplitIndex > 0 && nextIdx < playlist.size)
-                        val isWrappingToSideA = (nextIdx >= playlist.size && mixtapeSplitIndex > 0 && _playbackState.value.repeatMode == RepeatMode.ALL)
-                        val isEndOfPlaylist = (_playbackState.value.repeatMode == RepeatMode.OFF && currentIndex == playlist.size - 1)
+                        val isCrossingToSideB =
+                            (nextIdx == mixtapeSplitIndex && mixtapeSplitIndex > 0 && nextIdx < playlist.size)
+                        val isWrappingToSideA =
+                            (nextIdx >= playlist.size && mixtapeSplitIndex > 0 && _playbackState.value.repeatMode == RepeatMode.ALL)
+                        val isEndOfPlaylist =
+                            (_playbackState.value.repeatMode == RepeatMode.OFF && currentIndex == playlist.size - 1)
 
                         if (!isCrossingToSideB && !isWrappingToSideA && !isEndOfPlaylist && playlist.size > 1 && _playbackState.value.repeatMode != RepeatMode.ONE) {
                             startDualPlayerCrossfade(nextIdx, fadeMs)
@@ -1495,13 +1548,15 @@ class AudioEngine(
     fun release() {
         try {
             context.unregisterReceiver(becomingNoisyReceiver)
-        } catch (ignored: Exception) {}
+        } catch (ignored: Exception) {
+        }
         stopProgressPolling()
         cancelCrossfade()
         try {
             secondaryPlayer?.release()
             secondaryPlayer = null
-        } catch (_: Exception) {}
+        } catch (_: Exception) {
+        }
         audioFxController.release()
         exoPlayer.release()
     }
@@ -1510,10 +1565,16 @@ class AudioEngine(
         const val PREF_KEY_LAST_PLAYED_TRACK_PATH = "last_played_song_path"
         const val PREF_KEY_LAST_PLAYED_TRACK_POS = "last_played_song_pos"
 
-        @Deprecated("Use PREF_KEY_LAST_PLAYED_TRACK_PATH in accordance with canonical glossary", ReplaceWith("PREF_KEY_LAST_PLAYED_TRACK_PATH"))
+        @Deprecated(
+            "Use PREF_KEY_LAST_PLAYED_TRACK_PATH in accordance with canonical glossary",
+            ReplaceWith("PREF_KEY_LAST_PLAYED_TRACK_PATH")
+        )
         const val PREF_KEY_LAST_PLAYED_SONG_PATH = PREF_KEY_LAST_PLAYED_TRACK_PATH
 
-        @Deprecated("Use PREF_KEY_LAST_PLAYED_TRACK_POS in accordance with canonical glossary", ReplaceWith("PREF_KEY_LAST_PLAYED_TRACK_POS"))
+        @Deprecated(
+            "Use PREF_KEY_LAST_PLAYED_TRACK_POS in accordance with canonical glossary",
+            ReplaceWith("PREF_KEY_LAST_PLAYED_TRACK_POS")
+        )
         const val PREF_KEY_LAST_PLAYED_SONG_POS = PREF_KEY_LAST_PLAYED_TRACK_POS
     }
 }
@@ -1543,8 +1604,10 @@ internal data class FlacStreamInfo(
 
             val minBlockSize = ((csd[offset].toInt() and 0xFF) shl 8) or (csd[offset + 1].toInt() and 0xFF)
             val maxBlockSize = ((csd[offset + 2].toInt() and 0xFF) shl 8) or (csd[offset + 3].toInt() and 0xFF)
-            val minFrameSize = ((csd[offset + 4].toInt() and 0xFF) shl 16) or ((csd[offset + 5].toInt() and 0xFF) shl 8) or (csd[offset + 6].toInt() and 0xFF)
-            val maxFrameSize = ((csd[offset + 7].toInt() and 0xFF) shl 16) or ((csd[offset + 8].toInt() and 0xFF) shl 8) or (csd[offset + 9].toInt() and 0xFF)
+            val minFrameSize =
+                ((csd[offset + 4].toInt() and 0xFF) shl 16) or ((csd[offset + 5].toInt() and 0xFF) shl 8) or (csd[offset + 6].toInt() and 0xFF)
+            val maxFrameSize =
+                ((csd[offset + 7].toInt() and 0xFF) shl 16) or ((csd[offset + 8].toInt() and 0xFF) shl 8) or (csd[offset + 9].toInt() and 0xFF)
 
             val b10 = csd[offset + 10].toInt() and 0xFF
             val b11 = csd[offset + 11].toInt() and 0xFF
@@ -1643,4 +1706,3 @@ private class QualcommFlacMediaCodecAudioRenderer(
         return mediaFormat
     }
 }
-

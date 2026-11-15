@@ -202,6 +202,16 @@
                         android:padding="16dp">
 
                         <!-- Deck Header and DSP Preset Cycler + Reset -->
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="8dp"
+                            android:text="@string/drawer_eq_title"
+                            android:textColor="#71717A"
+                            android:textStyle="bold"
+                            android:textSize="10sp"
+                            android:fontFamily="monospace" />
+
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -209,20 +219,13 @@
                             android:gravity="center_vertical"
                             android:layout_marginBottom="14dp">
 
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="@string/drawer_eq_title"
-                                android:textColor="#71717A"
-                                android:textStyle="bold"
-                                android:textSize="10sp"
-                                android:fontFamily="monospace" />
-
                             <Button
                                 android:id="@+id/btnFx"
-                                android:layout_width="wrap_content"
-                                android:layout_height="28dp"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:layout_height="wrap_content"
+                                android:minHeight="36dp"
+                                android:gravity="center_vertical|start"
                                 android:text="FX: FLAT"
                                 android:textColor="#00E676"
                                 android:textSize="10.5sp"
@@ -232,13 +235,13 @@
                                 android:insetTop="0dp"
                                 android:insetBottom="0dp"
                                 android:paddingHorizontal="10dp"
-                                android:paddingVertical="0dp"
+                                android:paddingVertical="4dp"
                                 app:cornerRadius="6dp" />
 
                             <Button
                                 android:id="@+id/btnReset"
                                 android:layout_width="wrap_content"
-                                android:layout_height="28dp"
+                                android:layout_height="36dp"
                                 android:layout_marginStart="6dp"
                                 android:text="⟲ RESET"
                                 android:textColor="#A1A1AA"

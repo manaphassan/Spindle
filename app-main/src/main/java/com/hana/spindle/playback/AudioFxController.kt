@@ -68,6 +68,7 @@ class AudioFxController {
     }
 
     enum class TapeFormulation(val label: String, val tag: String) {
+        FLAT("FLAT (Reference)", "FLAT"),
         TYPE_I_NORMAL("NORMAL (Fe₂O₃)", "TYPE I"),
         TYPE_II_CHROME("HIGH (CrO₂)", "TYPE II"),
         TYPE_III_FERRICHROME("FERRICHROME (FeCr)", "TYPE III"),
@@ -116,11 +117,23 @@ class AudioFxController {
         val list = ArrayList<HardwareEqBand>(count)
         for (b in 0 until count) {
             val band = b.toShort()
-            val centerHz = try { eq.getCenterFreq(band) / 1000 } catch (e: Exception) { 0 }
-            val range = try { eq.getBandFreqRange(band) } catch (e: Exception) { intArrayOf(0, 0) }
+            val centerHz = try {
+                eq.getCenterFreq(band) / 1000
+            } catch (e: Exception) {
+                0
+            }
+            val range = try {
+                eq.getBandFreqRange(band)
+            } catch (e: Exception) {
+                intArrayOf(0, 0)
+            }
             val minHz = if (range.size >= 2) range[0] / 1000 else 0
             val maxHz = if (range.size >= 2) range[1] / 1000 else 0
-            val levelMb = try { eq.getBandLevel(band) } catch (e: Exception) { 0.toShort() }
+            val levelMb = try {
+                eq.getBandLevel(band)
+            } catch (e: Exception) {
+                0.toShort()
+            }
             list.add(HardwareEqBand(b, centerHz, minHz, maxHz, levelMb / 100f))
         }
         return list
@@ -177,6 +190,18 @@ class AudioFxController {
 
     var currentPresetName: String = "FLAT"
         internal set
+
+    /**
+     * True when nothing alters the tonal balance: no EQ (user, tape or Dolby curves),
+     * saturation, bass boost or crossfeed. Drives the deck's DIRECT lamp.
+     */
+    val isTonallyFlat: Boolean
+        get() = isBypassEnabled || (
+                isoBandsGainDb.all { abs(it) < 0.05f } &&
+                        !isTapeSaturationEnabled &&
+                        bassBoostStrength == 0 &&
+                        crossfeedStrength == 0
+                )
 
     fun updateCurrentPresetName(name: String) {
         currentPresetName = name
@@ -256,6 +281,7 @@ class AudioFxController {
 
     fun recomputeEffectiveGains() {
         val tapeCurve = when (currentTapeFormulation) {
+            TapeFormulation.FLAT -> CURVE_FLAT
             TapeFormulation.TYPE_I_NORMAL -> CURVE_TYPE_I_NORMAL
             TapeFormulation.TYPE_II_CHROME -> CURVE_TYPE_II_CHROME
             TapeFormulation.TYPE_III_FERRICHROME -> CURVE_TYPE_III_FERRICHROME
@@ -273,7 +299,8 @@ class AudioFxController {
         }
 
         for (i in 0 until 10) {
-            isoBandsGainDb[i] = (baseIsoBandsGainDb[i] + tapeCurve[i] + dolbyCurve[i] + satCurve[i]).coerceIn(-15.0f, 15.0f)
+            isoBandsGainDb[i] =
+                (baseIsoBandsGainDb[i] + tapeCurve[i] + dolbyCurve[i] + satCurve[i]).coerceIn(-15.0f, 15.0f)
         }
         syncToneFromIso()
         if (!isBypassEnabled) applyEq()
@@ -466,76 +493,91 @@ class AudioFxController {
                 setFilterStrength(0, force = true)
                 setCrossfeedStrength(0, force = true)
             }
+
             "HARMAN", "HARMAN_2019" -> {
                 setAllIsoBands(CURVE_HARMAN_2019, force = true)
                 setFilterStrength(250, force = true)
                 setCrossfeedStrength(200, force = true)
             }
+
             "HARMAN_2020", "HARMAN_OVER_EAR", "HARMAN_OE" -> {
                 setAllIsoBands(CURVE_HARMAN_OVER_EAR_2020, force = true)
                 setFilterStrength(250, force = true)
                 setCrossfeedStrength(200, force = true)
             }
+
             "CRINACLE", "CRINACLE_IEF" -> {
                 setAllIsoBands(CURVE_CRINACLE_IEF, force = true)
                 setFilterStrength(0, force = true)
                 setCrossfeedStrength(100, force = true)
             }
+
             "CRINACLE_BASS", "CRINACLE_IEF_BASS", "DUSK" -> {
                 setAllIsoBands(CURVE_CRINACLE_IEF_BASS, force = true)
                 setFilterStrength(150, force = true)
                 setCrossfeedStrength(150, force = true)
             }
+
             "DIFFUSE_FIELD", "DIFFUSE" -> {
                 setAllIsoBands(CURVE_DIFFUSE_FIELD, force = true)
                 setFilterStrength(0, force = true)
                 setCrossfeedStrength(150, force = true)
             }
+
             "MOONDROP", "MOONDROP_VDSF" -> {
                 setAllIsoBands(CURVE_MOONDROP_VDSF, force = true)
                 setFilterStrength(150, force = true)
                 setCrossfeedStrength(150, force = true)
             }
+
             "HD600", "SENNHEISER" -> {
                 setAllIsoBands(CURVE_SENNHEISER_HD600, force = true)
                 setFilterStrength(200, force = true)
                 setCrossfeedStrength(250, force = true)
             }
+
             "HD650", "SENNHEISER_HD650", "HD6XX" -> {
                 setAllIsoBands(CURVE_SENNHEISER_HD650, force = true)
                 setFilterStrength(200, force = true)
                 setCrossfeedStrength(250, force = true)
             }
+
             "ETYMOTIC", "ETYMOTIC_ER4", "ER4" -> {
                 setAllIsoBands(CURVE_ETYMOTIC_ER4, force = true)
                 setFilterStrength(0, force = true)
                 setCrossfeedStrength(100, force = true)
             }
+
             "SONY_MDR7506", "MDR7506", "7506" -> {
                 setAllIsoBands(CURVE_SONY_MDR7506, force = true)
                 setFilterStrength(100, force = true)
                 setCrossfeedStrength(150, force = true)
             }
+
             "WARM_TUBE", "WARM_ANALOG", "TUBE" -> {
                 setAllIsoBands(CURVE_WARM_ANALOG_TAPE, force = true)
                 setFilterStrength(200, force = true)
                 setCrossfeedStrength(300, force = true)
             }
+
             "AIR_STAGE", "AIR" -> {
                 setAllIsoBands(CURVE_AIR_STAGE, force = true)
                 setFilterStrength(0, force = true)
                 setCrossfeedStrength(500, force = true)
             }
+
             "V_SHAPE", "V_SHAPE_PUNCH" -> {
                 setAllIsoBands(CURVE_V_SHAPE_PUNCH, force = true)
                 setFilterStrength(400, force = true)
                 setCrossfeedStrength(150, force = true)
             }
+
             "BASS_BOOST" -> {
                 setAllIsoBands(CURVE_BASS_BOOST, force = true)
                 setFilterStrength(600, force = true)
                 setCrossfeedStrength(0, force = true)
             }
+
             else -> {
                 setAllIsoBands(CURVE_FLAT, force = true)
                 setFilterStrength(0, force = true)

@@ -58,6 +58,7 @@ class PlayerFragment : Fragment() {
     private var currentAlbumCoverBitmap: Bitmap? = null
     private var currentFormatString: String = ""
     private var spoolFoleyStreamId = 0
+    private val vuLevels = FloatArray(4)
 
     // Battery Receiver for Metal-81 Hardware LED
     private val batteryReceiver = object : BroadcastReceiver() {
@@ -303,24 +304,21 @@ class PlayerFragment : Fragment() {
         }
 
 
-        // 15Hz Stereo Ballistics Simulation for Analog VU Needle Galvanometer
+        // 15Hz analog VU needles driven by the measured RMS of the audible PCM signal
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                var phase = 0.0
                 while (isActive) {
                     if (isVuMeterVisible && _binding != null) {
                         val isPlaying = audioEngine.playbackState.value.isPlaying
-                        if (isPlaying) {
-                            phase += 0.4
-                            val baseLevel = 0.65f + 0.28f * kotlin.math.sin(phase).toFloat()
-                            val peakJitter = (kotlin.math.sin(phase * 2.3) * 0.12f).toFloat()
-                            val totalLevel = (baseLevel + peakJitter).coerceIn(0f, 1f)
-
-                            val (leftLvl, rightLvl) = audioEngine.getStereoLevels(totalLevel)
+                        val hasSignal = isPlaying && audioEngine.outputLevelMeter.read(66L, vuLevels)
+                        if (hasSignal) {
+                            val (leftLvl, rightLvl) = audioEngine.getStereoLevels(1f).let { (lm, rm) ->
+                                Pair(vuLevels[2] * lm, vuLevels[3] * rm)
+                            }
                             _binding?.vuMeterView?.setStereoLevels(leftLvl, rightLvl)
 
-                            val leftDb = (20f * kotlin.math.log10(leftLvl.coerceIn(0.001f, 1f))).coerceIn(-30f, 0f)
-                            val rightDb = (20f * kotlin.math.log10(rightLvl.coerceIn(0.001f, 1f))).coerceIn(-30f, 0f)
+                            val leftDb = (20f * kotlin.math.log10(leftLvl.coerceIn(0.001f, 1f))).coerceIn(-60f, 0f)
+                            val rightDb = (20f * kotlin.math.log10(rightLvl.coerceIn(0.001f, 1f))).coerceIn(-60f, 0f)
                             _binding?.tvVuLeftDb?.text = String.format(Locale.US, "L: %.1f dB", leftDb)
                             _binding?.tvVuRightDb?.text = String.format(Locale.US, "R: %.1f dB", rightDb)
                         } else {
