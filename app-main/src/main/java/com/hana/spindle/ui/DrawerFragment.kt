@@ -119,7 +119,7 @@ class DrawerFragment : Fragment() {
             SettingsPage("display", "deck style, theme, status bar", listOf(binding.settingsCardDisplay)),
             SettingsPage(
                 "playback",
-                "buttons, dac, replaygain, crossfade, sounds",
+                "buttons, dac, bit-perfect, peq, replaygain, crossfade",
                 listOf(binding.settingsCardPlayback)
             ),
             SettingsPage("sleep timer", "fade out and stop", listOf(binding.settingsCardSleep)),
