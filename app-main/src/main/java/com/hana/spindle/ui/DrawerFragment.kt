@@ -726,7 +726,8 @@ class DrawerFragment : Fragment() {
                 availableLetters = availableLetters,
                 title = "apps",
                 subtitle = "jump directly to installed app",
-                accentColor = theme.accentColor
+                accentColor = theme.accentColor,
+                deckColorway = if (isDeckStyle) deckColorway else null
             ) { letter ->
                 if (letter == "TOP" || letter == "↑") {
                     (binding.rvApps.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(0, 0)
@@ -756,6 +757,12 @@ class DrawerFragment : Fragment() {
             true
         }
 
+        // Deck style: the rail's needle rests on the letter of the first visible app.
+        binding.rvApps.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                if (isDeckStyle) syncRailNeedle()
+            }
+        })
 
         // Niagara-Style Vernier Wave Alphabet Index Rail
         binding.alphabetIndexView.onLetterSelected = { letter ->
@@ -782,9 +789,20 @@ class DrawerFragment : Fragment() {
         } else {
             allApps.filter { it.label.contains(query, ignoreCase = true) }
         }
-
-        appAdapter.submitList(filtered)
+        appAdapter.submitList(filtered) {
+            _binding?.rvApps?.invalidateItemDecorations()
+            if (isDeckStyle) syncRailNeedle()
+        }
     }
+
+    private fun syncRailNeedle() {
+        val b = _binding ?: return
+        val first = (b.rvApps.layoutManager as? LinearLayoutManager)?.findFirstVisibleItemPosition() ?: return
+        val label = appAdapter.currentList.getOrNull(first)?.label
+        b.alphabetIndexView.currentLetterIndex = label?.let { b.alphabetIndexView.letterIndexOf(it) } ?: -1
+    }
+
+    private var appLetterHeaders: com.hana.spindle.launcher.AppLetterHeaderDecoration? = null
 
     // ---- Accent colours: emerald in Classic, LCD butter / tangerine in deck style ----------------
 
@@ -923,6 +941,55 @@ class DrawerFragment : Fragment() {
         return p.measureText("iiii") == p.measureText("MMMM")
     }
 
+    /**
+     * Deck style: search becomes an LCD strip, A–Z a transport-style key, the list gets
+     * letter dividers and the rail a dial needle. Classic restores the Zune drawer.
+     */
+    private fun styleAppsPanel(primary: Int) {
+        val b = _binding ?: return
+        val d = resources.displayMetrics.density
+        val cw = deckColorway
+        appLetterHeaders?.let { b.rvApps.removeItemDecoration(it) }
+        appLetterHeaders = null
+        b.alphabetIndexView.deckStyle = isDeckStyle
+
+        if (!isDeckStyle) {
+            b.etSearchApps.setBackgroundResource(R.drawable.bg_neumorphic_button)
+            b.etSearchApps.typeface = Typeface.DEFAULT
+            b.etSearchApps.setHint(R.string.drawer_search_apps_hint)
+            b.btnJumpApps.setBackgroundResource(R.drawable.bg_metro_jump_button)
+            b.btnJumpApps.setTextColor(primary)
+            return
+        }
+
+        b.etSearchApps.background = android.graphics.drawable.GradientDrawable().apply {
+            setColor(cw.recess); cornerRadius = 6 * d
+            setStroke(maxOf(1, d.toInt()), ColorUtils.setAlphaComponent(cw.lcdSub, 40))
+        }
+        b.etSearchApps.backgroundTintList = null
+        b.etSearchApps.typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+        b.etSearchApps.hint = "SEARCH ▸"
+        b.etSearchApps.setTextColor(cw.lcdText)
+        b.etSearchApps.setHintTextColor(cw.lcdSub)
+
+        // Same skin as the tape deck's keys: key top over a darker front edge.
+        b.btnJumpApps.background = android.graphics.drawable.LayerDrawable(
+            arrayOf(
+                android.graphics.drawable.GradientDrawable().apply { setColor(cw.keyFront); cornerRadius = 5 * d },
+                android.graphics.drawable.GradientDrawable().apply { setColor(cw.keyTop); cornerRadius = 5 * d }
+            )
+        ).apply { setLayerInset(1, 0, 0, 0, (4 * d).toInt()) }
+        b.btnJumpApps.setTextColor(cw.keyGlyph)
+
+        b.alphabetIndexView.setDeckColors(cw.lcdSub, cw.lcdText, Color.parseColor("#F97316"))
+        appLetterHeaders = com.hana.spindle.launcher.AppLetterHeaderDecoration(
+            density = d,
+            labelAt = { appAdapter.currentList.getOrNull(it)?.label },
+            letterColor = cw.lcdText,
+            startInsetPx = 16 * d
+        ).also { b.rvApps.addItemDecoration(it) }
+        syncRailNeedle()
+    }
 
     private fun reloadApps() {
         viewLifecycleOwner.lifecycleScope.launch {
@@ -2161,6 +2228,7 @@ class DrawerFragment : Fragment() {
         binding.alphabetIndexView.updateTheme(secondary, accent)
         appAdapter.updateThemeColors(primary)
         styleSettingsTitle()
+        styleAppsPanel(primary)
         styleSoundPanel()
         if (isDeckStyle) styleDeckWidgets()
     }

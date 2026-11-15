@@ -38,6 +38,9 @@ class ZuneJumpListDialog : DialogFragment() {
     var titleText: String = "jump"
     var subtitleText: String = "tap a letter to jump immediately"
     var accentColor: Int = Color.parseColor("#F97316")
+
+    /** Walkman deck style: LCD-print tiles (butter on recess) instead of solid accent squares. */
+    var deckColorway: com.hana.spindle.ui.cassette.WalkmanColorway? = null
     var onLetterSelected: ((String) -> Unit)? = null
 
     companion object {
@@ -57,6 +60,7 @@ class ZuneJumpListDialog : DialogFragment() {
             title: String = "jump",
             subtitle: String = "tap a letter to jump immediately",
             accentColor: Int = Color.parseColor("#F97316"),
+            deckColorway: com.hana.spindle.ui.cassette.WalkmanColorway? = null,
             onLetterSelected: (String) -> Unit
         ): ZuneJumpListDialog {
             val dialog = ZuneJumpListDialog()
@@ -64,6 +68,7 @@ class ZuneJumpListDialog : DialogFragment() {
             dialog.titleText = title
             dialog.subtitleText = subtitle
             dialog.accentColor = accentColor
+            dialog.deckColorway = deckColorway
             dialog.onLetterSelected = onLetterSelected
             dialog.show(fragmentManager, "ZuneJumpListDialog")
             return dialog
@@ -105,6 +110,7 @@ class ZuneJumpListDialog : DialogFragment() {
 
         binding.rvJumpGrid.layoutManager = GridLayoutManager(requireContext(), 4)
         binding.rvJumpGrid.adapter = JumpTileAdapter()
+        deckColorway?.let { applyDeckChrome(it) }
 
         // Subtle entrance fade animation
         binding.root.alpha = 0f
@@ -122,6 +128,32 @@ class ZuneJumpListDialog : DialogFragment() {
         super.onDestroyView()
         _binding = null
     }
+
+    private fun applyDeckChrome(cw: com.hana.spindle.ui.cassette.WalkmanColorway) {
+        binding.root.setBackgroundColor(androidx.core.graphics.ColorUtils.setAlphaComponent(cw.glass, 245))
+        val mono = android.graphics.Typeface.create(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.BOLD)
+        binding.tvJumpTitle.text = titleText.uppercase()
+        binding.tvJumpTitle.typeface = mono
+        binding.tvJumpTitle.textSize = 22f
+        binding.tvJumpTitle.setTextColor(cw.lcdText)
+        binding.tvJumpSubtitle.text = subtitleText.uppercase()
+        binding.tvJumpSubtitle.typeface = android.graphics.Typeface.MONOSPACE
+        binding.tvJumpSubtitle.setTextColor(cw.lcdSub)
+    }
+
+    private fun deckTile(cw: com.hana.spindle.ui.cassette.WalkmanColorway, active: Boolean) =
+        android.graphics.drawable.GradientDrawable().apply {
+            val d = resources.displayMetrics.density
+            cornerRadius = 4 * d
+            setColor(cw.recess)
+            setStroke(
+                maxOf(1, d.toInt()),
+                androidx.core.graphics.ColorUtils.setAlphaComponent(
+                    if (active) cw.lcdText else cw.lcdSub,
+                    if (active) 110 else 30
+                )
+            )
+        }
 
     private inner class JumpTileAdapter : RecyclerView.Adapter<JumpTileAdapter.TileViewHolder>() {
 
@@ -152,10 +184,20 @@ class ZuneJumpListDialog : DialogFragment() {
                     }
                 }
 
+                val deck = deckColorway
                 if (isActive) {
-                    tvJumpLetter.setBackgroundResource(R.drawable.bg_metro_jump_tile_active)
-                    tvJumpLetter.backgroundTintList = ColorStateList.valueOf(accentColor)
-                    tvJumpLetter.setTextColor(Color.WHITE)
+                    if (deck != null) {
+                        tvJumpLetter.background = deckTile(deck, true)
+                        tvJumpLetter.backgroundTintList = null
+                        tvJumpLetter.setTextColor(deck.lcdText)
+                        tvJumpLetter.typeface = android.graphics.Typeface.create(
+                            android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.BOLD
+                        )
+                    } else {
+                        tvJumpLetter.setBackgroundResource(R.drawable.bg_metro_jump_tile_active)
+                        tvJumpLetter.backgroundTintList = ColorStateList.valueOf(accentColor)
+                        tvJumpLetter.setTextColor(Color.WHITE)
+                    }
                     tvJumpLetter.alpha = 1.0f
                     itemView.isClickable = true
                     itemView.isFocusable = true
@@ -171,10 +213,18 @@ class ZuneJumpListDialog : DialogFragment() {
                         dismiss()
                     }
                 } else {
-                    tvJumpLetter.setBackgroundResource(R.drawable.bg_metro_jump_tile_inactive)
-                    tvJumpLetter.backgroundTintList = null
-                    tvJumpLetter.setTextColor(Color.parseColor("#4B5563"))
-                    tvJumpLetter.alpha = 0.65f
+                    if (deck != null) {
+                        tvJumpLetter.background = deckTile(deck, false)
+                        tvJumpLetter.backgroundTintList = null
+                        tvJumpLetter.setTextColor(deck.lcdSub)
+                        tvJumpLetter.typeface = android.graphics.Typeface.MONOSPACE
+                        tvJumpLetter.alpha = 0.45f
+                    } else {
+                        tvJumpLetter.setBackgroundResource(R.drawable.bg_metro_jump_tile_inactive)
+                        tvJumpLetter.backgroundTintList = null
+                        tvJumpLetter.setTextColor(Color.parseColor("#4B5563"))
+                        tvJumpLetter.alpha = 0.65f
+                    }
                     itemView.isClickable = false
                     itemView.isFocusable = false
                     itemView.setOnClickListener(null)
