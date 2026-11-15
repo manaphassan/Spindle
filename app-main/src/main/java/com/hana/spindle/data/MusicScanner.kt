@@ -191,12 +191,17 @@ class MusicScanner(
     /**
      * Removes library entries whose audio file no longer exists (e.g. after an SD card swap).
      * Playlist links to those tracks go with them (foreign-key cascade). Returns the number removed.
+     *
+     * Tracks on a removable card that is not inserted are kept unless [includeUnmountedVolumes],
+     * so a card that is only out of the slot does not lose its playlists.
      */
-    suspend fun pruneMissingTracks(): Int = withContext(Dispatchers.IO) {
+    suspend fun pruneMissingTracks(includeUnmountedVolumes: Boolean = false): Int = withContext(Dispatchers.IO) {
         val tracks = trackDao.getAllTracks().firstOrNull() ?: return@withContext 0
         var removed = 0
         for (track in tracks) {
-            if (!File(CueSheetParser.getAudioFilePath(track.path)).exists()) {
+            val path = CueSheetParser.getAudioFilePath(track.path)
+            if (!includeUnmountedVolumes && StorageVolumes.isOnUnmountedVolume(path)) continue
+            if (!File(path).exists()) {
                 try {
                     trackDao.deleteByPath(track.path)
                     removed++

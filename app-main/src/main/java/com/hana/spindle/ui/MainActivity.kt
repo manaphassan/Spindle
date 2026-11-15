@@ -111,22 +111,35 @@ class MainActivity : AppCompatActivity() {
                     if (missingTrackDialog?.isShowing == true || app.musicScanner.progress.value.isScanning) {
                         return@collect
                     }
-                    missingTrackDialog = android.app.AlertDialog.Builder(this@MainActivity)
-                        .setTitle(R.string.missing_track_title)
-                        .setMessage(getString(R.string.missing_track_message, event.title))
-                        .setPositiveButton(R.string.missing_track_rescan) { _, _ -> rescanLibrary(app) }
-                        .setNegativeButton(R.string.missing_track_later, null)
-                        .show()
+                    // Card out of the slot: the file is not gone, so keeping the library is the default.
+                    val cardOut = com.hana.spindle.data.StorageVolumes.isOnUnmountedVolume(event.path)
+                    missingTrackDialog = if (cardOut) {
+                        android.app.AlertDialog.Builder(this@MainActivity)
+                            .setTitle(R.string.missing_card_title)
+                            .setMessage(getString(R.string.missing_card_message, event.title))
+                            .setPositiveButton(R.string.missing_card_keep, null)
+                            .setNegativeButton(R.string.missing_card_remove) { _, _ ->
+                                rescanLibrary(app, includeUnmountedVolumes = true)
+                            }
+                            .show()
+                    } else {
+                        android.app.AlertDialog.Builder(this@MainActivity)
+                            .setTitle(R.string.missing_track_title)
+                            .setMessage(getString(R.string.missing_track_message, event.title))
+                            .setPositiveButton(R.string.missing_track_rescan) { _, _ -> rescanLibrary(app) }
+                            .setNegativeButton(R.string.missing_track_later, null)
+                            .show()
+                    }
                 }
             }
         }
     }
 
     @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
-    private fun rescanLibrary(app: SpindleApp) {
+    private fun rescanLibrary(app: SpindleApp, includeUnmountedVolumes: Boolean = false) {
         Toast.makeText(this, R.string.missing_track_scanning, Toast.LENGTH_SHORT).show()
         lifecycleScope.launch {
-            val removed = app.musicScanner.pruneMissingTracks()
+            val removed = app.musicScanner.pruneMissingTracks(includeUnmountedVolumes)
             app.musicScanner.scanAll()
             app.audioEngine.unloadMissingTrack()
             val count = app.database.trackDao().getTrackCount()

@@ -213,4 +213,8 @@
     <string name="missing_track_later">NOT NOW</string>
     <string name="missing_track_scanning">Rescanning library…</string>
     <string name="missing_track_done">Library updated. Missing tracks removed: %2$d. Tracks indexed: %1$d.</string>
+    <string name="missing_card_title">SD card not inserted</string>
+    <string name="missing_card_message">“%1$s” is on an SD card that is not in the device. Insert the card to play it.\n\nIf that card is gone for good, you can remove its tracks from the library. Playlists lose those tracks too.</string>
+    <string name="missing_card_keep">KEEP TRACKS</string>
+    <string name="missing_card_remove">REMOVE FROM LIBRARY</string>
 </resources>
