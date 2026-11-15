@@ -72,6 +72,17 @@ class BiquadFrequencyVisualizerView @JvmOverloads constructor(
             }
         }
 
+    /** Response curve colour. Green by default; deck style uses the LCD colour. */
+    var accentColor: Int = Color.parseColor("#00E676")
+        set(value) {
+            if (field != value) {
+                field = value
+                updateThemeColors()
+                rebuildCurveFill()
+                invalidate()
+            }
+        }
+
     // Touch probe crosshair state
     private var isProbing: Boolean = false
     private var probeX: Float = -1f
@@ -206,7 +217,7 @@ class BiquadFrequencyVisualizerView @JvmOverloads constructor(
             zeroLinePaint.color = Color.parseColor("#384152")
             zeroLinePaint.pathEffect = DashPathEffect(floatArrayOf(6f, 6f), 0f)
             textPaint.color = Color.parseColor("#64748B")
-            curvePaint.color = Color.parseColor("#00E676")
+            curvePaint.color = accentColor
             curvePaint.strokeWidth = 3f
             spectrumPaint.color = Color.parseColor("#20F97316")
             probeLinePaint.color = Color.parseColor("#60A5FA")
@@ -262,13 +273,17 @@ class BiquadFrequencyVisualizerView @JvmOverloads constructor(
         plotWidth = (plotRight - plotLeft).coerceAtLeast(1f)
         plotHeight = (plotBottom - plotTop).coerceAtLeast(1f)
         zeroY = plotTop + plotHeight * (MAX_DB / DB_RANGE)
+        rebuildCurveFill()
+    }
 
-        // Gradient for curve area fill
-        if (!isEink) {
+    // Gradient for curve area fill
+    private fun rebuildCurveFill() {
+        if (!isEink && plotBottom > plotTop) {
+            val rgb = accentColor and 0x00FFFFFF
             curveFillPaint.shader = LinearGradient(
                 0f, plotTop,
                 0f, plotBottom,
-                intArrayOf(Color.parseColor("#3300E676"), Color.parseColor("#0800E676"), Color.TRANSPARENT),
+                intArrayOf(rgb or (0x33 shl 24), rgb or (0x08 shl 24), Color.TRANSPARENT),
                 floatArrayOf(0f, 0.6f, 1f),
                 Shader.TileMode.CLAMP
             )
@@ -425,7 +440,8 @@ class BiquadFrequencyVisualizerView @JvmOverloads constructor(
         } else {
             String.format("%d Hz", probeFreqHz.toInt())
         }
-        val gainStr = if (probeGainDb >= 0f) String.format("+%.1f dB", probeGainDb) else String.format("%.1f dB", probeGainDb)
+        val gainStr =
+            if (probeGainDb >= 0f) String.format("+%.1f dB", probeGainDb) else String.format("%.1f dB", probeGainDb)
         val hudText = "$freqStr │ $gainStr"
 
         val textWidth = hudTextPaint.measureText(hudText)
@@ -453,18 +469,36 @@ class BiquadFrequencyVisualizerView @JvmOverloads constructor(
         canvas.drawText(hudText, hudRect.centerX(), textBaseline, hudTextPaint)
     }
 
+    private var probeDownX = 0f
+    private var probeDownY = 0f
+    private var probeClaimed = false
+    private val probeTouchSlop = android.view.ViewConfiguration.get(context).scaledTouchSlop
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
-                parent?.requestDisallowInterceptTouchEvent(true)
+                // Don't claim yet: a vertical swipe here should still scroll the Sound Deck.
+                probeDownX = event.x
+                probeDownY = event.y
+                probeClaimed = false
                 isProbing = true
                 updateProbeCoordinates(event.x)
-                performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                 invalidate()
                 return true
             }
+
             MotionEvent.ACTION_MOVE -> {
-                parent?.requestDisallowInterceptTouchEvent(true)
+                if (!probeClaimed) {
+                    val dx = kotlin.math.abs(event.x - probeDownX)
+                    val dy = kotlin.math.abs(event.y - probeDownY)
+                    if (dx > probeTouchSlop && dx > dy) {
+                        probeClaimed = true
+                        parent?.requestDisallowInterceptTouchEvent(true)
+                        performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                    } else {
+                        return true
+                    }
+                }
                 val prevFreq = probeFreqHz
                 updateProbeCoordinates(event.x)
 
@@ -478,8 +512,10 @@ class BiquadFrequencyVisualizerView @JvmOverloads constructor(
                 invalidate()
                 return true
             }
+
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                parent?.requestDisallowInterceptTouchEvent(false)
+                if (probeClaimed) parent?.requestDisallowInterceptTouchEvent(false)
+                probeClaimed = false
                 isProbing = false
                 invalidate()
                 return true

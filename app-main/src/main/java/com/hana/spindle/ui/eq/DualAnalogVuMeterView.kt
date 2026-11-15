@@ -408,7 +408,12 @@ class DualAnalogVuMeterView @JvmOverloads constructor(
         // Center "VU" Badge
         val badgeW = 20f * density
         val badgeH = 14f * density
-        val badgeRect = RectF(centerDividerX - badgeW * 0.5f, h * 0.5f - badgeH * 0.5f, centerDividerX + badgeW * 0.5f, h * 0.5f + badgeH * 0.5f)
+        val badgeRect = RectF(
+            centerDividerX - badgeW * 0.5f,
+            h * 0.5f - badgeH * 0.5f,
+            centerDividerX + badgeW * 0.5f,
+            h * 0.5f + badgeH * 0.5f
+        )
         canvas.drawRoundRect(badgeRect, 3f * density, 3f * density, chassisBgPaint)
         canvas.drawRoundRect(badgeRect, 3f * density, 3f * density, chassisBorderPaint)
 
@@ -417,7 +422,15 @@ class DualAnalogVuMeterView @JvmOverloads constructor(
         canvas.drawText("VU", centerDividerX, h * 0.5f + (3f * density), textLabelPaint)
 
         // 5. Draw Right Dial
-        drawMeterDial(canvas, rightDialRect, dialClipPathRight, arcRectRight, rightAngle, "RIGHT CH 2", rightPeakActiveUntil)
+        drawMeterDial(
+            canvas,
+            rightDialRect,
+            dialClipPathRight,
+            arcRectRight,
+            rightAngle,
+            "RIGHT CH 2",
+            rightPeakActiveUntil
+        )
 
         // 6. Loop animation if needles are still in motion or audio is active or peak LED is decaying
         val now = SystemClock.uptimeMillis()
@@ -456,7 +469,15 @@ class DualAnalogVuMeterView @JvmOverloads constructor(
         }
 
         // Inner Bevel Stroke
-        canvas.drawRoundRect(rect.left + 1f, rect.top + 1f, rect.right - 1f, rect.bottom - 1f, 5f * density, 5f * density, dialBorderPaint)
+        canvas.drawRoundRect(
+            rect.left + 1f,
+            rect.top + 1f,
+            rect.right - 1f,
+            rect.bottom - 1f,
+            5f * density,
+            5f * density,
+            dialBorderPaint
+        )
 
         // Arc Scale: Safe Zone (-38° to 14° = 232° to 284° in standard Android arc)
         // 270° is straight UP. 270 + angleDeg.
@@ -502,14 +523,16 @@ class DualAnalogVuMeterView @JvmOverloads constructor(
             if (isMajor || label == "-3" || label == "+1") {
                 val tx = cx + (textRadius * cosVal)
                 val ty = cy + (textRadius * sinVal) - ((textScalePaint.descent() + textScalePaint.ascent()) * 0.45f)
-                textScalePaint.color = if (isRedZone && !isEink) Color.parseColor("#EF4444") else (if (isEink) Color.BLACK else currentBacklight.scaleColor)
+                textScalePaint.color =
+                    if (isRedZone && !isEink) Color.parseColor("#EF4444") else (if (isEink) Color.BLACK else currentBacklight.scaleColor)
                 canvas.drawText(label, tx, ty, textScalePaint)
             }
         }
 
         // Sub-text: "dB" label & Channel label
         textLabelPaint.textSize = 7.5f * density
-        textLabelPaint.color = if (isEink) Color.BLACK else ColorUtils.setAlphaComponent(currentBacklight.scaleColor, 140)
+        textLabelPaint.color =
+            if (isEink) Color.BLACK else ColorUtils.setAlphaComponent(currentBacklight.scaleColor, 140)
         canvas.drawText("dB", cx - (24f * density), rect.top + (22f * density), textLabelPaint)
         canvas.drawText(channelLabel, cx, rect.bottom - (20f * density), textLabelPaint)
 
@@ -531,7 +554,8 @@ class DualAnalogVuMeterView @JvmOverloads constructor(
         }
 
         textLabelPaint.textSize = 6.5f * density
-        textLabelPaint.color = if (isPeaking && !isEink) Color.parseColor("#FF2244") else (if (isEink) Color.BLACK else Color.parseColor("#71717A"))
+        textLabelPaint.color =
+            if (isPeaking && !isEink) Color.parseColor("#FF2244") else (if (isEink) Color.BLACK else Color.parseColor("#71717A"))
         canvas.drawText("PEAK", ledCenterX, ledCenterY + (9f * density), textLabelPaint)
 
         // --- DRAW NEEDLE & SHADOW ---
@@ -546,7 +570,13 @@ class DualAnalogVuMeterView @JvmOverloads constructor(
         if (!isEink) {
             val shadowOffsetX = 3f * density
             val shadowOffsetY = 4f * density
-            canvas.drawLine(cx + shadowOffsetX, cy + shadowOffsetY, tipX + shadowOffsetX, tipY + shadowOffsetY, needleShadowPaint)
+            canvas.drawLine(
+                cx + shadowOffsetX,
+                cy + shadowOffsetY,
+                tipX + shadowOffsetX,
+                tipY + shadowOffsetY,
+                needleShadowPaint
+            )
         }
 
         // Tapered Carbon Needle
@@ -635,22 +665,27 @@ class DualAnalogVuMeterView @JvmOverloads constructor(
                 val t = (db - (-30f)) / 10f
                 MIN_ANGLE
             }
+
             db <= -10.0f -> {
                 val t = (db - (-20f)) / 10f
                 MIN_ANGLE + (t * (-24f - MIN_ANGLE))
             }
+
             db <= -5.0f -> {
                 val t = (db - (-10f)) / 5f
                 -24f + (t * (-8f - (-24f)))
             }
+
             db <= -3.0f -> {
                 val t = (db - (-5f)) / 2f
                 -8f + (t * (0f - (-8f)))
             }
+
             db <= 0.0f -> {
                 val t = (db - (-3f)) / 3f
                 0f + (t * (MAX_ANGLE - 0f))
             }
+
             else -> MAX_ANGLE
         }
     }
@@ -663,14 +698,21 @@ class DualAnalogVuMeterView @JvmOverloads constructor(
         currentBacklight = allTones[nextToneIndex]
     }
 
+    private var vuDownX = 0f
+    private var vuDownY = 0f
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
-                parent?.requestDisallowInterceptTouchEvent(true)
+                // Tap cycles the lamp; vertical swipes are left to the scrolling parent.
+                vuDownX = event.x
+                vuDownY = event.y
                 return true
             }
+
             MotionEvent.ACTION_UP -> {
-                cycleBacklight()
+                val slop = android.view.ViewConfiguration.get(context).scaledTouchSlop
+                if (abs(event.x - vuDownX) <= slop && abs(event.y - vuDownY) <= slop) cycleBacklight()
                 return true
             }
         }

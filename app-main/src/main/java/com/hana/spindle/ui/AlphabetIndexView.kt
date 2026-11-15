@@ -46,6 +46,45 @@ class AlphabetIndexView @JvmOverloads constructor(
     var onTouchPositionChanged: ((letter: String, touchY: Float) -> Unit)? = null
     var onTouchActiveChanged: ((Boolean) -> Unit)? = null
 
+    /**
+     * Walkman deck style: letters in LCD print, and a tangerine dial needle (like the radio's)
+     * instead of the capsule. At rest the needle marks [currentLetterIndex].
+     */
+    var deckStyle: Boolean = false
+        set(value) {
+            if (field != value) {
+                field = value; invalidate()
+            }
+        }
+
+    /** Letter of the first visible list item; only drawn in [deckStyle]. */
+    var currentLetterIndex: Int = -1
+        set(value) {
+            if (field != value) {
+                field = value
+                if (deckStyle) invalidate()
+            }
+        }
+
+    private var deckRestColor = Color.parseColor("#B0B4CE")
+    private var deckLitColor = Color.parseColor("#FDE68A")
+    private val needlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#F97316") }
+    private val needleBandPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(36, 249, 115, 22) }
+
+    fun setDeckColors(restColor: Int, litColor: Int, needleColor: Int) {
+        deckRestColor = restColor
+        deckLitColor = litColor
+        needlePaint.color = needleColor
+        needleBandPaint.color =
+            Color.argb(36, Color.red(needleColor), Color.green(needleColor), Color.blue(needleColor))
+        invalidate()
+    }
+
+    fun letterIndexOf(label: String): Int {
+        val ch = label.trim().firstOrNull()?.uppercaseChar() ?: return 0
+        return if (ch in 'A'..'Z') ch - 'A' + 1 else 0
+    }
+
     private var selectedIndex = -1
     private var currentTouchY = 0f
     private var waveProgress = 0f
@@ -150,8 +189,17 @@ class AlphabetIndexView @JvmOverloads constructor(
 
             val x = baseX - (maxWaveDeflection * curve)
             val isSelected = (i == selectedIndex && waveProgress > 0.1f)
+            val isResting = deckStyle && waveProgress <= 0.1f && i == currentLetterIndex
 
-            if (isSelected) {
+            if (deckStyle && (isSelected || isResting)) {
+                // Dial needle pointing at the letter, on a faint tangerine band
+                val half = itemHeight * 0.5f
+                canvas.drawRect(x - 20f * density, cy - half, x + 10f * density, cy + half, needleBandPaint)
+                canvas.drawRect(x - 18f * density, cy - 1f * density, x - 10f * density, cy + 1f * density, needlePaint)
+                textPaint.textSize = if (isSelected) maxTextSize else baseTextSize
+                textPaint.color = deckLitColor
+                textPaint.alpha = 255
+            } else if (isSelected) {
                 // Machined callout pill capsule at the wave apex
                 val pillW = 28f * density
                 val pillH = 24f * density
@@ -179,8 +227,12 @@ class AlphabetIndexView @JvmOverloads constructor(
                 // Smooth interpolation for neighboring letters
                 textPaint.textSize = baseTextSize + (maxTextSize * 0.55f - baseTextSize) * curve
                 val alphaFactor = 0.45f + 0.55f * curve
-                textPaint.color = if (curve > 0.35f) Color.WHITE else Color.parseColor("#A1A1AA")
-                textPaint.alpha = (255 * alphaFactor).toInt().coerceIn(70, 255)
+                textPaint.color = when {
+                    deckStyle -> if (curve > 0.35f) deckLitColor else deckRestColor
+                    curve > 0.35f -> Color.WHITE
+                    else -> Color.parseColor("#A1A1AA")
+                }
+                textPaint.alpha = (255 * alphaFactor).toInt().coerceIn(if (deckStyle) 150 else 70, 255)
             }
 
             val baseline = cy - (textPaint.descent() + textPaint.ascent()) / 2f
@@ -204,12 +256,14 @@ class AlphabetIndexView @JvmOverloads constructor(
                 updateSelection(event.y, itemHeight)
                 return true
             }
+
             MotionEvent.ACTION_MOVE -> {
                 currentTouchY = event.y
                 updateSelection(event.y, itemHeight)
                 invalidate()
                 return true
             }
+
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 parent?.requestDisallowInterceptTouchEvent(false)
                 onTouchActiveChanged?.invoke(false)

@@ -1,0 +1,18 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Spindle · System deck</title>
+<style>html,body{margin:0;background:#000;overflow:hidden}svg{display:block}</style>
+</head>
+<body>
+<div id="deck"></div>
+<script src="../walkman-faceplate/palettes.js"></script>
+<script src="system.js"></script>
+<script>
+  // ?v=a|b (colorway) &p=sound|settings|apps (page)
+  const q = new URLSearchParams(location.search);
+  document.getElementById("deck").innerHTML = renderSystemDeck(q.get("v") || "a", q.get("p") || "sound");
+</script>
+</body>
+</html>

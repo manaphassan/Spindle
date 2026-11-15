@@ -23,6 +23,17 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
+        <!-- Walkman faceplate deck (default). The classic deck above stays available as a deck style. -->
+        <com.hana.spindle.ui.cassette.WalkmanDeckView
+            android:id="@+id/walkmanDeckView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
         <!-- Dynamic Folded Paper J-Card Liner Notes (3D Flip View) -->
         <com.hana.spindle.ui.cassette.JCardLinerView
             android:id="@+id/jCardLinerView"

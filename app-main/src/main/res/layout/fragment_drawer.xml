@@ -8,41 +8,13 @@
     android:background="@color/surface_dark"
     android:paddingTop="8dp">
 
-    <!-- Top Navigation Bar: Back Arrow & System Hub Title -->
-    <LinearLayout
-        android:id="@+id/drawerHeaderContainer"
-        android:layout_width="match_parent"
-        android:layout_height="44dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingHorizontal="14dp">
-
-        <ImageButton
-            android:id="@+id/btnBackToPlayer"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:padding="8dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_np_back"
-            app:tint="@color/text_primary"
-            android:contentDescription="Back to Player" />
-
-        <TextView
-            android:id="@+id/tvDrawerHeaderTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="6dp"
-            android:text="SYSTEM HUB"
-            android:textColor="@color/text_primary"
-            android:textStyle="bold"
-            android:textSize="15sp"
-            android:letterSpacing="0.06" />
-    </LinearLayout>
 
     <!-- Oversized Zune Kinetic Typography Header (0.22x Parallax) -->
     <RelativeLayout
+        android:id="@+id/metroHeader"
         android:layout_width="match_parent"
-        android:layout_height="62dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
         android:clipChildren="false">
 
         <TextView
@@ -52,17 +24,26 @@
             android:layout_marginStart="14dp"
             android:text="system + tools"
             android:textColor="@color/white"
-            android:textSize="50sp"
-            android:fontFamily="sans-serif-light"
+            android:textSize="13sp"
+            android:fontFamily="sans-serif-medium"
             android:includeFontPadding="false"
-            android:singleLine="true" />
+            android:singleLine="true"
+            android:letterSpacing="0.08"
+            android:textAllCaps="true" />
     </RelativeLayout>
+
+    <!-- Walkman deck style: SPINDLE band + FUNCTION switch, replacing the Zune header and pivots -->
+    <com.hana.spindle.ui.SystemDeckHeaderView
+        android:id="@+id/systemDeckHeader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
 
     <!-- TOP 3-TAB MINIMALIST ZUNE PIVOT -->
     <HorizontalScrollView
         android:id="@+id/tabScrollView"
         android:layout_width="match_parent"
-        android:layout_height="36dp"
+        android:layout_height="56dp"
         android:scrollbars="none"
         android:overScrollMode="never"
         android:layout_marginHorizontal="14dp"
@@ -78,26 +59,12 @@
             <TextView
                 android:id="@+id/btnTabEq"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_marginEnd="22dp"
+                android:gravity="center_vertical"
                 android:text="@string/drawer_tab_sound_deck"
                 android:textColor="@color/white"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:fontFamily="sans-serif-light"
-                android:clickable="true"
-                android:focusable="true"
-                android:background="?attr/selectableItemBackgroundBorderless" />
-
-            <TextView
-                android:id="@+id/btnTabApps"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="22dp"
-                android:text="@string/drawer_tab_apps"
-                android:textColor="@color/white"
-                android:textSize="18sp"
-                android:alpha="0.45"
+                android:textSize="34sp"
                 android:fontFamily="sans-serif-light"
                 android:clickable="true"
                 android:focusable="true"
@@ -106,11 +73,25 @@
             <TextView
                 android:id="@+id/btnTabSettings"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_marginEnd="22dp"
+                android:gravity="center_vertical"
                 android:text="@string/drawer_tab_settings"
                 android:textColor="@color/white"
-                android:textSize="18sp"
-                android:alpha="0.45"
+                android:textSize="34sp"
+                android:fontFamily="sans-serif-light"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackgroundBorderless" />
+
+            <TextView
+                android:id="@+id/btnTabApps"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:text="@string/drawer_tab_apps"
+                android:textColor="@color/white"
+                android:textSize="34sp"
                 android:fontFamily="sans-serif-light"
                 android:clickable="true"
                 android:focusable="true"
@@ -119,7 +100,7 @@
     </HorizontalScrollView>
 
     <!-- Horizontal Continuous Panorama Viewport -->
-    <HorizontalScrollView
+    <com.hana.spindle.ui.SnappingPanoramaView
         android:id="@+id/drawerPanoramaScrollView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -149,27 +130,8 @@
                 android:layout_height="match_parent"
                 android:orientation="vertical"
                 android:paddingStart="14dp"
-                android:paddingEnd="10dp">
+                android:paddingEnd="14dp">
 
-                <TextView
-                    android:id="@+id/tvHeaderSoundDeck"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="sound deck"
-                    android:textColor="@color/white"
-                    android:textSize="22sp"
-                    android:textStyle="bold"
-                    android:fontFamily="sans-serif-light" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="10-band hardware eq &amp; acoustic dsp"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="12sp"
-                    android:fontFamily="sans-serif"
-                    android:layout_marginTop="2dp"
-                    android:layout_marginBottom="8dp" />
 
                 <!-- TAB 2: HARDWARE ACOUSTIC EQ AND DSP TUNING DECK -->
                 <ScrollView
@@ -202,6 +164,16 @@
                         android:padding="16dp">
 
                         <!-- Deck Header and DSP Preset Cycler + Reset -->
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="8dp"
+                            android:text="@string/drawer_eq_title"
+                            android:textColor="#71717A"
+                            android:textStyle="bold"
+                            android:textSize="10sp"
+                            android:fontFamily="monospace" />
+
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -209,20 +181,13 @@
                             android:gravity="center_vertical"
                             android:layout_marginBottom="14dp">
 
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="@string/drawer_eq_title"
-                                android:textColor="#71717A"
-                                android:textStyle="bold"
-                                android:textSize="10sp"
-                                android:fontFamily="monospace" />
-
                             <Button
                                 android:id="@+id/btnFx"
-                                android:layout_width="wrap_content"
-                                android:layout_height="28dp"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:layout_height="wrap_content"
+                                android:minHeight="36dp"
+                                android:gravity="center_vertical|start"
                                 android:text="FX: FLAT"
                                 android:textColor="#00E676"
                                 android:textSize="10.5sp"
@@ -232,13 +197,13 @@
                                 android:insetTop="0dp"
                                 android:insetBottom="0dp"
                                 android:paddingHorizontal="10dp"
-                                android:paddingVertical="0dp"
+                                android:paddingVertical="4dp"
                                 app:cornerRadius="6dp" />
 
                             <Button
                                 android:id="@+id/btnReset"
                                 android:layout_width="wrap_content"
-                                android:layout_height="28dp"
+                                android:layout_height="36dp"
                                 android:layout_marginStart="6dp"
                                 android:text="⟲ RESET"
                                 android:textColor="#A1A1AA"
@@ -990,116 +955,289 @@
 
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
+
+                <!-- SECTION: CASSETTE TAPE BIAS & DOLBY NR -->
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/soundCardTapeNr"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="4dp"
+                    app:cardBackgroundColor="#131417"
+                    android:layout_marginBottom="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="TAPE FORMULATION &amp; BIAS"
+                            android:textColor="#71717A"
+                            android:textStyle="bold"
+                            android:textSize="10.5sp"
+                            android:fontFamily="monospace"
+                            android:layout_marginBottom="8dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Analog Tape Bias"
+                            android:textColor="@color/white"
+                            android:textStyle="bold"
+                            android:textSize="13.5sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Authentic vintage magnetic bias calibration: Normal (120µs), Chrome (70µs), or pure Metal."
+                            android:textColor="#A1A1AA"
+                            android:textSize="11sp"
+                            android:layout_marginTop="2dp"
+                            android:layout_marginBottom="8dp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="14dp">
+
+                            <Button
+                                android:id="@+id/btnTapeType1"
+                                android:layout_width="0dp"
+                                android:layout_height="36dp"
+                                android:layout_weight="1"
+                                android:text="TYPE I"
+                                android:textColor="@color/white"
+                                android:textSize="9.5sp"
+                                android:textStyle="bold"
+                                android:backgroundTint="#242731"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="8dp" />
+
+                            <Button
+                                android:id="@+id/btnTapeType2"
+                                android:layout_width="0dp"
+                                android:layout_height="36dp"
+                                android:layout_weight="1"
+                                android:layout_marginStart="4dp"
+                                android:text="TYPE II"
+                                android:textColor="@color/white"
+                                android:textSize="9.5sp"
+                                android:textStyle="bold"
+                                android:backgroundTint="#242731"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="8dp" />
+
+                            <Button
+                                android:id="@+id/btnTapeType3"
+                                android:layout_width="0dp"
+                                android:layout_height="36dp"
+                                android:layout_weight="1"
+                                android:layout_marginStart="4dp"
+                                android:text="TYPE III"
+                                android:textColor="@color/white"
+                                android:textSize="9.5sp"
+                                android:textStyle="bold"
+                                android:backgroundTint="#242731"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="8dp" />
+
+                            <Button
+                                android:id="@+id/btnTapeType4"
+                                android:layout_width="0dp"
+                                android:layout_height="36dp"
+                                android:layout_weight="1"
+                                android:layout_marginStart="4dp"
+                                android:text="TYPE IV"
+                                android:textColor="@color/white"
+                                android:textSize="9.5sp"
+                                android:textStyle="bold"
+                                android:backgroundTint="#242731"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="8dp" />
+                        </LinearLayout>
+
+                        <!-- Dolby Noise Reduction -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Dolby Noise Reduction"
+                            android:textColor="@color/white"
+                            android:textStyle="bold"
+                            android:textSize="13.5sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Vintage high-frequency noise floor compander filter."
+                            android:textColor="#A1A1AA"
+                            android:textSize="11sp"
+                            android:layout_marginTop="2dp"
+                            android:layout_marginBottom="8dp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <Button
+                                android:id="@+id/btnDolbyOff"
+                                android:layout_width="0dp"
+                                android:layout_height="36dp"
+                                android:layout_weight="1"
+                                android:text="OFF"
+                                android:textColor="@color/white"
+                                android:textSize="11sp"
+                                android:textStyle="bold"
+                                android:backgroundTint="#242731"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="8dp" />
+
+                            <Button
+                                android:id="@+id/btnDolbyB"
+                                android:layout_width="0dp"
+                                android:layout_height="36dp"
+                                android:layout_weight="1"
+                                android:layout_marginStart="6dp"
+                                android:text="DOLBY B"
+                                android:textColor="@color/white"
+                                android:textSize="11sp"
+                                android:textStyle="bold"
+                                android:backgroundTint="#242731"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="8dp" />
+
+                            <Button
+                                android:id="@+id/btnDolbyC"
+                                android:layout_width="0dp"
+                                android:layout_height="36dp"
+                                android:layout_weight="1"
+                                android:layout_marginStart="6dp"
+                                android:text="DOLBY C"
+                                android:textColor="@color/white"
+                                android:textSize="11sp"
+                                android:textStyle="bold"
+                                android:backgroundTint="#242731"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="8dp" />
+                        </LinearLayout>
+
+                        <!-- VU Meter Illumination (Backlight Tone) -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="VU Meter Illumination"
+                            android:textColor="@color/white"
+                            android:textStyle="bold"
+                            android:textSize="13.5sp"
+                            android:layout_marginTop="14dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Dual analog galvanometer dial backlighting mode."
+                            android:textColor="#A1A1AA"
+                            android:textSize="11sp"
+                            android:layout_marginTop="2dp"
+                            android:layout_marginBottom="8dp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <Button
+                                android:id="@+id/btnVuToneAmber"
+                                android:layout_width="0dp"
+                                android:layout_height="36dp"
+                                android:layout_weight="1"
+                                android:text="TUNGSTEN"
+                                android:textColor="@color/white"
+                                android:textSize="9.5sp"
+                                android:textStyle="bold"
+                                android:backgroundTint="#242731"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="8dp" />
+
+                            <Button
+                                android:id="@+id/btnVuToneCyan"
+                                android:layout_width="0dp"
+                                android:layout_height="36dp"
+                                android:layout_weight="1"
+                                android:layout_marginStart="4dp"
+                                android:text="MCINTOSH"
+                                android:textColor="@color/white"
+                                android:textSize="9.5sp"
+                                android:textStyle="bold"
+                                android:backgroundTint="#242731"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="8dp" />
+
+                            <Button
+                                android:id="@+id/btnVuToneGreen"
+                                android:layout_width="0dp"
+                                android:layout_height="36dp"
+                                android:layout_weight="1"
+                                android:layout_marginStart="4dp"
+                                android:text="NAGRA"
+                                android:textColor="@color/white"
+                                android:textSize="9.5sp"
+                                android:textStyle="bold"
+                                android:backgroundTint="#242731"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="8dp" />
+
+                            <Button
+                                android:id="@+id/btnVuToneCream"
+                                android:layout_width="0dp"
+                                android:layout_height="36dp"
+                                android:layout_weight="1"
+                                android:layout_marginStart="4dp"
+                                android:text="VINTAGE"
+                                android:textColor="@color/white"
+                                android:textSize="9.5sp"
+                                android:textStyle="bold"
+                                android:backgroundTint="#242731"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:padding="0dp"
+                                app:cornerRadius="8dp" />
+                        </LinearLayout>
+
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
             </LinearLayout>
         </ScrollView>
     </LinearLayout>
 
-    <!-- ============================================== -->
-    <!-- PANEL 1: APPS                                  -->
-    <!-- ============================================== -->
-    <LinearLayout
-        android:id="@+id/panelApps"
-        android:layout_width="300dp"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:paddingStart="14dp"
-        android:paddingEnd="10dp">
 
-        <TextView
-            android:id="@+id/tvHeaderApps"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="apps"
-            android:textColor="@color/white"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:fontFamily="sans-serif-light" />
-
-        <TextView
-            android:id="@+id/tvAppsCount"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="installed applications"
-            android:textColor="@color/text_secondary"
-            android:textSize="12sp"
-            android:fontFamily="sans-serif"
-            android:layout_marginTop="2dp"
-            android:layout_marginBottom="8dp" />
-
-        <!-- TAB 1: ANDROID APPS DRAWER WITH ALPHABET INDEX RAIL -->
-        <LinearLayout
-            android:id="@+id/containerApps"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:visibility="visible">
-
-            <!-- Minimalist Industrial Search Strip + Zune Metro Quick-Jump Trigger -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="40dp"
-                android:orientation="horizontal"
-                android:layout_marginBottom="10dp">
-
-                <EditText
-                    android:id="@+id/etSearchApps"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_neumorphic_button"
-                    android:backgroundTint="#121318"
-                    android:hint="@string/drawer_search_apps_hint"
-                    android:textColorHint="@color/text_secondary"
-                    android:textColor="@color/text_primary"
-                    android:paddingHorizontal="14dp"
-                    android:textSize="12sp"
-                    android:singleLine="true" />
-
-                <TextView
-                    android:id="@+id/btnJumpApps"
-                    android:layout_width="48dp"
-                    android:layout_height="match_parent"
-                    android:layout_marginStart="8dp"
-                    android:gravity="center"
-                    android:text="A-Z"
-                    android:textColor="@color/text_primary"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:fontFamily="sans-serif-medium"
-                    android:background="@drawable/bg_metro_jump_button"
-                    android:clickable="true"
-                    android:focusable="true" />
-            </LinearLayout>
-
-            <!-- Frame containing Single-Column List, Niagara Vernier Wave Rail, and Floating Callout -->
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent">
-
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rvApps"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:clipToPadding="false"
-                    android:paddingEnd="32dp"
-                    android:paddingBottom="24dp" />
-
-                <!-- Niagara-Style Vernier Wave Alphabet Scrollbar (100dp wide canvas) -->
-                <com.hana.spindle.ui.AlphabetIndexView
-                    android:id="@+id/alphabetIndexView"
-                    android:layout_width="100dp"
-                    android:layout_height="match_parent"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true"
-                    android:layout_marginEnd="0dp"
-                    android:layout_marginBottom="16dp" />
-
-            </RelativeLayout>
-        </LinearLayout>
-    </LinearLayout>
 
     <!-- ============================================== -->
-    <!-- PANEL 2: SETTINGS                              -->
+    <!-- PANEL 1: SETTINGS                              -->
     <!-- ============================================== -->
     <LinearLayout
         android:id="@+id/panelSettings"
@@ -1107,27 +1245,8 @@
         android:layout_height="match_parent"
         android:orientation="vertical"
         android:paddingStart="14dp"
-        android:paddingEnd="10dp">
+        android:paddingEnd="14dp">
 
-        <TextView
-            android:id="@+id/tvHeaderSettings"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="settings"
-            android:textColor="@color/white"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:fontFamily="sans-serif-light" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="system &amp; library preferences"
-            android:textColor="@color/text_secondary"
-            android:textSize="12sp"
-            android:fontFamily="sans-serif"
-            android:layout_marginTop="2dp"
-            android:layout_marginBottom="8dp" />
 
         <!-- TAB 3: MINIMALIST GROUPED LAUNCHER SETTINGS -->
         <LinearLayout
@@ -1150,6 +1269,30 @@
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
                         android:paddingBottom="48dp">
+                <!-- Zune-style settings menu; entries are built in DrawerFragment.setupSettingsMenu() -->
+                <LinearLayout
+                    android:id="@+id/settingsMenu"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+
+                <TextView
+                    android:id="@+id/tvSettingsPageTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="8dp"
+                    android:text="‹ display"
+                    android:textColor="@color/text_primary"
+                    android:textSize="28sp"
+                    android:fontFamily="sans-serif-light"
+                    android:singleLine="true"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:visibility="gone" />
+
 
                 <!-- 1. CATEGORY: THEME & DISPLAY -->
                 <LinearLayout
@@ -1161,6 +1304,7 @@
 
                 <!-- SECTION 1: APPEARANCE AND DISPLAY (3 CURATED THEMES) -->
                 <androidx.cardview.widget.CardView
+                    android:id="@+id/settingsCardDisplay"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     app:cardCornerRadius="16dp"
@@ -1260,6 +1404,7 @@
 
                         <!-- Vintage Cassette Models Row -->
                         <TextView
+                            android:id="@+id/tvShellModelsLabel"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Cassette Shell Models"
@@ -1270,6 +1415,7 @@
                             android:layout_marginBottom="6dp" />
 
                         <HorizontalScrollView
+                            android:id="@+id/shellModelsScroll"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:scrollbars="none">
@@ -1458,6 +1604,43 @@
                                 android:checked="true" />
                         </LinearLayout>
 
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="#1E2026"
+                            android:layout_marginVertical="14dp" />
+
+                        <!-- Home deck style: Walkman colorways or the classic vertical deck -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Home Deck Style"
+                            android:textColor="@color/white"
+                            android:textStyle="bold"
+                            android:textSize="13.5sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Tap to switch between the Walkman faceplates and the classic vertical deck."
+                            android:textColor="#A1A1AA"
+                            android:textSize="11sp"
+                            android:layout_marginTop="2dp"
+                            android:layout_marginBottom="8dp" />
+
+                        <Button
+                            android:id="@+id/btnDeckStyle"
+                            android:layout_width="match_parent"
+                            android:layout_height="48dp"
+                            android:text="WALKMAN · SILVER '81"
+                            android:textColor="@color/white"
+                            android:textSize="12sp"
+                            android:textStyle="bold"
+                            android:backgroundTint="#242731"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            app:cornerRadius="8dp" />
+
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
                 </LinearLayout>
@@ -1472,6 +1655,7 @@
 
                 <!-- SECTION: AUDIOPHILE & DAP HARDWARE ENGINE -->
                 <androidx.cardview.widget.CardView
+                    android:id="@+id/settingsCardPlayback"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     app:cardCornerRadius="16dp"
@@ -2488,282 +2672,10 @@
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
 
-                <!-- SECTION: CASSETTE TAPE BIAS & DOLBY NR -->
-                <androidx.cardview.widget.CardView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    app:cardCornerRadius="16dp"
-                    app:cardElevation="4dp"
-                    app:cardBackgroundColor="#131417"
-                    android:layout_marginBottom="16dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="16dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="TAPE FORMULATION &amp; BIAS"
-                            android:textColor="#71717A"
-                            android:textStyle="bold"
-                            android:textSize="10.5sp"
-                            android:fontFamily="monospace"
-                            android:layout_marginBottom="8dp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Analog Tape Bias"
-                            android:textColor="@color/white"
-                            android:textStyle="bold"
-                            android:textSize="13.5sp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Authentic vintage magnetic bias calibration: Normal (120µs), Chrome (70µs), or pure Metal."
-                            android:textColor="#A1A1AA"
-                            android:textSize="11sp"
-                            android:layout_marginTop="2dp"
-                            android:layout_marginBottom="8dp" />
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:layout_marginBottom="14dp">
-
-                            <Button
-                                android:id="@+id/btnTapeType1"
-                                android:layout_width="0dp"
-                                android:layout_height="36dp"
-                                android:layout_weight="1"
-                                android:text="TYPE I"
-                                android:textColor="@color/white"
-                                android:textSize="9.5sp"
-                                android:textStyle="bold"
-                                android:backgroundTint="#242731"
-                                android:insetTop="0dp"
-                                android:insetBottom="0dp"
-                                android:padding="0dp"
-                                app:cornerRadius="8dp" />
-
-                            <Button
-                                android:id="@+id/btnTapeType2"
-                                android:layout_width="0dp"
-                                android:layout_height="36dp"
-                                android:layout_weight="1"
-                                android:layout_marginStart="4dp"
-                                android:text="TYPE II"
-                                android:textColor="@color/white"
-                                android:textSize="9.5sp"
-                                android:textStyle="bold"
-                                android:backgroundTint="#242731"
-                                android:insetTop="0dp"
-                                android:insetBottom="0dp"
-                                android:padding="0dp"
-                                app:cornerRadius="8dp" />
-
-                            <Button
-                                android:id="@+id/btnTapeType3"
-                                android:layout_width="0dp"
-                                android:layout_height="36dp"
-                                android:layout_weight="1"
-                                android:layout_marginStart="4dp"
-                                android:text="TYPE III"
-                                android:textColor="@color/white"
-                                android:textSize="9.5sp"
-                                android:textStyle="bold"
-                                android:backgroundTint="#242731"
-                                android:insetTop="0dp"
-                                android:insetBottom="0dp"
-                                android:padding="0dp"
-                                app:cornerRadius="8dp" />
-
-                            <Button
-                                android:id="@+id/btnTapeType4"
-                                android:layout_width="0dp"
-                                android:layout_height="36dp"
-                                android:layout_weight="1"
-                                android:layout_marginStart="4dp"
-                                android:text="TYPE IV"
-                                android:textColor="@color/white"
-                                android:textSize="9.5sp"
-                                android:textStyle="bold"
-                                android:backgroundTint="#242731"
-                                android:insetTop="0dp"
-                                android:insetBottom="0dp"
-                                android:padding="0dp"
-                                app:cornerRadius="8dp" />
-                        </LinearLayout>
-
-                        <!-- Dolby Noise Reduction -->
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Dolby Noise Reduction"
-                            android:textColor="@color/white"
-                            android:textStyle="bold"
-                            android:textSize="13.5sp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Vintage high-frequency noise floor compander filter."
-                            android:textColor="#A1A1AA"
-                            android:textSize="11sp"
-                            android:layout_marginTop="2dp"
-                            android:layout_marginBottom="8dp" />
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal">
-
-                            <Button
-                                android:id="@+id/btnDolbyOff"
-                                android:layout_width="0dp"
-                                android:layout_height="36dp"
-                                android:layout_weight="1"
-                                android:text="OFF"
-                                android:textColor="@color/white"
-                                android:textSize="11sp"
-                                android:textStyle="bold"
-                                android:backgroundTint="#242731"
-                                android:insetTop="0dp"
-                                android:insetBottom="0dp"
-                                android:padding="0dp"
-                                app:cornerRadius="8dp" />
-
-                            <Button
-                                android:id="@+id/btnDolbyB"
-                                android:layout_width="0dp"
-                                android:layout_height="36dp"
-                                android:layout_weight="1"
-                                android:layout_marginStart="6dp"
-                                android:text="DOLBY B"
-                                android:textColor="@color/white"
-                                android:textSize="11sp"
-                                android:textStyle="bold"
-                                android:backgroundTint="#242731"
-                                android:insetTop="0dp"
-                                android:insetBottom="0dp"
-                                android:padding="0dp"
-                                app:cornerRadius="8dp" />
-
-                            <Button
-                                android:id="@+id/btnDolbyC"
-                                android:layout_width="0dp"
-                                android:layout_height="36dp"
-                                android:layout_weight="1"
-                                android:layout_marginStart="6dp"
-                                android:text="DOLBY C"
-                                android:textColor="@color/white"
-                                android:textSize="11sp"
-                                android:textStyle="bold"
-                                android:backgroundTint="#242731"
-                                android:insetTop="0dp"
-                                android:insetBottom="0dp"
-                                android:padding="0dp"
-                                app:cornerRadius="8dp" />
-                        </LinearLayout>
-
-                        <!-- VU Meter Illumination (Backlight Tone) -->
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="VU Meter Illumination"
-                            android:textColor="@color/white"
-                            android:textStyle="bold"
-                            android:textSize="13.5sp"
-                            android:layout_marginTop="14dp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Dual analog galvanometer dial backlighting mode."
-                            android:textColor="#A1A1AA"
-                            android:textSize="11sp"
-                            android:layout_marginTop="2dp"
-                            android:layout_marginBottom="8dp" />
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal">
-
-                            <Button
-                                android:id="@+id/btnVuToneAmber"
-                                android:layout_width="0dp"
-                                android:layout_height="36dp"
-                                android:layout_weight="1"
-                                android:text="TUNGSTEN"
-                                android:textColor="@color/white"
-                                android:textSize="9.5sp"
-                                android:textStyle="bold"
-                                android:backgroundTint="#242731"
-                                android:insetTop="0dp"
-                                android:insetBottom="0dp"
-                                android:padding="0dp"
-                                app:cornerRadius="8dp" />
-
-                            <Button
-                                android:id="@+id/btnVuToneCyan"
-                                android:layout_width="0dp"
-                                android:layout_height="36dp"
-                                android:layout_weight="1"
-                                android:layout_marginStart="4dp"
-                                android:text="MCINTOSH"
-                                android:textColor="@color/white"
-                                android:textSize="9.5sp"
-                                android:textStyle="bold"
-                                android:backgroundTint="#242731"
-                                android:insetTop="0dp"
-                                android:insetBottom="0dp"
-                                android:padding="0dp"
-                                app:cornerRadius="8dp" />
-
-                            <Button
-                                android:id="@+id/btnVuToneGreen"
-                                android:layout_width="0dp"
-                                android:layout_height="36dp"
-                                android:layout_weight="1"
-                                android:layout_marginStart="4dp"
-                                android:text="NAGRA"
-                                android:textColor="@color/white"
-                                android:textSize="9.5sp"
-                                android:textStyle="bold"
-                                android:backgroundTint="#242731"
-                                android:insetTop="0dp"
-                                android:insetBottom="0dp"
-                                android:padding="0dp"
-                                app:cornerRadius="8dp" />
-
-                            <Button
-                                android:id="@+id/btnVuToneCream"
-                                android:layout_width="0dp"
-                                android:layout_height="36dp"
-                                android:layout_weight="1"
-                                android:layout_marginStart="4dp"
-                                android:text="VINTAGE"
-                                android:textColor="@color/white"
-                                android:textSize="9.5sp"
-                                android:textStyle="bold"
-                                android:backgroundTint="#242731"
-                                android:insetTop="0dp"
-                                android:insetBottom="0dp"
-                                android:padding="0dp"
-                                app:cornerRadius="8dp" />
-                        </LinearLayout>
-
-                    </LinearLayout>
-                </androidx.cardview.widget.CardView>
 
                 <!-- SECTION: SLEEP TIMER & FADE-OUT -->
                 <androidx.cardview.widget.CardView
+                    android:id="@+id/settingsCardSleep"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     app:cardCornerRadius="16dp"
@@ -2930,6 +2842,7 @@
 
                 <!-- SECTION 2: AUDIO HARDWARE TELEMETRY -->
                 <androidx.cardview.widget.CardView
+                    android:id="@+id/settingsCardTelemetry"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     app:cardCornerRadius="16dp"
@@ -3142,6 +3055,7 @@
 
                 <!-- SECTION 3: OFFLINE MUSIC STORAGE AND FOLDER SCANNER -->
                 <androidx.cardview.widget.CardView
+                    android:id="@+id/settingsCardLibrary"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     app:cardCornerRadius="16dp"
@@ -3344,6 +3258,7 @@
 
                 <!-- SECTION 4: FM INTERNET RADIO (ADD AND DELETE STATIONS) -->
                 <androidx.cardview.widget.CardView
+                    android:id="@+id/settingsCardRadio"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     app:cardCornerRadius="16dp"
@@ -3427,6 +3342,7 @@
 
                 <!-- SECTION: DOUBLE-TAP GESTURES & AMBIENT MODE -->
                 <androidx.cardview.widget.CardView
+                    android:id="@+id/settingsCardGestures"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     app:cardCornerRadius="16dp"
@@ -3520,6 +3436,7 @@
 
                 <!-- SECTION 5: SYSTEM AND ABOUT SPINDLE -->
                 <androidx.cardview.widget.CardView
+                    android:id="@+id/settingsCardAbout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     app:cardCornerRadius="16dp"
@@ -3713,6 +3630,90 @@
                 </ScrollView>
             </LinearLayout>
         </LinearLayout>
+
+    <!-- ============================================== -->
+    <!-- PANEL 2: APPS                                  -->
+    <!-- ============================================== -->
+    <LinearLayout
+        android:id="@+id/panelApps"
+        android:layout_width="300dp"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp">
+
+
+        <!-- TAB 1: ANDROID APPS DRAWER WITH ALPHABET INDEX RAIL -->
+        <LinearLayout
+            android:id="@+id/containerApps"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:visibility="visible">
+
+            <!-- Minimalist Industrial Search Strip + Zune Metro Quick-Jump Trigger -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:orientation="horizontal"
+                android:layout_marginBottom="10dp">
+
+                <EditText
+                    android:id="@+id/etSearchApps"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_neumorphic_button"
+                    android:backgroundTint="#121318"
+                    android:hint="@string/drawer_search_apps_hint"
+                    android:textColorHint="@color/text_secondary"
+                    android:textColor="@color/text_primary"
+                    android:paddingHorizontal="14dp"
+                    android:textSize="12sp"
+                    android:singleLine="true" />
+
+                <TextView
+                    android:id="@+id/btnJumpApps"
+                    android:layout_width="48dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginStart="8dp"
+                    android:gravity="center"
+                    android:text="A-Z"
+                    android:textColor="@color/text_primary"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-medium"
+                    android:background="@drawable/bg_metro_jump_button"
+                    android:clickable="true"
+                    android:focusable="true" />
+            </LinearLayout>
+
+            <!-- Frame containing Single-Column List, Niagara Vernier Wave Rail, and Floating Callout -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvApps"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:clipToPadding="false"
+                    android:paddingEnd="32dp"
+                    android:paddingBottom="24dp" />
+
+                <!-- Niagara-Style Vernier Wave Alphabet Scrollbar (100dp wide canvas) -->
+                <com.hana.spindle.ui.AlphabetIndexView
+                    android:id="@+id/alphabetIndexView"
+                    android:layout_width="100dp"
+                    android:layout_height="match_parent"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginEnd="0dp"
+                    android:layout_marginBottom="16dp" />
+
+            </RelativeLayout>
+        </LinearLayout>
     </LinearLayout>
-</HorizontalScrollView>
+    </LinearLayout>
+</com.hana.spindle.ui.SnappingPanoramaView>
 </LinearLayout>

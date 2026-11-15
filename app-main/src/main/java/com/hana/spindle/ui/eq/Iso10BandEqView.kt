@@ -93,11 +93,21 @@ class Iso10BandEqView @JvmOverloads constructor(
     // Palette
     private val trackColor = Color.parseColor("#1A1C23")
     private val trackZeroColor = Color.parseColor("#3F4452")
-    private val curveColor = Color.parseColor("#00E676") // Audiophile Emerald Glow
-    private val curveFillColorTop = Color.parseColor("#2600E676")
-    private val curveFillColorBottom = Color.parseColor("#0000E676")
+
+    /** Curve, thumb ring and active value colour. Green by default; deck style uses the LCD colour. */
+    var accentColor: Int = Color.parseColor("#00E676")
+        set(value) {
+            if (field != value) {
+                field = value
+                updateThemePaints()
+                invalidate()
+            }
+        }
+    private val curveColor get() = accentColor
+    private val curveFillColorTop get() = (accentColor and 0x00FFFFFF) or (0x26 shl 24)
+    private val curveFillColorBottom get() = accentColor and 0x00FFFFFF
     private val thumbCoreColor = Color.parseColor("#E4E4E7")
-    private val thumbBorderColor = Color.parseColor("#00E676")
+    private val thumbBorderColor get() = accentColor
     private val textMutedColor = Color.parseColor("#71717A")
     private val textActiveColor = Color.parseColor("#A1A1AA")
 
@@ -421,6 +431,12 @@ class Iso10BandEqView @JvmOverloads constructor(
         return closest
     }
 
+    private var grabbedThumb = false
+    private var bandDownX = 0f
+    private var bandDownY = 0f
+    private var bandMoved = false
+    private val bandTouchSlop = android.view.ViewConfiguration.get(context).scaledTouchSlop
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (isLocked) {
             if (event.actionMasked == MotionEvent.ACTION_DOWN) {
@@ -435,16 +451,28 @@ class Iso10BandEqView @JvmOverloads constructor(
 
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
+                // Dragging needs a grab on a fader thumb; anywhere else a vertical swipe scrolls
+                // the parent and a plain tap sets the band to the tapped level.
+                bandDownX = event.x
+                bandDownY = event.y
+                bandMoved = false
                 activeTouchBand = getBandIndexAtX(event.x)
-                if (activeTouchBand in 0 until NUM_BANDS) {
+                val grabRadius = 26f * resources.displayMetrics.density
+                grabbedThumb = activeTouchBand in 0 until NUM_BANDS &&
+                        abs(event.y - gainToY(bandGains[activeTouchBand])) <= grabRadius
+                if (grabbedThumb) {
                     parent.requestDisallowInterceptTouchEvent(true)
-                    bandGains[activeTouchBand] = yToGain(event.y)
-                    invalidate()
-                    onBandsChanged?.invoke(bandGains.clone())
                 }
                 return true
             }
+
             MotionEvent.ACTION_MOVE -> {
+                if (!grabbedThumb) {
+                    if (abs(event.x - bandDownX) > bandTouchSlop || abs(event.y - bandDownY) > bandTouchSlop) {
+                        bandMoved = true
+                    }
+                    return true
+                }
                 val band = getBandIndexAtX(event.x)
                 if (band in 0 until NUM_BANDS) {
                     bandGains[band] = yToGain(event.y)
@@ -454,10 +482,18 @@ class Iso10BandEqView @JvmOverloads constructor(
                 }
                 return true
             }
+
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                val tapped = event.actionMasked == MotionEvent.ACTION_UP && !grabbedThumb && !bandMoved
+                if (tapped && activeTouchBand in 0 until NUM_BANDS) {
+                    bandGains[activeTouchBand] = yToGain(event.y)
+                    invalidate()
+                    onBandsChanged?.invoke(bandGains.clone())
+                }
+                if (grabbedThumb) parent.requestDisallowInterceptTouchEvent(false)
+                if (grabbedThumb || tapped) onBandDragFinished?.invoke()
                 activeTouchBand = -1
-                parent.requestDisallowInterceptTouchEvent(false)
-                onBandDragFinished?.invoke()
+                grabbedThumb = false
                 return true
             }
         }

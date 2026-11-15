@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.SharedPreferences
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.media.AudioManager
@@ -11,6 +12,7 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
+import android.os.Build
 import android.os.Bundle
 import android.view.HapticFeedbackConstants
 import android.view.LayoutInflater
@@ -26,11 +28,13 @@ import com.hana.spindle.databinding.FragmentRadioBinding
 import com.hana.spindle.playback.AnalogFmEngine
 import com.hana.spindle.playback.RadioStreamEngine
 import com.hana.spindle.theme.CassetteTheme
+import com.hana.spindle.ui.cassette.WalkmanColorway
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.Locale
+import kotlin.math.abs
 import kotlin.math.sin
 
 /**
@@ -41,6 +45,13 @@ import kotlin.math.sin
  * Force Mono noise defeat, channel scan with carrier lock, regional tuning, and dynamic presets.
  */
 class RadioFragment : Fragment() {
+
+    private companion object {
+        const val AUDIBLE_LEVEL = 0.25f
+        const val LOCK_LEVEL = 0.65f
+        const val SCAN_LOCK_LEVEL = 0.68f
+        const val PRESET_COUNT = 4
+    }
 
     private var _binding: FragmentRadioBinding? = null
     private val binding get() = _binding!!
@@ -73,6 +84,21 @@ class RadioFragment : Fragment() {
     private var networkCallback: ConnectivityManager.NetworkCallback? = null
     private var audioPulseJob: Job? = null
 
+    // Walkman radio deck. Shown when the shared deck style is a Walkman colorway.
+    private var isDeckStyle = false
+
+    /** Deck style only: FM is selected but no wired headset is plugged in to act as the antenna. */
+    private var antennaMissing = false
+    private var lastFmStationName: String? = null
+    private var bufferLevel = 0f
+    private var linkLevel = 1f
+    private val deckSyncRunnable = Runnable { syncDeck() }
+    private val deckStyleListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == WalkmanColorway.PREF_DECK_STYLE) applyDeckStyle()
+    }
+
+    private val foley get() = (activity?.application as? SpindleApp)?.audioEngine?.foleyEngine
+
     private val headsetReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action == Intent.ACTION_HEADSET_PLUG) {
@@ -89,6 +115,10 @@ class RadioFragment : Fragment() {
     }
 
     private fun onHeadsetPlugStateChanged(isPlugged: Boolean) {
+        if (isDeckStyle) {
+            onDeckHeadsetChanged(isPlugged)
+            return
+        }
         if (!isPlugged && isFmMode) {
             stopScan()
             analogFmEngine.stopAnalogAudio()
@@ -121,6 +151,7 @@ class RadioFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        applyDeckStyle()
         loadRadioSettings()
         setupHeader()
         setupModeToggle()
@@ -133,7 +164,11 @@ class RadioFragment : Fragment() {
         observeState()
         observeTheme()
         observeBluetoothTelemetry()
+        setupDeck()
+        observeBufferMeter()
         applyLoadedSettings()
+        requireContext().getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+            .registerOnSharedPreferenceChangeListener(deckStyleListener)
     }
 
     private fun setupHeader() {
@@ -201,8 +236,12 @@ class RadioFragment : Fragment() {
 
     private fun applyLoadedSettings() {
         if (isFmMode && !isWiredHeadsetPlugged()) {
-            isFmMode = false
-            saveRadioSettings()
+            if (isDeckStyle) {
+                antennaMissing = true
+            } else {
+                isFmMode = false
+                saveRadioSettings()
+            }
         }
         binding.speakerGrilleView.radioMode = if (isFmMode) {
             RadioSpeakerGrilleView.RadioMode.FM
@@ -213,18 +252,20 @@ class RadioFragment : Fragment() {
         binding.tuningDialView.setBandLimits(AnalogFmEngine.MIN_FREQ, AnalogFmEngine.MAX_FREQ, AnalogFmEngine.STEP_MHZ)
 
         val prefs = requireContext().getSharedPreferences("spindle_radio_prefs", Context.MODE_PRIVATE)
-        val savedFreq = prefs.getFloat("radio_frequency", 88.5f).coerceIn(AnalogFmEngine.MIN_FREQ, AnalogFmEngine.MAX_FREQ)
+        val savedFreq =
+            prefs.getFloat("radio_frequency", 88.5f).coerceIn(AnalogFmEngine.MIN_FREQ, AnalogFmEngine.MAX_FREQ)
         binding.tuningDialView.currentFreq = savedFreq
 
         updateRadioModeDisplay(binding.speakerGrilleView.radioMode)
         updateMonoButtonState()
         updatePresetsForActiveMode()
 
-        if (isFmMode) {
+        if (isFmMode && !antennaMissing) {
             analogFmEngine.startAnalogAudio()
             analogFmEngine.tuneFrequency(savedFreq)
             syncFmAudio(savedFreq)
         }
+        requestDeckSync()
     }
 
     private fun syncFmAudio(freq: Float) {
@@ -247,50 +288,63 @@ class RadioFragment : Fragment() {
             binding.speakerGrilleView.isPlaying = false
             binding.speakerGrilleView.isFmActive = false
         }
+        requestDeckSync()
     }
 
     private fun setupModeToggle() {
-        binding.speakerGrilleView.onModeChanged = { mode ->
-            if (mode == RadioSpeakerGrilleView.RadioMode.FM && !isWiredHeadsetPlugged()) {
-                // Revert switch to DIGITAL and alert user
-                binding.speakerGrilleView.radioMode = RadioSpeakerGrilleView.RadioMode.DIGITAL
-                binding.speakerGrilleView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
-                binding.tvRadioRdsName.text = "HEADPHONES REQUIRED AS FM ANTENNA"
-                binding.tvRadioStreamStatus.text = "NO ANTENNA"
-                binding.tvRadioStreamStatus.setTextColor(Color.parseColor("#EF4444"))
-                Toast.makeText(
-                    requireContext(),
-                    "FM requires 3.5mm wired headphones connected as an antenna",
-                    Toast.LENGTH_LONG
-                ).show()
-            } else {
-                isFmMode = (mode == RadioSpeakerGrilleView.RadioMode.FM)
-                updateRadioModeDisplay(mode)
-                updatePresetsForActiveMode()
+        binding.speakerGrilleView.onModeChanged = { mode -> requestRadioMode(mode) }
+    }
 
-                if (isFmMode) {
-                    // Strictly halt internet streaming audio
-                    radioEngine.pause()
-                    stopAudioSync()
-                    analogFmEngine.startAnalogAudio()
-                    val curFreq = binding.tuningDialView.currentFreq
-                    analogFmEngine.tuneFrequency(curFreq)
-                    syncFmAudio(curFreq)
-                } else {
-                    stopScan()
-                    analogFmEngine.stopAnalogAudio()
-                    radioEngine.setVolume(0.8f)
-                    binding.signalMeterView.signalStrength = 0f
-                    binding.signalMeterView.centerTuningDeviation = 0f
-                    binding.signalMeterView.isStereo = false
-                    val isAudioActive = radioEngine.radioState.value.isPlaying
-                    binding.tvRadioStreamStatus.text = if (isAudioActive) "LIVE IN" else "STOPPED"
-                    binding.tvRadioStreamStatus.setTextColor(if (isAudioActive) Color.parseColor("#10B981") else Color.parseColor("#64748B"))
-                    renderState(radioEngine.radioState.value)
-                }
-                saveRadioSettings()
+    private fun requestRadioMode(mode: RadioSpeakerGrilleView.RadioMode) {
+        if (mode == RadioSpeakerGrilleView.RadioMode.FM && !isWiredHeadsetPlugged()) {
+            if (isDeckStyle) {
+                enterFmWithoutAntenna()
+                return
             }
+            // Revert switch to DIGITAL and alert user
+            binding.speakerGrilleView.radioMode = RadioSpeakerGrilleView.RadioMode.DIGITAL
+            binding.speakerGrilleView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+            binding.tvRadioRdsName.text = "HEADPHONES REQUIRED AS FM ANTENNA"
+            binding.tvRadioStreamStatus.text = "NO ANTENNA"
+            binding.tvRadioStreamStatus.setTextColor(Color.parseColor("#EF4444"))
+            Toast.makeText(
+                requireContext(),
+                "FM requires 3.5mm wired headphones connected as an antenna",
+                Toast.LENGTH_LONG
+            ).show()
+        } else {
+            antennaMissing = false
+            isFmMode = (mode == RadioSpeakerGrilleView.RadioMode.FM)
+            updateRadioModeDisplay(mode)
+            updatePresetsForActiveMode()
+
+            if (isFmMode) {
+                // Strictly halt internet streaming audio
+                radioEngine.pause()
+                stopAudioSync()
+                analogFmEngine.startAnalogAudio()
+                val curFreq = binding.tuningDialView.currentFreq
+                analogFmEngine.tuneFrequency(curFreq)
+                syncFmAudio(curFreq)
+            } else {
+                stopScan()
+                analogFmEngine.stopAnalogAudio()
+                radioEngine.setVolume(0.8f)
+                binding.signalMeterView.signalStrength = 0f
+                binding.signalMeterView.centerTuningDeviation = 0f
+                binding.signalMeterView.isStereo = false
+                val isAudioActive = radioEngine.radioState.value.isPlaying
+                binding.tvRadioStreamStatus.text = if (isAudioActive) "LIVE IN" else "STOPPED"
+                binding.tvRadioStreamStatus.setTextColor(
+                    if (isAudioActive) Color.parseColor("#10B981") else Color.parseColor(
+                        "#64748B"
+                    )
+                )
+                renderState(radioEngine.radioState.value)
+            }
+            saveRadioSettings()
         }
+        requestDeckSync()
     }
 
     private fun updateRadioModeDisplay(mode: RadioSpeakerGrilleView.RadioMode) {
@@ -301,6 +355,7 @@ class RadioFragment : Fragment() {
                 binding.btnRadioMono.visibility = View.VISIBLE
                 binding.btnRadioScan.visibility = View.VISIBLE
             }
+
             RadioSpeakerGrilleView.RadioMode.DIGITAL -> {
                 binding.tvRadioBandMode.text = "DIGITAL"
                 binding.tvRadioFreqUnit.text = " DAB+"
@@ -313,20 +368,28 @@ class RadioFragment : Fragment() {
     private fun setupFmControls() {
         binding.btnRadioMono.setOnClickListener {
             if (!isFmMode) return@setOnClickListener
-            isForceMono = !isForceMono
-            analogFmEngine.isForceMono = isForceMono
-            updateMonoButtonState()
-            binding.tvRadioBandMode.text = if (isForceMono) "FM MONO" else "FM"
-            saveRadioSettings()
+            setForceMono(!isForceMono)
         }
 
-        binding.btnRadioScan.setOnClickListener {
-            if (!isFmMode) return@setOnClickListener
-            if (isScanning) {
-                stopScan()
-            } else {
-                startScan()
-            }
+        binding.btnRadioScan.setOnClickListener { toggleScan() }
+    }
+
+    private fun setForceMono(on: Boolean) {
+        if (!isFmMode || antennaMissing || on == isForceMono) return
+        isForceMono = on
+        analogFmEngine.isForceMono = isForceMono
+        updateMonoButtonState()
+        binding.tvRadioBandMode.text = if (isForceMono) "FM MONO" else "FM"
+        saveRadioSettings()
+        requestDeckSync()
+    }
+
+    private fun toggleScan() {
+        if (!isFmMode || antennaMissing) return
+        if (isScanning) {
+            stopScan()
+        } else {
+            startScan()
         }
     }
 
@@ -373,7 +436,12 @@ class RadioFragment : Fragment() {
                 analogFmEngine.tuneFrequency(nextFreq)
 
                 val strength = analogFmEngine.getSignalStrength(nextFreq)
-                if (strength >= 0.68f) {
+                if (isDeckStyle) {
+                    binding.signalMeterView.signalStrength = strength
+                    binding.signalMeterView.centerTuningDeviation = analogFmEngine.getCarrierDeviation(nextFreq)
+                    syncDeck()
+                }
+                if (strength >= SCAN_LOCK_LEVEL) {
                     // Local station carrier locked!
                     stopScan()
                     analogFmEngine.tuneFrequency(nextFreq)
@@ -404,16 +472,24 @@ class RadioFragment : Fragment() {
                 binding.tvRadioStreamStatus.setTextColor(Color.parseColor("#F97316"))
             }
         }
+        requestDeckSync()
     }
 
     private fun setupAnalogFmEngine() {
         analogFmEngine.listener = object : AnalogFmEngine.AnalogFmListener {
-            override fun onSignalChanged(frequencyMhz: Float, signalStrength: Float, isStereo: Boolean, stationName: String?) {
+            override fun onSignalChanged(
+                frequencyMhz: Float,
+                signalStrength: Float,
+                isStereo: Boolean,
+                stationName: String?
+            ) {
+                lastFmStationName = stationName
                 if (!isFmMode || isScanning) return
                 binding.signalMeterView.signalStrength = signalStrength
                 binding.signalMeterView.centerTuningDeviation = analogFmEngine.getCarrierDeviation(frequencyMhz)
                 binding.signalMeterView.isStereo = isStereo && !isForceMono
                 binding.tvRadioFrequency.text = String.format(Locale.US, "%.1f", frequencyMhz)
+                requestDeckSync()
 
                 if (stationName != null) {
                     binding.tvRadioRdsName.text = stationName
@@ -429,7 +505,8 @@ class RadioFragment : Fragment() {
                     }
                     binding.tvRadioStreamStatus.text = statusText
                     binding.tvRadioStreamStatus.setTextColor(statusColor)
-                    binding.tvRadioNowPlaying.text = if (isStereo && !isForceMono) "OTA FM STEREO • LOCAL BROADCAST" else "OTA FM MONO • LOCAL BROADCAST"
+                    binding.tvRadioNowPlaying.text =
+                        if (isStereo && !isForceMono) "OTA FM STEREO • LOCAL BROADCAST" else "OTA FM MONO • LOCAL BROADCAST"
                 } else {
                     binding.tvRadioRdsName.text = "STATIC DETECTED • TUNING NEEDED"
                     binding.tvRadioStreamStatus.text = "OTA FM"
@@ -450,6 +527,7 @@ class RadioFragment : Fragment() {
             else -> RadioSpeakerGrilleView.NetworkState.ONLINE
         }
         _binding?.speakerGrilleView?.networkState = netState
+        requestDeckSync()
     }
 
     private fun setupNetworkMonitoring() {
@@ -463,6 +541,7 @@ class RadioFragment : Fragment() {
         val activeNetwork = cm.activeNetwork
         val caps = cm.getNetworkCapabilities(activeNetwork)
         isDeviceOnline = caps?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
+        caps?.let { linkLevel = linkLevelOf(it) }
         updateNetworkStatus()
 
         val request = NetworkRequest.Builder()
@@ -481,6 +560,14 @@ class RadioFragment : Fragment() {
                 view?.post {
                     isDeviceOnline = false
                     updateNetworkStatus()
+                }
+            }
+
+            override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
+                val level = linkLevelOf(networkCapabilities)
+                view?.post {
+                    linkLevel = level
+                    requestDeckSync()
                 }
             }
 
@@ -509,54 +596,72 @@ class RadioFragment : Fragment() {
             for (i in presetButtons.indices) {
                 val freq = fmPresets.getOrElse(i) { 88.5f }
                 presetButtons[i].text = String.format(Locale.US, "%.1f", freq)
-                presetButtons[i].setOnClickListener {
-                    (activity?.application as? SpindleApp)?.audioEngine?.foleyEngine?.playTilePress()
-                    stopScan()
-                    binding.tuningDialView.currentFreq = freq
-                    analogFmEngine.tuneFrequency(freq)
-                    syncFmAudio(freq)
-                    highlightActivePreset(freq)
-                    saveRadioSettings()
-                }
-                presetButtons[i].setOnLongClickListener {
-                    (activity?.application as? SpindleApp)?.audioEngine?.foleyEngine?.playPinAction(true)
-                    val curFreq = binding.tuningDialView.currentFreq
-                    fmPresets[i] = curFreq
-                    presetButtons[i].text = String.format(Locale.US, "%.1f", curFreq)
-                    presetButtons[i].performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
-                    Toast.makeText(
-                        requireContext(),
-                        "FM Preset P${i + 1} Saved: ${String.format(Locale.US, "%.1f MHz", curFreq)}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    saveRadioSettings()
-                    highlightActivePreset(curFreq)
-                    true
-                }
+                presetButtons[i].setOnClickListener { onPresetClicked(i) }
+                presetButtons[i].setOnLongClickListener { onPresetLongClicked(i) }
             }
             highlightActivePreset(binding.tuningDialView.currentFreq)
         } else {
-            val stations = radioEngine.userStations.ifEmpty { RadioStreamEngine.PRESET_STATIONS }
+            val stations = streamStations()
             for (i in presetButtons.indices) {
                 if (i < stations.size) {
-                    val station = stations[i]
-                    presetButtons[i].text = station.callsign
+                    presetButtons[i].text = stations[i].callsign
                     presetButtons[i].setOnLongClickListener(null)
-                    presetButtons[i].setOnClickListener {
-                        (activity?.application as? SpindleApp)?.audioEngine?.foleyEngine?.playTilePress()
-                        val current = radioEngine.radioState.value.currentStation
-                        val isAudioActive = radioEngine.radioState.value.isPlaying || radioEngine.radioState.value.isBuffering
-                        if (current?.frequencyMhz == station.frequencyMhz && isAudioActive) {
-                            radioEngine.pause()
-                        } else {
-                            radioEngine.playStation(station)
-                            binding.tuningDialView.currentFreq = station.frequencyMhz
-                        }
-                    }
+                    presetButtons[i].setOnClickListener { onPresetClicked(i) }
                 }
             }
             renderPresetButtons(radioEngine.radioState.value)
         }
+        requestDeckSync()
+    }
+
+    private fun streamStations() = radioEngine.userStations.ifEmpty { RadioStreamEngine.PRESET_STATIONS }
+
+    /** FM: tunes the stored frequency (read at tap time). NET: plays the station, or stops it if already on. */
+    private fun onPresetClicked(i: Int) {
+        foley?.playTilePress()
+        if (isFmMode) {
+            if (antennaMissing) return
+            stopScan()
+            tuneFmTo(fmPresets.getOrElse(i) { 88.5f })
+        } else {
+            val station = streamStations().getOrNull(i) ?: return
+            val current = radioEngine.radioState.value.currentStation
+            val isAudioActive = radioEngine.radioState.value.isPlaying || radioEngine.radioState.value.isBuffering
+            if (current?.frequencyMhz == station.frequencyMhz && isAudioActive) {
+                radioEngine.pause()
+            } else {
+                radioEngine.playStation(station)
+                binding.tuningDialView.currentFreq = station.frequencyMhz
+            }
+        }
+        requestDeckSync()
+    }
+
+    /** Stores the current FM frequency in preset [i]. Stream presets are fixed, so NET ignores it. */
+    private fun onPresetLongClicked(i: Int): Boolean {
+        if (!isFmMode || antennaMissing) return false
+        foley?.playPinAction(true)
+        val curFreq = binding.tuningDialView.currentFreq
+        fmPresets[i] = curFreq
+        presetButtons[i].text = String.format(Locale.US, "%.1f", curFreq)
+        presetButtons[i].performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+        Toast.makeText(
+            requireContext(),
+            "FM Preset P${i + 1} Saved: ${String.format(Locale.US, "%.1f MHz", curFreq)}",
+            Toast.LENGTH_SHORT
+        ).show()
+        saveRadioSettings()
+        highlightActivePreset(curFreq)
+        requestDeckSync()
+        return true
+    }
+
+    private fun tuneFmTo(freq: Float) {
+        binding.tuningDialView.currentFreq = freq
+        analogFmEngine.tuneFrequency(freq)
+        syncFmAudio(freq)
+        highlightActivePreset(freq)
+        saveRadioSettings()
     }
 
     private fun highlightActivePreset(curFreq: Float) {
@@ -570,9 +675,11 @@ class RadioFragment : Fragment() {
             val isMatch = kotlin.math.abs(freq - curFreq) < 0.15f
 
             val activeColor = if (isEink) Color.WHITE else Color.WHITE
-            val inactiveText = if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#475569") else Color.parseColor("#94A3B8")
+            val inactiveText =
+                if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#475569") else Color.parseColor("#94A3B8")
             val activeBg = if (isEink) Color.BLACK else theme.accentColor
-            val inactiveBg = if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#F1F5F9") else Color.parseColor("#202334")
+            val inactiveBg =
+                if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#F1F5F9") else Color.parseColor("#202334")
 
             presetButtons[i].setTextColor(if (isMatch) activeColor else inactiveText)
             presetButtons[i].backgroundTintList = ColorStateList.valueOf(if (isMatch) activeBg else inactiveBg)
@@ -581,50 +688,39 @@ class RadioFragment : Fragment() {
 
     private fun setupTuningDial() {
         binding.tuningDialView.onFrequencyChanged = { freq ->
-            (activity?.application as? SpindleApp)?.audioEngine?.foleyEngine?.playRotaryRatchet()
+            foley?.playRotaryRatchet()
             if (isFmMode) {
-                analogFmEngine.tuneFrequency(freq)
-                syncFmAudio(freq)
-                highlightActivePreset(freq)
-                saveRadioSettings()
+                tuneFmTo(freq)
             } else {
                 radioEngine.tuneTo(freq)
                 updateSignalTelemetry(freq)
             }
         }
         binding.tuningDialView.onDialClicked = {
-            (activity?.application as? SpindleApp)?.audioEngine?.foleyEngine?.playSwitchSnap()
-            if (isFmMode) {
-                if (analogFmEngine.isAnalogModeEnabled) {
-                    analogFmEngine.stopAnalogAudio()
-                    binding.tvRadioStreamStatus.text = "MUTED"
-                    binding.tvRadioStreamStatus.setTextColor(Color.parseColor("#64748B"))
-                    binding.speakerGrilleView.isPlaying = false
-                    stopAudioSync()
-                } else {
-                    analogFmEngine.startAnalogAudio()
-                    syncFmAudio(binding.tuningDialView.currentFreq)
-                }
-            } else {
-                radioEngine.togglePlayPause()
-            }
+            foley?.playSwitchSnap()
+            togglePower()
         }
-        binding.cardLcd.setOnClickListener {
-            if (isFmMode) {
-                if (analogFmEngine.isAnalogModeEnabled) {
-                    analogFmEngine.stopAnalogAudio()
-                    binding.tvRadioStreamStatus.text = "MUTED"
-                    binding.tvRadioStreamStatus.setTextColor(Color.parseColor("#64748B"))
-                    binding.speakerGrilleView.isPlaying = false
-                    stopAudioSync()
-                } else {
-                    analogFmEngine.startAnalogAudio()
-                    syncFmAudio(binding.tuningDialView.currentFreq)
-                }
+        binding.cardLcd.setOnClickListener { togglePower() }
+    }
+
+    /** FM: mutes or resumes the receiver. NET: plays or stops the stream. */
+    private fun togglePower() {
+        if (isFmMode) {
+            if (antennaMissing) return
+            if (analogFmEngine.isAnalogModeEnabled) {
+                analogFmEngine.stopAnalogAudio()
+                binding.tvRadioStreamStatus.text = "MUTED"
+                binding.tvRadioStreamStatus.setTextColor(Color.parseColor("#64748B"))
+                binding.speakerGrilleView.isPlaying = false
+                stopAudioSync()
             } else {
-                radioEngine.togglePlayPause()
+                analogFmEngine.startAnalogAudio()
+                syncFmAudio(binding.tuningDialView.currentFreq)
             }
+        } else {
+            radioEngine.togglePlayPause()
         }
+        requestDeckSync()
     }
 
     private fun updateSignalTelemetry(freq: Float) {
@@ -658,40 +754,27 @@ class RadioFragment : Fragment() {
     }
 
     private fun setupSkipButtons() {
-        binding.btnTunePrev.setOnClickListener {
-            if (isFmMode) {
-                val carriers = analogFmEngine.carrierStations.sortedBy { it.first }
-                val cur = binding.tuningDialView.currentFreq
-                val prevStation = carriers.lastOrNull { it.first < cur - 0.15f } ?: carriers.lastOrNull()
-                if (prevStation != null) {
-                    binding.tuningDialView.currentFreq = prevStation.first
-                    analogFmEngine.tuneFrequency(prevStation.first)
-                    syncFmAudio(prevStation.first)
-                    highlightActivePreset(prevStation.first)
-                    saveRadioSettings()
-                }
+        binding.btnTunePrev.setOnClickListener { seek(forward = false) }
+        binding.btnTuneNext.setOnClickListener { seek(forward = true) }
+    }
+
+    /** FM: jumps to the neighbouring carrier (wrapping). NET: plays the neighbouring station. */
+    private fun seek(forward: Boolean) {
+        if (isFmMode) {
+            if (antennaMissing) return
+            val carriers = analogFmEngine.carrierStations.sortedBy { it.first }
+            val cur = binding.tuningDialView.currentFreq
+            val target = if (forward) {
+                carriers.firstOrNull { it.first > cur + 0.15f } ?: carriers.firstOrNull()
             } else {
-                radioEngine.seekPrevStation()
-                binding.tuningDialView.currentFreq = radioEngine.radioState.value.currentFrequency
+                carriers.lastOrNull { it.first < cur - 0.15f } ?: carriers.lastOrNull()
             }
+            target?.let { tuneFmTo(it.first) }
+        } else {
+            if (forward) radioEngine.seekNextStation() else radioEngine.seekPrevStation()
+            binding.tuningDialView.currentFreq = radioEngine.radioState.value.currentFrequency
         }
-        binding.btnTuneNext.setOnClickListener {
-            if (isFmMode) {
-                val carriers = analogFmEngine.carrierStations.sortedBy { it.first }
-                val cur = binding.tuningDialView.currentFreq
-                val nextStation = carriers.firstOrNull { it.first > cur + 0.15f } ?: carriers.firstOrNull()
-                if (nextStation != null) {
-                    binding.tuningDialView.currentFreq = nextStation.first
-                    analogFmEngine.tuneFrequency(nextStation.first)
-                    syncFmAudio(nextStation.first)
-                    highlightActivePreset(nextStation.first)
-                    saveRadioSettings()
-                }
-            } else {
-                radioEngine.seekNextStation()
-                binding.tuningDialView.currentFreq = radioEngine.radioState.value.currentFrequency
-            }
-        }
+        requestDeckSync()
     }
 
     private fun observeTheme() {
@@ -731,12 +814,14 @@ class RadioFragment : Fragment() {
         binding.btnTunePrev.imageTintList = skipTint
         binding.btnTuneNext.imageTintList = skipTint
 
-        val presetCardBg = if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#181A22")
+        val presetCardBg =
+            if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#181A22")
         binding.cardPresets.setCardBackgroundColor(presetCardBg)
 
         binding.tvRadioHeaderTitle.setTextColor(if (isEink) Color.BLACK else theme.textPrimaryColor)
         binding.tvRadioHeaderSubtitle.setTextColor(if (isEink) Color.DKGRAY else theme.textSecondaryColor)
-        binding.btnRadioBackToPlayer.imageTintList = ColorStateList.valueOf(if (isEink) Color.BLACK else theme.textPrimaryColor)
+        binding.btnRadioBackToPlayer.imageTintList =
+            ColorStateList.valueOf(if (isEink) Color.BLACK else theme.textPrimaryColor)
         binding.btnRadioBackToPlayer.backgroundTintList = ColorStateList.valueOf(
             if (isEink) Color.WHITE else if (isDark) Color.parseColor("#262938") else Color.parseColor("#E2E8F0")
         )
@@ -901,9 +986,11 @@ class RadioFragment : Fragment() {
             val station = radioEngine.userStations.ifEmpty { RadioStreamEngine.PRESET_STATIONS }.getOrNull(i)
             val isCurrent = (station != null && station.callsign == state.currentStation?.callsign)
             val activeColor = if (isEink) Color.WHITE else Color.WHITE
-            val inactiveText = if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#475569") else Color.parseColor("#94A3B8")
+            val inactiveText =
+                if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#475569") else Color.parseColor("#94A3B8")
             val activeBg = if (isEink) Color.BLACK else theme.accentColor
-            val inactiveBg = if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#F1F5F9") else Color.parseColor("#202334")
+            val inactiveBg =
+                if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#F1F5F9") else Color.parseColor("#202334")
 
             presetButtons[i].setTextColor(
                 if (isCurrent) activeColor else inactiveText
@@ -919,11 +1006,13 @@ class RadioFragment : Fragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 spindleApp.audioEngine.metricsTracker.metrics.collect { metrics ->
                     _binding?.let { b ->
-                        val isEink = spindleApp.themeManager.currentTheme.value.id == CassetteTheme.MONOCHROME_EINK.id
+                        val isEink =
+                            spindleApp.themeManager.currentTheme.value.id == CassetteTheme.MONOCHROME_EINK.id
                         if (metrics.isBluetoothConnected) {
                             b.tvRadioBtBadge.visibility = View.VISIBLE
                             val devName = metrics.bluetoothDeviceName?.takeIf { it.isNotBlank() } ?: "BT"
-                            val bat = if (metrics.bluetoothBatteryPct != null && metrics.bluetoothBatteryPct >= 0) " (${metrics.bluetoothBatteryPct}%)" else ""
+                            val bat =
+                                if (metrics.bluetoothBatteryPct != null && metrics.bluetoothBatteryPct >= 0) " (${metrics.bluetoothBatteryPct}%)" else ""
                             b.tvRadioBtBadge.text = "$devName$bat"
                             b.tvRadioBtBadge.setTextColor(if (isEink) Color.BLACK else Color.parseColor("#10B981"))
                         } else {
@@ -935,8 +1024,299 @@ class RadioFragment : Fragment() {
         }
     }
 
+    // ---- Walkman radio deck ---------------------------------------------------------------
+
+    /** Shows the Walkman radio deck or the classic tuner, following the shared tape-deck style. */
+    private fun applyDeckStyle() {
+        val b = _binding ?: return
+        val style = requireContext().getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+            .getString(WalkmanColorway.PREF_DECK_STYLE, WalkmanColorway.DEFAULT_STYLE)
+        val colorway = WalkmanColorway.fromPref(style)
+        val wasDeck = isDeckStyle
+        isDeckStyle = colorway != null
+        colorway?.let { b.radioDeckView.colorway = it }
+        b.radioDeckView.visibility = if (isDeckStyle) View.VISIBLE else View.GONE
+        b.classicRadioContainer.visibility = if (isDeckStyle) View.GONE else View.VISIBLE
+        if (wasDeck && !isDeckStyle && antennaMissing) {
+            // The classic tuner has no "FM without antenna" state; fall back to its NET behaviour.
+            antennaMissing = false
+            onHeadsetPlugStateChanged(false)
+        }
+        requestDeckSync()
+    }
+
+    private fun setupDeck() {
+        val deck = binding.radioDeckView
+        deck.onTune = { freq, isFinal -> onDeckTune(freq, isFinal) }
+        deck.onSeek = { forward ->
+            foley?.playTilePress()
+            stopScan()
+            seek(forward)
+        }
+        deck.onPowerToggle = {
+            foley?.playSwitchSnap()
+            togglePower()
+        }
+        deck.onBandSelected = { isNet ->
+            foley?.playSwitchSnap()
+            val mode = if (isNet) RadioSpeakerGrilleView.RadioMode.DIGITAL else RadioSpeakerGrilleView.RadioMode.FM
+            binding.speakerGrilleView.radioMode = mode
+            requestRadioMode(mode)
+        }
+        deck.onMonoSelected = { on ->
+            foley?.playSwitchSnap()
+            setForceMono(on)
+        }
+        deck.onPresetClicked = { i -> onPresetClicked(i) }
+        deck.onPresetLongClicked = { i -> onPresetLongClicked(i) }
+        deck.onScanClicked = {
+            foley?.playTilePress()
+            toggleScan()
+        }
+        deck.onTapeClicked = {
+            foley?.playReleaseClick()
+            (activity as? com.hana.spindle.ui.MainActivity)?.navigateToPlayer()
+        }
+    }
+
+    /** FM tunes live on every step; NET only retunes the stream when the finger lifts. */
+    private fun onDeckTune(freq: Float, isFinal: Boolean) {
+        if (isFmMode) {
+            if (antennaMissing) return
+            if (isScanning) stopScan()
+            if (freq != binding.tuningDialView.currentFreq) {
+                foley?.playRotaryRatchet()
+                tuneFmTo(freq)
+            }
+        } else if (isFinal) {
+            binding.tuningDialView.currentFreq = freq
+            radioEngine.tuneTo(freq)
+            updateSignalTelemetry(freq)
+        }
+        requestDeckSync()
+    }
+
+    private fun onDeckHeadsetChanged(isPlugged: Boolean) {
+        if (!isFmMode) return
+        if (!isPlugged && !antennaMissing) {
+            enterFmWithoutAntenna()
+        } else if (isPlugged && antennaMissing) {
+            antennaMissing = false
+            analogFmEngine.startAnalogAudio()
+            val freq = binding.tuningDialView.currentFreq
+            analogFmEngine.tuneFrequency(freq)
+            syncFmAudio(freq)
+            requestDeckSync()
+        }
+    }
+
+    /**
+     * Deck style keeps the FM band selected without a headphone antenna and says so on the
+     * LCD, instead of silently switching to NET. FM never falls back to the stream.
+     */
+    private fun enterFmWithoutAntenna() {
+        stopScan()
+        analogFmEngine.stopAnalogAudio()
+        radioEngine.pause()
+        stopAudioSync()
+        isFmMode = true
+        antennaMissing = true
+        binding.speakerGrilleView.radioMode = RadioSpeakerGrilleView.RadioMode.FM
+        binding.speakerGrilleView.isPlaying = false
+        binding.speakerGrilleView.isFmActive = false
+        binding.signalMeterView.signalStrength = 0f
+        binding.signalMeterView.centerTuningDeviation = 0f
+        binding.signalMeterView.isStereo = false
+        updateRadioModeDisplay(RadioSpeakerGrilleView.RadioMode.FM)
+        updatePresetsForActiveMode()
+        saveRadioSettings()
+        requestDeckSync()
+    }
+
+    /** Polls the stream buffer for the BUF meter while the NET band is shown. */
+    private fun observeBufferMeter() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                while (isActive) {
+                    if (isDeckStyle && !isFmMode) {
+                        val level = (radioEngine.bufferedAheadMs().toFloat() / RadioStreamEngine.MAX_BUFFER_MS)
+                            .coerceIn(0f, 1f)
+                        if (abs(level - bufferLevel) >= 0.02f || (level == 0f && bufferLevel != 0f)) {
+                            bufferLevel = level
+                            syncDeck()
+                        }
+                    }
+                    delay(250L)
+                }
+            }
+        }
+    }
+
+    private fun linkLevelOf(caps: NetworkCapabilities): Float {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val rssi = caps.signalStrength
+            if (rssi != NetworkCapabilities.SIGNAL_STRENGTH_UNSPECIFIED) return RadioDeckMath.rssiToLevel(rssi)
+        }
+        return if (caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)) 1f else 0f
+    }
+
+    /** Coalesces the many state changes of one frame into a single deck model update. */
+    private fun requestDeckSync() {
+        if (!isDeckStyle) return
+        val deck = _binding?.radioDeckView ?: return
+        deck.removeCallbacks(deckSyncRunnable)
+        deck.postOnAnimation(deckSyncRunnable)
+    }
+
+    private fun syncDeck() {
+        val b = _binding ?: return
+        if (!isDeckStyle) return
+        b.radioDeckView.model = buildDeckModel()
+    }
+
+    private fun buildDeckModel(): RadioDeckModel {
+        val freq = binding.tuningDialView.currentFreq
+        return if (isFmMode) buildFmModel(freq) else buildNetModel(freq)
+    }
+
+    private fun formatFreq(f: Float) = String.format(Locale.US, "%.1f", f)
+
+    /** FM carriers share their frequencies with the built-in stream stations, which carry the callsign and genre. */
+    private fun builtInStationAt(freq: Float, window: Float) =
+        RadioStreamEngine.PRESET_STATIONS.firstOrNull { abs(it.frequencyMhz - freq) < window }
+
+    private fun buildFmModel(freq: Float): RadioDeckModel {
+        val meter = binding.signalMeterView
+        val strength = if (antennaMissing) 0f else meter.signalStrength
+        val listening = !antennaMissing && analogFmEngine.isAnalogModeEnabled
+        val stereo = listening && meter.isStereo && !isScanning
+        val station = if (antennaMissing) null else lastFmStationName?.let { builtInStationAt(freq, 0.21f) }
+
+        val marks = analogFmEngine.carrierStations.map { (f, name) ->
+            RadioDeckModel.DialMark(f, builtInStationAt(f, 0.05f)?.callsign ?: name.substringBefore(" RADIO"))
+        }.sortedBy { it.frequency }
+        val presets = (0 until PRESET_COUNT).map { i ->
+            val f = fmPresets[i]
+            RadioDeckModel.PresetKey(builtInStationAt(f, 0.15f)?.callsign ?: "MEMORY", "${i + 1}", formatFreq(f))
+        }
+
+        val (tag, line) = when {
+            antennaMissing -> "ANT" to "PLUG IN WIRED HEADPHONES · OR SLIDE TO NET"
+            isScanning -> "SCAN" to "SEARCHING LOCAL STATIONS ▸▸"
+            !analogFmEngine.isAnalogModeEnabled -> "FM" to "MUTED · TAP DISPLAY TO LISTEN"
+            lastFmStationName != null -> "RDS" to lastFmStationName.orEmpty()
+            else -> "RDS" to "STATIC · TURN THE WHEEL TO TUNE"
+        }
+
+        return RadioDeckModel(
+            isNet = false,
+            frequency = freq,
+            stations = marks,
+            presets = presets,
+            activePreset = fmPresets.indexOfFirst { abs(it - freq) < 0.15f },
+            genre = station?.genre?.uppercase(Locale.US).orEmpty(),
+            lcdPilotText = if (isForceMono) "MONO" else "STEREO",
+            lcdPilotLit = if (isForceMono) listening else stereo,
+            warning = if (antennaMissing) "NO ANT" else null,
+            lineTag = tag,
+            line = line,
+            lineWarn = antennaMissing,
+            region = "${formatFreq(AnalogFmEngine.MIN_FREQ)} – ${formatFreq(AnalogFmEngine.MAX_FREQ)}",
+            hint = when {
+                antennaMissing -> "HEADPHONE CABLE = FM ANTENNA"
+                isScanning -> "TAP SCAN AGAIN TO STOP"
+                else -> "TAP PRESET TO TUNE · HOLD TO STORE"
+            },
+            onAir = listening && !isScanning && strength >= AUDIBLE_LEVEL,
+            lampLabel = "STEREO",
+            lampOn = stereo,
+            forceMono = isForceMono,
+            scanning = isScanning,
+            fmDead = antennaMissing,
+            meter = RadioDeckModel.Meter(
+                row1Name = "SIG",
+                row1Level = strength,
+                row2Name = "TUNE",
+                row2CenterZero = true,
+                tuneDeviation = meter.centerTuningDeviation,
+                tuneActive = strength > 0f,
+                showLockLamp = true,
+                locked = strength >= LOCK_LEVEL,
+                threshold = if (isScanning) SCAN_LOCK_LEVEL else -1f,
+                // getCarrierDeviation() spans the 0.25 MHz carrier window
+                scaleLeft = "−250 kHz",
+                scaleCenter = "▼ LOCK",
+                scaleRight = "+250 kHz"
+            )
+        )
+    }
+
+    private fun buildNetModel(freq: Float): RadioDeckModel {
+        val state = radioEngine.radioState.value
+        val stations = streamStations()
+        val station = state.currentStation
+        val active = state.isPlaying || state.isBuffering
+
+        val presets = (0 until PRESET_COUNT).map { i ->
+            val st = stations.getOrNull(i)
+            if (st == null) RadioDeckModel.PresetKey("", "${i + 1}", "", enabled = false)
+            else RadioDeckModel.PresetKey(st.callsign, "${i + 1}", formatFreq(st.frequencyMhz))
+        }
+        val activePreset = if (!active || station == null) -1 else {
+            stations.indexOfFirst { it.callsign == station.callsign }.takeIf { it in 0 until PRESET_COUNT } ?: -1
+        }
+
+        val (tag, line) = when {
+            !isDeviceOnline -> "NET" to "OFFLINE · CHECK THE CONNECTION"
+            state.isBuffering -> "NOW" to "CONNECTING ${station?.callsign.orEmpty()}…"
+            state.isPlaying -> "NOW" to (state.nowPlayingTitle?.takeIf { it.isNotBlank() } ?: station?.rdsName
+            ?: "LIVE")
+
+            station == null -> "NET" to "NO STATION ON THIS FREQUENCY"
+            else -> "NET" to "STOPPED · TAP DISPLAY TO PLAY"
+        }
+        val maxSec = RadioStreamEngine.MAX_BUFFER_MS / 1000
+
+        return RadioDeckModel(
+            isNet = true,
+            frequency = freq,
+            stations = stations.map { RadioDeckModel.DialMark(it.frequencyMhz, it.callsign) }.sortedBy { it.frequency },
+            presets = presets,
+            activePreset = activePreset,
+            genre = station?.genre?.uppercase(Locale.US).orEmpty(),
+            lcdPilotText = if (state.isBuffering) "BUFFER" else "LIVE",
+            lcdPilotLit = active,
+            warning = if (!isDeviceOnline) "NO NET" else null,
+            lineTag = tag,
+            line = line,
+            lineWarn = !isDeviceOnline,
+            region = "STREAM",
+            hint = "TAP PRESET TO PLAY · TAP AGAIN TO STOP",
+            onAir = state.isPlaying,
+            lampLabel = "LIVE",
+            lampOn = state.isPlaying,
+            forceMono = isForceMono,
+            scanning = false,
+            fmDead = false,
+            meter = RadioDeckModel.Meter(
+                row1Name = "BUF",
+                row1Level = if (active) bufferLevel else 0f,
+                row2Name = "LINK",
+                row2CenterZero = false,
+                row2Level = if (isDeviceOnline) linkLevel else 0f,
+                showLockLamp = false,
+                scaleLeft = "0 s",
+                scaleCenter = "${maxSec / 2} s",
+                scaleRight = "$maxSec s"
+            )
+        )
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
+        requireContext().getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+            .unregisterOnSharedPreferenceChangeListener(deckStyleListener)
+        _binding?.radioDeckView?.removeCallbacks(deckSyncRunnable)
         stopAudioSync()
         stopScan()
         analogFmEngine.release()

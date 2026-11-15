@@ -1,0 +1,20 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Spindle · Walkman faceplate</title>
+<style>html,body{margin:0;background:#000;overflow:hidden}svg{display:block}</style>
+</head>
+<body>
+<div id="deck"></div>
+<script src="palettes.js"></script>
+<script src="cassette.js"></script>
+<script src="body.js"></script>
+<script src="meter.js"></script>
+<script src="deck.js"></script>
+<script>
+  const v = new URLSearchParams(location.search).get("v") || "a";
+  document.getElementById("deck").innerHTML = renderDeck(v);
+</script>
+</body>
+</html>

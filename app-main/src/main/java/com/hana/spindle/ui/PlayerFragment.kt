@@ -58,6 +58,12 @@ class PlayerFragment : Fragment() {
     private var currentAlbumCoverBitmap: Bitmap? = null
     private var currentFormatString: String = ""
     private var spoolFoleyStreamId = 0
+    private var isWalkmanStyle = true
+    private val vuLevels = FloatArray(4)
+
+    private val deckStyleListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == com.hana.spindle.ui.cassette.WalkmanColorway.PREF_DECK_STYLE) applyDeckStyle()
+    }
 
     // Battery Receiver for Metal-81 Hardware LED
     private val batteryReceiver = object : BroadcastReceiver() {
@@ -98,20 +104,26 @@ class PlayerFragment : Fragment() {
         setupThemeObservation()
         setupAudioPlaybackObservation(app)
         setupControls()
+        setupWalkmanControls()
         setupCassetteFlip()
+        applyDeckStyle()
+        requireContext().getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+            .registerOnSharedPreferenceChangeListener(deckStyleListener)
 
-        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, object : androidx.activity.OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                val mainAct = activity as? MainActivity
-                val isPlayerPage = mainAct?.let { it.getCurrentViewPagerItem() == 1 } ?: false
-                if (isPlayerPage && handleBackPressed()) {
-                    return
+        requireActivity().onBackPressedDispatcher.addCallback(
+            viewLifecycleOwner,
+            object : androidx.activity.OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    val mainAct = activity as? MainActivity
+                    val isPlayerPage = mainAct?.let { it.getCurrentViewPagerItem() == 1 } ?: false
+                    if (isPlayerPage && handleBackPressed()) {
+                        return
+                    }
+                    isEnabled = false
+                    requireActivity().onBackPressedDispatcher.onBackPressed()
+                    isEnabled = true
                 }
-                isEnabled = false
-                requireActivity().onBackPressedDispatcher.onBackPressed()
-                isEnabled = true
-            }
-        })
+            })
 
         // Read initial battery status
         try {
@@ -123,7 +135,8 @@ class PlayerFragment : Fragment() {
                 binding.verticalDeckView.batteryLevel = batteryPct
                 binding.metal81ChassisView.batteryLevel = batteryPct
             }
-        } catch (_: Exception) {}
+        } catch (_: Exception) {
+        }
 
         // Immediate state sync upon view creation
         syncState()
@@ -134,6 +147,25 @@ class PlayerFragment : Fragment() {
             syncPlaybackState(audioEngine.playbackState.value)
         }
     }
+
+    /** Shows the Walkman deck or the classic vertical deck according to the saved deck style. */
+    private fun applyDeckStyle() {
+        val b = _binding ?: return
+        val style = requireContext().getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+            .getString(
+                com.hana.spindle.ui.cassette.WalkmanColorway.PREF_DECK_STYLE,
+                com.hana.spindle.ui.cassette.WalkmanColorway.DEFAULT_STYLE
+            )
+        val colorway = com.hana.spindle.ui.cassette.WalkmanColorway.fromPref(style)
+        isWalkmanStyle = colorway != null
+        colorway?.let { b.walkmanDeckView.colorway = it }
+        if (!isJCardVisible) {
+            b.walkmanDeckView.visibility = if (isWalkmanStyle) View.VISIBLE else View.GONE
+            b.verticalDeckView.visibility = if (isWalkmanStyle) View.GONE else View.VISIBLE
+        }
+    }
+
+    private fun activeDeckView(): View = if (isWalkmanStyle) binding.walkmanDeckView else binding.verticalDeckView
 
     override fun onResume() {
         super.onResume()
@@ -186,6 +218,7 @@ class PlayerFragment : Fragment() {
             b.verticalDeckView.dolbyMode = audioEngine.audioFxController.currentDolbyMode
             b.verticalCassetteView.isPlaying = state.isPlaying
             b.verticalCassetteView.progress = state.progress
+            syncWalkmanDeck(state)
 
             // Screen-reader summary of the deck (the canvas views expose nothing on their own)
             val a11yTrack = state.currentTrack
@@ -214,7 +247,11 @@ class PlayerFragment : Fragment() {
                 val formatStr = if (song.fileFormat.equals("MP3", ignoreCase = true) && song.bitrateKbps > 0) {
                     "MP3 • ${song.bitrateKbps}kbps"
                 } else if (song.sampleRate > 0) {
-                    val kHz = if (song.sampleRate % 1000 == 0) "${song.sampleRate / 1000}" else String.format(Locale.US, "%.1f", song.sampleRate / 1000f)
+                    val kHz = if (song.sampleRate % 1000 == 0) "${song.sampleRate / 1000}" else String.format(
+                        Locale.US,
+                        "%.1f",
+                        song.sampleRate / 1000f
+                    )
                     val bitStr = if (song.bitDepth > 0) "${song.bitDepth}-bit / " else ""
                     "${song.fileFormat} • $bitStr${kHz}kHz"
                 } else {
@@ -228,6 +265,7 @@ class PlayerFragment : Fragment() {
                     val coverBitmap = app.imageLoader.loadCover(song.path, 160, 160, song.album, song.artist)
                     currentAlbumCoverBitmap = coverBitmap
                     _binding?.verticalDeckView?.albumArtBitmap = coverBitmap
+                    _binding?.walkmanDeckView?.albumArtBitmap = coverBitmap
                     val accentColor = app.imageLoader.extractAccentColor(song.path)
                     _binding?.verticalDeckView?.setCoverAccentColor(accentColor)
 
@@ -257,6 +295,7 @@ class PlayerFragment : Fragment() {
                 b.verticalDeckView.durationMs = 0L
                 b.verticalDeckView.audioFormat = ""
                 b.verticalDeckView.albumArtBitmap = null
+                b.walkmanDeckView.albumArtBitmap = null
                 b.verticalDeckView.androidVersionText = com.hana.spindle.util.DeviceUtils.getAndroidVersionString()
                 b.verticalCassetteView.trackTitle = hardwareName
                 b.verticalCassetteView.artistName = ""
@@ -287,6 +326,57 @@ class PlayerFragment : Fragment() {
         }
     }
 
+    private fun syncWalkmanDeck(state: com.hana.spindle.playback.PlaybackState) {
+        val deck = _binding?.walkmanDeckView ?: return
+        val fx = audioEngine.audioFxController
+        deck.isPlaying = state.isPlaying
+        deck.progress = state.progress
+        deck.currentTimeMs = state.currentPositionMs
+        deck.tapeFormulation = fx.currentTapeFormulation
+        deck.dolbyMode = fx.currentDolbyMode
+        deck.isDirect = fx.isTonallyFlat
+        deck.repeatMode = state.repeatMode
+
+        val song = state.currentTrack
+        if (song != null) {
+            deck.trackKey = song.path
+            deck.trackTitle = song.title
+            deck.trackSubtitle = listOf(song.artist, song.album).filter { it.isNotBlank() }.joinToString(" · ")
+            deck.formatLine = walkmanFormatLine(song)
+            deck.rateLine = walkmanRateLine(song)
+        } else {
+            deck.trackKey = null
+            deck.trackTitle = com.hana.spindle.util.DeviceUtils.getHardwareDeviceName()
+            deck.trackSubtitle = "Press PLAY for the library · EJECT to browse"
+            deck.formatLine = "NO TAPE"
+            deck.rateLine = ""
+        }
+    }
+
+    private fun walkmanFormatLine(song: TrackEntity): String {
+        val format = song.fileFormat.uppercase(Locale.US)
+        return if (song.bitrateKbps > 0 && isLossyFormat(format)) "$format · ${song.bitrateKbps} kbps" else format
+    }
+
+    private fun walkmanRateLine(song: TrackEntity): String {
+        if (song.sampleRate <= 0) return ""
+        val kHz = if (song.sampleRate % 1000 == 0) "${song.sampleRate / 1000}" else String.format(
+            Locale.US,
+            "%.1f",
+            song.sampleRate / 1000f
+        )
+        // Lossy codecs have no intrinsic bit depth; show the channel layout instead.
+        val tail = if (isLossyFormat(song.fileFormat.uppercase(Locale.US)) || song.bitDepth <= 0) {
+            if (song.channels == 1) "MONO" else "STEREO"
+        } else {
+            "${song.bitDepth} bit"
+        }
+        return "$kHz kHz · $tail"
+    }
+
+    private fun isLossyFormat(format: String) =
+        format == "MP3" || format == "AAC" || format == "M4A" || format == "OGG" || format == "OPUS" || format == "WMA"
+
     private fun setupAudioPlaybackObservation(app: SpindleApp) {
         viewLifecycleOwner.lifecycleScope.launch {
             audioEngine.playbackState.collectLatest { state ->
@@ -316,24 +406,21 @@ class PlayerFragment : Fragment() {
         }
 
 
-        // 15Hz Stereo Ballistics Simulation for Analog VU Needle Galvanometer
+        // 15Hz analog VU needles driven by the measured RMS of the audible PCM signal
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                var phase = 0.0
                 while (isActive) {
                     if (isVuMeterVisible && _binding != null) {
                         val isPlaying = audioEngine.playbackState.value.isPlaying
-                        if (isPlaying) {
-                            phase += 0.4
-                            val baseLevel = 0.65f + 0.28f * kotlin.math.sin(phase).toFloat()
-                            val peakJitter = (kotlin.math.sin(phase * 2.3) * 0.12f).toFloat()
-                            val totalLevel = (baseLevel + peakJitter).coerceIn(0f, 1f)
-
-                            val (leftLvl, rightLvl) = audioEngine.getStereoLevels(totalLevel)
+                        val hasSignal = isPlaying && audioEngine.outputLevelMeter.read(66L, vuLevels)
+                        if (hasSignal) {
+                            val (leftLvl, rightLvl) = audioEngine.getStereoLevels(1f).let { (lm, rm) ->
+                                Pair(vuLevels[2] * lm, vuLevels[3] * rm)
+                            }
                             _binding?.vuMeterView?.setStereoLevels(leftLvl, rightLvl)
 
-                            val leftDb = (20f * kotlin.math.log10(leftLvl.coerceIn(0.001f, 1f))).coerceIn(-30f, 0f)
-                            val rightDb = (20f * kotlin.math.log10(rightLvl.coerceIn(0.001f, 1f))).coerceIn(-30f, 0f)
+                            val leftDb = (20f * kotlin.math.log10(leftLvl.coerceIn(0.001f, 1f))).coerceIn(-60f, 0f)
+                            val rightDb = (20f * kotlin.math.log10(rightLvl.coerceIn(0.001f, 1f))).coerceIn(-60f, 0f)
                             _binding?.tvVuLeftDb?.text = String.format(Locale.US, "L: %.1f dB", leftDb)
                             _binding?.tvVuRightDb?.text = String.format(Locale.US, "R: %.1f dB", rightDb)
                         } else {
@@ -369,8 +456,10 @@ class PlayerFragment : Fragment() {
         binding.verticalDeckView.onNextClicked = { audioEngine.playNext() }
         binding.verticalDeckView.onNextAlbumClicked = { audioEngine.playNextAlbum() }
         binding.verticalDeckView.onPrevAlbumClicked = { audioEngine.playPreviousAlbum() }
-        binding.verticalDeckView.onHoldSeekForward = { audioEngine.fastForward(com.hana.spindle.core.SpindleGlossary.SEEK_STEP_HOLD_MS) }
-        binding.verticalDeckView.onHoldSeekRewind = { audioEngine.rewind(com.hana.spindle.core.SpindleGlossary.SEEK_STEP_HOLD_MS) }
+        binding.verticalDeckView.onHoldSeekForward =
+            { audioEngine.fastForward(com.hana.spindle.core.SpindleGlossary.SEEK_STEP_HOLD_MS) }
+        binding.verticalDeckView.onHoldSeekRewind =
+            { audioEngine.rewind(com.hana.spindle.core.SpindleGlossary.SEEK_STEP_HOLD_MS) }
 
         // Continuous high-speed motor gear spool foley with dynamic pitch & auto-stop
         binding.verticalDeckView.onHoldSeekStart = { isForward ->
@@ -386,7 +475,11 @@ class PlayerFragment : Fragment() {
         binding.verticalDeckView.onLeaderAutoStop = {
             audioEngine.foleyEngine.stopMotorSpoolLoop(spoolFoleyStreamId)
             audioEngine.foleyEngine.playAutoStopClack()
-            android.widget.Toast.makeText(requireContext(), "AUTO-STOP • TAPE LEADER", android.widget.Toast.LENGTH_SHORT).show()
+            android.widget.Toast.makeText(
+                requireContext(),
+                "AUTO-STOP • TAPE LEADER",
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
         }
 
         // 3D Card Flip to J-Card Liner Notes
@@ -441,7 +534,11 @@ class PlayerFragment : Fragment() {
             binding.verticalCassetteView.artistName = ""
             binding.metal81CassetteView.trackTitle = hardwareName
             binding.metal81CassetteView.artistName = ""
-            android.widget.Toast.makeText(requireContext(), "Cassette Ejected & Stopped", android.widget.Toast.LENGTH_SHORT).show()
+            android.widget.Toast.makeText(
+                requireContext(),
+                "Cassette Ejected & Stopped",
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
         }
         binding.verticalDeckView.onDoubleTapChassis = {
             (activity as? MainActivity)?.enterAmbientSleep()
@@ -455,7 +552,8 @@ class PlayerFragment : Fragment() {
         binding.verticalDeckView.onTapeTypeClicked = { type ->
             audioEngine.setTapeFormulation(type)
             audioEngine.foleyEngine.playSwitchSnap()
-            android.widget.Toast.makeText(requireContext(), "TAPE: ${type.label}", android.widget.Toast.LENGTH_SHORT).show()
+            android.widget.Toast.makeText(requireContext(), "TAPE: ${type.label}", android.widget.Toast.LENGTH_SHORT)
+                .show()
         }
         binding.verticalDeckView.onEqBadgeLongClicked = {
             val fxController = (requireActivity().application as SpindleApp).audioEngine.audioFxController
@@ -467,7 +565,11 @@ class PlayerFragment : Fragment() {
         binding.verticalDeckView.onDolbyClicked = { mode ->
             audioEngine.setDolbyMode(mode)
             audioEngine.foleyEngine.playSwitchSnap()
-            android.widget.Toast.makeText(requireContext(), "DOLBY NR: ${mode.label}", android.widget.Toast.LENGTH_SHORT).show()
+            android.widget.Toast.makeText(
+                requireContext(),
+                "DOLBY NR: ${mode.label}",
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
         }
 
         // Metal-81 Red Controls
@@ -498,7 +600,11 @@ class PlayerFragment : Fragment() {
             binding.verticalCassetteView.artistName = ""
             binding.metal81CassetteView.trackTitle = hardwareName
             binding.metal81CassetteView.artistName = ""
-            android.widget.Toast.makeText(requireContext(), "Cassette Ejected & Stopped", android.widget.Toast.LENGTH_SHORT).show()
+            android.widget.Toast.makeText(
+                requireContext(),
+                "Cassette Ejected & Stopped",
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
             true
         }
 
@@ -508,6 +614,7 @@ class PlayerFragment : Fragment() {
                 (activity as? MainActivity)?.enterAmbientSleep()
                 return true
             }
+
             override fun onDown(e: MotionEvent): Boolean = true
         })
         binding.root.setOnTouchListener { _, event ->
@@ -518,12 +625,79 @@ class PlayerFragment : Fragment() {
         setupVuMeterControls()
     }
 
+    @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+    private fun setupWalkmanControls() {
+        val deck = binding.walkmanDeckView
+        deck.levelProvider = { out -> audioEngine.outputLevelMeter.read(40L, out) }
+        // PLAY reuses the classic deck's handler (starts the library when no tape is loaded).
+        deck.onPlayClicked = { binding.verticalDeckView.onPlayClicked?.invoke() }
+        deck.onStopClicked = { audioEngine.stop() }
+        deck.onPrevClicked = { audioEngine.playPrevious(forcePreviousSong = false) }
+        deck.onNextClicked = { audioEngine.playNext() }
+        deck.onPrevAlbumClicked = { audioEngine.playPreviousAlbum() }
+        deck.onNextAlbumClicked = { audioEngine.playNextAlbum() }
+        deck.onHoldSeekForward = { audioEngine.fastForward(com.hana.spindle.core.SpindleGlossary.SEEK_STEP_HOLD_MS) }
+        deck.onHoldSeekRewind = { audioEngine.rewind(com.hana.spindle.core.SpindleGlossary.SEEK_STEP_HOLD_MS) }
+        deck.onHoldSeekStart = { _ -> spoolFoleyStreamId = audioEngine.foleyEngine.startMotorSpoolLoop(0.95f) }
+        deck.onHoldSeekProgress = { pitch -> audioEngine.foleyEngine.setMotorSpoolPitch(spoolFoleyStreamId, pitch) }
+        deck.onHoldSeekStop = {
+            audioEngine.foleyEngine.stopMotorSpoolLoop(spoolFoleyStreamId)
+            audioEngine.foleyEngine.playReleaseClick()
+        }
+        deck.onLeaderAutoStop = {
+            audioEngine.foleyEngine.stopMotorSpoolLoop(spoolFoleyStreamId)
+            audioEngine.foleyEngine.playAutoStopClack()
+        }
+        deck.onEjectClicked = { (activity as? MainActivity)?.navigateToVault() }
+        deck.onEjectLongClicked = {
+            audioEngine.ejectCassette()
+            android.widget.Toast.makeText(
+                requireContext(),
+                "Cassette Ejected & Stopped",
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
+        }
+        deck.onJCardClicked = { openJCardLiner(animate = true) }
+        deck.onMeterClicked = { openVuMeter(animate = true) }
+        deck.onReverseClicked = {
+            audioEngine.foleyEngine.playSwitchSnap()
+            audioEngine.toggleRepeat()
+        }
+        deck.onTapeTypeSelected = { type ->
+            if (!notifyIfEqLocked()) {
+                audioEngine.setTapeFormulation(type)
+                audioEngine.foleyEngine.playSwitchSnap()
+            }
+            syncState()
+        }
+        deck.onTapeSwitchLongPressed = { binding.verticalDeckView.onEqBadgeLongClicked?.invoke() }
+        deck.onDolbySelected = { mode ->
+            if (!notifyIfEqLocked()) {
+                audioEngine.setDolbyMode(mode)
+                audioEngine.foleyEngine.playSwitchSnap()
+            }
+            syncState()
+        }
+        deck.onDoubleTapChassis = { (activity as? MainActivity)?.enterAmbientSleep() }
+    }
+
+    /** The DSP ignores changes while the EQ lock is on; say so instead of silently snapping back. */
+    private fun notifyIfEqLocked(): Boolean {
+        if (!audioEngine.audioFxController.isLocked) return false
+        android.widget.Toast.makeText(
+            requireContext(),
+            "EQ & DSP is locked. Unlock it in the Sound Deck to change TAPE EQ or DOLBY NR.",
+            android.widget.Toast.LENGTH_SHORT
+        ).show()
+        return true
+    }
+
     private fun openJCardLiner(animate: Boolean) {
         if (isJCardVisible) return
         isJCardVisible = true
         audioEngine.foleyEngine.playSwitchSnap()
 
-        val deck = binding.verticalDeckView
+        val deck = activeDeckView()
         val jcard = binding.jCardLinerView
 
         val queue = audioEngine.currentQueueFlow.value
@@ -572,7 +746,7 @@ class PlayerFragment : Fragment() {
         isJCardVisible = false
         audioEngine.foleyEngine.playSwitchSnap()
 
-        val deck = binding.verticalDeckView
+        val deck = activeDeckView()
         val jcard = binding.jCardLinerView
 
         if (!animate) {
@@ -608,6 +782,7 @@ class PlayerFragment : Fragment() {
             .start()
     }
 
+    @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
     private fun setupVuMeterControls() {
         val b = _binding ?: return
 
@@ -631,7 +806,8 @@ class PlayerFragment : Fragment() {
 
         // Restore saved backlight preference
         val prefs = requireContext().getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
-        val savedToneName = prefs.getString("pref_vu_backlight_tone", DualAnalogVuMeterView.BacklightTone.WARM_TUNGSTEN.name)
+        val savedToneName =
+            prefs.getString("pref_vu_backlight_tone", DualAnalogVuMeterView.BacklightTone.WARM_TUNGSTEN.name)
         val tone = try {
             DualAnalogVuMeterView.BacklightTone.valueOf(savedToneName ?: "")
         } catch (_: Exception) {
@@ -848,9 +1024,11 @@ class PlayerFragment : Fragment() {
                 RepeatMode.OFF -> {
                     b.btnVuRepeat.setColorFilter(Color.parseColor("#71717A"))
                 }
+
                 RepeatMode.ALL -> {
                     b.btnVuRepeat.setColorFilter(Color.parseColor("#F97316"))
                 }
+
                 RepeatMode.ONE -> {
                     b.btnVuRepeat.setColorFilter(Color.parseColor("#FDE68A"))
                 }
@@ -915,7 +1093,8 @@ class PlayerFragment : Fragment() {
     private fun syncVuBacklightPreference() {
         val b = _binding ?: return
         val prefs = requireContext().getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
-        val savedToneName = prefs.getString("pref_vu_backlight_tone", DualAnalogVuMeterView.BacklightTone.WARM_TUNGSTEN.name)
+        val savedToneName =
+            prefs.getString("pref_vu_backlight_tone", DualAnalogVuMeterView.BacklightTone.WARM_TUNGSTEN.name)
         val tone = try {
             DualAnalogVuMeterView.BacklightTone.valueOf(savedToneName ?: "")
         } catch (_: Exception) {
@@ -928,6 +1107,8 @@ class PlayerFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        context?.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+            ?.unregisterOnSharedPreferenceChangeListener(deckStyleListener)
         if (spoolFoleyStreamId != 0) {
             audioEngine.foleyEngine.stopMotorSpoolLoop(spoolFoleyStreamId)
             spoolFoleyStreamId = 0

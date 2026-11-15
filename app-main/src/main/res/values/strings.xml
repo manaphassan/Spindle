@@ -120,9 +120,9 @@
     <string name="spindle_deck_ready">Ready to Play</string>
 
     <!-- Drawer Navigation & DSP Console -->
-    <string name="drawer_tab_sound_deck">SOUND DECK</string>
-    <string name="drawer_tab_apps">APPS</string>
-    <string name="drawer_tab_settings">SETTINGS</string>
+    <string name="drawer_tab_sound_deck">sound</string>
+    <string name="drawer_tab_apps">apps</string>
+    <string name="drawer_tab_settings">settings</string>
     <string name="drawer_search_apps_hint">Search installed apps…</string>
     <string name="drawer_eq_title">STUDIO DSP &amp; PARAMETRIC EQ</string>
     <string name="drawer_iso_eq_header">10-BAND ISO GRAPHIC EQUALIZER</string>
