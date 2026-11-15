@@ -39,6 +39,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -414,10 +415,30 @@ class AudioEngine(
                     _playbackState.value = _playbackState.value.copy(isPlaying = false)
                     stopProgressPolling()
                     notifyWidgetUpdate()
+                    if (error.errorCode == androidx.media3.common.PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND) {
+                        val track = playlist.getOrNull(player.currentMediaItemIndex) ?: playlist.getOrNull(currentIndex)
+                        if (track != null) {
+                            _missingTrackEvents.tryEmit(
+                                MissingTrackEvent(track.title, CueSheetParser.getAudioFilePath(track.path))
+                            )
+                        }
+                    }
                 }
             }
         })
     }
+
+    /** A track whose file is no longer on storage, typically after an SD card swap. */
+    data class MissingTrackEvent(val title: String, val path: String)
+
+    private val _missingTrackEvents = kotlinx.coroutines.flow.MutableSharedFlow<MissingTrackEvent>(
+        extraBufferCapacity = 1,
+        onBufferOverflow = kotlinx.coroutines.channels.BufferOverflow.DROP_OLDEST
+    )
+
+    /** Fires when playback stops because the track's file is missing; the UI offers a rescan. */
+    val missingTrackEvents: kotlinx.coroutines.flow.SharedFlow<MissingTrackEvent> =
+        _missingTrackEvents.asSharedFlow()
 
     /** True while the current track plays as DoP over a verified bit-perfect mixer path. */
     @Volatile
@@ -1112,6 +1133,21 @@ class AudioEngine(
      */
     fun ejectCassette() {
         foleyEngine.playCarriageEject()
+        clearDeck()
+    }
+
+    /**
+     * Unloads the current track if its file no longer exists, as after a library rescan that
+     * removed it. Returns true when the deck was cleared.
+     */
+    fun unloadMissingTrack(): Boolean {
+        val track = _playbackState.value.currentTrack ?: return false
+        if (File(CueSheetParser.getAudioFilePath(track.path)).exists()) return false
+        clearDeck()
+        return true
+    }
+
+    private fun clearDeck() {
         cancelCrossfade()
         try {
             exoPlayer.stop()

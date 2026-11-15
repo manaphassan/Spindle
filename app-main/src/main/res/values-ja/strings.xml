@@ -31,4 +31,10 @@
     <string name="a11y_deck_playing">再生中: %1$s、%2$s、%3$s</string>
     <string name="a11y_deck_paused">一時停止: %1$s、%2$s、%3$s</string>
     <string name="a11y_deck_empty">カセットデッキ、トラックなし</string>
+    <string name="missing_track_title">トラックが見つかりません</string>
+    <string name="missing_track_message">「%1$s」はこのデバイスにありません。SDカードが取り外されたか、交換された可能性があります。\n\nライブラリを再スキャンして、見つからないトラックを削除し、現在の音楽をインデックスしますか？</string>
+    <string name="missing_track_rescan">再スキャン</string>
+    <string name="missing_track_later">後で</string>
+    <string name="missing_track_scanning">ライブラリを再スキャン中…</string>
+    <string name="missing_track_done">ライブラリを更新しました: %1$d トラック、見つからない %2$d 件を削除</string>
 </resources>
