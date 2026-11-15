@@ -10,7 +10,8 @@ import androidx.media3.extractor.ExtractorsFactory
  * Custom Media3 [ExtractorsFactory] prioritizing native audiophile container decoders:
  * 1. [AiffExtractor]: Pure bit-perfect AIFF/AIFC IFF container parser with 80-bit float sample rate resolution.
  * 2. [DsfExtractor]: 1-bit DSD to 24-bit 88.2kHz FIR decimator with 32-tap Hann filter and LUT acceleration.
- * 3. Media3 default extractors (FLAC, WAV, MP3, OGG, AAC, etc.)
+ * 3. [WavPackExtractor]: lossless 16/24-bit WavPack decoded in pure Kotlin.
+ * 4. Media3 default extractors (FLAC, WAV, MP3, OGG, AAC, etc.)
  */
 @UnstableApi
 class SpindleExtractorsFactory : ExtractorsFactory {
@@ -19,7 +20,7 @@ class SpindleExtractorsFactory : ExtractorsFactory {
 
     override fun createExtractors(): Array<Extractor> {
         val defaultExtractors = defaultExtractorsFactory.createExtractors()
-        return arrayOf(AiffExtractor(), DsfExtractor(), *defaultExtractors)
+        return arrayOf(AiffExtractor(), DsfExtractor(), WavPackExtractor(), *defaultExtractors)
     }
 
     override fun createExtractors(
@@ -27,6 +28,6 @@ class SpindleExtractorsFactory : ExtractorsFactory {
         responseHeaders: Map<String, List<String>>
     ): Array<Extractor> {
         val defaultExtractors = defaultExtractorsFactory.createExtractors(uri, responseHeaders)
-        return arrayOf(AiffExtractor(), DsfExtractor(), *defaultExtractors)
+        return arrayOf(AiffExtractor(), DsfExtractor(), WavPackExtractor(), *defaultExtractors)
     }
 }

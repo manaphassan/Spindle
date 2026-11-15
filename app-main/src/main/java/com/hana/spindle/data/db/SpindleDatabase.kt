@@ -13,7 +13,7 @@ import androidx.room.RoomDatabase
         PlaylistSongCrossRef::class
     ],
     version = 6,
-    exportSchema = false
+    exportSchema = true
 )
 abstract class SpindleDatabase : RoomDatabase() {
 
@@ -71,6 +71,8 @@ abstract class SpindleDatabase : RoomDatabase() {
                     "spindle_music.db"
                 )
                 .addMigrations(MIGRATION_4_5, MIGRATION_5_6)
+                // The library is a rebuildable index of files on disk (playlists aside). Any schema
+                // problem is treated like a fresh install: rebuild instead of crashing on launch.
                 .fallbackToDestructiveMigration()
                 .build()
                 INSTANCE = instance

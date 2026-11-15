@@ -434,6 +434,7 @@ class DrawerFragment : Fragment() {
         b.drawerPanoramaScrollView.enableSnapping(w, PANEL_COUNT, 0)
     }
 
+    @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
     private fun setupDeckHeader(app: SpindleApp) {
         binding.systemDeckHeader.labels = listOf("SOUND", "SETTINGS", "APPS")
         binding.systemDeckHeader.onPageSelected = { index ->
@@ -658,6 +659,7 @@ class DrawerFragment : Fragment() {
         binding.scrollSettingsContent.scrollTo(0, 0)
     }
 
+    @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
     private fun openSettingsPage(index: Int) {
         val pages = settingsPages()
         val page = pages.getOrNull(index) ?: return
@@ -1833,6 +1835,58 @@ class DrawerFragment : Fragment() {
             app.audioEngine.metricsTracker.updateRouteTelemetry()
         }
 
+        // 4b. Bit-perfect mixer (Android 14+), verified from the platform's own answer
+        binding.switchBitPerfectMixer.isChecked =
+            prefs.getBoolean(com.hana.spindle.playback.PREF_BITPERFECT_MIXER, false)
+        binding.switchBitPerfectMixer.isEnabled = com.hana.spindle.playback.BitPerfectMixerController.isOsSupported
+        binding.switchBitPerfectMixer.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean(com.hana.spindle.playback.PREF_BITPERFECT_MIXER, isChecked).apply()
+            val track = app.audioEngine.playbackState.value.currentTrack
+            app.audioEngine.applyBitPerfectMixer(track?.sampleRate ?: 0, track?.bitDepth ?: 16)
+            app.audioEngine.refreshDopPolicy()
+            binding.switchDsdDop.isEnabled =
+                isChecked && com.hana.spindle.playback.BitPerfectMixerController.isOsSupported
+            app.audioEngine.metricsTracker.updateRouteTelemetry()
+        }
+        // 4b'. DSD over PCM (needs the bit-perfect mixer path; applies from the next DSD track)
+        binding.switchDsdDop.isChecked = prefs.getBoolean(com.hana.spindle.playback.extractor.PREF_DSD_DOP, false)
+        binding.switchDsdDop.isEnabled = binding.switchBitPerfectMixer.isChecked &&
+                com.hana.spindle.playback.BitPerfectMixerController.isOsSupported
+        binding.switchDsdDop.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean(com.hana.spindle.playback.extractor.PREF_DSD_DOP, isChecked).apply()
+            app.audioEngine.refreshDopPolicy()
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+                app.audioEngine.bitPerfectMixer.state.collect { st ->
+                    binding.tvBitPerfectMixerStatus.text = when (st.status) {
+                        com.hana.spindle.playback.BitPerfectStatus.OFF -> getString(R.string.bitperfect_status_off)
+                        com.hana.spindle.playback.BitPerfectStatus.UNSUPPORTED_OS -> getString(R.string.bitperfect_status_unsupported)
+                        com.hana.spindle.playback.BitPerfectStatus.NO_DEVICE -> getString(R.string.bitperfect_status_no_device)
+                        com.hana.spindle.playback.BitPerfectStatus.NO_MATCH -> getString(R.string.bitperfect_status_no_match)
+                        com.hana.spindle.playback.BitPerfectStatus.REJECTED -> getString(R.string.bitperfect_status_rejected)
+                        com.hana.spindle.playback.BitPerfectStatus.ACTIVE ->
+                            getString(
+                                R.string.bitperfect_status_active,
+                                st.format?.sampleRateHz ?: 0,
+                                st.format?.bitDepth ?: 0
+                            )
+                    }
+                }
+            }
+        }
+
+        // 4c. Software parametric EQ
+        binding.switchPeq.isChecked = com.hana.spindle.playback.ParametricEq.settings.value.enabled
+        binding.switchPeq.setOnCheckedChangeListener { _, isChecked ->
+            val cur = com.hana.spindle.playback.ParametricEq.settings.value
+            com.hana.spindle.playback.ParametricEq.update(cur.copy(enabled = isChecked), requireContext())
+            app.audioEngine.metricsTracker.updateRouteTelemetry()
+        }
+        binding.btnPeqEdit.setOnClickListener {
+            com.hana.spindle.ui.DialogParametricEq().show(childFragmentManager, "peq")
+        }
+
         binding.btnUsbDacProbe.setOnClickListener {
             val dac = app.usbDacManager.refreshUsbDacTelemetry()
             app.audioEngine.metricsTracker.updateRouteTelemetry()
@@ -2835,11 +2889,14 @@ class DrawerFragment : Fragment() {
                             b.layoutJackTelemetry.visibility = View.GONE
                         }
 
-                        if (metrics.isBitPerfect) {
-                            b.tvBitPerfectBadge.text = "● HI-RES PASSTHROUGH"
+                        if (metrics.isBitPerfectVerified) {
+                            b.tvBitPerfectBadge.text = "● " + getString(R.string.bitperfect_badge_verified)
+                            b.tvBitPerfectBadge.setTextColor(if (isEink) Color.BLACK else Color.parseColor("#00E676"))
+                        } else if (metrics.isBitPerfect) {
+                            b.tvBitPerfectBadge.text = "● DIRECT · NO DSP"
                             b.tvBitPerfectBadge.setTextColor(if (isEink) Color.BLACK else Color.parseColor("#00E676"))
                         } else {
-                            b.tvBitPerfectBadge.text = "AudioFlinger Resampled"
+                            b.tvBitPerfectBadge.text = "DSP / mixer active"
                             b.tvBitPerfectBadge.setTextColor(if (isEink) Color.BLACK else Color.parseColor("#F59E0B"))
                         }
                     }
@@ -2883,6 +2940,7 @@ class DrawerFragment : Fragment() {
         }
     }
 
+    @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
     private fun setupStudioCollectorSuite() {
         fun updateBadge() {
             val isUnlocked = StudioUnlockManager.isStudioUnlocked(requireContext())

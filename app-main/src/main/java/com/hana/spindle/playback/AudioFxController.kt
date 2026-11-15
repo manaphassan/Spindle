@@ -194,14 +194,15 @@ class AudioFxController {
     /**
      * True when nothing alters the tonal balance: no EQ (user, tape or Dolby curves),
      * saturation, bass boost or crossfeed. Drives the deck's DIRECT lamp.
+     * The software parametric EQ runs in the audio sink and ignores bypass, so it always counts.
      */
     val isTonallyFlat: Boolean
-        get() = isBypassEnabled || (
+        get() = !ParametricEq.isActive && (isBypassEnabled || (
                 isoBandsGainDb.all { abs(it) < 0.05f } &&
                         !isTapeSaturationEnabled &&
                         bassBoostStrength == 0 &&
                         crossfeedStrength == 0
-                )
+                ))
 
     fun updateCurrentPresetName(name: String) {
         currentPresetName = name
@@ -348,7 +349,7 @@ class AudioFxController {
             // Re-apply cached settings
             applyEq()
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.w("AudioFxController", "Non-fatal", e)
         }
     }
 
@@ -364,7 +365,7 @@ class AudioFxController {
                 virtualizer?.setStrength(crossfeedStrength.toShort())
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.w("AudioFxController", "Non-fatal", e)
         }
     }
 
@@ -442,7 +443,7 @@ class AudioFxController {
             try {
                 bassBoost?.setStrength(bassBoostStrength.toShort())
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.w("AudioFxController", "Non-fatal", e)
             }
         }
     }
@@ -461,7 +462,7 @@ class AudioFxController {
             try {
                 virtualizer?.setStrength(crossfeedStrength.toShort())
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.w("AudioFxController", "Non-fatal", e)
             }
         }
     }
@@ -686,7 +687,7 @@ class AudioFxController {
                 eq.setBandLevel(hwBand.toShort(), millibels)
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.w("AudioFxController", "Non-fatal", e)
         }
     }
 
@@ -735,7 +736,7 @@ class AudioFxController {
             bassBoost?.release()
             virtualizer?.release()
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.w("AudioFxController", "Non-fatal", e)
         }
         equalizer = null
         bassBoost = null

@@ -25,9 +25,9 @@ class SpindleAppWidgetProvider : AppWidgetProvider() {
 
     companion object {
         const val ACTION_UPDATE_WIDGET = "com.hana.spindle.widget.ACTION_UPDATE_WIDGET"
-        const val ACTION_WIDGET_PLAY_PAUSE = "com.hana.spindle.widget.ACTION_WIDGET_PLAY_PAUSE"
-        const val ACTION_WIDGET_PREV = "com.hana.spindle.widget.ACTION_WIDGET_PREV"
-        const val ACTION_WIDGET_NEXT = "com.hana.spindle.widget.ACTION_WIDGET_NEXT"
+        const val ACTION_WIDGET_PLAY_PAUSE = WidgetControlReceiver.ACTION_WIDGET_PLAY_PAUSE
+        const val ACTION_WIDGET_PREV = WidgetControlReceiver.ACTION_WIDGET_PREV
+        const val ACTION_WIDGET_NEXT = WidgetControlReceiver.ACTION_WIDGET_NEXT
 
         fun updateAllWidgets(context: Context) {
             val appWidgetManager = AppWidgetManager.getInstance(context)
@@ -50,15 +50,7 @@ class SpindleAppWidgetProvider : AppWidgetProvider() {
         } ?: return
 
         when (intent.action) {
-            ACTION_WIDGET_PLAY_PAUSE -> {
-                app.audioEngine.togglePlayPause()
-            }
-            ACTION_WIDGET_PREV -> {
-                app.audioEngine.playPrevious(forcePreviousSong = false)
-            }
-            ACTION_WIDGET_NEXT -> {
-                app.audioEngine.playNext()
-            }
+            // Transport actions are handled by the non-exported WidgetControlReceiver.
             ACTION_UPDATE_WIDGET -> {
                 val appWidgetManager = AppWidgetManager.getInstance(context)
                 val thisWidget = ComponentName(context, SpindleAppWidgetProvider::class.java)
@@ -155,7 +147,7 @@ class SpindleAppWidgetProvider : AppWidgetProvider() {
                     views.setOnClickPendingIntent(R.id.widgetRoot, openPendingIntent)
 
                     // Transport controls pending intents
-                    val playPauseIntent = Intent(context, SpindleAppWidgetProvider::class.java).apply {
+                    val playPauseIntent = Intent(context, WidgetControlReceiver::class.java).apply {
                         action = ACTION_WIDGET_PLAY_PAUSE
                     }
                     views.setOnClickPendingIntent(
@@ -166,7 +158,7 @@ class SpindleAppWidgetProvider : AppWidgetProvider() {
                         )
                     )
 
-                    val prevIntent = Intent(context, SpindleAppWidgetProvider::class.java).apply {
+                    val prevIntent = Intent(context, WidgetControlReceiver::class.java).apply {
                         action = ACTION_WIDGET_PREV
                     }
                     views.setOnClickPendingIntent(
@@ -177,7 +169,7 @@ class SpindleAppWidgetProvider : AppWidgetProvider() {
                         )
                     )
 
-                    val nextIntent = Intent(context, SpindleAppWidgetProvider::class.java).apply {
+                    val nextIntent = Intent(context, WidgetControlReceiver::class.java).apply {
                         action = ACTION_WIDGET_NEXT
                     }
                     views.setOnClickPendingIntent(

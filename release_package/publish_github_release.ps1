@@ -37,7 +37,6 @@ Write-Host "[*] Creating GitHub Release $TAG..." -ForegroundColor Cyan
 & gh release create $TAG `
     "$ARTIFACTS_DIR/Spindle-Standard-v1.6.0-STUDIO-release.apk" `
     "$ARTIFACTS_DIR/Spindle-Standard-v1.6.0-STUDIO-release.aab" `
-    "$ARTIFACTS_DIR/Spindle-Standard-v1.6.0-STUDIO-debug.apk" `
     "$ARTIFACTS_DIR/Spindle-Lite-v1.0.1-LITE.apk" `
     "$ARTIFACTS_DIR/SHA256SUMS.txt" `
     "$ARTIFACTS_DIR/PACKAGE_INFO.json" `

@@ -229,6 +229,7 @@ class UpnpSoapClient {
     ): String? {
         if (controlPath.isBlank() && baseUrl.isBlank()) return null
         val fullUrl = resolveControlUrl(baseUrl, controlPath)
+        if (!RemoteHostPolicy.isAllowedUrl(fullUrl)) return null
 
         var conn: HttpURLConnection? = null
         return try {

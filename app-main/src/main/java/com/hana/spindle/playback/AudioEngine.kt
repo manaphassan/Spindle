@@ -21,6 +21,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.Renderer
 import androidx.media3.exoplayer.audio.AudioRendererEventListener
 import androidx.media3.exoplayer.audio.AudioSink
+import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.audio.MediaCodecAudioRenderer
 import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
@@ -92,7 +93,8 @@ data class PlaybackState(
 @UnstableApi
 class AudioEngine(
     private val context: Context,
-    val metricsTracker: AudioMetricsTracker = AudioMetricsTracker(context)
+    val metricsTracker: AudioMetricsTracker = AudioMetricsTracker(context),
+    val bitPerfectMixer: BitPerfectMixerController = BitPerfectMixerController(context)
 ) : AudioTransport {
 
     override val isPlaying: Boolean get() = _playbackState.value.isPlaying
@@ -263,7 +265,7 @@ class AudioEngine(
                 IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY)
             )
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.w("AudioEngine", "Could not register becoming-noisy receiver", e)
         }
 
         // High-resolution audio attributes
@@ -289,6 +291,8 @@ class AudioEngine(
         this.playerAudioAttributes = audioAttrs
         this.playerLoadControl = lControl
 
+        ParametricEq.load(context)
+        refreshDopPolicy()
         exoPlayer = createPlayerInstance()
         audioFxController.attachSession(exoPlayer.audioSessionId)
         restoreLastPlayedTrack()
@@ -296,6 +300,20 @@ class AudioEngine(
 
     private fun createPlayerInstance(): ExoPlayer {
         val renderersFactory = object : DefaultRenderersFactory(context) {
+            override fun buildAudioSink(
+                context: Context,
+                enableFloatOutput: Boolean,
+                enableAudioTrackPlaybackParams: Boolean
+            ): AudioSink = LevelTapAudioSink(
+                DefaultAudioSink.Builder(context)
+                    .setEnableFloatOutput(enableFloatOutput)
+                    .setEnableAudioTrackPlaybackParams(enableAudioTrackPlaybackParams)
+                    // One processor instance per sink (crossfade uses two players); shared settings.
+                    .setAudioProcessors(arrayOf<androidx.media3.common.audio.AudioProcessor>(ParametricEqProcessor()))
+                    .build(),
+                outputLevelMeter
+            ) { !isDopActive }
+
             override fun buildAudioRenderers(
                 context: Context,
                 extensionRendererMode: Int,
@@ -317,19 +335,13 @@ class AudioEngine(
                     )
                 )
             }
-
-            override fun buildAudioSink(
-                context: Context,
-                enableFloatOutput: Boolean,
-                enableAudioTrackPlaybackParams: Boolean
-            ): AudioSink? {
-                val sink =
-                    super.buildAudioSink(context, enableFloatOutput, enableAudioTrackPlaybackParams) ?: return null
-                return LevelTapAudioSink(sink, outputLevelMeter)
-            }
         }.apply {
             setEnableDecoderFallback(true)
-            setEnableAudioFloatOutput(true)
+            // Float output converts 24/32-bit PCM, which can never match a bit-perfect mixer format.
+            setEnableAudioFloatOutput(
+                !context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+                    .getBoolean(PREF_BITPERFECT_MIXER, false)
+            )
             setEnableAudioTrackPlaybackParams(false)
         }
 
@@ -407,6 +419,36 @@ class AudioEngine(
         })
     }
 
+    /** True while the current track plays as DoP over a verified bit-perfect mixer path. */
+    @Volatile
+    var isDopActive: Boolean = false
+        private set
+
+    /**
+     * (Re)reads the DoP opt-in. DoP also needs the bit-perfect mixer switch: the negotiator asks
+     * the platform for an exact 24-bit mixer format at the DoP rate and only reports success when
+     * the platform confirms it, so the extractor never emits DoP words onto a mixing path.
+     */
+    fun refreshDopPolicy() {
+        val prefs = context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+        com.hana.spindle.playback.extractor.DsdOutput.dopRequested =
+            prefs.getBoolean(com.hana.spindle.playback.extractor.PREF_DSD_DOP, false) &&
+                    prefs.getBoolean(PREF_BITPERFECT_MIXER, false)
+        com.hana.spindle.playback.extractor.DsdOutput.negotiator = { pcmRate ->
+            bitPerfectMixer.apply(true, pcmRate, 24)
+            val st = bitPerfectMixer.state.value
+            st.isVerifiedActive && st.format?.sampleRateHz == pcmRate && st.format?.bitDepth == 24
+        }
+    }
+
+    private fun isDsdTrack(track: TrackEntity) = track.fileFormat.uppercase() in setOf("DSF", "DSD")
+
+    /** Requests the platform bit-perfect mixer path (Android 14+) for this track format. */
+    fun applyBitPerfectMixer(sampleRateHz: Int, bitDepth: Int) {
+        val prefs = context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+        bitPerfectMixer.apply(prefs.getBoolean(PREF_BITPERFECT_MIXER, false), sampleRateHz, bitDepth)
+    }
+
     private fun onTrackStarted(track: TrackEntity, reason: Int = -1, isUserInitiated: Boolean = false) {
         val physicalPath = CueSheetParser.getAudioFilePath(track.path)
         val file = File(physicalPath)
@@ -430,6 +472,16 @@ class AudioEngine(
             activeLyricIndex = -1
         )
         loadLyricsForTrack(track, physicalPath)
+        val dsdTrack = isDsdTrack(track)
+        val dopRate = com.hana.spindle.playback.extractor.DopPacker.pcmRateFor(track.sampleRate)
+        if (dsdTrack && com.hana.spindle.playback.extractor.DsdOutput.dopRequested && dopRate > 0) {
+            // The extractor negotiated (or failed to) when it read the header; reflect what is live.
+            val st = bitPerfectMixer.state.value
+            isDopActive = st.isVerifiedActive && st.format?.sampleRateHz == dopRate && st.format?.bitDepth == 24
+        } else {
+            isDopActive = false
+        }
+        if (isDopActive) exoPlayer.volume = 1.0f else applyBitPerfectMixer(track.sampleRate, track.bitDepth)
         metricsTracker.updateSourceSpecs(
             format = track.fileFormat,
             bitDepth = track.bitDepth,
@@ -700,7 +752,7 @@ class AudioEngine(
                 }
 
                 // Smooth fade-out in final 10 seconds
-                if (currentSecs in 1..10) {
+                if (currentSecs in 1..10 && !isDopActive) {
                     val effectiveDb =
                         if (replayGainMode == com.hana.spindle.core.ReplayGainMode.OFF) 0f else (currentReplayGainDb + replayGainPreampDb)
                     val baseVol = if (effectiveDb == 0f) 1.0f else Math.pow(10.0, (effectiveDb / 20.0)).toFloat()
@@ -734,7 +786,7 @@ class AudioEngine(
         val effectiveDb =
             if (replayGainMode == com.hana.spindle.core.ReplayGainMode.OFF) 0f else (currentReplayGainDb + replayGainPreampDb)
         val rawLinear = if (effectiveDb == 0f) 1.0f else Math.pow(10.0, (effectiveDb / 20.0)).toFloat()
-        exoPlayer.volume = applySoftKneeLimiter(rawLinear)
+        exoPlayer.volume = if (isDopActive) 1.0f else applySoftKneeLimiter(rawLinear)
         isFadingOut = false
     }
 
@@ -835,6 +887,9 @@ class AudioEngine(
             if (!isFadingOut) exoPlayer.volume = 1.0f
             return
         }
+        if (isDopActive) {
+            exoPlayer.volume = 1.0f; return
+        } // any gain would corrupt DoP markers
         currentReplayGainDb = TagParser.extractReplayGainDb(trackFile, replayGainMode)
         val effectiveDb = currentReplayGainDb + replayGainPreampDb
         val rawLinear = if (effectiveDb == 0f) 1.0f else {
@@ -1445,7 +1500,7 @@ class AudioEngine(
             val baseVol =
                 if (effectiveDb == 0f) 1.0f else Math.pow(10.0, (effectiveDb / 20.0)).toFloat().coerceIn(0.1f, 1.0f)
 
-            if (crossfadeMode != com.hana.spindle.core.CrossfadeMode.GAPLESS && duration > crossfadeMode.durationMs * 2) {
+            if (!isDopActive && crossfadeMode != com.hana.spindle.core.CrossfadeMode.GAPLESS && duration > crossfadeMode.durationMs * 2) {
                 val remainingMs = duration - current
                 val fadeMs = crossfadeMode.durationMs
 
@@ -1546,6 +1601,7 @@ class AudioEngine(
     }
 
     fun release() {
+        bitPerfectMixer.clear()
         try {
             context.unregisterReceiver(becomingNoisyReceiver)
         } catch (ignored: Exception) {

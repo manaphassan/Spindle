@@ -54,7 +54,9 @@ class OutputLevelMeter {
 @UnstableApi
 class LevelTapAudioSink(
     sink: AudioSink,
-    private val meter: OutputLevelMeter
+    private val meter: OutputLevelMeter,
+    /** False while the PCM is not audio samples (e.g. DoP-packed DSD); the meter then rests. */
+    private val isMeasurable: () -> Boolean = { true }
 ) : ForwardingAudioSink(sink) {
 
     private companion object {
@@ -74,12 +76,16 @@ class LevelTapAudioSink(
 
     @Volatile
     private var encoding = C.ENCODING_INVALID
+
     @Volatile
     private var channelCount = 0
+
     @Volatile
     private var sampleRate = 0
+
     @Volatile
     private var audiblePositionUs = C.TIME_UNSET
+
     @Volatile
     private var audiblePositionAtMs = 0L
 
@@ -105,7 +111,7 @@ class LevelTapAudioSink(
         if (buffer !== lastBuffer || presentationTimeUs != lastBufferPtsUs) {
             lastBuffer = buffer
             lastBufferPtsUs = presentationTimeUs
-            measure(buffer, presentationTimeUs)
+            if (isMeasurable()) measure(buffer, presentationTimeUs)
         }
         return super.handleBuffer(buffer, presentationTimeUs, encodedAccessUnitCount)
     }

@@ -12,8 +12,14 @@ data class LiteRadioStation(
     val callsign: String,
     val rdsName: String,
     val genre: String,
-    val streamUrl: String
-)
+    val streamUrl: String,
+    /** Plain-HTTP URL used only on Android 4.x (API < 21), where TLS 1.2 is not available. */
+    val legacyHttpUrl: String? = null
+) {
+    /** HTTPS everywhere TLS 1.2 exists; HTTP only for KitKat-era devices that cannot use it. */
+    fun resolveUrl(sdkInt: Int): String =
+        if (sdkInt < 21 && legacyHttpUrl != null) legacyHttpUrl else streamUrl
+}
 
 class LiteRadioEngine(private val context: Context) :
     MediaPlayer.OnPreparedListener,
@@ -30,28 +36,32 @@ class LiteRadioEngine(private val context: Context) :
                 callsign = "LO-FI",
                 rdsName = "LO-FI RADIO • CHILL BEATS & AMBIENT GROOVE",
                 genre = "Chillhop / Ambient",
-                streamUrl = "http://ice1.somafm.com/groovesalad-128-mp3"
+                streamUrl = "https://ice1.somafm.com/groovesalad-128-mp3",
+                legacyHttpUrl = "http://ice1.somafm.com/groovesalad-128-mp3"
             ),
             LiteRadioStation(
                 frequencyMhz = 93.2f,
                 callsign = "ANIMEFM",
                 rdsName = "ANIMEFM RADIO • 24/7 ANIME OST & J-POP",
                 genre = "Anime & J-Pop",
-                streamUrl = "http://stream.laut.fm/animefm"
+                streamUrl = "https://stream.laut.fm/animefm",
+                legacyHttpUrl = "http://stream.laut.fm/animefm"
             ),
             LiteRadioStation(
                 frequencyMhz = 98.6f,
                 callsign = "INITIAL D",
                 rdsName = "INITIAL D WORLD RADIO • EUROBEAT SPEEDWAY",
                 genre = "Eurobeat / High Octane",
-                streamUrl = "http://stream.laut.fm/eurobeat"
+                streamUrl = "https://stream.laut.fm/eurobeat",
+                legacyHttpUrl = "http://stream.laut.fm/eurobeat"
             ),
             LiteRadioStation(
                 frequencyMhz = 104.2f,
                 callsign = "CITYPOP",
                 rdsName = "CITYPOP RADIO • 80S TOKYO GROOVE & SYNTH-POP",
                 genre = "City Pop / 80s Groove",
-                streamUrl = "http://5.178.110.76:8000/cityhunter.mp3"
+                streamUrl = "https://play.streamafrica.net/japancitypop",
+                legacyHttpUrl = "http://5.178.110.76:8000/cityhunter.mp3"
             )
         )
     }
@@ -90,7 +100,7 @@ class LiteRadioEngine(private val context: Context) :
             val player = MediaPlayer()
             @Suppress("DEPRECATION")
             player.setAudioStreamType(AudioManager.STREAM_MUSIC)
-            player.setDataSource(station.streamUrl)
+            player.setDataSource(station.resolveUrl(android.os.Build.VERSION.SDK_INT))
             player.setOnPreparedListener(this)
             player.setOnErrorListener(this)
             player.setOnBufferingUpdateListener(this)

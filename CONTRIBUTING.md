@@ -86,3 +86,15 @@ Before opening a pull request or merging changes:
 - [ ] All new UI strings are externalized in `strings.xml` (no hardcoded English strings in layout XML or Kotlin code).
 - [ ] All layout preview placeholders use `tools:text` instead of `android:text`.
 - [ ] Any shared constant added is defined in `:core` rather than duplicated across modules.
+
+## 6. CI/CD
+
+- **CI** (`.github/workflows/ci.yml`) runs on every PR and push to `main`: unit tests for `app-main`, `app-lite` and `core`, `app-main` lint (existing findings frozen in `app-main/lint-baseline.xml`, only new errors fail), debug compile of both apps, and a check that no key material is tracked.
+- **Release** (`.github/workflows/release.yml`) is tag-driven. The tag must match the module's `versionName`:
+  - `git tag v1.7.0-STUDIO && git push origin v1.7.0-STUDIO` publishes Spindle Standard (signed APK + AAB).
+  - `git tag v1.1.1-LITE && git push origin v1.1.1-LITE` publishes Spindle Lite (signed APK).
+  - Notes come from `RELEASE_NOTES_<tag>.md` if present, otherwise they are generated.
+  - Artifacts, `SHA256SUMS.txt` and the GitHub Release are produced by the workflow. Never commit binaries.
+- **Required repository secrets** (Settings → Secrets and variables → Actions): `SIGNING_KEYSTORE_BASE64` (`base64 -w0 spindle-release.jks`), `SIGNING_STORE_PASSWORD`, `SIGNING_KEY_ALIAS`, `SIGNING_KEY_PASSWORD`. The release job refuses to run without them and rejects debug-signed APKs.
+- **Dependabot** opens weekly PRs for Gradle dependencies and GitHub Actions.
+- The Studio token **signing private key is not a CI secret** and must stay offline (see `tools/StudioTokenTool.java`).

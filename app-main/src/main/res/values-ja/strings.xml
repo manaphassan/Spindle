@@ -1,4 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">スピンドル</string>
+    <string name="bitperfect_mixer_title">ビットパーフェクト ミキサー (Android 14以降)</string>
+    <string name="bitperfect_mixer_desc">USB／有線DACへサンプルレートとビット深度をそのまま渡すようAndroidに要求します。フロート出力は無効になり、次のトラックから有効です。EQとエフェクトはシステム側でバイパスされます。</string>
+    <string name="bitperfect_status_off">ビットパーフェクト ミキサー: オフ</string>
+    <string name="bitperfect_status_unsupported">Android 14以降が必要です</string>
+    <string name="bitperfect_status_no_device">USB／有線DACが接続されていません</string>
+    <string name="bitperfect_status_no_match">このトラックをDACへそのまま渡せません。Androidがリサンプリングします</string>
+    <string name="bitperfect_status_rejected">Androidがビットパーフェクト要求を拒否しました</string>
+    <string name="bitperfect_status_active">ビットパーフェクト有効: %1$d Hz / %2$d-bit</string>
+    <string name="bitperfect_badge_verified">ビットパーフェクト · 検証済み</string>
+    <string name="peq_title">パラメトリックEQ (ソフトウェア)</string>
+    <string name="peq_desc">ベル、シェルフ、パスフィルターをオーディオ経路で処理し、AutoEqテキストを読み込めます。編集は即時反映、オンにした場合は次のトラックから有効です。DSPとして扱われます。</string>
+    <string name="peq_edit">編集</string>
+    <string name="peq_dialog_title">パラメトリックEQ バンド</string>
+    <string name="peq_dialog_hint">AutoEq / Equalizer APO のテキストを1行1フィルターで貼り付けてください (例: Filter 1: ON PK Fc 1000 Hz Gain -3.0 dB Q 1.00)。</string>
+    <string name="peq_apply">適用</string>
+    <string name="peq_auto_preamp">自動プリアンプ</string>
+    <string name="peq_reset">リセット</string>
+    <string name="peq_parse_error">有効なフィルターが見つかりません</string>
+    <string name="peq_applied">%1$d 件のフィルターを適用しました</string>
+    <string name="dsd_dop_title">DSD over PCM (DoP)</string>
+    <string name="dsd_dop_desc">DSDファイルをPCMへ変換せず、DoP対応USB DACへネイティブDSDとして送ります。ビットパーフェクト ミキサーのスイッチと、DoPレートに対応したDACが必要です。DoP中は音量、ReplayGain、フェードが無効になります。先に音量を下げてください。DoP非対応のDACでは大きなノイズとして再生されます。</string>
+    <string name="signal_path_title">シグナルパス</string>
+    <string name="signal_stage_source">ソース</string>
+    <string name="signal_stage_decode">デコード</string>
+    <string name="signal_stage_dsp">DSP</string>
+    <string name="signal_stage_output">出力</string>
+    <string name="signal_dsp_none">なし (バイパス)</string>
+    <string name="a11y_deck_playing">再生中: %1$s、%2$s、%3$s</string>
+    <string name="a11y_deck_paused">一時停止: %1$s、%2$s、%3$s</string>
+    <string name="a11y_deck_empty">カセットデッキ、トラックなし</string>
 </resources>

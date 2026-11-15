@@ -220,6 +220,19 @@ class PlayerFragment : Fragment() {
             b.verticalCassetteView.progress = state.progress
             syncWalkmanDeck(state)
 
+            // Screen-reader summary of the deck (the canvas views expose nothing on their own)
+            val a11yTrack = state.currentTrack
+            val deckDescription = if (a11yTrack == null) {
+                getString(R.string.a11y_deck_empty)
+            } else {
+                getString(
+                    if (state.isPlaying) R.string.a11y_deck_playing else R.string.a11y_deck_paused,
+                    a11yTrack.title, a11yTrack.artist, a11yTrack.fileFormat
+                )
+            }
+            b.verticalDeckView.contentDescription = deckDescription
+            b.metal81ChassisView.contentDescription = deckDescription
+
             // 2. Metal-81 Red Layout
             b.metal81ChassisView.isPlaying = state.isPlaying
             b.metal81CassetteView.isPlaying = state.isPlaying
@@ -612,6 +625,7 @@ class PlayerFragment : Fragment() {
         setupVuMeterControls()
     }
 
+    @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
     private fun setupWalkmanControls() {
         val deck = binding.walkmanDeckView
         deck.levelProvider = { out -> audioEngine.outputLevelMeter.read(40L, out) }
@@ -768,6 +782,7 @@ class PlayerFragment : Fragment() {
             .start()
     }
 
+    @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
     private fun setupVuMeterControls() {
         val b = _binding ?: return
 
