@@ -11,11 +11,11 @@ import android.graphics.Shader
 import android.graphics.Typeface
 
 /**
- * Draws the Walkman chassis. Everything that never moves (brushed body, printed
+ * Draws the faceplate chassis. Everything that never moves (brushed body, printed
  * legends, recesses, key wells) is rendered once into a cached bitmap; [drawDynamic]
  * only paints lamps, counter, meter, switch knobs and keys each frame.
  */
-internal class WalkmanFaceplatePainter {
+internal class FaceplateBodyPainter {
 
     companion object {
         val KEY_LABELS = arrayOf("REW", "PLAY", "FF", "STOP", "EJECT")
@@ -83,7 +83,7 @@ internal class WalkmanFaceplatePainter {
     private val r = RectF()
     private val glyph = Path()
 
-    fun buildStatic(width: Int, height: Int, s: Float, ox: Float, oy: Float, cw: WalkmanColorway): Bitmap {
+    fun buildStatic(width: Int, height: Int, s: Float, ox: Float, oy: Float, cw: FaceplateColorway): Bitmap {
         val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val c = Canvas(bmp)
 
@@ -120,17 +120,17 @@ internal class WalkmanFaceplatePainter {
         drawText(c, "RUN", 344f, 34f, cw.bandSub, Paint.Align.RIGHT)
 
         fill.color = cw.doorFrame
-        c.drawRoundRect(WalkmanGeometry.door, 10f, 10f, fill)
+        c.drawRoundRect(FaceplateGeometry.door, 10f, 10f, fill)
         fill.color = cw.glass
-        c.drawRoundRect(WalkmanGeometry.glass, 7f, 7f, fill)
+        c.drawRoundRect(FaceplateGeometry.glass, 7f, 7f, fill)
 
         drawText(c, "COUNTER", 16f, 293f, cw.print, Paint.Align.LEFT)
         drawText(c, "RESET", 119f, 331f, cw.print, Paint.Align.CENTER)
         drawText(c, "AUTO REVERSE", 172f, 293f, cw.print, Paint.Align.CENTER)
 
         fill.color = cw.recess
-        c.drawRoundRect(WalkmanGeometry.lcd, 4f, 4f, fill)
-        c.drawRoundRect(WalkmanGeometry.meter, 6f, 6f, fill)
+        c.drawRoundRect(FaceplateGeometry.lcd, 4f, 4f, fill)
+        c.drawRoundRect(FaceplateGeometry.meter, 6f, 6f, fill)
         drawText(c, "L", 22f, 353f, cw.lcdSub, Paint.Align.CENTER)
         drawText(c, "R", 22f, 367f, cw.lcdSub, Paint.Align.CENTER)
         for ((label, i) in METER_SCALE) {
@@ -147,11 +147,11 @@ internal class WalkmanFaceplatePainter {
         r.set(16f, 424f, 176f, 440f); c.drawRoundRect(r, 8f, 8f, fill)
         r.set(196f, 424f, 344f, 440f); c.drawRoundRect(r, 8f, 8f, fill)
 
-        for (i in 0 until WalkmanGeometry.KEY_COUNT) {
-            val x = WalkmanGeometry.keyLeft(i)
-            drawText(c, KEY_LABELS[i], x + WalkmanGeometry.KEY_W / 2f, 470f, cw.print, Paint.Align.CENTER, 8.5f)
+        for (i in 0 until FaceplateGeometry.KEY_COUNT) {
+            val x = FaceplateGeometry.keyLeft(i)
+            drawText(c, KEY_LABELS[i], x + FaceplateGeometry.KEY_W / 2f, 470f, cw.print, Paint.Align.CENTER, 8.5f)
             fill.color = WELL
-            r.set(x - 2f, 474f, x + WalkmanGeometry.KEY_W + 2f, 572f)
+            r.set(x - 2f, 474f, x + FaceplateGeometry.KEY_W + 2f, 572f)
             c.drawRoundRect(r, 6f, 6f, fill)
         }
 
@@ -168,7 +168,7 @@ internal class WalkmanFaceplatePainter {
         c.drawText(t, x, y, print)
     }
 
-    fun drawDynamic(c: Canvas, st: WalkmanDeckState) {
+    fun drawDynamic(c: Canvas, st: FaceplateDeckState) {
         val cw = st.colorway
         drawLamp(c, 308f, 31f, st.running)
         drawLamp(c, 286f, 403f, st.isDirect)
@@ -208,7 +208,7 @@ internal class WalkmanFaceplatePainter {
 
         // Format readout
         c.save()
-        c.clipRect(WalkmanGeometry.lcd)
+        c.clipRect(FaceplateGeometry.lcd)
         lcdMain.color = cw.lcdText
         c.drawText(st.formatLine, 226f, 306f, lcdMain)
         lcdSub.color = cw.lcdSub
@@ -221,7 +221,7 @@ internal class WalkmanFaceplatePainter {
         drawSwitch(c, cw, 16f, 160f, TAPE_STOPS, st.tapeIndex)
         drawSwitch(c, cw, 196f, 148f, DOLBY_STOPS, st.dolbyIndex)
 
-        for (i in 0 until WalkmanGeometry.KEY_COUNT) {
+        for (i in 0 until FaceplateGeometry.KEY_COUNT) {
             drawKey(c, cw, i, st.pressedKey == i || (i == 1 && st.playLatched))
         }
     }
@@ -238,7 +238,7 @@ internal class WalkmanFaceplatePainter {
         c.drawCircle(x, y, 3f, fill)
     }
 
-    private fun drawMeterRow(c: Canvas, cw: WalkmanColorway, y: Float, lit: Int, hold: Int, clip: Boolean) {
+    private fun drawMeterRow(c: Canvas, cw: FaceplateColorway, y: Float, lit: Int, hold: Int, clip: Boolean) {
         for (i in METER_DB.indices) {
             val on = i < lit || i == hold
             fill.color = when {
@@ -254,7 +254,7 @@ internal class WalkmanFaceplatePainter {
         c.drawCircle(338f, y + 4f, 3f, fill)
     }
 
-    private fun drawSwitch(c: Canvas, cw: WalkmanColorway, x: Float, w: Float, stops: Array<String>, active: Int) {
+    private fun drawSwitch(c: Canvas, cw: FaceplateColorway, x: Float, w: Float, stops: Array<String>, active: Int) {
         val step = w / stops.size
         for (i in stops.indices) {
             val p = if (i == active) printActive.apply { color = cw.print } else printInactive.apply {
@@ -276,9 +276,9 @@ internal class WalkmanFaceplatePainter {
         }
     }
 
-    private fun drawKey(c: Canvas, cw: WalkmanColorway, i: Int, down: Boolean) {
-        val x = WalkmanGeometry.keyLeft(i)
-        val w = WalkmanGeometry.KEY_W
+    private fun drawKey(c: Canvas, cw: FaceplateColorway, i: Int, down: Boolean) {
+        val x = FaceplateGeometry.keyLeft(i)
+        val w = FaceplateGeometry.KEY_W
         val isPlay = i == 1
         val top = if (isPlay) cw.playTop else cw.keyTop
         val front = if (isPlay) cw.playFront else cw.keyFront

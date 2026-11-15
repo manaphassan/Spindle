@@ -49,14 +49,14 @@ Spindle comes in two editions so you get the smoothest experience on whatever de
 
 | Edition | Best For... | What You Get | Download |
 | :--- | :--- | :--- | :---: |
-| **Spindle Standard**<br/>`v1.7.0-STUDIO` | **Modern phones & newer DAPs**<br/>Android 8.0 or newer | • Faceplate cassette deck (Silver '81 / Pro Black) or the classic animated vertical deck<br/>• Faceplate FM / internet radio with buffer and link meters<br/>• Real output VU & LED meters<br/>• 10-band EQ, software parametric EQ with AutoEq import, tape & Dolby emulation<br/>• Bit-perfect mixer mode & DSD over PCM (Android 14+, USB / wired DAC)<br/>• FLAC, WavPack, DSD (.dsf/.dff), AIFF, MP3, AAC, Ogg / Opus<br/>• Synchronized lyrics with LRCLIB auto-download | [**Download v1.7.0 APK**](https://github.com/manaphassan/Spindle/releases/download/v1.7.0-STUDIO/Spindle-Standard-v1.7.0-STUDIO-release.apk)<br/><sub>Size: 4.6 MB · signed release</sub><br/><sub>[Release notes & checksums](https://github.com/manaphassan/Spindle/releases/tag/v1.7.0-STUDIO)</sub> |
+| **Spindle Standard**<br/>`v1.7.1-STUDIO` | **Modern phones & newer DAPs**<br/>Android 8.0 or newer | • Faceplate cassette deck (Silver '81 / Pro Black) or the classic animated vertical deck<br/>• Faceplate FM / internet radio with buffer and link meters<br/>• Real output VU & LED meters<br/>• 10-band EQ, software parametric EQ with AutoEq import, tape & Dolby emulation<br/>• Bit-perfect mixer mode & DSD over PCM (Android 14+, USB / wired DAC)<br/>• FLAC, WavPack, DSD (.dsf/.dff), AIFF, MP3, AAC, Ogg / Opus<br/>• Synchronized lyrics with LRCLIB auto-download | [**Download v1.7.1 APK**](https://github.com/manaphassan/Spindle/releases/download/v1.7.1-STUDIO/Spindle-Standard-v1.7.1-STUDIO-release.apk)<br/><sub>Size: 4.6 MB · signed release</sub><br/><sub>[Release notes & checksums](https://github.com/manaphassan/Spindle/releases/tag/v1.7.1-STUDIO)</sub> |
 | **Spindle Lite**<br/>`v1.1.1-LITE` | **Vintage phones & compact players**<br/>Android 4.4 (KitKat) down to 4.1<br/>Tiny 3-inch screens & 512MB RAM | • Super lightweight — sips battery & uses almost zero RAM<br/>• Zune HD Metro layout, typography & 5-pivot Vault (`songs`, `artists`, `albums`, `folders`, `queue`)<br/>• Zune 26-letter quick jump grid (A–Z)<br/>• Artists & Albums drill-down with Play All<br/>• 3-digit mechanical tape counter & Type IV/II/I cassette skins<br/>• Full physical button control (camera shutter, volume, d-pad)<br/>• Blazing fast on decade-old hardware | [**Download APK**](release_package/latest/Spindle-Lite-v1.1.1-LITE.apk)<br/><sub>Size: 1.73 MB</sub><br/><sub>[Release Package](release_package/latest/)</sub> |
 
 > 💡 **Not sure which one to pick?**  
 > If your phone was made in the last 6–8 years, grab **Spindle Standard**.  
 > If you're reviving an old phone from 2011–2014 (like an Xperia active, Galaxy S3, or low-RAM player), grab **Spindle Lite**.  
-> Standard v1.7.0 updates v1.6.0 in place (same signing key). It also fixes a Studio unlock weakness in v1.6.0, so please update.  
-> Checksums: Standard on the [release page](https://github.com/manaphassan/Spindle/releases/tag/v1.7.0-STUDIO), Lite in [`release_package/latest/`](release_package/latest/).
+> Standard v1.7.1 updates v1.6.0 and v1.7.0 in place (same signing key). v1.7.0 and later also fix a Studio unlock weakness in v1.6.0, so please update.  
+> Checksums: Standard on the [release page](https://github.com/manaphassan/Spindle/releases/tag/v1.7.1-STUDIO), Lite in [`release_package/latest/`](release_package/latest/).
 
 ---
 
@@ -68,7 +68,7 @@ Spindle comes in two editions so you get the smoothest experience on whatever de
       <td width="33%" align="center">
         <b>Faceplate Deck</b><br/>
         <sub>Real level meter, tape EQ & Dolby sliders</sub><br/><br/>
-        <img src="design/mockups/walkman-faceplate/device/silver_playing.png" width="240" alt="Faceplate cassette deck"/>
+        <img src="design/mockups/faceplate-deck/device/silver_playing.png" width="240" alt="Faceplate cassette deck"/>
       </td>
       <td width="33%" align="center">
         <b>Faceplate Radio</b><br/>
@@ -82,7 +82,7 @@ Spindle comes in two editions so you get the smoothest experience on whatever de
       </td>
     </tr>
   </table>
-  <sub>v1.7.0 faceplate deck style. The classic deck below is still one tap away in Settings › Display.</sub>
+  <sub>v1.7 faceplate deck style. The classic deck below is still one tap away in Settings › Display.</sub>
   <br/><br/>
   <table>
     <tr>
@@ -152,7 +152,7 @@ Getting started takes less than a minute:
 
 > 💡 **Dedicated Player Tip:** Want to turn an old phone into a dedicated music machine? In your Android Settings, go to *Default Apps → Home app* and set **Spindle** as your default home screen. Every time you press the Home button, you'll go straight back to your cassette deck!
 
-> 🔄 **Updating from v1.6.0?** Install the new APK over the old one. Your library, mixtapes and settings stay. The new faceplate deck becomes the default home deck; switch back in *Settings › Display › Home Deck Style*.
+> 🔄 **Updating from v1.6.0 or v1.7.0?** Install the new APK over the old one. Your library, mixtapes and settings stay. The new faceplate deck becomes the default home deck; switch back in *Settings › Display › Home Deck Style*.
 
 ---
 
@@ -181,7 +181,7 @@ Want to poke around under the hood, build from source, or check out the audio en
 - **[Master Technical Documentation](MASTER_DOCUMENTATION.md)** — Architecture, audio pipeline, and roadmap.
 - **[Contributing Guide](CONTRIBUTING.md)** — Module rules, naming, review checklist, CI and releases.
 - **[Canonical Glossary](docs/GLOSSARY.md)** — One name per concept across code, UI and docs.
-- **[v1.7.0 Release Notes](RELEASE_NOTES_v1.7.0-STUDIO.md)** — What changed in the current release.
+- **[v1.7.1 Release Notes](RELEASE_NOTES_v1.7.1-STUDIO.md)** and **[v1.7.0 Release Notes](RELEASE_NOTES_v1.7.0-STUDIO.md)** — What changed in the current releases.
 - **[Spindle Lite Master Documentation](docs/SPINDLE_LITE_MASTER_DOCUMENTATION.md)** — Hardware key dispatch matrix and memory optimization specs.
 - **[Brand & Design Guide](docs/BRANDING.md)** — Typography, colors, and design standards.
 

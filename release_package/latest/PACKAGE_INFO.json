@@ -32,5 +32,5 @@
       ]
     }
   ],
-  "note": "Spindle Standard is published only as signed GitHub Release assets. Current: v1.7.0-STUDIO (versionCode 9), https://github.com/manaphassan/Spindle/releases/tag/v1.7.0-STUDIO. It supersedes v1.6.0, which shipped a bypassable Studio unlock."
+  "note": "Spindle Standard is published only as signed GitHub Release assets. Current: v1.7.1-STUDIO (versionCode 10), https://github.com/manaphassan/Spindle/releases/tag/v1.7.1-STUDIO. v1.7.0 and later supersede v1.6.0, which shipped a bypassable Studio unlock."
 }

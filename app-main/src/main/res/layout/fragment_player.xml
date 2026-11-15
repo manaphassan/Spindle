@@ -23,9 +23,9 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
-        <!-- Walkman faceplate deck (default). The classic deck above stays available as a deck style. -->
-        <com.hana.spindle.ui.cassette.WalkmanDeckView
-            android:id="@+id/walkmanDeckView"
+        <!-- Faceplate deck (default). The classic deck above stays available as a deck style. -->
+        <com.hana.spindle.ui.cassette.FaceplateDeckView
+            android:id="@+id/faceplateDeckView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:visibility="gone"

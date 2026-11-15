@@ -3,10 +3,10 @@ package com.hana.spindle.ui.cassette
 import android.graphics.Color
 
 /**
- * Colorways for [WalkmanDeckView]. Values come from the approved faceplate mockup
- * (design/mockups/walkman-faceplate) and the brand palette in docs/BRANDING.md.
+ * Colorways for [FaceplateDeckView]. Values come from the approved faceplate mockup
+ * (design/mockups/faceplate-deck) and the brand palette in docs/BRANDING.md.
  */
-enum class WalkmanColorway(
+enum class FaceplateColorway(
     val prefValue: String,
     val displayName: String,
     val bodyTop: Int,
@@ -39,8 +39,8 @@ enum class WalkmanColorway(
     val hint: Int
 ) {
     SILVER(
-        prefValue = "walkman_silver",
-        displayName = "WALKMAN · SILVER '81",
+        prefValue = "faceplate_silver",
+        displayName = "FACEPLATE · SILVER '81",
         bodyTop = Color.parseColor("#DADDE2"),
         bodyBottom = Color.parseColor("#B6BBC4"),
         brushLightAlpha = 0.22f,
@@ -71,8 +71,8 @@ enum class WalkmanColorway(
         hint = Color.parseColor("#4A4F6A")
     ),
     BLACK(
-        prefValue = "walkman_black",
-        displayName = "WALKMAN · PRO BLACK",
+        prefValue = "faceplate_black",
+        displayName = "FACEPLATE · PRO BLACK",
         bodyTop = Color.parseColor("#2A2B32"),
         bodyBottom = Color.parseColor("#17181D"),
         brushLightAlpha = 0.05f,
@@ -108,6 +108,9 @@ enum class WalkmanColorway(
         const val STYLE_CLASSIC = "classic"
         val DEFAULT_STYLE = SILVER.prefValue
 
-        fun fromPref(value: String?): WalkmanColorway? = values().firstOrNull { it.prefValue == value }
+        fun fromPref(value: String?): FaceplateColorway? {
+            val current = com.hana.spindle.util.LegacyPrefsMigration.deckStyle(value)
+            return values().firstOrNull { it.prefValue == current }
+        }
     }
 }

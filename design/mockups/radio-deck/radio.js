@@ -1,5 +1,5 @@
 // Radio deck mockup - chassis, tuning wheel, meters, switches, preset keys.
-// Companion to ../walkman-faceplate: same chassis, palettes and key geometry.
+// Companion to ../faceplate-deck: same chassis, palettes and key geometry.
 (function () {
   const SANS = "Arial,sans-serif", MONO = "Consolas,monospace";
   const label = (p, x, y, t, anchor, extra) =>

@@ -12,11 +12,11 @@ import android.graphics.Shader
 import android.graphics.drawable.Drawable
 
 /**
- * Brushed-metal Walkman body as a plain background, for screens built from regular views
+ * Brushed-metal faceplate body as a plain background, for screens built from regular views
  * (the tape and radio decks paint their own). Rendered once per size into a bitmap.
  */
-class WalkmanChassisDrawable(
-    val colorway: WalkmanColorway,
+class FaceplateChassisDrawable(
+    val colorway: FaceplateColorway,
     private val density: Float,
     private val grainSeed: Long = 23L
 ) : Drawable() {

@@ -39,8 +39,8 @@ class ZuneJumpListDialog : DialogFragment() {
     var subtitleText: String = "tap a letter to jump immediately"
     var accentColor: Int = Color.parseColor("#F97316")
 
-    /** Walkman deck style: LCD-print tiles (butter on recess) instead of solid accent squares. */
-    var deckColorway: com.hana.spindle.ui.cassette.WalkmanColorway? = null
+    /** Faceplate deck style: LCD-print tiles (butter on recess) instead of solid accent squares. */
+    var deckColorway: com.hana.spindle.ui.cassette.FaceplateColorway? = null
     var onLetterSelected: ((String) -> Unit)? = null
 
     companion object {
@@ -60,7 +60,7 @@ class ZuneJumpListDialog : DialogFragment() {
             title: String = "jump",
             subtitle: String = "tap a letter to jump immediately",
             accentColor: Int = Color.parseColor("#F97316"),
-            deckColorway: com.hana.spindle.ui.cassette.WalkmanColorway? = null,
+            deckColorway: com.hana.spindle.ui.cassette.FaceplateColorway? = null,
             onLetterSelected: (String) -> Unit
         ): ZuneJumpListDialog {
             // One grid at a time: a second tap while it is opening would otherwise stack another.
@@ -138,7 +138,7 @@ class ZuneJumpListDialog : DialogFragment() {
         _binding = null
     }
 
-    private fun applyDeckChrome(cw: com.hana.spindle.ui.cassette.WalkmanColorway) {
+    private fun applyDeckChrome(cw: com.hana.spindle.ui.cassette.FaceplateColorway) {
         // Opaque on purpose: through a 96%-alpha backing, some devices (seen on an Android 8 Xperia)
         // showed a stale, offset copy of this grid behind it.
         binding.root.setBackgroundColor(cw.glass)
@@ -152,7 +152,7 @@ class ZuneJumpListDialog : DialogFragment() {
         binding.tvJumpSubtitle.setTextColor(cw.lcdSub)
     }
 
-    private fun deckTile(cw: com.hana.spindle.ui.cassette.WalkmanColorway, active: Boolean) =
+    private fun deckTile(cw: com.hana.spindle.ui.cassette.FaceplateColorway, active: Boolean) =
         android.graphics.drawable.GradientDrawable().apply {
             val d = resources.displayMetrics.density
             cornerRadius = 4 * d

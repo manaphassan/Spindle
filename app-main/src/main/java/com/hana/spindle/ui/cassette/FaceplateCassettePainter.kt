@@ -12,9 +12,9 @@ import android.graphics.Typeface
 import android.text.TextPaint
 import android.text.TextUtils
 
-/** Mutable render state shared by [WalkmanDeckView] and its painters (design units = dp). */
-internal class WalkmanDeckState {
-    var colorway = WalkmanColorway.SILVER
+/** Mutable render state shared by [FaceplateDeckView] and its painters (design units = dp). */
+internal class FaceplateDeckState {
+    var colorway = FaceplateColorway.SILVER
     var title = ""
     var subtitle = ""
     var positionLabel = "C-90 · 45 MIN PER SIDE · REFERENCE"
@@ -44,7 +44,7 @@ internal class WalkmanDeckState {
 }
 
 /** Fixed layout of the faceplate on a 360 x 592 dp design canvas. */
-internal object WalkmanGeometry {
+internal object FaceplateGeometry {
     const val DESIGN_W = 360f
     const val DESIGN_H = 592f
     const val KEY_COUNT = 5
@@ -65,7 +65,7 @@ internal object WalkmanGeometry {
     fun keyHit(i: Int, out: RectF): RectF = out.apply { set(keyLeft(i), 460f, keyLeft(i) + KEY_W, 576f) }
 }
 
-internal class WalkmanCassettePainter {
+internal class FaceplateCassettePainter {
 
     private companion object {
         val SHELL = Color.parseColor("#2E3039")
@@ -132,7 +132,7 @@ internal class WalkmanCassettePainter {
     private var cachedSubSrc = ""
     private var cachedSub = ""
 
-    fun draw(canvas: Canvas, st: WalkmanDeckState) {
+    fun draw(canvas: Canvas, st: FaceplateDeckState) {
         // Shell
         fill.color = SHELL
         tmpRect.set(26f, 64f, 334f, 262f)
@@ -169,7 +169,7 @@ internal class WalkmanCassettePainter {
         drawHeadArea(canvas)
 
         fill.shader = glare
-        canvas.drawRoundRect(WalkmanGeometry.glass, 7f, 7f, fill)
+        canvas.drawRoundRect(FaceplateGeometry.glass, 7f, 7f, fill)
         fill.shader = null
     }
 
@@ -200,7 +200,7 @@ internal class WalkmanCassettePainter {
         canvas.restore()
     }
 
-    private fun drawWindowAndReels(canvas: Canvas, st: WalkmanDeckState) {
+    private fun drawWindowAndReels(canvas: Canvas, st: FaceplateDeckState) {
         fill.color = WINDOW
         canvas.drawRoundRect(windowRect, 24f, 24f, fill)
 

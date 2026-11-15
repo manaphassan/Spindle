@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:background="@color/surface_dark">
 
-<!-- Classic tuner (deck style "Classic"). Its views also hold the tuning state used by the Walkman deck. -->
+<!-- Classic tuner (deck style "Classic"). Its views also hold the tuning state used by the faceplate deck. -->
 <LinearLayout
     android:id="@+id/classicRadioContainer"
     android:layout_width="match_parent"
@@ -359,7 +359,7 @@
 
 </LinearLayout>
 
-    <!-- Walkman radio deck (default deck style), paired with the tape deck's WalkmanDeckView -->
+    <!-- Faceplate radio deck (default deck style), paired with the tape deck's FaceplateDeckView -->
     <com.hana.spindle.ui.radio.RadioDeckView
         android:id="@+id/radioDeckView"
         android:layout_width="match_parent"

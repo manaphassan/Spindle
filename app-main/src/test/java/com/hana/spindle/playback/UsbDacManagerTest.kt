@@ -55,7 +55,7 @@ class UsbDacManagerTest {
         assertEquals("Chord", UsbDacManager.resolveBrand(0x9999, null, "Chord Mojo 2"))
         assertEquals("iFi Audio", UsbDacManager.resolveBrand(0x9999, "AMR/iFi", "GO bar"))
         assertEquals("Qudelix", UsbDacManager.resolveBrand(0x9999, "Qudelix Inc.", "5K"))
-        assertEquals("Sony Hi-Res", UsbDacManager.resolveBrand(0x9999, "Sony", "Walkman USB Audio"))
+        assertEquals("Sony Hi-Res", UsbDacManager.resolveBrand(0x9999, "Sony", "USB Audio"))
         assertEquals("Astell&Kern", UsbDacManager.resolveBrand(0x9999, "IRIVER", "Astell&Kern HC3"))
         assertEquals("Cayin", UsbDacManager.resolveBrand(0x9999, "Cayin", "RU7 1-Bit Resistor DAC"))
         assertEquals("Hidizs", UsbDacManager.resolveBrand(0x9999, "Hidizs", "S9 Pro Martha"))

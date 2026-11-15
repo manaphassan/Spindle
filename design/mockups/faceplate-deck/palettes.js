@@ -1,10 +1,10 @@
-// Spindle Walkman faceplate mockup - colorways.
+// Spindle faceplate deck mockup - colorways.
 // Brand tokens from docs/BRANDING.md: indigo #2A2E45, tangerine #F97316,
 // coral #FB7185, butter #FDE68A, stone #FAFAF9, emerald #00E676.
 window.SPINDLE_PALETTES = {
   a: {
     name: "Silver '81",
-    tagline: "Brushed aluminium + indigo band. Homage to the first-gen Walkman.",
+    tagline: "Brushed aluminium + indigo band. Homage to first-generation portable cassette players.",
     bodyTop: "#DADDE2", bodyBot: "#B6BBC4",
     brushLight: 0.22, brushDark: 0.05,
     band: "#2A2E45", wordmark: "#FAFAF9", bandSub: "#B0B4CE",

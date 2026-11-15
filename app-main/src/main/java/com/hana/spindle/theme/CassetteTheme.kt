@@ -1,4 +1,3 @@
-
 package com.hana.spindle.theme
 
 import android.graphics.Color
@@ -284,10 +283,10 @@ data class CassetteTheme(
             isDarkAppTheme = true
         )
 
-        // 10. Sony HF 90 (Quintessential 1980s Normal Bias Type I)
-        val SONY_HF_90 = CassetteTheme(
-            id = "theme_sony_hf_90",
-            name = "Sony HF 90",
+        // 10. Red Normal Type I (quintessential 1980s normal bias shell)
+        val RED_NORMAL_TYPE1 = CassetteTheme(
+            id = "theme_red_normal_type1",
+            name = "Red Normal Type I",
             subtitle = "Normal Bias Type I • 120µs Classic Red",
             chassisStyle = ChassisStyle.VERTICAL_DECK,
             chassisColor = Color.parseColor("#181A20"),
@@ -297,7 +296,7 @@ data class CassetteTheme(
             cardBorderColor = Color.parseColor("#2E333F"),
             textPrimaryColor = Color.parseColor("#FAFAF9"),
             textSecondaryColor = Color.parseColor("#9CA3AF"),
-            accentColor = Color.parseColor("#EF4444"), // Sony Racing Red
+            accentColor = Color.parseColor("#EF4444"), // Racing red
             shellColor = Color.parseColor("#16181F"),
             shellTexture = ShellTexture.CLEAR_ACRYLIC,
             labelBackgroundColor = Color.parseColor("#E5E7EB"), // Cool light gray label paper
@@ -362,10 +361,10 @@ data class CassetteTheme(
             isDarkAppTheme = true
         )
 
-        // 13. Sony Duad 90 (Type III Ferrichrome FeCr)
-        val SONY_DUAD_TYPE3 = CassetteTheme(
-            id = "theme_sony_duad_type3",
-            name = "Sony Duad Type III",
+        // 13. Ferrichrome Type III (FeCr dual-layer shell)
+        val FERRICHROME_TYPE3 = CassetteTheme(
+            id = "theme_ferrichrome_type3",
+            name = "Ferrichrome Type III",
             subtitle = "Ferrichrome FeCr • Dual-Layer Hybrid",
             chassisStyle = ChassisStyle.VERTICAL_DECK,
             chassisColor = Color.parseColor("#141D20"),
@@ -400,8 +399,8 @@ data class CassetteTheme(
             BASF_CHROME,
             SKELETON_REEL,
             REEL_TO_REEL_STUDIO,
-            SONY_HF_90,
-            SONY_DUAD_TYPE3,
+            RED_NORMAL_TYPE1,
+            FERRICHROME_TYPE3,
             DENON_HD8_100,
             METAL_81_RED
         )
@@ -410,9 +409,9 @@ data class CassetteTheme(
         val VERTICAL_STUDIO_DECK = METAL_XR_TYPE4
         val VAPORWAVE_80S = LIGHT
         val METAL_81_RED_HERO = METAL_81_RED
-        val TYPE_I_NORMAL = SONY_HF_90
+        val TYPE_I_NORMAL = RED_NORMAL_TYPE1
         val TYPE_II_CHROME = TDK_SA_90
-        val TYPE_III_FERRICHROME = SONY_DUAD_TYPE3
+        val TYPE_III_FERRICHROME = FERRICHROME_TYPE3
         val TYPE_IV_METAL = METAL_XR_TYPE4
         val ALBUM_ADAPTIVE = DARK
     }

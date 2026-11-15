@@ -1,4 +1,4 @@
-// System deck mockup - SOUND / SETTINGS / APPS on the Walkman chassis.
+// System deck mockup - SOUND / SETTINGS / APPS on the faceplate chassis.
 // Coordinates are dp on a 360x640 canvas (SO-02J: 720x1280 @ xhdpi).
 (function () {
   const SANS = "Arial,sans-serif", MONO = "Consolas,monospace";
