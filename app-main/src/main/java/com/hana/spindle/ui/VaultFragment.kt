@@ -3110,13 +3110,15 @@ class VaultFragment : Fragment() {
                 if (cover != null) {
                     pBinding.ivPanoramaArt.setImageBitmap(cover)
                 } else {
-                    pBinding.ivPanoramaArt.setImageResource(R.drawable.bg_circle_play)
+                    // No art: leave the card's own centre disc and play glyph on the plain backing.
+                    // A shape drawable here has no intrinsic size and stretches into a wide oval.
+                    pBinding.ivPanoramaArt.setImageDrawable(null)
                 }
             }
         } else {
             pBinding.tvPanoramaNpTitle.text = "No track playing"
             pBinding.tvPanoramaNpArtist.text = "Tap to choose a track"
-            pBinding.ivPanoramaArt.setImageResource(R.drawable.bg_circle_play)
+            pBinding.ivPanoramaArt.setImageDrawable(null)
         }
         pBinding.btnPanoramaPlayPause.setImageResource(
             if (state.isPlaying) R.drawable.ic_np_pause else R.drawable.ic_np_play
