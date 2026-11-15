@@ -191,7 +191,9 @@ class AudioMetricsTracker(private val context: Context) {
             }
         }
 
-        updateRouteTelemetry()
+        // Deferred: isDspActive() reads SpindleApp.audioEngine, which is still being constructed
+        // (it creates this tracker), so a synchronous call re-enters the lazy and overflows the stack.
+        scope.launch { updateRouteTelemetry() }
     }
 
     /**
