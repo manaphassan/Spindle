@@ -2,7 +2,7 @@
 
 **Release Name:** Audiophile Audio Engine, Extended Formats & AutoEQ Workshop  
 **Release Tag:** `v1.7.0-STUDIO`  
-**Build Date:** October 5, 2026  
+**Build Date:** November 16, 2026  
 **Publisher:** HaNa Innovation  
 **Core License:** [PolyForm Noncommercial 1.0.0](LICENSE) (Free personal use; commercial resale strictly prohibited)  
 **Studio Add-On License:** [Spindle Studio Collector EULA](LICENSE-STUDIO.md) (Fair Ownership · Zero Subscriptions)  
@@ -11,6 +11,33 @@
 ---
 
 ## 🎧 What's New in v1.7.0-STUDIO
+
+### 📼 Walkman Deck Style
+- **Walkman faceplate player:** a painted Walkman deck (Silver '81 and Pro Black colorways) as the new default home deck, with cassette, level meter, tape and Dolby sliders, and a DIRECT lamp that lights only when nothing changes the sound. The classic vertical deck stays available under Settings › Display › Home Deck Style.
+- **Walkman radio deck:** FM and NET bands on one tuner. Without wired headphones FM shows NO ANT instead of silently switching to NET; NET shows stream buffer and link meters.
+- **System Deck drawer:** in deck style the drawer gets a SPINDLE band with a RUN lamp, a FUNCTION switch for Sound / Settings / Apps, an LCD settings menu, letter headers in the app list and a dial-needle alphabet rail.
+- **Zune pivots:** the classic style's Vault and drawer use rotating pivot headers and snapping full-width panels; settings open as a menu of short pages.
+
+### 📊 Real Metering
+- VU meters now read the actual PCM output instead of a simulated needle, timed to what you hear.
+
+### 🏛️ Audio Engine Additions
+- **Software parametric EQ** with AutoEq / Equalizer APO text import.
+- **Bit-perfect mixer mode** (Android 14+), with a badge only when the platform confirms it.
+- **DSD over PCM (DoP)** for DSF files on a verified bit-perfect path.
+- **WavPack (.wv)** lossless playback with a pure-Kotlin decoder.
+- **FLAT reference tape** formulation as the new default.
+
+### 🛠️ Fixes
+- Fixed a crash on every launch caused by startup recursion between the audio engine and output telemetry.
+- When a track's file is missing, Spindle offers to rescan the library. If its SD card is just not inserted, tracks are kept unless you choose to remove them.
+- Launching Spindle from another app while it is the home screen no longer creates a second copy.
+- Fixed the ghosted A–Z jump list, screens left shrunk and dimmed after page jumps, and the stretched cover in the Vault hub.
+- Audio controls no longer steal vertical scroll gestures. EQ bands now need a grabbed thumb to drag; a plain tap sets the level on release.
+
+---
+
+## 🎧 Also in v1.7.0-STUDIO
 
 ### 1. 💎 Bit-Perfect 32-Bit Float PCM Pipeline & Studio Soft-Knee Limiter
 - **Direct 32-Bit Float AudioTrack Routing (`ENCODING_PCM_FLOAT`):** Configures Android's `DefaultAudioSink` and `AudioTrack` with `AudioFormat.ENCODING_PCM_FLOAT` (value 4) backed by Media3 extension preference. Decodes incoming streams directly into 32-bit single-precision IEEE 754 floating-point audio with $+140\text{ dB}$ of internal dynamic headroom.
@@ -48,8 +75,8 @@
 | :--- | :--- | :---: | :--- |
 | **`Spindle-Standard-v1.7.0-STUDIO-release.apk`** | Production APK | **Code 9** | Android 8.0+ (API 26+) |
 | **`Spindle-Standard-v1.7.0-STUDIO-release.aab`** | Google Play App Bundle | **Code 9** | Android 8.0+ (API 26+) |
-| **`Spindle-Standard-v1.7.0-STUDIO-debug.apk`** | Studio Debug Build | **Code 9** | Android 8.0+ (API 26+) |
-| **`Spindle-Lite-v1.0.1-LITE.apk`** | Vintage Hardware (HVGA) | **Code 2** | Android 4.4+ (KitKat) |
+
+Signed with the same HaNa Innovation key as v1.6.0, so it updates existing installs in place. SHA-256 checksums are in `SHA256SUMS.txt`. Spindle Lite is published separately (latest: `v1.1.1-LITE`).
 
 ---
 
@@ -58,9 +85,6 @@
 ```bash
 # Sideload via ADB to modern DAP or smartphone:
 adb install -r Spindle-Standard-v1.7.0-STUDIO-release.apk
-
-# Sideload to vintage Android 4.4 device:
-adb install -r Spindle-Lite-v1.0.1-LITE.apk
 ```
 
 <sub>Spindle · Dedicated Audiophile Music Player Launcher · HaNa Innovation</sub>
