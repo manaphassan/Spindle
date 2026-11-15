@@ -17,14 +17,14 @@ class ThemeManager(context: Context) {
         if (themeVer < 2) {
             prefs.edit()
                 .putInt("theme_version", 2)
-                .putString("selected_theme_id", CassetteTheme.METAL_XR_TYPE4.id)
+                .putString("selected_theme_id", CassetteTheme.PURE_METAL_TYPE4.id)
                 .apply()
-            return CassetteTheme.METAL_XR_TYPE4
+            return CassetteTheme.PURE_METAL_TYPE4
         }
         val savedId = com.hana.spindle.util.LegacyPrefsMigration.themeId(
-            prefs.getString("selected_theme_id", CassetteTheme.METAL_XR_TYPE4.id)
+            prefs.getString("selected_theme_id", CassetteTheme.PURE_METAL_TYPE4.id)
         )
-        return CassetteTheme.ALL_PRESETS.find { it.id == savedId } ?: CassetteTheme.METAL_XR_TYPE4
+        return CassetteTheme.ALL_PRESETS.find { it.id == savedId } ?: CassetteTheme.PURE_METAL_TYPE4
     }
 
     fun setTheme(theme: CassetteTheme) {

@@ -1692,13 +1692,13 @@ class DrawerFragment : Fragment() {
             (requireActivity().application as? SpindleApp)?.audioEngine?.foleyEngine?.playCarriageEject()
         }
 
-        binding.btnThemeMetalXr.setOnClickListener { switchTheme(CassetteTheme.METAL_XR_TYPE4) }
+        binding.btnThemePureMetal.setOnClickListener { switchTheme(CassetteTheme.PURE_METAL_TYPE4) }
         binding.btnThemeDark.setOnClickListener { switchTheme(CassetteTheme.DARK) }
         binding.btnThemeLight.setOnClickListener { switchTheme(CassetteTheme.LIGHT) }
         binding.btnThemeEink.setOnClickListener { switchTheme(CassetteTheme.MONOCHROME_EINK) }
-        binding.btnThemeTdk.setOnClickListener { switchTheme(CassetteTheme.TDK_SA_90) }
-        binding.btnThemeMaxell.setOnClickListener { switchTheme(CassetteTheme.MAXELL_XLII) }
-        binding.btnThemeBasf.setOnClickListener { switchTheme(CassetteTheme.BASF_CHROME) }
+        binding.btnThemeHighBias.setOnClickListener { switchTheme(CassetteTheme.TYPE2_HIGH_BIAS) }
+        binding.btnThemeAmberGold.setOnClickListener { switchTheme(CassetteTheme.TYPE2_AMBER_GOLD) }
+        binding.btnThemeChrome.setOnClickListener { switchTheme(CassetteTheme.TYPE2_ANTHRACITE_CHROME) }
         binding.btnThemeSkeleton.setOnClickListener { switchTheme(CassetteTheme.SKELETON_REEL) }
         binding.btnThemeStudioReel.setOnClickListener {
             if (!StudioUnlockManager.isFeatureUnlocked(
@@ -1720,7 +1720,7 @@ class DrawerFragment : Fragment() {
             switchTheme(CassetteTheme.REEL_TO_REEL_STUDIO)
         }
         binding.btnThemeRedNormal.setOnClickListener { switchTheme(CassetteTheme.RED_NORMAL_TYPE1) }
-        binding.btnThemeDenonHd.setOnClickListener { switchTheme(CassetteTheme.DENON_HD8_100) }
+        binding.btnThemeGoldHigh.setOnClickListener { switchTheme(CassetteTheme.GOLD_HIGH_TYPE2) }
         binding.btnThemeMetal81.setOnClickListener { switchTheme(CassetteTheme.METAL_81_RED) }
     }
 
@@ -1729,8 +1729,8 @@ class DrawerFragment : Fragment() {
         val isEink = curId == CassetteTheme.MONOCHROME_EINK.id
         val activeColor = ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#F97316"))
 
-        binding.btnThemeMetalXr.backgroundTintList =
-            if (curId == CassetteTheme.METAL_XR_TYPE4.id) activeColor else ColorStateList.valueOf(Color.parseColor("#18191E"))
+        binding.btnThemePureMetal.backgroundTintList =
+            if (curId == CassetteTheme.PURE_METAL_TYPE4.id) activeColor else ColorStateList.valueOf(Color.parseColor("#18191E"))
         binding.btnThemeDark.backgroundTintList =
             if (curId == CassetteTheme.DARK.id) activeColor else ColorStateList.valueOf(Color.parseColor("#202334"))
         binding.btnThemeLight.backgroundTintList =
@@ -1738,12 +1738,12 @@ class DrawerFragment : Fragment() {
         binding.btnThemeEink.backgroundTintList =
             if (isEink) activeColor else ColorStateList.valueOf(Color.parseColor("#000000"))
 
-        binding.btnThemeTdk.backgroundTintList =
-            if (curId == CassetteTheme.TDK_SA_90.id) activeColor else ColorStateList.valueOf(Color.parseColor("#242220"))
-        binding.btnThemeMaxell.backgroundTintList =
-            if (curId == CassetteTheme.MAXELL_XLII.id) activeColor else ColorStateList.valueOf(Color.parseColor("#261E14"))
-        binding.btnThemeBasf.backgroundTintList =
-            if (curId == CassetteTheme.BASF_CHROME.id) activeColor else ColorStateList.valueOf(Color.parseColor("#1F2421"))
+        binding.btnThemeHighBias.backgroundTintList =
+            if (curId == CassetteTheme.TYPE2_HIGH_BIAS.id) activeColor else ColorStateList.valueOf(Color.parseColor("#242220"))
+        binding.btnThemeAmberGold.backgroundTintList =
+            if (curId == CassetteTheme.TYPE2_AMBER_GOLD.id) activeColor else ColorStateList.valueOf(Color.parseColor("#261E14"))
+        binding.btnThemeChrome.backgroundTintList =
+            if (curId == CassetteTheme.TYPE2_ANTHRACITE_CHROME.id) activeColor else ColorStateList.valueOf(Color.parseColor("#1F2421"))
         binding.btnThemeSkeleton.backgroundTintList =
             if (curId == CassetteTheme.SKELETON_REEL.id) activeColor else ColorStateList.valueOf(Color.parseColor("#261418"))
         binding.btnThemeStudioReel.backgroundTintList =
@@ -1752,8 +1752,8 @@ class DrawerFragment : Fragment() {
             )
         binding.btnThemeRedNormal.backgroundTintList =
             if (curId == CassetteTheme.RED_NORMAL_TYPE1.id) activeColor else ColorStateList.valueOf(Color.parseColor("#181A20"))
-        binding.btnThemeDenonHd.backgroundTintList =
-            if (curId == CassetteTheme.DENON_HD8_100.id) activeColor else ColorStateList.valueOf(Color.parseColor("#141318"))
+        binding.btnThemeGoldHigh.backgroundTintList =
+            if (curId == CassetteTheme.GOLD_HIGH_TYPE2.id) activeColor else ColorStateList.valueOf(Color.parseColor("#141318"))
         binding.btnThemeMetal81.backgroundTintList =
             if (curId == CassetteTheme.METAL_81_RED.id) activeColor else ColorStateList.valueOf(Color.parseColor("#261014"))
 

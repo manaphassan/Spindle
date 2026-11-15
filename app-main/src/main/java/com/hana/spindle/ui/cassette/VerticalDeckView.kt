@@ -1056,7 +1056,7 @@ class VerticalDeckView @JvmOverloads constructor(
                 Paint.Align.CENTER; typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
             }
         } else {
-            // Dynamic Cassette Model (Dark, TDK, Maxell, BASF, Skeleton Reel)
+            // Dynamic Cassette Model (Dark, Type II shells, Skeleton Reel)
             chassisPaint.apply { color = theme.chassisColor; style = Paint.Style.FILL }
             chassisBevelPaint.apply { color = theme.diagonalBezelColor; style = Paint.Style.STROKE; strokeWidth = 3f }
             slotBevelPaint.apply { color = theme.diagonalBezelColor; style = Paint.Style.STROKE; strokeWidth = 2.5f }
@@ -2242,30 +2242,27 @@ class VerticalDeckView @JvmOverloads constructor(
         )
 
         // 11. Specular Hot-Stamped Metallic Foil Stamping on Cassette Shell
-        val isMetalXr = (theme.id == com.hana.spindle.theme.CassetteTheme.METAL_XR_TYPE4.id || theme.name.contains(
-            "Metal-XR",
-            ignoreCase = true
-        ))
-        val isTdk = (theme.id == com.hana.spindle.theme.CassetteTheme.TDK_SA_90.id)
-        val isMaxell = (theme.id == com.hana.spindle.theme.CassetteTheme.MAXELL_XLII.id)
-        val isBasf = (theme.id == com.hana.spindle.theme.CassetteTheme.BASF_CHROME.id)
+        val isPureMetal = theme.id == com.hana.spindle.theme.CassetteTheme.PURE_METAL_TYPE4.id
+        val isHighBias = (theme.id == com.hana.spindle.theme.CassetteTheme.TYPE2_HIGH_BIAS.id)
+        val isAmberGold = (theme.id == com.hana.spindle.theme.CassetteTheme.TYPE2_AMBER_GOLD.id)
+        val isChrome = (theme.id == com.hana.spindle.theme.CassetteTheme.TYPE2_ANTHRACITE_CHROME.id)
 
-        if (isMetalXr || isTdk || isMaxell || isBasf) {
+        if (isPureMetal || isHighBias || isAmberGold || isChrome) {
             val foilBrand = when {
-                isMetalXr -> "EXTRALLOY METAL-XR • TYPE IV METAL"
-                isTdk -> "TDK SA-90 • HIGH BIAS"
-                isMaxell -> "MAXELL XLII-S • HIGH BIAS"
-                else -> "BASF CHROME EXTRA II"
+                isPureMetal -> "PURE METAL • TYPE IV METAL"
+                isHighBias -> "HIGH BIAS 90 • TYPE II"
+                isAmberGold -> "AMBER GOLD 90 • TYPE II"
+                else -> "ANTHRACITE CHROME • TYPE II"
             }
             val foilX = cassetteRect.left + cw * 0.35f
             val foilY = cassetteRect.top + ch * 0.045f
 
             val foilColor1 =
-                if (isMetalXr) Color.parseColor("#EF4444") else if (isTdk) Color.parseColor("#FEF08A") else if (isMaxell) Color.parseColor(
+                if (isPureMetal) Color.parseColor("#EF4444") else if (isHighBias) Color.parseColor("#FEF08A") else if (isAmberGold) Color.parseColor(
                     "#FFFFFF"
                 ) else Color.parseColor("#FEF08A")
             val foilColor2 =
-                if (isMetalXr) Color.parseColor("#F59E0B") else if (isTdk) Color.parseColor("#D4AF37") else if (isMaxell) Color.parseColor(
+                if (isPureMetal) Color.parseColor("#F59E0B") else if (isHighBias) Color.parseColor("#D4AF37") else if (isAmberGold) Color.parseColor(
                     "#94A3B8"
                 ) else Color.parseColor("#EAB308")
 

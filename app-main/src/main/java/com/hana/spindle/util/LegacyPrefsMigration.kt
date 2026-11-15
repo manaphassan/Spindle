@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 
 /**
- * One-time rename of preference keys and values that were stored up to v1.7.0 under names
+ * One-time rename of preference keys and values that were stored up to v1.7.1 under names
  * containing third-party product names. The legacy strings below exist only so those saved
  * settings carry over; nothing new is ever written with them.
  */
@@ -23,7 +23,10 @@ object LegacyPrefsMigration {
 
     private val THEME_IDS = mapOf(
         "theme_sony_hf_90" to "theme_red_normal_type1",
-        "theme_sony_duad_type3" to "theme_ferrichrome_type3"
+        "theme_sony_duad_type3" to "theme_ferrichrome_type3",
+        // v1.7.2
+        "theme_metal_xr_type4" to "theme_pure_metal_type4",
+        "theme_denon_hd8_100" to "theme_gold_high_type2"
     )
 
     /** Current deck-style value for [value], translating a legacy one. */

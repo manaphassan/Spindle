@@ -2,7 +2,7 @@
 **Product Name:** Spindle (Audiophile DAP Launcher)  
 **Package Name:** `com.hana.spindle`  
 **Hero Hardware Inspiration:** Classic 1980s Japanese Portable Cassette Decks & Modern Minimalist Audiophile Gear  
-**Version:** 1.7.1-STUDIO (current stable release, published 2026-11-16, `versionCode` 10)  
+**Version:** 1.7.2-STUDIO (current stable release, published 2026-11-16, `versionCode` 11)  
 **Author / Art Director & Lead Systems Architect:** Spindle Core Team  
 **Platform Target:** Android 8.0 (API 26) through Android 14/15 (API 34/35)  
 **Primary Hardware Targets:** Ultra-low-resource Android DAPs, Compact Smartphones with Hardware DACs, and E-Ink DAPs  
@@ -57,8 +57,8 @@ The center home screen renders a custom hardware-accelerated Canvas deck:
 +-------------------------------------------------------------+
 ```
 
-1. **Default Metal-XR Type IV Chassis**:
-   - Centered gold/red metallic foil hot-stamping (`EXTRALLOY METAL-XR • TYPE IV METAL`) across the top edge.
+1. **Default Pure Metal Type IV Chassis**:
+   - Centered gold/red metallic foil hot-stamping (`PURE METAL • TYPE IV METAL`) across the top edge.
    - Halved spindle hub gap for authentic vintage cassette shell geometry.
 2. **Geometry & Centering (`centerWindowRect`)**:
    - The clear acrylic spindle window is centered horizontally across the display width.
@@ -82,7 +82,7 @@ Triggered by tapping the cassette body or the `[J-CARD]` badge on the deck:
 1. **3D Spatial Card Flip**:
    - Perspective Y-axis rotation (`rotationY`, `cameraDistance = 8000dp`) smoothly transitions between the physical cassette deck and the unfolded jewel-case J-Card.
 2. **Vintage Jewel-Case Cardstock Architecture**:
-   - **Spine Fold**: Bold uppercase retro typography displaying album, artist, tape model formulation (`EXTRALLOY METAL-XR 90 • TYPE IV`), and total Side A / Side B runtimes (`A: mm:ss | B: mm:ss`).
+   - **Spine Fold**: Bold uppercase retro typography displaying album, artist, tape model formulation (`PURE METAL 90 • TYPE IV`), and total Side A / Side B runtimes (`A: mm:ss | B: mm:ss`).
    - **Booklet Section**: High-resolution album artwork thumbnail frame, audiophile format specs (`FLAC 24-bit / 96kHz • Direct PCM`), and mastering notes.
    - **Dual-Column Tracklist**: Automatically splits album tracks into Side A and Side B with vintage numbering (`A01..`, `B01..`), individual track durations, and a glowing theme-accented active playing indicator (`▶`).
    - **Direct Touch-to-Play**: Tapping any track row instantly seeks and plays the selected song while seamlessly flipping back to the running tape deck.
@@ -560,7 +560,7 @@ Spindle is maintained across two targeted build modules to optimize for modern a
      Procedural Foley      Type IV Foil          Queue Drawer          Headphone AutoEQ       Cross-Platform
 ```
 
-**Current stable release:** v1.7.1-STUDIO, published 2026-11-16 (§8.7, maintenance update on v1.7.0).
+**Current stable release:** v1.7.2-STUDIO, published 2026-11-16 (§8.7, maintenance update on v1.7.0).
 
 ### 8.1 v1.2.0-RELEASE (Flagship Base Stable)
 * **Flagship Cassette Deck**: Centered acrylic spindle window with kinetic differential spool physics ($v = 4.7625\text{ cm/s}$).
@@ -612,7 +612,8 @@ Spindle is maintained across two targeted build modules to optimize for modern a
 
 ### 8.7 v1.7.0-STUDIO (Current Stable Release — Audiophile Engine & Extended Format Expansion)
 * **Release Status**: Stable, published 2026-11-16 as tag `v1.7.0-STUDIO` (`versionCode` 9, `versionName` `1.7.0-STUDIO`). Signed with the same release key as v1.6.0, so it updates existing installs in place (per `RELEASE_NOTES_v1.7.0-STUDIO.md`).
-* **v1.7.1-STUDIO maintenance update** (`versionCode` 10, current): removes third-party product names from the UI, code and stored settings. Deck styles are `faceplate_silver` / `faceplate_black`, the hold setting is `pref_hold_lock_keys`, and two shells became Red Normal Type I and Ferrichrome Type III. `util/LegacyPrefsMigration.kt` rewrites the old keys and values on first launch (`SpindleApp.onCreate`). Also re-applies the ViewPager2 depth transform on page selection and window focus, so pages are never left shrunk after waking.
+* **v1.7.1-STUDIO maintenance update** (`versionCode` 10): removes third-party product names from the UI, code and stored settings. Deck styles are `faceplate_silver` / `faceplate_black`, the hold setting is `pref_hold_lock_keys`, and two shells became Red Normal Type I and Ferrichrome Type III. `util/LegacyPrefsMigration.kt` rewrites the old keys and values on first launch (`SpindleApp.onCreate`). Also re-applies the ViewPager2 depth transform on page selection and window focus, so pages are never left shrunk after waking.
+* **v1.7.2-STUDIO maintenance update** (`versionCode` 11, current): generic names for the remaining branded cassette shells (Pure Metal Type IV, Type II High-Bias, Type II Amber Gold, Anthracite Chrome, Gold High Position), including the printed shell and J-card labels. The two shell ids that changed (`theme_pure_metal_type4`, `theme_gold_high_type2`) are migrated by `LegacyPrefsMigration`. The release workflow is now manually triggered (`workflow_dispatch`).
 * **Bit-Perfect 32-Bit Float PCM Pipeline (`ENCODING_PCM_FLOAT`)**:
   - Direct 32-bit single-precision floating-point output routing to Android HAL / `AudioTrack`.
   - $+140\text{ dB}$ internal processing dynamic headroom preventing digital clipping and quantization degradation during aggressive tone sculpting.

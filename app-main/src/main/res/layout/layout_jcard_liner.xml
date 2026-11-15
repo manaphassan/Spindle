@@ -69,7 +69,7 @@
                     android:fontFamily="monospace"
                     android:textColor="@color/text_secondary"
                     android:textSize="11sp"
-                    tools:text="EXTRALLOY METAL-XR 90 • TYPE IV 70µs" />
+                    tools:text="PURE METAL 90 • TYPE IV 70µs" />
             </LinearLayout>
 
             <TextView
