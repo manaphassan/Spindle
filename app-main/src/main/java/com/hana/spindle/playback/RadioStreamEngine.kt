@@ -43,6 +43,9 @@ class RadioStreamEngine(private val context: Context) {
         private const val PREFS_VERSION_KEY = "stations_db_version"
         private const val CURRENT_DB_VERSION = 3
 
+        /** Upper bound of the live stream buffer; also full scale of the radio deck's BUF meter. */
+        const val MAX_BUFFER_MS = 8000
+
         val PRESET_STATIONS = listOf(
             RadioStation(
                 frequencyMhz = 88.5f,
@@ -190,7 +193,7 @@ class RadioStreamEngine(private val context: Context) {
         val loadControl = DefaultLoadControl.Builder()
             .setBufferDurationsMs(
                 2000,  // Min buffer ms
-                8000,  // Max buffer ms
+                MAX_BUFFER_MS,  // Max buffer ms
                 1500,  // Playback buffer ms
                 2000   // Rebuffer ms
             )
@@ -211,7 +214,10 @@ class RadioStreamEngine(private val context: Context) {
 
                     override fun onPlaybackStateChanged(playbackState: Int) {
                         val isBuffering = (playbackState == Player.STATE_BUFFERING) && exoPlayer.playWhenReady
-                        Log.i(TAG, "onPlaybackStateChanged: state=$playbackState, isBuffering=$isBuffering, playWhenReady=${exoPlayer.playWhenReady}")
+                        Log.i(
+                            TAG,
+                            "onPlaybackStateChanged: state=$playbackState, isBuffering=$isBuffering, playWhenReady=${exoPlayer.playWhenReady}"
+                        )
                         _radioState.value = _radioState.value.copy(isBuffering = isBuffering)
                     }
 
@@ -234,6 +240,10 @@ class RadioStreamEngine(private val context: Context) {
 
     val audioSessionId: Int
         get() = exoPlayer.audioSessionId
+
+    /** Stream audio buffered ahead of the play head in ms, 0 when stopped. Call on the main thread. */
+    fun bufferedAheadMs(): Long =
+        if (exoPlayer.playWhenReady) exoPlayer.totalBufferedDuration.coerceAtLeast(0L) else 0L
 
     fun tuneTo(frequency: Float) {
         val matchingStation = findNearestStation(frequency)

@@ -1,11 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/surface_dark">
+
+<!-- Classic tuner (deck style "Classic"). Its views also hold the tuning state used by the Walkman deck. -->
+<LinearLayout
+    android:id="@+id/classicRadioContainer"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/surface_dark"
     android:paddingTop="14dp"
     android:paddingBottom="16dp"
     android:paddingHorizontal="20dp">
@@ -352,3 +358,12 @@
     </LinearLayout>
 
 </LinearLayout>
+
+    <!-- Walkman radio deck (default deck style), paired with the tape deck's WalkmanDeckView -->
+    <com.hana.spindle.ui.radio.RadioDeckView
+        android:id="@+id/radioDeckView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
+</FrameLayout>
