@@ -61,7 +61,9 @@ class VaultFragment : Fragment() {
     private lateinit var tracksListAdapter: TrackAdapter
     private var songAdapter: TrackAdapter
         get() = tracksListAdapter
-        set(value) { tracksListAdapter = value }
+        set(value) {
+            tracksListAdapter = value
+        }
 
     private lateinit var albumAdapter: AlbumAdapter
     private lateinit var folderAdapter: FolderAdapter
@@ -82,10 +84,13 @@ class VaultFragment : Fragment() {
     private var mixtapeReorderHelper: androidx.recyclerview.widget.ItemTouchHelper? = null
 
     private var currentAlbumTracks: List<TrackEntity> = emptyList()
+
     @Deprecated("Use currentAlbumTracks in accordance with canonical glossary", ReplaceWith("currentAlbumTracks"))
     private var currentAlbumSongs: List<TrackEntity>
         get() = currentAlbumTracks
-        set(value) { currentAlbumTracks = value }
+        set(value) {
+            currentAlbumTracks = value
+        }
 
     private var currentAlbumItem: AlbumItem? = null
     private var albumTracksJob: Job? = null
@@ -103,31 +108,46 @@ class VaultFragment : Fragment() {
     private var isShowingNpLyrics = false
     private var isPanoramaVisible = true
     private var currentLoadedTrackId: Long = -1L
+
     @Deprecated("Use currentLoadedTrackId in accordance with canonical glossary", ReplaceWith("currentLoadedTrackId"))
     private var currentLoadedSongId: Long
         get() = currentLoadedTrackId
-        set(value) { currentLoadedTrackId = value }
+        set(value) {
+            currentLoadedTrackId = value
+        }
 
     private var currentMiniTrackId: Long = -1L
+
     @Deprecated("Use currentMiniTrackId in accordance with canonical glossary", ReplaceWith("currentMiniTrackId"))
     private var currentMiniSongId: Long
         get() = currentMiniTrackId
-        set(value) { currentMiniTrackId = value }
+        set(value) {
+            currentMiniTrackId = value
+        }
 
     // 0: Tracks, 1: Albums, 2: Artists, 3: Mixtapes, 4: Folders, 5: Favorites, 6: Composers
     private var currentTab = 0
 
     private var allTracksList: List<TrackEntity> = emptyList()
+
     @Deprecated("Use allTracksList in accordance with canonical glossary", ReplaceWith("allTracksList"))
     private var allSongsList: List<TrackEntity>
         get() = allTracksList
-        set(value) { allTracksList = value }
+        set(value) {
+            allTracksList = value
+        }
 
     private var currentDisplayedTracks: List<TrackEntity> = emptyList()
-    @Deprecated("Use currentDisplayedTracks in accordance with canonical glossary", ReplaceWith("currentDisplayedTracks"))
+
+    @Deprecated(
+        "Use currentDisplayedTracks in accordance with canonical glossary",
+        ReplaceWith("currentDisplayedTracks")
+    )
     private var currentDisplayedSongs: List<TrackEntity>
         get() = currentDisplayedTracks
-        set(value) { currentDisplayedTracks = value }
+        set(value) {
+            currentDisplayedTracks = value
+        }
 
     private var allAlbumsList: List<AlbumItem> = emptyList()
     private var currentDisplayedAlbums: List<AlbumItem> = emptyList()
@@ -166,8 +186,12 @@ class VaultFragment : Fragment() {
         }
     }
 
-    @Deprecated("Use newInstance returning VaultFragment in accordance with canonical glossary", ReplaceWith("newInstance(openNowPlaying, initialTab)"))
-    fun newCatalogInstance(openNowPlaying: Boolean = false, initialTab: Int = -1): VaultFragment = newInstance(openNowPlaying, initialTab)
+    @Deprecated(
+        "Use newInstance returning VaultFragment in accordance with canonical glossary",
+        ReplaceWith("newInstance(openNowPlaying, initialTab)")
+    )
+    fun newCatalogInstance(openNowPlaying: Boolean = false, initialTab: Int = -1): VaultFragment =
+        newInstance(openNowPlaying, initialTab)
 
 
     override fun onCreateView(
@@ -228,14 +252,27 @@ class VaultFragment : Fragment() {
         ).apply {
             onPlayNext = { track ->
                 audioEngine.playNextInQueue(track)
-                android.widget.Toast.makeText(requireContext(), getString(R.string.toast_will_play_next, track.title), android.widget.Toast.LENGTH_SHORT).show()
+                android.widget.Toast.makeText(
+                    requireContext(),
+                    getString(R.string.toast_will_play_next, track.title),
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
             }
             onAddToQueue = { track ->
                 audioEngine.addToQueue(track)
-                android.widget.Toast.makeText(requireContext(), getString(R.string.toast_added_to_queue, track.title), android.widget.Toast.LENGTH_SHORT).show()
+                android.widget.Toast.makeText(
+                    requireContext(),
+                    getString(R.string.toast_added_to_queue, track.title),
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
             }
             onAddToMixtape = { track ->
-                MixtapeDialogs.showAddToMixtapeDialog(requireContext(), app.database, viewLifecycleOwner.lifecycleScope, track) {
+                MixtapeDialogs.showAddToMixtapeDialog(
+                    requireContext(),
+                    app.database,
+                    viewLifecycleOwner.lifecycleScope,
+                    track
+                ) {
                     if (currentTab == 6) {
                         loadMixtapes(app)
                     }
@@ -312,7 +349,11 @@ class VaultFragment : Fragment() {
                 viewLifecycleOwner.lifecycleScope.launch {
                     app.database.playlistDao().removeTrackFromPlaylist(playlistId, trackToRemove.id)
                     app.database.playlistDao().reorderPlaylist(playlistId, mutable.map { it.id })
-                    android.widget.Toast.makeText(requireContext(), getString(R.string.toast_removed_from_mixtape, trackToRemove.title), android.widget.Toast.LENGTH_SHORT).show()
+                    android.widget.Toast.makeText(
+                        requireContext(),
+                        getString(R.string.toast_removed_from_mixtape, trackToRemove.title),
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
 
@@ -349,14 +390,27 @@ class VaultFragment : Fragment() {
             showTrackNumbers = true
             onPlayNext = { track ->
                 audioEngine.playNextInQueue(track)
-                android.widget.Toast.makeText(requireContext(), getString(R.string.toast_will_play_next, track.title), android.widget.Toast.LENGTH_SHORT).show()
+                android.widget.Toast.makeText(
+                    requireContext(),
+                    getString(R.string.toast_will_play_next, track.title),
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
             }
             onAddToQueue = { track ->
                 audioEngine.addToQueue(track)
-                android.widget.Toast.makeText(requireContext(), getString(R.string.toast_added_to_queue, track.title), android.widget.Toast.LENGTH_SHORT).show()
+                android.widget.Toast.makeText(
+                    requireContext(),
+                    getString(R.string.toast_added_to_queue, track.title),
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
             }
             onAddToMixtape = { track ->
-                MixtapeDialogs.showAddToMixtapeDialog(requireContext(), app.database, viewLifecycleOwner.lifecycleScope, track) {
+                MixtapeDialogs.showAddToMixtapeDialog(
+                    requireContext(),
+                    app.database,
+                    viewLifecycleOwner.lifecycleScope,
+                    track
+                ) {
                     if (currentTab == 6) {
                         loadMixtapes(app)
                     }
@@ -386,7 +440,11 @@ class VaultFragment : Fragment() {
                         viewLifecycleOwner.lifecycleScope.launch {
                             app.database.playlistDao().removeTrackFromPlaylist(playlistId, track.id)
                             app.database.playlistDao().reorderPlaylist(playlistId, mutable.map { it.id })
-                            android.widget.Toast.makeText(requireContext(), getString(R.string.toast_removed_from_mixtape, track.title), android.widget.Toast.LENGTH_SHORT).show()
+                            android.widget.Toast.makeText(
+                                requireContext(),
+                                getString(R.string.toast_removed_from_mixtape, track.title),
+                                android.widget.Toast.LENGTH_SHORT
+                            ).show()
                         }
                     }
                 }
@@ -430,12 +488,15 @@ class VaultFragment : Fragment() {
                             when (which) {
                                 0 -> {
                                     val pinnedNow = togglePinAlbum(album)
-                                    val msg = if (pinnedNow) "Pinned '${album.album}' to Start Screen" else "Unpinned '${album.album}' from Start Screen"
+                                    val msg =
+                                        if (pinnedNow) "Pinned '${album.album}' to Start Screen" else "Unpinned '${album.album}' from Start Screen"
                                     Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
                                 }
+
                                 1 -> {
                                     viewLifecycleOwner.lifecycleScope.launch {
-                                        val tracks = app.database.playlistDao().getTracksForPlaylist(album.year.toLong()).first()
+                                        val tracks =
+                                            app.database.playlistDao().getTracksForPlaylist(album.year.toLong()).first()
                                         if (tracks.isNotEmpty()) {
                                             currentDisplayedTracks = tracks
                                             audioEngine.playQueue(tracks, 0)
@@ -443,6 +504,7 @@ class VaultFragment : Fragment() {
                                         }
                                     }
                                 }
+
                                 2 -> {
                                     MixtapeDialogs.exportMixtape(
                                         requireContext(),
@@ -452,6 +514,7 @@ class VaultFragment : Fragment() {
                                         album.album
                                     )
                                 }
+
                                 3 -> {
                                     android.app.AlertDialog.Builder(requireContext())
                                         .setTitle("Delete Mixtape")
@@ -459,7 +522,11 @@ class VaultFragment : Fragment() {
                                         .setPositiveButton("Delete") { _, _ ->
                                             viewLifecycleOwner.lifecycleScope.launch {
                                                 app.database.playlistDao().deletePlaylist(album.year.toLong())
-                                                android.widget.Toast.makeText(requireContext(), getString(R.string.toast_deleted_mixtape, album.album), android.widget.Toast.LENGTH_SHORT).show()
+                                                android.widget.Toast.makeText(
+                                                    requireContext(),
+                                                    getString(R.string.toast_deleted_mixtape, album.album),
+                                                    android.widget.Toast.LENGTH_SHORT
+                                                ).show()
                                             }
                                         }
                                         .setNegativeButton(R.string.action_cancel, null)
@@ -476,9 +543,11 @@ class VaultFragment : Fragment() {
                             when (which) {
                                 0 -> {
                                     val pinnedNow = togglePinAlbum(album)
-                                    val msg = if (pinnedNow) "Pinned '${album.album}' to Start Screen" else "Unpinned '${album.album}' from Start Screen"
+                                    val msg =
+                                        if (pinnedNow) "Pinned '${album.album}' to Start Screen" else "Unpinned '${album.album}' from Start Screen"
                                     Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
                                 }
+
                                 1 -> {
                                     viewLifecycleOwner.lifecycleScope.launch {
                                         val tracks = getTracksFlowForAlbum(app, album).first()
@@ -489,6 +558,7 @@ class VaultFragment : Fragment() {
                                         }
                                     }
                                 }
+
                                 2 -> {
                                     viewLifecycleOwner.lifecycleScope.launch {
                                         val tracks = getTracksFlowForAlbum(app, album).first()
@@ -511,9 +581,11 @@ class VaultFragment : Fragment() {
                             when (which) {
                                 0 -> {
                                     val pinnedNow = togglePinAlbum(album)
-                                    val msg = if (pinnedNow) "Pinned '${album.album}' to Start Screen" else "Unpinned '${album.album}' from Start Screen"
+                                    val msg =
+                                        if (pinnedNow) "Pinned '${album.album}' to Start Screen" else "Unpinned '${album.album}' from Start Screen"
                                     Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
                                 }
+
                                 1 -> {
                                     albumTracksJob?.cancel()
                                     albumTracksJob = viewLifecycleOwner.lifecycleScope.launch {
@@ -526,6 +598,7 @@ class VaultFragment : Fragment() {
                                         }
                                     }
                                 }
+
                                 2 -> {
                                     albumTracksJob?.cancel()
                                     albumTracksJob = viewLifecycleOwner.lifecycleScope.launch {
@@ -568,14 +641,27 @@ class VaultFragment : Fragment() {
         ).apply {
             onPlayNext = { track ->
                 audioEngine.playNextInQueue(track)
-                android.widget.Toast.makeText(requireContext(), getString(R.string.toast_will_play_next, track.title), android.widget.Toast.LENGTH_SHORT).show()
+                android.widget.Toast.makeText(
+                    requireContext(),
+                    getString(R.string.toast_will_play_next, track.title),
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
             }
             onAddToQueue = { track ->
                 audioEngine.addToQueue(track)
-                android.widget.Toast.makeText(requireContext(), getString(R.string.toast_added_to_queue, track.title), android.widget.Toast.LENGTH_SHORT).show()
+                android.widget.Toast.makeText(
+                    requireContext(),
+                    getString(R.string.toast_added_to_queue, track.title),
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
             }
             onAddToMixtape = { track ->
-                MixtapeDialogs.showAddToMixtapeDialog(requireContext(), app.database, viewLifecycleOwner.lifecycleScope, track) {
+                MixtapeDialogs.showAddToMixtapeDialog(
+                    requireContext(),
+                    app.database,
+                    viewLifecycleOwner.lifecycleScope,
+                    track
+                ) {
                     loadMixtapes(app)
                 }
             }
@@ -679,7 +765,8 @@ class VaultFragment : Fragment() {
         searchSuggestionAdapter = SearchSuggestionAdapter { suggestion ->
             binding.rvSearchSuggestions.visibility = View.GONE
             binding.etCatalogSearch.clearFocus()
-            val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
+            val imm =
+                requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
             imm?.hideSoftInputFromWindow(binding.etCatalogSearch.windowToken, 0)
 
             if (suggestion.track != null) {
@@ -736,8 +823,8 @@ class VaultFragment : Fragment() {
     fun scrollToCatalogPanel(index: Int) {
         currentCatalogPanelIndex = index.coerceIn(0, 6)
         val cBinding = _binding?.layoutCatalogCollectionPanorama ?: return
-        val dm = resources.displayMetrics
-        val panelWidth = dm.widthPixels - (52 * dm.density).toInt()
+        // Pure Zune pivots: each collection page is one full screen width.
+        val panelWidth = resources.displayMetrics.widthPixels
         val targetX = currentCatalogPanelIndex * panelWidth
         cBinding.catalogPanoramaScrollView.post {
             cBinding.catalogPanoramaScrollView.smoothScrollTo(targetX, 0)
@@ -764,17 +851,12 @@ class VaultFragment : Fragment() {
 
         tabs.forEachIndexed { i, tv ->
             val isActive = (i == index)
-            tv.alpha = if (isActive) 1.0f else 0.40f
+            // Zune pivots keep one weight and size; only brightness marks the active one.
+            tv.alpha = if (isActive) 1.0f else 0.55f
             tv.setTextColor(if (isActive) (if (isEink) Color.BLACK else Color.WHITE) else (if (isEink) Color.GRAY else Color.WHITE))
-            tv.setTypeface(null, if (isActive) Typeface.BOLD else Typeface.NORMAL)
-            tv.textSize = if (isActive) 20f else 18f
         }
 
-        val targetTab = tabs.getOrNull(index) ?: return
-        binding.tabScrollView.post {
-            val scrollX = targetTab.left - (binding.tabScrollView.width - targetTab.width) / 2
-            binding.tabScrollView.smoothScrollTo(scrollX.coerceAtLeast(0), 0)
-        }
+        ZunePivotHeader.arrange(binding.tabScrollView, binding.catalogTabBar, tabs, index)
     }
 
     private fun switchToTab(index: Int) {
@@ -798,6 +880,7 @@ class VaultFragment : Fragment() {
                         downY = e.y
                         hsv.requestDisallowInterceptTouchEvent(false)
                     }
+
                     MotionEvent.ACTION_MOVE -> {
                         val dx = kotlin.math.abs(e.x - downX)
                         val dy = kotlin.math.abs(e.y - downY)
@@ -807,6 +890,7 @@ class VaultFragment : Fragment() {
                             targetRv.parent?.requestDisallowInterceptTouchEvent(false)
                         }
                     }
+
                     MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                         targetRv.parent?.requestDisallowInterceptTouchEvent(false)
                     }
@@ -819,7 +903,7 @@ class VaultFragment : Fragment() {
     private fun setupCollectionPanorama(app: SpindleApp) {
         val cBinding = _binding?.layoutCatalogCollectionPanorama ?: return
         val dm = resources.displayMetrics
-        val panelWidth = dm.widthPixels - (52 * dm.density).toInt()
+        val panelWidth = dm.widthPixels
 
         val panels = listOf(
             cBinding.panelTracks,
@@ -835,6 +919,7 @@ class VaultFragment : Fragment() {
             lp.width = panelWidth
             panel.layoutParams = lp
         }
+        cBinding.catalogPanoramaScrollView.enableSnapping(panelWidth, panels.size, 0)
 
         // Layout managers
         cBinding.rvPanoramaTracks.layoutManager = LinearLayoutManager(requireContext())
@@ -985,7 +1070,12 @@ class VaultFragment : Fragment() {
         binding.tvMetroHeroTitle.setTextColor(primary)
         binding.layoutPanorama.tvPanoramaParallaxTitle.setTextColor(primary)
         binding.btnBackToPlayer.imageTintList = ColorStateList.valueOf(primary)
-        binding.tvScanStatus.setTextColor(if (isEink) Color.BLACK else ContextCompat.getColor(requireContext(), R.color.vfd_emerald))
+        binding.tvScanStatus.setTextColor(
+            if (isEink) Color.BLACK else ContextCompat.getColor(
+                requireContext(),
+                R.color.vfd_emerald
+            )
+        )
 
         binding.searchContainer.backgroundTintList = ColorStateList.valueOf(
             if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#202334")
@@ -1024,9 +1114,19 @@ class VaultFragment : Fragment() {
         )
         binding.btnAlbumDetailBack.imageTintList = ColorStateList.valueOf(primary)
         binding.tvAlbumDetailHeaderTitle.setTextColor(primary)
-        binding.tvAlbumDetailFormat.setTextColor(if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#2A2E45") else Color.parseColor("#00E676"))
-        binding.tvAlbumDetailFormat.backgroundTintList = ColorStateList.valueOf(if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#202334"))
-        binding.cardAlbumDetailCover.setCardBackgroundColor(if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#202334"))
+        binding.tvAlbumDetailFormat.setTextColor(
+            if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#2A2E45") else Color.parseColor(
+                "#00E676"
+            )
+        )
+        binding.tvAlbumDetailFormat.backgroundTintList = ColorStateList.valueOf(
+            if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#202334")
+        )
+        binding.cardAlbumDetailCover.setCardBackgroundColor(
+            if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor(
+                "#202334"
+            )
+        )
         binding.btnAlbumDetailCoverPlay.backgroundTintList = ColorStateList.valueOf(if (isEink) Color.BLACK else accent)
         binding.btnAlbumDetailCoverPlay.imageTintList = ColorStateList.valueOf(Color.WHITE)
         binding.tvAlbumDetailTitle.setTextColor(primary)
@@ -1034,22 +1134,34 @@ class VaultFragment : Fragment() {
         binding.tvAlbumDetailMeta.setTextColor(secondary)
         binding.btnAlbumDetailPlayAll.backgroundTintList = ColorStateList.valueOf(if (isEink) Color.BLACK else accent)
         binding.btnAlbumDetailPlayAll.setTextColor(Color.WHITE)
-        binding.btnAlbumDetailShuffle.backgroundTintList = ColorStateList.valueOf(if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#202334"))
+        binding.btnAlbumDetailShuffle.backgroundTintList = ColorStateList.valueOf(
+            if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#202334")
+        )
         binding.btnAlbumDetailShuffle.setTextColor(primary)
         currentAlbumItem?.let { updateAlbumDetailPinButton(it) }
-        binding.vAlbumDetailDivider.setBackgroundColor(if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor("#24252B"))
+        binding.vAlbumDetailDivider.setBackgroundColor(
+            if (isEink) Color.BLACK else if (!isDark) Color.parseColor("#E5E5E2") else Color.parseColor(
+                "#24252B"
+            )
+        )
 
         // Single Audio Now Playing
         binding.nowPlayingSingleContainer.setBackgroundColor(
             if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#FAFAF9") else Color.parseColor("#2A2E45")
         )
         binding.btnNpBack.imageTintList = ColorStateList.valueOf(primary)
-        binding.btnNpFavorite.imageTintList = ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#FB7185"))
+        binding.btnNpFavorite.imageTintList =
+            ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#FB7185"))
         binding.btnNpMenu.imageTintList = ColorStateList.valueOf(primary)
         binding.tvNpTitle.setTextColor(primary)
         binding.tvNpArtist.setTextColor(secondary)
         binding.tvNpArtistHeader.setTextColor(primary)
-        binding.tvNpAlbumHeader.setTextColor(if (isEink) primary else ContextCompat.getColor(requireContext(), R.color.brand_orange))
+        binding.tvNpAlbumHeader.setTextColor(
+            if (isEink) primary else ContextCompat.getColor(
+                requireContext(),
+                R.color.brand_orange
+            )
+        )
         binding.tvNpCurrentTime.setTextColor(primary)
         binding.tvNpTotalDuration.setTextColor(secondary)
         binding.btnNpPrev.imageTintList = ColorStateList.valueOf(primary)
@@ -1167,18 +1279,21 @@ class VaultFragment : Fragment() {
                     if (ch in 'A'..'Z') ch else '#'
                 }.toSet()
             }
+
             1, 2, 3, 6 -> {
                 currentDisplayedAlbums.map { album ->
                     val ch = album.album.trim().firstOrNull()?.uppercaseChar() ?: '#'
                     if (ch in 'A'..'Z') ch else '#'
                 }.toSet()
             }
+
             4 -> {
                 allFoldersList.map { folder ->
                     val ch = folder.name.trim().firstOrNull()?.uppercaseChar() ?: '#'
                     if (ch in 'A'..'Z') ch else '#'
                 }.toSet()
             }
+
             else -> emptySet()
         }
 
@@ -1212,7 +1327,8 @@ class VaultFragment : Fragment() {
         (activity?.application as? SpindleApp)?.audioEngine?.foleyEngine?.playMetroTick(if (isTop) 1.4f else 1.0f)
         val targetChar = if (isTop) ' ' else (letter.firstOrNull()?.uppercaseChar() ?: return)
         val lm = binding.rvCatalog.layoutManager
-        val panoramaLm = _binding?.layoutCatalogCollectionPanorama?.rvPanoramaTracks?.layoutManager as? LinearLayoutManager
+        val panoramaLm =
+            _binding?.layoutCatalogCollectionPanorama?.rvPanoramaTracks?.layoutManager as? LinearLayoutManager
 
         if (isTop) {
             (lm as? LinearLayoutManager)?.scrollToPositionWithOffset(0, 0)
@@ -1232,6 +1348,7 @@ class VaultFragment : Fragment() {
                     panoramaLm?.scrollToPositionWithOffset(index, 0)
                 }
             }
+
             1, 2, 3, 6 -> {
                 val index = currentDisplayedAlbums.indexOfFirst {
                     val firstChar = it.album.trim().firstOrNull()?.uppercaseChar() ?: '#'
@@ -1241,6 +1358,7 @@ class VaultFragment : Fragment() {
                     (lm as? GridLayoutManager)?.scrollToPositionWithOffset(index, 0)
                 }
             }
+
             4 -> {
                 val index = allFoldersList.indexOfFirst {
                     val firstChar = it.name.trim().firstOrNull()?.uppercaseChar() ?: '#'
@@ -1267,20 +1385,39 @@ class VaultFragment : Fragment() {
                 .setItems(options) { _, which ->
                     when (which) {
                         0 -> {
-                            MixtapeDialogs.showCreateMixtapeDialog(requireContext(), app.database, viewLifecycleOwner.lifecycleScope) {
+                            MixtapeDialogs.showCreateMixtapeDialog(
+                                requireContext(),
+                                app.database,
+                                viewLifecycleOwner.lifecycleScope
+                            ) {
                                 loadMixtapes(app)
                             }
                         }
+
                         1 -> {
-                            MixtapeDialogs.showImportM3uDialog(requireContext(), app.database, viewLifecycleOwner.lifecycleScope) {
+                            MixtapeDialogs.showImportM3uDialog(
+                                requireContext(),
+                                app.database,
+                                viewLifecycleOwner.lifecycleScope
+                            ) {
                                 loadMixtapes(app)
                             }
                         }
+
                         2 -> {
-                            MixtapeDialogs.showExportAllMixtapesDialog(requireContext(), app.database, viewLifecycleOwner.lifecycleScope)
+                            MixtapeDialogs.showExportAllMixtapesDialog(
+                                requireContext(),
+                                app.database,
+                                viewLifecycleOwner.lifecycleScope
+                            )
                         }
+
                         3 -> {
-                            MixtapeDialogs.showSyncMicroSdMixtapesDialog(requireContext(), app.database, viewLifecycleOwner.lifecycleScope) {
+                            MixtapeDialogs.showSyncMicroSdMixtapesDialog(
+                                requireContext(),
+                                app.database,
+                                viewLifecycleOwner.lifecycleScope
+                            ) {
                                 loadMixtapes(app)
                             }
                         }
@@ -1318,15 +1455,18 @@ class VaultFragment : Fragment() {
             binding.etCatalogSearch.text?.clear()
             binding.rvSearchSuggestions.visibility = View.GONE
             binding.btnSearchClear.visibility = View.GONE
-            val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
+            val imm =
+                requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
             imm?.hideSoftInputFromWindow(binding.etCatalogSearch.windowToken, 0)
         }
 
         binding.etCatalogSearch.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE ||
-                actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH) {
+                actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH
+            ) {
                 binding.rvSearchSuggestions.visibility = View.GONE
-                val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
+                val imm =
+                    requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
                 imm?.hideSoftInputFromWindow(binding.etCatalogSearch.windowToken, 0)
                 true
             } else {
@@ -1347,6 +1487,7 @@ class VaultFragment : Fragment() {
                 }
                 applyFilterAndSort()
             }
+
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
         })
@@ -1432,9 +1573,9 @@ class VaultFragment : Fragment() {
                 val fallbackTracks = allTracksList.filter { track ->
                     tokens.all { t ->
                         track.title.contains(t, ignoreCase = true) ||
-                        track.artist.contains(t, ignoreCase = true) ||
-                        track.album.contains(t, ignoreCase = true) ||
-                        track.composer?.contains(t, ignoreCase = true) == true
+                                track.artist.contains(t, ignoreCase = true) ||
+                                track.album.contains(t, ignoreCase = true) ||
+                                track.composer?.contains(t, ignoreCase = true) == true
                     }
                 }.take(4)
                 for (track in fallbackTracks) {
@@ -1451,7 +1592,7 @@ class VaultFragment : Fragment() {
                 val fallbackAlbums = allAlbumsList.filter { album ->
                     tokens.all { t ->
                         album.album.contains(t, ignoreCase = true) ||
-                        album.artist.contains(t, ignoreCase = true)
+                                album.artist.contains(t, ignoreCase = true)
                     }
                 }.take(3)
                 for (album in fallbackAlbums) {
@@ -1487,15 +1628,37 @@ class VaultFragment : Fragment() {
                     CatalogFilterChip.ALL -> list
                     CatalogFilterChip.FAVORITES -> list.filter { it.isFavorite }
                     CatalogFilterChip.RECENTLY_ADDED -> list.sortedByDescending { it.dateAdded }
-                    CatalogFilterChip.MOST_PLAYED -> list.filter { it.playCount > 0 }.sortedByDescending { it.playCount }
+                    CatalogFilterChip.MOST_PLAYED -> list.filter { it.playCount > 0 }
+                        .sortedByDescending { it.playCount }
+
                     CatalogFilterChip.COMPOSER -> list.filter { !it.composer.isNullOrBlank() }
                     CatalogFilterChip.DUPLICATES -> {
-                        val dupKeys = list.groupBy { it.title.lowercase(Locale.ROOT) to it.artist.lowercase(Locale.ROOT) }
-                            .filter { it.value.size > 1 }.keys
+                        val dupKeys =
+                            list.groupBy { it.title.lowercase(Locale.ROOT) to it.artist.lowercase(Locale.ROOT) }
+                                .filter { it.value.size > 1 }.keys
                         list.filter { (it.title.lowercase(Locale.ROOT) to it.artist.lowercase(Locale.ROOT)) in dupKeys }
                     }
-                    CatalogFilterChip.HI_RES -> list.filter { it.bitDepth >= 24 || it.sampleRate > 48000 || it.fileFormat in setOf("FLAC", "WAV", "DSD", "DSF") }
-                    CatalogFilterChip.LOSSLESS -> list.filter { it.fileFormat in setOf("FLAC", "WAV", "ALAC", "AIFF", "DSD", "DSF") }
+
+                    CatalogFilterChip.HI_RES -> list.filter {
+                        it.bitDepth >= 24 || it.sampleRate > 48000 || it.fileFormat in setOf(
+                            "FLAC",
+                            "WAV",
+                            "DSD",
+                            "DSF"
+                        )
+                    }
+
+                    CatalogFilterChip.LOSSLESS -> list.filter {
+                        it.fileFormat in setOf(
+                            "FLAC",
+                            "WAV",
+                            "ALAC",
+                            "AIFF",
+                            "DSD",
+                            "DSF"
+                        )
+                    }
+
                     CatalogFilterChip.FLAC -> list.filter { it.fileFormat == "FLAC" }
                     CatalogFilterChip.WAV -> list.filter { it.fileFormat == "WAV" }
                     CatalogFilterChip.MP3 -> list.filter { it.fileFormat == "MP3" }
@@ -1508,11 +1671,11 @@ class VaultFragment : Fragment() {
                     list = list.filter { track ->
                         tokens.all { t ->
                             track.title.contains(t, ignoreCase = true) ||
-                            track.artist.contains(t, ignoreCase = true) ||
-                            track.album.contains(t, ignoreCase = true) ||
-                            track.albumArtist?.contains(t, ignoreCase = true) == true ||
-                            track.composer?.contains(t, ignoreCase = true) == true ||
-                            track.genre?.contains(t, ignoreCase = true) == true
+                                    track.artist.contains(t, ignoreCase = true) ||
+                                    track.album.contains(t, ignoreCase = true) ||
+                                    track.albumArtist?.contains(t, ignoreCase = true) == true ||
+                                    track.composer?.contains(t, ignoreCase = true) == true ||
+                                    track.genre?.contains(t, ignoreCase = true) == true
                         }
                     }
                 }
@@ -1521,8 +1684,18 @@ class VaultFragment : Fragment() {
                 list = when (trackSortOrder) {
                     TrackSortOrder.TITLE_ASC -> list.sortedBy { it.title.lowercase(Locale.ROOT) }
                     TrackSortOrder.TITLE_DESC -> list.sortedByDescending { it.title.lowercase(Locale.ROOT) }
-                    TrackSortOrder.ARTIST_ASC -> list.sortedWith(compareBy({ it.artist.lowercase(Locale.ROOT) }, { it.title.lowercase(Locale.ROOT) }))
-                    TrackSortOrder.ALBUM_ASC -> list.sortedWith(compareBy({ it.album.lowercase(Locale.ROOT) }, { it.trackNumber }))
+                    TrackSortOrder.ARTIST_ASC -> list.sortedWith(
+                        compareBy(
+                            { it.artist.lowercase(Locale.ROOT) },
+                            { it.title.lowercase(Locale.ROOT) })
+                    )
+
+                    TrackSortOrder.ALBUM_ASC -> list.sortedWith(
+                        compareBy(
+                            { it.album.lowercase(Locale.ROOT) },
+                            { it.trackNumber })
+                    )
+
                     TrackSortOrder.TRACK_NUMBER -> list.sortedWith(compareBy({ it.discNumber }, { it.trackNumber }))
                     TrackSortOrder.YEAR_DESC -> list.sortedByDescending { it.year }
                     TrackSortOrder.YEAR_ASC -> list.sortedBy { it.year }
@@ -1537,11 +1710,34 @@ class VaultFragment : Fragment() {
                 if (groupByMode != GroupByMode.NONE) {
                     list = when (groupByMode) {
                         GroupByMode.NONE -> list
-                        GroupByMode.ARTIST -> list.sortedWith(compareBy({ it.artist.lowercase(Locale.ROOT) }, { it.album.lowercase(Locale.ROOT) }, { it.trackNumber }))
-                        GroupByMode.COMPOSER -> list.sortedWith(compareBy({ it.composer?.lowercase(Locale.ROOT) ?: "\uffff" }, { it.album.lowercase(Locale.ROOT) }, { it.trackNumber }))
-                        GroupByMode.DECADE -> list.sortedWith(compareBy({ if (it.year > 0) it.year / 10 * 10 else 9999 }, { it.year }, { it.album.lowercase(Locale.ROOT) }, { it.trackNumber }))
-                        GroupByMode.INITIAL_LETTER -> list.sortedWith(compareBy({ it.title.trim().firstOrNull()?.uppercaseChar() ?: '#' }, { it.title.lowercase(Locale.ROOT) }))
-                        GroupByMode.FORMAT -> list.sortedWith(compareBy({ it.fileFormat.uppercase(Locale.ROOT) }, { it.title.lowercase(Locale.ROOT) }))
+                        GroupByMode.ARTIST -> list.sortedWith(
+                            compareBy(
+                                { it.artist.lowercase(Locale.ROOT) },
+                                { it.album.lowercase(Locale.ROOT) },
+                                { it.trackNumber })
+                        )
+
+                        GroupByMode.COMPOSER -> list.sortedWith(compareBy({
+                            it.composer?.lowercase(Locale.ROOT) ?: "\uffff"
+                        }, { it.album.lowercase(Locale.ROOT) }, { it.trackNumber }))
+
+                        GroupByMode.DECADE -> list.sortedWith(
+                            compareBy(
+                                { if (it.year > 0) it.year / 10 * 10 else 9999 },
+                                { it.year },
+                                { it.album.lowercase(Locale.ROOT) },
+                                { it.trackNumber })
+                        )
+
+                        GroupByMode.INITIAL_LETTER -> list.sortedWith(compareBy({
+                            it.title.trim().firstOrNull()?.uppercaseChar() ?: '#'
+                        }, { it.title.lowercase(Locale.ROOT) }))
+
+                        GroupByMode.FORMAT -> list.sortedWith(
+                            compareBy(
+                                { it.fileFormat.uppercase(Locale.ROOT) },
+                                { it.title.lowercase(Locale.ROOT) })
+                        )
                     }
                 }
 
@@ -1556,6 +1752,7 @@ class VaultFragment : Fragment() {
                 }
                 binding.tvCatalogCount.text = "${list.size} tracks"
             }
+
             1, 2, 3, 6 -> {
                 var list = when (currentTab) {
                     1 -> allAlbumsList
@@ -1571,7 +1768,7 @@ class VaultFragment : Fragment() {
                     list = list.filter { item ->
                         tokens.all { t ->
                             item.album.contains(t, ignoreCase = true) ||
-                            item.artist.contains(t, ignoreCase = true)
+                                    item.artist.contains(t, ignoreCase = true)
                         }
                     }
                 }
@@ -1583,7 +1780,12 @@ class VaultFragment : Fragment() {
                     val sortedCustom = when (albumSortOrder) {
                         AlbumSortOrder.TITLE_ASC -> custom.sortedBy { it.album.lowercase(Locale.ROOT) }
                         AlbumSortOrder.TITLE_DESC -> custom.sortedByDescending { it.album.lowercase(Locale.ROOT) }
-                        AlbumSortOrder.ARTIST_ASC -> custom.sortedWith(compareBy({ it.artist.lowercase(Locale.ROOT) }, { it.album.lowercase(Locale.ROOT) }))
+                        AlbumSortOrder.ARTIST_ASC -> custom.sortedWith(
+                            compareBy(
+                                { it.artist.lowercase(Locale.ROOT) },
+                                { it.album.lowercase(Locale.ROOT) })
+                        )
+
                         AlbumSortOrder.YEAR_DESC -> custom.sortedByDescending { it.year }
                         AlbumSortOrder.YEAR_ASC -> custom.sortedBy { it.year }
                         AlbumSortOrder.TRACK_COUNT_DESC -> custom.sortedByDescending { it.trackCount }
@@ -1594,7 +1796,12 @@ class VaultFragment : Fragment() {
                     when (albumSortOrder) {
                         AlbumSortOrder.TITLE_ASC -> list.sortedBy { it.album.lowercase(Locale.ROOT) }
                         AlbumSortOrder.TITLE_DESC -> list.sortedByDescending { it.album.lowercase(Locale.ROOT) }
-                        AlbumSortOrder.ARTIST_ASC -> list.sortedWith(compareBy({ it.artist.lowercase(Locale.ROOT) }, { it.album.lowercase(Locale.ROOT) }))
+                        AlbumSortOrder.ARTIST_ASC -> list.sortedWith(
+                            compareBy(
+                                { it.artist.lowercase(Locale.ROOT) },
+                                { it.album.lowercase(Locale.ROOT) })
+                        )
+
                         AlbumSortOrder.YEAR_DESC -> list.sortedByDescending { it.year }
                         AlbumSortOrder.YEAR_ASC -> list.sortedBy { it.year }
                         AlbumSortOrder.TRACK_COUNT_DESC -> list.sortedByDescending { it.trackCount }
@@ -1609,14 +1816,17 @@ class VaultFragment : Fragment() {
                         if (::albumsAdapter.isInitialized) albumsAdapter.submitList(list)
                         _binding?.layoutCatalogCollectionPanorama?.tvAlbumsCount?.text = "${list.size} albums"
                     }
+
                     2 -> {
                         if (::artistsAdapter.isInitialized) artistsAdapter.submitList(list)
                         _binding?.layoutCatalogCollectionPanorama?.tvArtistsCount?.text = "${list.size} artists"
                     }
+
                     3 -> {
                         if (::mixtapesAdapter.isInitialized) mixtapesAdapter.submitList(list)
                         _binding?.layoutCatalogCollectionPanorama?.tvMixtapesCount?.text = "${list.size} mixtapes"
                     }
+
                     6 -> {
                         if (::composersAdapter.isInitialized) composersAdapter.submitList(list)
                         _binding?.layoutCatalogCollectionPanorama?.tvComposersCount?.text = "${list.size} composers"
@@ -1630,6 +1840,7 @@ class VaultFragment : Fragment() {
                 }
                 binding.tvCatalogCount.text = "${list.size} $unitLabel"
             }
+
             4 -> {
                 var list = allFoldersList
                 if (query.isNotEmpty()) {
@@ -1661,17 +1872,27 @@ class VaultFragment : Fragment() {
                 tList = tList.filter { track ->
                     tokens.all { t ->
                         track.title.contains(t, ignoreCase = true) ||
-                        track.artist.contains(t, ignoreCase = true) ||
-                        track.album.contains(t, ignoreCase = true) ||
-                        track.composer?.contains(t, ignoreCase = true) == true
+                                track.artist.contains(t, ignoreCase = true) ||
+                                track.album.contains(t, ignoreCase = true) ||
+                                track.composer?.contains(t, ignoreCase = true) == true
                     }
                 }
             }
             tList = when (trackSortOrder) {
                 TrackSortOrder.TITLE_ASC -> tList.sortedBy { it.title.lowercase(Locale.ROOT) }
                 TrackSortOrder.TITLE_DESC -> tList.sortedByDescending { it.title.lowercase(Locale.ROOT) }
-                TrackSortOrder.ARTIST_ASC -> tList.sortedWith(compareBy({ it.artist.lowercase(Locale.ROOT) }, { it.title.lowercase(Locale.ROOT) }))
-                TrackSortOrder.ALBUM_ASC -> tList.sortedWith(compareBy({ it.album.lowercase(Locale.ROOT) }, { it.trackNumber }))
+                TrackSortOrder.ARTIST_ASC -> tList.sortedWith(
+                    compareBy(
+                        { it.artist.lowercase(Locale.ROOT) },
+                        { it.title.lowercase(Locale.ROOT) })
+                )
+
+                TrackSortOrder.ALBUM_ASC -> tList.sortedWith(
+                    compareBy(
+                        { it.album.lowercase(Locale.ROOT) },
+                        { it.trackNumber })
+                )
+
                 TrackSortOrder.TRACK_NUMBER -> tList.sortedWith(compareBy({ it.discNumber }, { it.trackNumber }))
                 TrackSortOrder.YEAR_DESC -> tList.sortedByDescending { it.year }
                 TrackSortOrder.YEAR_ASC -> tList.sortedBy { it.year }
@@ -1691,14 +1912,19 @@ class VaultFragment : Fragment() {
                 items = items.filter { item ->
                     tokens.all { t ->
                         item.album.contains(t, ignoreCase = true) ||
-                        item.artist.contains(t, ignoreCase = true)
+                                item.artist.contains(t, ignoreCase = true)
                     }
                 }
             }
             return when (albumSortOrder) {
                 AlbumSortOrder.TITLE_ASC -> items.sortedBy { it.album.lowercase(Locale.ROOT) }
                 AlbumSortOrder.TITLE_DESC -> items.sortedByDescending { it.album.lowercase(Locale.ROOT) }
-                AlbumSortOrder.ARTIST_ASC -> items.sortedWith(compareBy({ it.artist.lowercase(Locale.ROOT) }, { it.album.lowercase(Locale.ROOT) }))
+                AlbumSortOrder.ARTIST_ASC -> items.sortedWith(
+                    compareBy(
+                        { it.artist.lowercase(Locale.ROOT) },
+                        { it.album.lowercase(Locale.ROOT) })
+                )
+
                 AlbumSortOrder.YEAR_DESC -> items.sortedByDescending { it.year }
                 AlbumSortOrder.YEAR_ASC -> items.sortedBy { it.year }
                 AlbumSortOrder.TRACK_COUNT_DESC -> items.sortedByDescending { it.trackCount }
@@ -1727,7 +1953,7 @@ class VaultFragment : Fragment() {
                 mList = mList.filter { item ->
                     tokens.all { t ->
                         item.album.contains(t, ignoreCase = true) ||
-                        item.artist.contains(t, ignoreCase = true)
+                                item.artist.contains(t, ignoreCase = true)
                     }
                 }
             }
@@ -1736,7 +1962,12 @@ class VaultFragment : Fragment() {
             val sortedCustom = when (albumSortOrder) {
                 AlbumSortOrder.TITLE_ASC -> custom.sortedBy { it.album.lowercase(Locale.ROOT) }
                 AlbumSortOrder.TITLE_DESC -> custom.sortedByDescending { it.album.lowercase(Locale.ROOT) }
-                AlbumSortOrder.ARTIST_ASC -> custom.sortedWith(compareBy({ it.artist.lowercase(Locale.ROOT) }, { it.album.lowercase(Locale.ROOT) }))
+                AlbumSortOrder.ARTIST_ASC -> custom.sortedWith(
+                    compareBy(
+                        { it.artist.lowercase(Locale.ROOT) },
+                        { it.album.lowercase(Locale.ROOT) })
+                )
+
                 AlbumSortOrder.YEAR_DESC -> custom.sortedByDescending { it.year }
                 AlbumSortOrder.YEAR_ASC -> custom.sortedBy { it.year }
                 AlbumSortOrder.TRACK_COUNT_DESC -> custom.sortedByDescending { it.trackCount }
@@ -1766,16 +1997,26 @@ class VaultFragment : Fragment() {
                 favList = favList.filter { track ->
                     tokens.all { t ->
                         track.title.contains(t, ignoreCase = true) ||
-                        track.artist.contains(t, ignoreCase = true) ||
-                        track.album.contains(t, ignoreCase = true)
+                                track.artist.contains(t, ignoreCase = true) ||
+                                track.album.contains(t, ignoreCase = true)
                     }
                 }
             }
             favList = when (trackSortOrder) {
                 TrackSortOrder.TITLE_ASC -> favList.sortedBy { it.title.lowercase(Locale.ROOT) }
                 TrackSortOrder.TITLE_DESC -> favList.sortedByDescending { it.title.lowercase(Locale.ROOT) }
-                TrackSortOrder.ARTIST_ASC -> favList.sortedWith(compareBy({ it.artist.lowercase(Locale.ROOT) }, { it.title.lowercase(Locale.ROOT) }))
-                TrackSortOrder.ALBUM_ASC -> favList.sortedWith(compareBy({ it.album.lowercase(Locale.ROOT) }, { it.trackNumber }))
+                TrackSortOrder.ARTIST_ASC -> favList.sortedWith(
+                    compareBy(
+                        { it.artist.lowercase(Locale.ROOT) },
+                        { it.title.lowercase(Locale.ROOT) })
+                )
+
+                TrackSortOrder.ALBUM_ASC -> favList.sortedWith(
+                    compareBy(
+                        { it.album.lowercase(Locale.ROOT) },
+                        { it.trackNumber })
+                )
+
                 TrackSortOrder.TRACK_NUMBER -> favList.sortedWith(compareBy({ it.discNumber }, { it.trackNumber }))
                 TrackSortOrder.YEAR_DESC -> favList.sortedByDescending { it.year }
                 TrackSortOrder.YEAR_ASC -> favList.sortedBy { it.year }
@@ -1840,7 +2081,10 @@ class VaultFragment : Fragment() {
                         b.tvNpTitle.text = track.title
                         b.tvNpArtist.text = track.artist
                         b.tvNpArtistHeader.text = track.artist.lowercase(Locale.ROOT)
-                        b.tvNpAlbumHeader.text = if (track.year > 0) "${track.album.uppercase(Locale.ROOT)} (${track.year})" else track.album.uppercase(Locale.ROOT)
+                        b.tvNpAlbumHeader.text =
+                            if (track.year > 0) "${track.album.uppercase(Locale.ROOT)} (${track.year})" else track.album.uppercase(
+                                Locale.ROOT
+                            )
                         updateNowPlayingUpNextPreview()
 
                         if (track.id != currentLoadedTrackId) {
@@ -1895,7 +2139,8 @@ class VaultFragment : Fragment() {
                                 } else {
                                     b.ivMiniArt.setPadding(8, 8, 8, 8)
                                     b.ivMiniArt.setImageResource(android.R.drawable.ic_media_play)
-                                    b.ivMiniArt.imageTintList = ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#64748B"))
+                                    b.ivMiniArt.imageTintList =
+                                        ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#64748B"))
                                 }
                             }
                         }
@@ -2009,24 +2254,26 @@ class VaultFragment : Fragment() {
         }
 
         // Swipe down on Now Playing screen to dismiss to music catalog
-        val npSwipeDownDetector = android.view.GestureDetector(requireContext(), object : android.view.GestureDetector.SimpleOnGestureListener() {
-            override fun onFling(
-                e1: android.view.MotionEvent?,
-                e2: android.view.MotionEvent,
-                velocityX: Float,
-                velocityY: Float
-            ): Boolean {
-                if (e1 == null) return false
-                val diffY = e2.y - e1.y
-                val diffX = e2.x - e1.x
-                if (diffY > 120 && kotlin.math.abs(diffY) > kotlin.math.abs(diffX) && velocityY > 200) {
-                    arguments?.putBoolean(ARG_OPEN_NOW_PLAYING, false)
-                    showNowPlayingSingleAudio(false)
-                    return true
+        val npSwipeDownDetector = android.view.GestureDetector(
+            requireContext(),
+            object : android.view.GestureDetector.SimpleOnGestureListener() {
+                override fun onFling(
+                    e1: android.view.MotionEvent?,
+                    e2: android.view.MotionEvent,
+                    velocityX: Float,
+                    velocityY: Float
+                ): Boolean {
+                    if (e1 == null) return false
+                    val diffY = e2.y - e1.y
+                    val diffX = e2.x - e1.x
+                    if (diffY > 120 && kotlin.math.abs(diffY) > kotlin.math.abs(diffX) && velocityY > 200) {
+                        arguments?.putBoolean(ARG_OPEN_NOW_PLAYING, false)
+                        showNowPlayingSingleAudio(false)
+                        return true
+                    }
+                    return false
                 }
-                return false
-            }
-        })
+            })
         binding.nowPlayingSingleContainer.setOnTouchListener { _, event ->
             npSwipeDownDetector.onTouchEvent(event)
             true
@@ -2078,9 +2325,11 @@ class VaultFragment : Fragment() {
                 binding.btnNpDownloadLyrics.isEnabled = true
                 if (downloaded != null && downloaded.lines.isNotEmpty()) {
                     audioEngine.reloadLyricsForCurrentTrack(forceDownload = false)
-                    Toast.makeText(requireContext(), "Synchronized lyrics downloaded from LRCLIB!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Synchronized lyrics downloaded from LRCLIB!", Toast.LENGTH_SHORT)
+                        .show()
                 } else {
-                    Toast.makeText(requireContext(), "No lyrics found on LRCLIB for this track.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "No lyrics found on LRCLIB for this track.", Toast.LENGTH_SHORT)
+                        .show()
                 }
             }
         }
@@ -2095,7 +2344,8 @@ class VaultFragment : Fragment() {
             binding.btnNpFavorite.imageTintList = ColorStateList.valueOf(favColor)
         } else {
             binding.btnNpFavorite.setImageResource(R.drawable.ic_np_heart)
-            binding.btnNpFavorite.imageTintList = ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#B0B4CE"))
+            binding.btnNpFavorite.imageTintList =
+                ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#B0B4CE"))
         }
     }
 
@@ -2106,17 +2356,21 @@ class VaultFragment : Fragment() {
         when (mode) {
             ShuffleMode.OFF -> {
                 binding.btnNpShuffle.setBackgroundResource(R.drawable.bg_metro_circle_button)
-                binding.btnNpShuffle.imageTintList = ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#94A3B8"))
+                binding.btnNpShuffle.imageTintList =
+                    ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#94A3B8"))
                 binding.tvNpShuffleLabel.setTextColor(if (isEink) Color.BLACK else Color.parseColor("#94A3B8"))
             }
+
             ShuffleMode.ALL -> {
                 binding.btnNpShuffle.setBackgroundResource(R.drawable.bg_metro_circle_button_active)
                 binding.btnNpShuffle.imageTintList = ColorStateList.valueOf(accent)
                 binding.tvNpShuffleLabel.setTextColor(accent)
             }
+
             ShuffleMode.ALBUM -> {
                 binding.btnNpShuffle.setBackgroundResource(R.drawable.bg_metro_circle_button_active)
-                binding.btnNpShuffle.imageTintList = ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#FDE68A"))
+                binding.btnNpShuffle.imageTintList =
+                    ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#FDE68A"))
                 binding.tvNpShuffleLabel.setTextColor(if (isEink) Color.BLACK else Color.parseColor("#FDE68A"))
             }
         }
@@ -2129,17 +2383,21 @@ class VaultFragment : Fragment() {
         when (mode) {
             RepeatMode.OFF -> {
                 binding.btnNpRepeat.setBackgroundResource(R.drawable.bg_metro_circle_button)
-                binding.btnNpRepeat.imageTintList = ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#94A3B8"))
+                binding.btnNpRepeat.imageTintList =
+                    ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#94A3B8"))
                 binding.tvNpRepeatLabel.setTextColor(if (isEink) Color.BLACK else Color.parseColor("#94A3B8"))
             }
+
             RepeatMode.ALL -> {
                 binding.btnNpRepeat.setBackgroundResource(R.drawable.bg_metro_circle_button_active)
                 binding.btnNpRepeat.imageTintList = ColorStateList.valueOf(accent)
                 binding.tvNpRepeatLabel.setTextColor(accent)
             }
+
             RepeatMode.ONE -> {
                 binding.btnNpRepeat.setBackgroundResource(R.drawable.bg_metro_circle_button_active)
-                binding.btnNpRepeat.imageTintList = ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#FB7185"))
+                binding.btnNpRepeat.imageTintList =
+                    ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#FB7185"))
                 binding.tvNpRepeatLabel.setTextColor(if (isEink) Color.BLACK else Color.parseColor("#FB7185"))
             }
         }
@@ -2155,9 +2413,10 @@ class VaultFragment : Fragment() {
                         val isDark = theme.isDarkAppTheme
                         val routeInfo = if (metrics.isBluetoothConnected) {
                             val btName = metrics.bluetoothDeviceName ?: "BT Audio"
-                            val battInfo = if (metrics.bluetoothBatteryPct != null && metrics.bluetoothBatteryPct >= 0) {
-                                " (${metrics.bluetoothBatteryPct}%)"
-                            } else ""
+                            val battInfo =
+                                if (metrics.bluetoothBatteryPct != null && metrics.bluetoothBatteryPct >= 0) {
+                                    " (${metrics.bluetoothBatteryPct}%)"
+                                } else ""
                             "${metrics.outputRoute} • $btName$battInfo"
                         } else {
                             metrics.outputRoute
@@ -2209,7 +2468,10 @@ class VaultFragment : Fragment() {
                 binding.tvNpTitle.text = track.title
                 binding.tvNpArtist.text = track.artist
                 binding.tvNpArtistHeader.text = track.artist.lowercase(Locale.ROOT)
-                binding.tvNpAlbumHeader.text = if (track.year > 0) "${track.album.uppercase(Locale.ROOT)} (${track.year})" else track.album.uppercase(Locale.ROOT)
+                binding.tvNpAlbumHeader.text =
+                    if (track.year > 0) "${track.album.uppercase(Locale.ROOT)} (${track.year})" else track.album.uppercase(
+                        Locale.ROOT
+                    )
                 val app = requireActivity().application as SpindleApp
                 viewLifecycleOwner.lifecycleScope.launch {
                     val cover = app.imageLoader.loadCover(track.path, 500, 500, track.album, track.artist)
@@ -2264,7 +2526,8 @@ class VaultFragment : Fragment() {
             val tv = upNextViews[i]
             if (nextIdx < queue.size) {
                 val nextTrack = queue[nextIdx]
-                val trackNumStr = if (nextTrack.trackNumber > 0) String.format(Locale.US, "%02d ", nextTrack.trackNumber) else ""
+                val trackNumStr =
+                    if (nextTrack.trackNumber > 0) String.format(Locale.US, "%02d ", nextTrack.trackNumber) else ""
                 tv.text = "$trackNumStr${nextTrack.title}"
                 tv.visibility = View.VISIBLE
                 tv.setOnClickListener {
@@ -2321,7 +2584,8 @@ class VaultFragment : Fragment() {
                 "\n⚠️ OVER ${mixtapePartition.capacity.label} (${overSides.joinToString(", ")})"
             } else ""
 
-            binding.tvAlbumDetailMeta.text = "$yearStr${tracks.size} Tracks • $durationFormatted\nSIDE A: ${mixtapePartition.sideA.size} trk ($sideADur) • SIDE B: ${mixtapePartition.sideB.size} trk ($sideBDur)$overWarning\n[TAP TO EDIT SIDE A/B SPLIT]"
+            binding.tvAlbumDetailMeta.text =
+                "$yearStr${tracks.size} Tracks • $durationFormatted\nSIDE A: ${mixtapePartition.sideA.size} trk ($sideADur) • SIDE B: ${mixtapePartition.sideB.size} trk ($sideBDur)$overWarning\n[TAP TO EDIT SIDE A/B SPLIT]"
             binding.tvAlbumDetailMeta.isClickable = true
             binding.tvAlbumDetailMeta.setOnClickListener {
                 app.audioEngine.foleyEngine.playTilePress()
@@ -2401,7 +2665,8 @@ class VaultFragment : Fragment() {
                 binding.ivAlbumDetailCover.imageTintList = null
                 binding.ivAlbumDetailCover.setOnClickListener(null)
             } else {
-                val cover = app.imageLoader.loadAlbumCover(album.album, album.artist, album.representativePath, 300, 300)
+                val cover =
+                    app.imageLoader.loadAlbumCover(album.album, album.artist, album.representativePath, 300, 300)
                 if (cover != null) {
                     binding.ivAlbumDetailCover.imageTintList = null
                     binding.ivAlbumDetailCover.setPadding(0, 0, 0, 0)
@@ -2451,7 +2716,8 @@ class VaultFragment : Fragment() {
             val isPinned = togglePinAlbum(album)
             app.audioEngine.foleyEngine.playPinAction(isPinned)
             updateAlbumDetailPinButton(album)
-            val msg = if (isPinned) "Pinned '${album.album}' to Start Screen" else "Unpinned '${album.album}' from Start Screen"
+            val msg =
+                if (isPinned) "Pinned '${album.album}' to Start Screen" else "Unpinned '${album.album}' from Start Screen"
             Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
         }
 
@@ -2506,12 +2772,18 @@ class VaultFragment : Fragment() {
                         try {
                             pickCoverArtLauncher.launch("image/*")
                         } catch (e: Exception) {
-                            Toast.makeText(requireContext(), "Could not launch photo picker: ${e.message}", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                requireContext(),
+                                "Could not launch photo picker: ${e.message}",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
                     }
+
                     "Search Online Artwork (iTunes / Deezer)" -> {
                         fetchCoverOnlineForDetail(album)
                     }
+
                     "Export cover.jpg to Album Folder" -> {
                         exportCoverToFolderForDetail(album)
                     }
@@ -2544,14 +2816,20 @@ class VaultFragment : Fragment() {
                                 binding.ivAlbumDetailCover.setPadding(0, 0, 0, 0)
                                 binding.ivAlbumDetailCover.setImageBitmap(bitmap)
                                 albumAdapter.notifyDataSetChanged()
-                                Toast.makeText(requireContext(), "Cover artwork updated & saved to folder!", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(
+                                    requireContext(),
+                                    "Cover artwork updated & saved to folder!",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             } else {
-                                Toast.makeText(requireContext(), "Failed to save cover image.", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(requireContext(), "Failed to save cover image.", Toast.LENGTH_SHORT)
+                                    .show()
                             }
                         }
                     } else {
                         withContext(Dispatchers.Main) {
-                            Toast.makeText(requireContext(), "Unsupported or corrupt image file.", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(requireContext(), "Unsupported or corrupt image file.", Toast.LENGTH_SHORT)
+                                .show()
                         }
                     }
                 }
@@ -2566,7 +2844,8 @@ class VaultFragment : Fragment() {
     private fun fetchCoverOnlineForDetail(album: AlbumItem) {
         val app = requireActivity().application as SpindleApp
         viewLifecycleOwner.lifecycleScope.launch {
-            Toast.makeText(requireContext(), "Searching online artwork for \"${album.album}\"...", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Searching online artwork for \"${album.album}\"...", Toast.LENGTH_SHORT)
+                .show()
             val downloaded = app.coverArtFetcher.fetchCoverForAlbum(
                 album = album.album,
                 artist = album.artist,
@@ -2574,13 +2853,15 @@ class VaultFragment : Fragment() {
                 saveToFolder = true
             )
             if (downloaded != null) {
-                val newCover = app.imageLoader.loadAlbumCover(album.album, album.artist, album.representativePath, 300, 300)
+                val newCover =
+                    app.imageLoader.loadAlbumCover(album.album, album.artist, album.representativePath, 300, 300)
                 if (newCover != null) {
                     binding.ivAlbumDetailCover.imageTintList = null
                     binding.ivAlbumDetailCover.setPadding(0, 0, 0, 0)
                     binding.ivAlbumDetailCover.setImageBitmap(newCover)
                     albumAdapter.notifyDataSetChanged()
-                    Toast.makeText(requireContext(), "Cover updated & saved to folder (cover.jpg)!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Cover updated & saved to folder (cover.jpg)!", Toast.LENGTH_SHORT)
+                        .show()
                 }
             } else {
                 Toast.makeText(requireContext(), "Artwork not found in online catalogs.", Toast.LENGTH_SHORT).show()
@@ -2597,7 +2878,13 @@ class VaultFragment : Fragment() {
             } else {
                 val bmp = app.imageLoader.loadAlbumCover(album.album, album.artist, album.representativePath, 600, 600)
                 if (bmp != null) {
-                    app.imageLoader.saveCustomCover(bmp, album.representativePath, album.album, album.artist, saveToFolder = true)
+                    app.imageLoader.saveCustomCover(
+                        bmp,
+                        album.representativePath,
+                        album.album,
+                        album.artist,
+                        saveToFolder = true
+                    )
                 } else {
                     false
                 }
@@ -2606,7 +2893,11 @@ class VaultFragment : Fragment() {
                 if (success) {
                     Toast.makeText(requireContext(), "Exported cover.jpg to album folder!", Toast.LENGTH_SHORT).show()
                 } else {
-                    Toast.makeText(requireContext(), "Could not export cover.jpg (read-only folder or storage restriction).", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        requireContext(),
+                        "Could not export cover.jpg (read-only folder or storage restriction).",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             }
         }
@@ -2654,14 +2945,15 @@ class VaultFragment : Fragment() {
 
     private fun setupPanorama(app: SpindleApp) {
         val dm = resources.displayMetrics
-        val peekPx = (52 * dm.density).toInt()
-        val panelWidth = dm.widthPixels - peekPx
+        // Full-page hub panels, like the System Hub pivots.
+        val panelWidth = dm.widthPixels
         val pBinding = binding.layoutPanorama
 
         pBinding.panelNowPlaying.layoutParams = pBinding.panelNowPlaying.layoutParams.apply { width = panelWidth }
         pBinding.panelExplore.layoutParams = pBinding.panelExplore.layoutParams.apply { width = panelWidth }
         pBinding.panelRecent.layoutParams = pBinding.panelRecent.layoutParams.apply { width = panelWidth }
         pBinding.panelTools.layoutParams = pBinding.panelTools.layoutParams.apply { width = panelWidth }
+        pBinding.panoramaScrollView.enableSnapping(panelWidth, 4, 0)
 
         pBinding.panoramaScrollView.isFocusable = false
         pBinding.panoramaScrollView.descendantFocusability = ViewGroup.FOCUS_BEFORE_DESCENDANTS
@@ -2766,8 +3058,10 @@ class VaultFragment : Fragment() {
             binding.cardMiniPlayer.visibility = View.GONE
             binding.tvCatalogHeaderTitle.text = "MUSIC HUB"
             binding.layoutPanorama.panoramaScrollView.post {
-                binding.layoutPanorama.panoramaScrollView.scrollTo(0, 0)
-                binding.layoutPanorama.tvPanoramaParallaxTitle.translationX = 0f
+                // Runs a frame later; the view may already be destroyed by then.
+                val panorama = _binding?.layoutPanorama ?: return@post
+                panorama.panoramaScrollView.scrollTo(0, 0)
+                panorama.tvPanoramaParallaxTitle.translationX = 0f
             }
             if (app != null) {
                 updatePanoramaData(app)
@@ -2844,7 +3138,8 @@ class VaultFragment : Fragment() {
             val tv = upNextViews[i]
             if (nextIdx < queue.size) {
                 val nextTrack = queue[nextIdx]
-                val trackNumStr = if (nextTrack.trackNumber > 0) String.format(Locale.US, "%02d ", nextTrack.trackNumber) else ""
+                val trackNumStr =
+                    if (nextTrack.trackNumber > 0) String.format(Locale.US, "%02d ", nextTrack.trackNumber) else ""
                 tv.text = "$trackNumStr${nextTrack.title}"
                 tv.visibility = View.VISIBLE
                 tv.setOnClickListener {
@@ -2862,25 +3157,29 @@ class VaultFragment : Fragment() {
             try {
                 val trackCount = withContext(Dispatchers.IO) { app.database.trackDao().getTrackCount() }
                 pBinding.tvMenuTracksCount.text = java.text.NumberFormat.getNumberInstance(Locale.US).format(trackCount)
-            } catch (_: Exception) {}
+            } catch (_: Exception) {
+            }
         }
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val albums = withContext(Dispatchers.IO) { app.database.trackDao().getAlbums().first() }
                 pBinding.tvMenuAlbumsCount.text = albums.size.toString()
-            } catch (_: Exception) {}
+            } catch (_: Exception) {
+            }
         }
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val artists = withContext(Dispatchers.IO) { app.database.trackDao().getArtists().first() }
                 pBinding.tvMenuArtistsCount.text = artists.size.toString()
-            } catch (_: Exception) {}
+            } catch (_: Exception) {
+            }
         }
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val mixtapes = withContext(Dispatchers.IO) { app.database.playlistDao().getAllPlaylists().first() }
                 pBinding.tvMenuMixtapesCount.text = (mixtapes.size + 6).toString()
-            } catch (_: Exception) {}
+            } catch (_: Exception) {
+            }
         }
     }
 
@@ -2902,17 +3201,20 @@ class VaultFragment : Fragment() {
                 }
 
                 if (tileAlbums.size < 4) {
-                    val recentTracks = withContext(Dispatchers.IO) { app.database.trackDao().getRecentlyAddedTracks(50).first() }
+                    val recentTracks =
+                        withContext(Dispatchers.IO) { app.database.trackDao().getRecentlyAddedTracks(50).first() }
                     for (t in recentTracks) {
                         if (t.album.isNotBlank() && seen.add(t.album)) {
-                            tileAlbums.add(AlbumItem(
-                                album = t.album,
-                                artist = t.artist,
-                                trackCount = 1,
-                                representativePath = t.path,
-                                year = t.year,
-                                format = t.fileFormat
-                            ))
+                            tileAlbums.add(
+                                AlbumItem(
+                                    album = t.album,
+                                    artist = t.artist,
+                                    trackCount = 1,
+                                    representativePath = t.path,
+                                    year = t.year,
+                                    format = t.fileFormat
+                                )
+                            )
                             if (tileAlbums.size == 4) break
                         }
                     }
@@ -2928,7 +3230,8 @@ class VaultFragment : Fragment() {
                     }
                 }
                 bindRecentAlbumTiles(app, tileAlbums, getPinnedKeys())
-            } catch (_: Exception) {}
+            } catch (_: Exception) {
+            }
         }
     }
 
@@ -2937,7 +3240,8 @@ class VaultFragment : Fragment() {
         val tiles = listOf(pBinding.tileRecent1, pBinding.tileRecent2, pBinding.tileRecent3, pBinding.tileRecent4)
         val arts = listOf(pBinding.ivTileArt1, pBinding.ivTileArt2, pBinding.ivTileArt3, pBinding.ivTileArt4)
         val titles = listOf(pBinding.tvTileTitle1, pBinding.tvTileTitle2, pBinding.tvTileTitle3, pBinding.tvTileTitle4)
-        val artists = listOf(pBinding.tvTileArtist1, pBinding.tvTileArtist2, pBinding.tvTileArtist3, pBinding.tvTileArtist4)
+        val artists =
+            listOf(pBinding.tvTileArtist1, pBinding.tvTileArtist2, pBinding.tvTileArtist3, pBinding.tvTileArtist4)
         val pins = listOf(pBinding.tvTilePin1, pBinding.tvTilePin2, pBinding.tvTilePin3, pBinding.tvTilePin4)
 
         for (i in 0 until 4) {
@@ -2951,7 +3255,8 @@ class VaultFragment : Fragment() {
                 pins[i].visibility = if (isPinned) View.VISIBLE else View.GONE
 
                 viewLifecycleOwner.lifecycleScope.launch {
-                    val bmp = app.imageLoader.loadAlbumCover(album.album, album.artist, album.representativePath, 200, 200)
+                    val bmp =
+                        app.imageLoader.loadAlbumCover(album.album, album.artist, album.representativePath, 200, 200)
                     if (bmp != null) {
                         arts[i].setImageBitmap(bmp)
                     } else {
@@ -2971,7 +3276,8 @@ class VaultFragment : Fragment() {
                     tiles[i].performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
                     val pinnedNow = togglePinAlbum(album)
                     (activity?.application as? SpindleApp)?.audioEngine?.foleyEngine?.playPinAction(pinnedNow)
-                    val msg = if (pinnedNow) "Pinned '${album.album}' to Start Screen" else "Unpinned '${album.album}' from Start Screen"
+                    val msg =
+                        if (pinnedNow) "Pinned '${album.album}' to Start Screen" else "Unpinned '${album.album}' from Start Screen"
                     Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
                     true
                 }
@@ -3034,15 +3340,18 @@ class VaultFragment : Fragment() {
             val raw = prefs.getString("pin_data_$key", null) ?: continue
             try {
                 val json = org.json.JSONObject(raw)
-                list.add(AlbumItem(
-                    album = json.getString("album"),
-                    artist = json.optString("artist", ""),
-                    trackCount = json.optInt("trackCount", 1),
-                    representativePath = json.optString("path", ""),
-                    year = json.optInt("year", 0),
-                    format = json.optString("format", "FLAC")
-                ))
-            } catch (_: Exception) {}
+                list.add(
+                    AlbumItem(
+                        album = json.getString("album"),
+                        artist = json.optString("artist", ""),
+                        trackCount = json.optInt("trackCount", 1),
+                        representativePath = json.optString("path", ""),
+                        year = json.optInt("year", 0),
+                        format = json.optString("format", "FLAC")
+                    )
+                )
+            } catch (_: Exception) {
+            }
         }
         return list
     }
@@ -3215,7 +3524,10 @@ class VaultFragment : Fragment() {
         }
     }
 
-    private fun getTracksFlowForAlbum(app: SpindleApp, album: AlbumItem): kotlinx.coroutines.flow.Flow<List<TrackEntity>> {
+    private fun getTracksFlowForAlbum(
+        app: SpindleApp,
+        album: AlbumItem
+    ): kotlinx.coroutines.flow.Flow<List<TrackEntity>> {
         return when (album.format) {
             "SMART_MIXTAPE" -> {
                 when (album.year) {
@@ -3228,6 +3540,7 @@ class VaultFragment : Fragment() {
                     else -> app.database.trackDao().getRecentlyAddedTracks(100)
                 }
             }
+
             "DISCOGRAPHY" -> app.database.trackDao().getTracksByArtist(album.album)
             "COMPOSER" -> app.database.trackDao().getTracksByComposer(album.album)
             "GENRE" -> app.database.trackDao().getTracksByGenre(album.album)
@@ -3324,7 +3637,16 @@ class VaultFragment : Fragment() {
                 }
 
                 // 6. Studio Master Hi-Res
-                val hiRes = allTracks.filter { it.bitDepth >= 24 || it.sampleRate > 48000 || it.fileFormat in listOf("FLAC", "WAV", "DSD", "DSF", "DFF", "AIFF") }
+                val hiRes = allTracks.filter {
+                    it.bitDepth >= 24 || it.sampleRate > 48000 || it.fileFormat in listOf(
+                        "FLAC",
+                        "WAV",
+                        "DSD",
+                        "DSF",
+                        "DFF",
+                        "AIFF"
+                    )
+                }
                 if (hiRes.isNotEmpty()) {
                     smartItems.add(
                         AlbumItem(

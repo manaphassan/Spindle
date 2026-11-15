@@ -8,41 +8,13 @@
     android:background="@color/surface_dark"
     android:paddingTop="8dp">
 
-    <!-- Top Navigation Bar: Back Arrow & System Hub Title -->
-    <LinearLayout
-        android:id="@+id/drawerHeaderContainer"
-        android:layout_width="match_parent"
-        android:layout_height="44dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingHorizontal="14dp">
-
-        <ImageButton
-            android:id="@+id/btnBackToPlayer"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:padding="8dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_np_back"
-            app:tint="@color/text_primary"
-            android:contentDescription="Back to Player" />
-
-        <TextView
-            android:id="@+id/tvDrawerHeaderTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="6dp"
-            android:text="SYSTEM HUB"
-            android:textColor="@color/text_primary"
-            android:textStyle="bold"
-            android:textSize="15sp"
-            android:letterSpacing="0.06" />
-    </LinearLayout>
 
     <!-- Oversized Zune Kinetic Typography Header (0.22x Parallax) -->
     <RelativeLayout
+        android:id="@+id/metroHeader"
         android:layout_width="match_parent"
-        android:layout_height="62dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
         android:clipChildren="false">
 
         <TextView
@@ -52,17 +24,20 @@
             android:layout_marginStart="14dp"
             android:text="system + tools"
             android:textColor="@color/white"
-            android:textSize="50sp"
-            android:fontFamily="sans-serif-light"
+            android:textSize="13sp"
+            android:fontFamily="sans-serif-medium"
             android:includeFontPadding="false"
-            android:singleLine="true" />
+            android:singleLine="true"
+            android:letterSpacing="0.08"
+            android:textAllCaps="true" />
     </RelativeLayout>
+
 
     <!-- TOP 3-TAB MINIMALIST ZUNE PIVOT -->
     <HorizontalScrollView
         android:id="@+id/tabScrollView"
         android:layout_width="match_parent"
-        android:layout_height="36dp"
+        android:layout_height="56dp"
         android:scrollbars="none"
         android:overScrollMode="never"
         android:layout_marginHorizontal="14dp"
@@ -78,26 +53,12 @@
             <TextView
                 android:id="@+id/btnTabEq"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_marginEnd="22dp"
+                android:gravity="center_vertical"
                 android:text="@string/drawer_tab_sound_deck"
                 android:textColor="@color/white"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:fontFamily="sans-serif-light"
-                android:clickable="true"
-                android:focusable="true"
-                android:background="?attr/selectableItemBackgroundBorderless" />
-
-            <TextView
-                android:id="@+id/btnTabApps"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="22dp"
-                android:text="@string/drawer_tab_apps"
-                android:textColor="@color/white"
-                android:textSize="18sp"
-                android:alpha="0.45"
+                android:textSize="34sp"
                 android:fontFamily="sans-serif-light"
                 android:clickable="true"
                 android:focusable="true"
@@ -106,11 +67,25 @@
             <TextView
                 android:id="@+id/btnTabSettings"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_marginEnd="22dp"
+                android:gravity="center_vertical"
                 android:text="@string/drawer_tab_settings"
                 android:textColor="@color/white"
-                android:textSize="18sp"
-                android:alpha="0.45"
+                android:textSize="34sp"
+                android:fontFamily="sans-serif-light"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackgroundBorderless" />
+
+            <TextView
+                android:id="@+id/btnTabApps"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:text="@string/drawer_tab_apps"
+                android:textColor="@color/white"
+                android:textSize="34sp"
                 android:fontFamily="sans-serif-light"
                 android:clickable="true"
                 android:focusable="true"
@@ -119,7 +94,7 @@
     </HorizontalScrollView>
 
     <!-- Horizontal Continuous Panorama Viewport -->
-    <HorizontalScrollView
+    <com.hana.spindle.ui.SnappingPanoramaView
         android:id="@+id/drawerPanoramaScrollView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -149,27 +124,8 @@
                 android:layout_height="match_parent"
                 android:orientation="vertical"
                 android:paddingStart="14dp"
-                android:paddingEnd="10dp">
+                android:paddingEnd="14dp">
 
-                <TextView
-                    android:id="@+id/tvHeaderSoundDeck"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="sound deck"
-                    android:textColor="@color/white"
-                    android:textSize="22sp"
-                    android:textStyle="bold"
-                    android:fontFamily="sans-serif-light" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="10-band hardware eq &amp; acoustic dsp"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="12sp"
-                    android:fontFamily="sans-serif"
-                    android:layout_marginTop="2dp"
-                    android:layout_marginBottom="8dp" />
 
                 <!-- TAB 2: HARDWARE ACOUSTIC EQ AND DSP TUNING DECK -->
                 <ScrollView
@@ -993,116 +949,15 @@
 
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
+
             </LinearLayout>
         </ScrollView>
     </LinearLayout>
 
-    <!-- ============================================== -->
-    <!-- PANEL 1: APPS                                  -->
-    <!-- ============================================== -->
-    <LinearLayout
-        android:id="@+id/panelApps"
-        android:layout_width="300dp"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:paddingStart="14dp"
-        android:paddingEnd="10dp">
 
-        <TextView
-            android:id="@+id/tvHeaderApps"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="apps"
-            android:textColor="@color/white"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:fontFamily="sans-serif-light" />
-
-        <TextView
-            android:id="@+id/tvAppsCount"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="installed applications"
-            android:textColor="@color/text_secondary"
-            android:textSize="12sp"
-            android:fontFamily="sans-serif"
-            android:layout_marginTop="2dp"
-            android:layout_marginBottom="8dp" />
-
-        <!-- TAB 1: ANDROID APPS DRAWER WITH ALPHABET INDEX RAIL -->
-        <LinearLayout
-            android:id="@+id/containerApps"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:visibility="visible">
-
-            <!-- Minimalist Industrial Search Strip + Zune Metro Quick-Jump Trigger -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="40dp"
-                android:orientation="horizontal"
-                android:layout_marginBottom="10dp">
-
-                <EditText
-                    android:id="@+id/etSearchApps"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_neumorphic_button"
-                    android:backgroundTint="#121318"
-                    android:hint="@string/drawer_search_apps_hint"
-                    android:textColorHint="@color/text_secondary"
-                    android:textColor="@color/text_primary"
-                    android:paddingHorizontal="14dp"
-                    android:textSize="12sp"
-                    android:singleLine="true" />
-
-                <TextView
-                    android:id="@+id/btnJumpApps"
-                    android:layout_width="48dp"
-                    android:layout_height="match_parent"
-                    android:layout_marginStart="8dp"
-                    android:gravity="center"
-                    android:text="A-Z"
-                    android:textColor="@color/text_primary"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:fontFamily="sans-serif-medium"
-                    android:background="@drawable/bg_metro_jump_button"
-                    android:clickable="true"
-                    android:focusable="true" />
-            </LinearLayout>
-
-            <!-- Frame containing Single-Column List, Niagara Vernier Wave Rail, and Floating Callout -->
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent">
-
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rvApps"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:clipToPadding="false"
-                    android:paddingEnd="32dp"
-                    android:paddingBottom="24dp" />
-
-                <!-- Niagara-Style Vernier Wave Alphabet Scrollbar (100dp wide canvas) -->
-                <com.hana.spindle.ui.AlphabetIndexView
-                    android:id="@+id/alphabetIndexView"
-                    android:layout_width="100dp"
-                    android:layout_height="match_parent"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true"
-                    android:layout_marginEnd="0dp"
-                    android:layout_marginBottom="16dp" />
-
-            </RelativeLayout>
-        </LinearLayout>
-    </LinearLayout>
 
     <!-- ============================================== -->
-    <!-- PANEL 2: SETTINGS                              -->
+    <!-- PANEL 1: SETTINGS                              -->
     <!-- ============================================== -->
     <LinearLayout
         android:id="@+id/panelSettings"
@@ -1110,27 +965,8 @@
         android:layout_height="match_parent"
         android:orientation="vertical"
         android:paddingStart="14dp"
-        android:paddingEnd="10dp">
+        android:paddingEnd="14dp">
 
-        <TextView
-            android:id="@+id/tvHeaderSettings"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="settings"
-            android:textColor="@color/white"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:fontFamily="sans-serif-light" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="system &amp; library preferences"
-            android:textColor="@color/text_secondary"
-            android:textSize="12sp"
-            android:fontFamily="sans-serif"
-            android:layout_marginTop="2dp"
-            android:layout_marginBottom="8dp" />
 
         <!-- TAB 3: MINIMALIST GROUPED LAUNCHER SETTINGS -->
         <LinearLayout
@@ -3586,6 +3422,90 @@
                 </ScrollView>
             </LinearLayout>
         </LinearLayout>
+
+    <!-- ============================================== -->
+    <!-- PANEL 2: APPS                                  -->
+    <!-- ============================================== -->
+    <LinearLayout
+        android:id="@+id/panelApps"
+        android:layout_width="300dp"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp">
+
+
+        <!-- TAB 1: ANDROID APPS DRAWER WITH ALPHABET INDEX RAIL -->
+        <LinearLayout
+            android:id="@+id/containerApps"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:visibility="visible">
+
+            <!-- Minimalist Industrial Search Strip + Zune Metro Quick-Jump Trigger -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:orientation="horizontal"
+                android:layout_marginBottom="10dp">
+
+                <EditText
+                    android:id="@+id/etSearchApps"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_neumorphic_button"
+                    android:backgroundTint="#121318"
+                    android:hint="@string/drawer_search_apps_hint"
+                    android:textColorHint="@color/text_secondary"
+                    android:textColor="@color/text_primary"
+                    android:paddingHorizontal="14dp"
+                    android:textSize="12sp"
+                    android:singleLine="true" />
+
+                <TextView
+                    android:id="@+id/btnJumpApps"
+                    android:layout_width="48dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginStart="8dp"
+                    android:gravity="center"
+                    android:text="A-Z"
+                    android:textColor="@color/text_primary"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-medium"
+                    android:background="@drawable/bg_metro_jump_button"
+                    android:clickable="true"
+                    android:focusable="true" />
+            </LinearLayout>
+
+            <!-- Frame containing Single-Column List, Niagara Vernier Wave Rail, and Floating Callout -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvApps"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:clipToPadding="false"
+                    android:paddingEnd="32dp"
+                    android:paddingBottom="24dp" />
+
+                <!-- Niagara-Style Vernier Wave Alphabet Scrollbar (100dp wide canvas) -->
+                <com.hana.spindle.ui.AlphabetIndexView
+                    android:id="@+id/alphabetIndexView"
+                    android:layout_width="100dp"
+                    android:layout_height="match_parent"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginEnd="0dp"
+                    android:layout_marginBottom="16dp" />
+
+            </RelativeLayout>
+        </LinearLayout>
     </LinearLayout>
-</HorizontalScrollView>
+    </LinearLayout>
+</com.hana.spindle.ui.SnappingPanoramaView>
 </LinearLayout>

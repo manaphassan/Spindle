@@ -12,7 +12,7 @@
     android:descendantFocusability="beforeDescendants">
 
     <!-- Horizontal Continuous Panorama Viewport -->
-    <HorizontalScrollView
+    <com.hana.spindle.ui.SnappingPanoramaView
         android:id="@+id/panoramaScrollView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -40,7 +40,7 @@
                 android:layout_height="match_parent"
                 android:orientation="vertical"
                 android:paddingStart="16dp"
-                android:paddingEnd="12dp">
+                android:paddingEnd="14dp">
 
                 <TextView
                     android:id="@+id/tvHeaderNowPlaying"
@@ -228,7 +228,7 @@
                 android:layout_height="match_parent"
                 android:orientation="vertical"
                 android:paddingStart="16dp"
-                android:paddingEnd="12dp">
+                android:paddingEnd="14dp">
 
                 <TextView
                     android:id="@+id/tvHeaderExplore"
@@ -444,7 +444,7 @@
                 android:layout_height="match_parent"
                 android:orientation="vertical"
                 android:paddingStart="16dp"
-                android:paddingEnd="12dp">
+                android:paddingEnd="14dp">
 
                 <TextView
                     android:id="@+id/tvHeaderRecent"
@@ -738,7 +738,7 @@
                 android:layout_height="match_parent"
                 android:orientation="vertical"
                 android:paddingStart="16dp"
-                android:paddingEnd="16dp">
+                android:paddingEnd="14dp">
 
                 <TextView
                     android:id="@+id/tvHeaderTools"
@@ -843,7 +843,7 @@
             </LinearLayout>
 
         </LinearLayout>
-    </HorizontalScrollView>
+    </com.hana.spindle.ui.SnappingPanoramaView>
 
     <!-- Parallax Big Kinetic Header (Drawn on top layer with elevation, moves at ~0.22x parallax speed) -->
     <TextView

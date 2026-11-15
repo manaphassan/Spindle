@@ -84,10 +84,20 @@ class DrawerFragment : Fragment() {
     private var allApps: List<AppInfo> = emptyList()
 
 
-
     private val dspPresets = listOf("FLAT", "BASS_BOOST", "HARMAN", "VOCAL", "CLUB")
     private var currentPresetIndex = 0
-    private var currentTabIndex = 0
+    private var currentTabIndex = PANEL_SOUND
+
+    private companion object {
+        const val PANEL_SOUND = 0
+        const val PANEL_SETTINGS = 1
+        const val PANEL_APPS = 2
+        const val PANEL_COUNT = 3
+    }
+
+    /** System Hub pivots are full pages: one panel per viewport width, no peek. */
+    private fun drawerPanelWidth(): Int = resources.displayMetrics.widthPixels
+
 
     private var syncAllEqControlsAction: (() -> Unit)? = null
     private var audioManager: AudioManager? = null
@@ -179,15 +189,14 @@ class DrawerFragment : Fragment() {
     }
 
     // =========================================================================
-    // 1. TOP 3-TAB NAVIGATION (AUDIOPHILE-FIRST "RACK DECK")
+    // 1. ZUNE PIVOTS: sound · settings · apps
     // =========================================================================
     private fun setupTabNavigation() {
-        binding.btnTabEq.setOnClickListener { selectTab(0) }
-        binding.btnTabApps.setOnClickListener { selectTab(1) }
-        binding.btnTabSettings.setOnClickListener { selectTab(2) }
+        binding.btnTabEq.setOnClickListener { selectTab(PANEL_SOUND) }
+        binding.btnTabApps.setOnClickListener { selectTab(PANEL_APPS) }
+        binding.btnTabSettings.setOnClickListener { selectTab(PANEL_SETTINGS) }
 
-        // Primary Landing: Sound Deck (EQ / DSP / VU Meters)
-        highlightDrawerTab(0)
+        highlightDrawerTab(PANEL_SOUND)
 
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -199,27 +208,21 @@ class DrawerFragment : Fragment() {
                     isEnabled = true
                     return
                 }
-                if (currentTabIndex != 0) {
-                    selectTab(0)
-                } else {
-                    mainAct.navigateToPlayer()
+                when {
+                    currentTabIndex != PANEL_SOUND -> selectTab(PANEL_SOUND)
+                    else -> mainAct.navigateToPlayer()
                 }
             }
         })
     }
 
     private fun setupDrawerPanorama() {
-        val dm = resources.displayMetrics
-        val peekPx = (52 * dm.density).toInt()
-        val panelWidth = dm.widthPixels - peekPx
-
-        binding.panelSoundDeck.layoutParams = binding.panelSoundDeck.layoutParams.apply { width = panelWidth }
-        binding.panelApps.layoutParams = binding.panelApps.layoutParams.apply { width = panelWidth }
-        binding.panelSettings.layoutParams = binding.panelSettings.layoutParams.apply { width = panelWidth }
+        applyPanelWidths()
 
         binding.drawerPanoramaScrollView.post {
-            binding.drawerPanoramaScrollView.scrollTo(0, 0)
-            highlightDrawerTab(0)
+            val b = _binding ?: return@post
+            b.drawerPanoramaScrollView.scrollTo(0, 0)
+            highlightDrawerTab(PANEL_SOUND)
         }
 
         // Touch disambiguation: vertical list/scroll vs horizontal panorama swipe
@@ -227,38 +230,13 @@ class DrawerFragment : Fragment() {
         setupTouchDisambiguation(binding.containerEq, binding.drawerPanoramaScrollView)
         setupTouchDisambiguation(binding.scrollSettingsContent, binding.drawerPanoramaScrollView)
 
-        var startX = 0f
-        var startY = 0f
-        val touchSlop = ViewConfiguration.get(requireContext()).scaledTouchSlop
-
-        // Ensure horizontal scrolling inside DrawerFragment does not get stolen by parent ViewPager2,
-        // but when at Panel 0 (sound deck) swiping right (dx > touchSlop), smoothly swipe back to PlayerFragment
-        binding.drawerPanoramaScrollView.setOnTouchListener { v, event ->
-            when (event.actionMasked) {
-                MotionEvent.ACTION_DOWN -> {
-                    startX = event.x
-                    startY = event.y
-                    v.parent?.requestDisallowInterceptTouchEvent(true)
-                }
-                MotionEvent.ACTION_MOVE -> {
-                    val dx = event.x - startX
-                    val dy = kotlin.math.abs(event.y - startY)
-                    if (binding.drawerPanoramaScrollView.scrollX <= 0 && dx > touchSlop && dx > dy) {
-                        v.parent?.requestDisallowInterceptTouchEvent(false)
-                    } else {
-                        v.parent?.requestDisallowInterceptTouchEvent(true)
-                    }
-                }
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    v.parent?.requestDisallowInterceptTouchEvent(false)
-                }
-            }
-            false
-        }
+        // The panorama keeps every horizontal swipe from the outer ViewPager2, except a
+        // rightward swipe on the first page (sound), which goes back to the deck.
+        binding.drawerPanoramaScrollView.handOffAtStart = true
 
         // Kinetic parallax title + active tab tracking
         binding.drawerPanoramaScrollView.setOnScrollChangeListener { _, scrollX, _, _, _ ->
-            binding.tvMetroHubTitle.translationX = -scrollX * 0.22f
+            val panelWidth = drawerPanelWidth()
             val activeIdx = ((scrollX + panelWidth / 2) / panelWidth).coerceIn(0, 2)
             if (activeIdx != currentTabIndex) {
                 currentTabIndex = activeIdx
@@ -266,9 +244,6 @@ class DrawerFragment : Fragment() {
             }
         }
 
-        binding.btnBackToPlayer.setOnClickListener {
-            (activity as? MainActivity)?.navigateToPlayer()
-        }
     }
 
     private fun setupTouchDisambiguation(targetView: View, hsv: HorizontalScrollView) {
@@ -285,6 +260,7 @@ class DrawerFragment : Fragment() {
                             downY = e.y
                             hsv.requestDisallowInterceptTouchEvent(false)
                         }
+
                         MotionEvent.ACTION_MOVE -> {
                             val dx = kotlin.math.abs(e.x - downX)
                             val dy = kotlin.math.abs(e.y - downY)
@@ -306,6 +282,7 @@ class DrawerFragment : Fragment() {
                         downY = e.y
                         hsv.requestDisallowInterceptTouchEvent(false)
                     }
+
                     MotionEvent.ACTION_MOVE -> {
                         val dx = kotlin.math.abs(e.x - downX)
                         val dy = kotlin.math.abs(e.y - downY)
@@ -322,12 +299,10 @@ class DrawerFragment : Fragment() {
     }
 
     fun scrollToDrawerPanel(index: Int) {
-        currentTabIndex = index.coerceIn(0, 2)
-        val dm = resources.displayMetrics
-        val panelWidth = dm.widthPixels - (52 * dm.density).toInt()
-        val targetX = currentTabIndex * panelWidth
+        currentTabIndex = index.coerceIn(0, PANEL_COUNT - 1)
+        val targetX = currentTabIndex * drawerPanelWidth()
         binding.drawerPanoramaScrollView.post {
-            binding.drawerPanoramaScrollView.smoothScrollTo(targetX, 0)
+            _binding?.drawerPanoramaScrollView?.smoothScrollTo(targetX, 0)
         }
         highlightDrawerTab(currentTabIndex)
     }
@@ -340,25 +315,31 @@ class DrawerFragment : Fragment() {
         val activeText = if (isLight || isEink) Color.BLACK else Color.WHITE
         val inactiveText = if (isLight || isEink) Color.DKGRAY else Color.WHITE
 
-        val tabs = listOf(binding.btnTabEq, binding.btnTabApps, binding.btnTabSettings)
+        val tabs = listOf(binding.btnTabEq, binding.btnTabSettings, binding.btnTabApps)
         tabs.forEachIndexed { i, tv ->
             val isActive = (i == index)
-            tv.alpha = if (isActive) 1.0f else 0.40f
+            // Zune pivots keep one weight and size; only brightness marks the active pivot.
+            tv.alpha = if (isActive) 1.0f else 0.55f
             tv.setTextColor(if (isActive) activeText else inactiveText)
-            tv.setTypeface(null, if (isActive) Typeface.BOLD else Typeface.NORMAL)
-            tv.textSize = if (isActive) 20f else 18f
         }
 
-        val targetTab = tabs.getOrNull(index) ?: return
-        binding.tabScrollView.post {
-            val scrollX = targetTab.left - (binding.tabScrollView.width - targetTab.width) / 2
-            binding.tabScrollView.smoothScrollTo(scrollX.coerceAtLeast(0), 0)
-        }
+        ZunePivotHeader.arrange(binding.tabScrollView, binding.tabBar, tabs, index)
     }
 
     private fun selectTab(index: Int) {
         scrollToDrawerPanel(index)
     }
+
+
+    private fun applyPanelWidths() {
+        val b = _binding ?: return
+        val w = drawerPanelWidth()
+        listOf(b.panelSoundDeck, b.panelSettings, b.panelApps).forEach { p ->
+            p.layoutParams = p.layoutParams.apply { width = w }
+        }
+        b.drawerPanoramaScrollView.enableSnapping(w, PANEL_COUNT, 0)
+    }
+
 
     /** Preset name plus every other stage that colours the sound, so "FLAT" is never misleading. */
     private fun fxLabel(fx: AudioFxController): String {
@@ -372,6 +353,7 @@ class DrawerFragment : Fragment() {
         if (fx.isTapeSaturationEnabled) parts += "SAT"
         return "FX: " + parts.joinToString(" + ")
     }
+
 
     // =========================================================================
     // 2. MINIMALIST APP DRAWER WITH NIAGARA-STYLE VERNIER WAVE SCROLLBAR
@@ -410,6 +392,7 @@ class DrawerFragment : Fragment() {
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 filterApps(s.toString())
             }
+
             override fun afterTextChanged(s: Editable?) {}
         })
 
@@ -443,7 +426,10 @@ class DrawerFragment : Fragment() {
                         }
                     }
                     if (targetIndex >= 0) {
-                        (binding.rvApps.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(targetIndex, 0)
+                        (binding.rvApps.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(
+                            targetIndex,
+                            0
+                        )
                     }
                 }
             }
@@ -453,6 +439,7 @@ class DrawerFragment : Fragment() {
             binding.btnJumpApps.performClick()
             true
         }
+
 
         // Niagara-Style Vernier Wave Alphabet Index Rail
         binding.alphabetIndexView.onLetterSelected = { letter ->
@@ -479,8 +466,11 @@ class DrawerFragment : Fragment() {
         } else {
             allApps.filter { it.label.contains(query, ignoreCase = true) }
         }
+
         appAdapter.submitList(filtered)
     }
+
+
 
     private fun reloadApps() {
         viewLifecycleOwner.lifecycleScope.launch {
@@ -656,22 +646,29 @@ class DrawerFragment : Fragment() {
 
         binding.btnEqMode.setOnClickListener {
             if (fxController.isLocked) {
-                Toast.makeText(requireContext(), "EQ is locked. Tap UNLOCKED to switch mode.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "EQ is locked. Tap UNLOCKED to switch mode.", Toast.LENGTH_SHORT)
+                    .show()
                 return@setOnClickListener
             }
             val newMode = !fxController.isParametricMode
             fxController.setParametricMode(newMode)
             updateEqModeVisual(newMode)
             it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-            val msg = if (newMode) "Parametric EQ Mode Active (Tap/hold band to cycle Q-Factor)" else "Graphic EQ Mode Active (Standard ISO 1-Octave)"
+            val msg =
+                if (newMode) "Parametric EQ Mode Active (Tap/hold band to cycle Q-Factor)" else "Graphic EQ Mode Active (Standard ISO 1-Octave)"
             Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
         }
 
         binding.iso10BandEqView.onQChanged = { band, q ->
             fxController.setBandQ(band, q)
             updateBiquadVisualizer()
-            val bandLabel = if (band in AudioDspConstants.ISO_LABELS.indices) AudioDspConstants.ISO_LABELS[band] else "Band $band"
-            Toast.makeText(requireContext(), "$bandLabel Q set to ${String.format(Locale.US, "%.1f", q)}", Toast.LENGTH_SHORT).show()
+            val bandLabel =
+                if (band in AudioDspConstants.ISO_LABELS.indices) AudioDspConstants.ISO_LABELS[band] else "Band $band"
+            Toast.makeText(
+                requireContext(),
+                "$bandLabel Q set to ${String.format(Locale.US, "%.1f", q)}",
+                Toast.LENGTH_SHORT
+            ).show()
         }
 
         // 2d. Target Curves Quick Buttons (Settings card)
@@ -682,6 +679,7 @@ class DrawerFragment : Fragment() {
             binding.btnCurveAir to "AIR",
             binding.btnCurveFlat to "FLAT"
         )
+
         fun highlightCurve(selected: String) {
             val activeColor = ColorStateList.valueOf(Color.parseColor("#F97316"))
             val inactiveColor = ColorStateList.valueOf(Color.parseColor("#202334"))
@@ -704,6 +702,7 @@ class DrawerFragment : Fragment() {
                 MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
                     v.parent?.requestDisallowInterceptTouchEvent(true)
                 }
+
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     v.parent?.requestDisallowInterceptTouchEvent(false)
                 }
@@ -726,12 +725,27 @@ class DrawerFragment : Fragment() {
             // 1. Highlight built-in static pills
             autoEqButtons.forEach { (btn, name) ->
                 val isSelected = name.equals(currentName, ignoreCase = true) ||
-                        (name.equals("HARMAN", ignoreCase = true) && currentName.contains("Harman", ignoreCase = true)) ||
-                        (name.equals("CRINACLE", ignoreCase = true) && currentName.contains("Crinacle", ignoreCase = true)) ||
-                        (name.equals("MOONDROP", ignoreCase = true) && currentName.contains("Moondrop", ignoreCase = true)) ||
+                        (name.equals("HARMAN", ignoreCase = true) && currentName.contains(
+                            "Harman",
+                            ignoreCase = true
+                        )) ||
+                        (name.equals("CRINACLE", ignoreCase = true) && currentName.contains(
+                            "Crinacle",
+                            ignoreCase = true
+                        )) ||
+                        (name.equals("MOONDROP", ignoreCase = true) && currentName.contains(
+                            "Moondrop",
+                            ignoreCase = true
+                        )) ||
                         (name.equals("HD600", ignoreCase = true) && currentName.contains("HD600", ignoreCase = true)) ||
-                        (name.equals("WARM_TUBE", ignoreCase = true) && currentName.contains("Warm", ignoreCase = true)) ||
-                        (name.equals("V_SHAPE", ignoreCase = true) && currentName.contains("V-Shape", ignoreCase = true)) ||
+                        (name.equals("WARM_TUBE", ignoreCase = true) && currentName.contains(
+                            "Warm",
+                            ignoreCase = true
+                        )) ||
+                        (name.equals("V_SHAPE", ignoreCase = true) && currentName.contains(
+                            "V-Shape",
+                            ignoreCase = true
+                        )) ||
                         (name.equals("FLAT", ignoreCase = true) && currentName.equals("Flat", ignoreCase = true))
                 btn.setTextColor(if (isSelected) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
                 btn.backgroundTintList = ColorStateList.valueOf(
@@ -760,7 +774,11 @@ class DrawerFragment : Fragment() {
                 )
                 pill.setOnClickListener {
                     if (fxController.isLocked) {
-                        Toast.makeText(requireContext(), "EQ & DSP is locked. Tap UNLOCKED to adjust.", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            requireContext(),
+                            "EQ & DSP is locked. Tap UNLOCKED to adjust.",
+                            Toast.LENGTH_SHORT
+                        ).show()
                         return@setOnClickListener
                     }
                     fxController.applyUserPreset(preset)
@@ -808,7 +826,8 @@ class DrawerFragment : Fragment() {
         autoEqButtons.forEach { (btn, name) ->
             btn.setOnClickListener {
                 if (fxController.isLocked) {
-                    Toast.makeText(requireContext(), "EQ & DSP is locked. Tap UNLOCKED to adjust.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "EQ & DSP is locked. Tap UNLOCKED to adjust.", Toast.LENGTH_SHORT)
+                        .show()
                     return@setOnClickListener
                 }
                 fxController.applyPreset(name)
@@ -820,7 +839,8 @@ class DrawerFragment : Fragment() {
         // 4. DSP Preset Cycler Button
         binding.btnFx.setOnClickListener {
             if (fxController.isLocked) {
-                Toast.makeText(requireContext(), "EQ & DSP is locked. Tap UNLOCKED to adjust.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "EQ & DSP is locked. Tap UNLOCKED to adjust.", Toast.LENGTH_SHORT)
+                    .show()
                 return@setOnClickListener
             }
             currentPresetIndex = (currentPresetIndex + 1) % dspPresets.size
@@ -832,7 +852,8 @@ class DrawerFragment : Fragment() {
         // 5. Deck Master RESET Button: Flat EQ, 0 gain, 80% volume
         binding.btnReset.setOnClickListener {
             if (fxController.isLocked) {
-                Toast.makeText(requireContext(), "EQ & DSP is locked. Tap UNLOCKED to adjust.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "EQ & DSP is locked. Tap UNLOCKED to adjust.", Toast.LENGTH_SHORT)
+                    .show()
                 return@setOnClickListener
             }
             fxController.setLowGain(0f)
@@ -854,7 +875,8 @@ class DrawerFragment : Fragment() {
             syncAllEqControls()
 
             it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-            Toast.makeText(requireContext(), "Hardware EQ & Master Output Reset to Flat Reference", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Hardware EQ & Master Output Reset to Flat Reference", Toast.LENGTH_SHORT)
+                .show()
         }
 
         // 4. Master Output Volume Fader (Replaces L/R balance slider)
@@ -866,6 +888,7 @@ class DrawerFragment : Fragment() {
                 }
                 updateVolumeLabel(progress)
             }
+
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 seekBar?.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
@@ -878,7 +901,8 @@ class DrawerFragment : Fragment() {
         binding.switchBypass.setOnCheckedChangeListener { _, isChecked ->
             fxController.setBypass(isChecked)
             updateBypassVisuals(isChecked)
-            val msg = if (isChecked) "Hi-Res Passthrough Active (DSP Bypassed)" else "DSP Equalization & Target Profile Enabled"
+            val msg =
+                if (isChecked) "Hi-Res Passthrough Active (DSP Bypassed)" else "DSP Equalization & Target Profile Enabled"
             Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
         }
 
@@ -906,7 +930,8 @@ class DrawerFragment : Fragment() {
             binding.containerTapeSaturationDrive.alpha = if (isChecked) 1.0f else 0.4f
             app.audioEngine.setTapeSaturation(isChecked)
             app.audioEngine.foleyEngine.playSwitchSnap()
-            val msg = if (isChecked) "Harmonic Tape Saturation Active (+3.2dB @ 63Hz Warmth)" else "Tape Saturation DSP Disabled"
+            val msg =
+                if (isChecked) "Harmonic Tape Saturation Active (+3.2dB @ 63Hz Warmth)" else "Tape Saturation DSP Disabled"
             Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
         }
 
@@ -927,6 +952,7 @@ class DrawerFragment : Fragment() {
                     updateBiquadVisualizer()
                 }
             }
+
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 seekBar?.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
@@ -943,6 +969,7 @@ class DrawerFragment : Fragment() {
                 }
                 updateCrossfeedLabel(progress)
             }
+
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 seekBar?.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
@@ -964,7 +991,8 @@ class DrawerFragment : Fragment() {
         curveButtons.forEach { (btn, curveName) ->
             btn.setOnClickListener {
                 if (fxController.isLocked) {
-                    Toast.makeText(requireContext(), "EQ & DSP is locked. Tap UNLOCKED to adjust.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "EQ & DSP is locked. Tap UNLOCKED to adjust.", Toast.LENGTH_SHORT)
+                        .show()
                     return@setOnClickListener
                 }
                 fxController.applyPreset(curveName)
@@ -1169,19 +1197,33 @@ class DrawerFragment : Fragment() {
         val isEink = curId == CassetteTheme.MONOCHROME_EINK.id
         val activeColor = ColorStateList.valueOf(if (isEink) Color.BLACK else Color.parseColor("#F97316"))
 
-        binding.btnThemeMetalXr.backgroundTintList = if (curId == CassetteTheme.METAL_XR_TYPE4.id) activeColor else ColorStateList.valueOf(Color.parseColor("#18191E"))
-        binding.btnThemeDark.backgroundTintList = if (curId == CassetteTheme.DARK.id) activeColor else ColorStateList.valueOf(Color.parseColor("#202334"))
-        binding.btnThemeLight.backgroundTintList = if (curId == CassetteTheme.LIGHT.id) activeColor else ColorStateList.valueOf(Color.parseColor("#E5E5E2"))
-        binding.btnThemeEink.backgroundTintList = if (isEink) activeColor else ColorStateList.valueOf(Color.parseColor("#000000"))
+        binding.btnThemeMetalXr.backgroundTintList =
+            if (curId == CassetteTheme.METAL_XR_TYPE4.id) activeColor else ColorStateList.valueOf(Color.parseColor("#18191E"))
+        binding.btnThemeDark.backgroundTintList =
+            if (curId == CassetteTheme.DARK.id) activeColor else ColorStateList.valueOf(Color.parseColor("#202334"))
+        binding.btnThemeLight.backgroundTintList =
+            if (curId == CassetteTheme.LIGHT.id) activeColor else ColorStateList.valueOf(Color.parseColor("#E5E5E2"))
+        binding.btnThemeEink.backgroundTintList =
+            if (isEink) activeColor else ColorStateList.valueOf(Color.parseColor("#000000"))
 
-        binding.btnThemeTdk.backgroundTintList = if (curId == CassetteTheme.TDK_SA_90.id) activeColor else ColorStateList.valueOf(Color.parseColor("#242220"))
-        binding.btnThemeMaxell.backgroundTintList = if (curId == CassetteTheme.MAXELL_XLII.id) activeColor else ColorStateList.valueOf(Color.parseColor("#261E14"))
-        binding.btnThemeBasf.backgroundTintList = if (curId == CassetteTheme.BASF_CHROME.id) activeColor else ColorStateList.valueOf(Color.parseColor("#1F2421"))
-        binding.btnThemeSkeleton.backgroundTintList = if (curId == CassetteTheme.SKELETON_REEL.id) activeColor else ColorStateList.valueOf(Color.parseColor("#261418"))
-        binding.btnThemeStudioReel.backgroundTintList = if (curId == CassetteTheme.REEL_TO_REEL_STUDIO.id) activeColor else ColorStateList.valueOf(Color.parseColor("#241B14"))
-        binding.btnThemeSonyHf.backgroundTintList = if (curId == CassetteTheme.SONY_HF_90.id) activeColor else ColorStateList.valueOf(Color.parseColor("#181A20"))
-        binding.btnThemeDenonHd.backgroundTintList = if (curId == CassetteTheme.DENON_HD8_100.id) activeColor else ColorStateList.valueOf(Color.parseColor("#141318"))
-        binding.btnThemeMetal81.backgroundTintList = if (curId == CassetteTheme.METAL_81_RED.id) activeColor else ColorStateList.valueOf(Color.parseColor("#261014"))
+        binding.btnThemeTdk.backgroundTintList =
+            if (curId == CassetteTheme.TDK_SA_90.id) activeColor else ColorStateList.valueOf(Color.parseColor("#242220"))
+        binding.btnThemeMaxell.backgroundTintList =
+            if (curId == CassetteTheme.MAXELL_XLII.id) activeColor else ColorStateList.valueOf(Color.parseColor("#261E14"))
+        binding.btnThemeBasf.backgroundTintList =
+            if (curId == CassetteTheme.BASF_CHROME.id) activeColor else ColorStateList.valueOf(Color.parseColor("#1F2421"))
+        binding.btnThemeSkeleton.backgroundTintList =
+            if (curId == CassetteTheme.SKELETON_REEL.id) activeColor else ColorStateList.valueOf(Color.parseColor("#261418"))
+        binding.btnThemeStudioReel.backgroundTintList =
+            if (curId == CassetteTheme.REEL_TO_REEL_STUDIO.id) activeColor else ColorStateList.valueOf(
+                Color.parseColor("#241B14")
+            )
+        binding.btnThemeSonyHf.backgroundTintList =
+            if (curId == CassetteTheme.SONY_HF_90.id) activeColor else ColorStateList.valueOf(Color.parseColor("#181A20"))
+        binding.btnThemeDenonHd.backgroundTintList =
+            if (curId == CassetteTheme.DENON_HD8_100.id) activeColor else ColorStateList.valueOf(Color.parseColor("#141318"))
+        binding.btnThemeMetal81.backgroundTintList =
+            if (curId == CassetteTheme.METAL_81_RED.id) activeColor else ColorStateList.valueOf(Color.parseColor("#261014"))
 
         binding.tvActiveThemeName.text = themeManager.currentTheme.value.name
     }
@@ -1211,7 +1253,8 @@ class DrawerFragment : Fragment() {
         binding.switchBatterySaverKinematics.isChecked = prefs.getBoolean("pref_battery_saver_kinematics", false)
         binding.switchBatterySaverKinematics.setOnCheckedChangeListener { _, isChecked ->
             prefs.edit().putBoolean("pref_battery_saver_kinematics", isChecked).apply()
-            val msg = if (isChecked) "Cassette Battery Saver: 30 FPS Active 🔋" else "Cassette High-Performance: 60 FPS ✨"
+            val msg =
+                if (isChecked) "Cassette Battery Saver: 30 FPS Active 🔋" else "Cassette High-Performance: 60 FPS ✨"
             Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
         }
 
@@ -1225,7 +1268,8 @@ class DrawerFragment : Fragment() {
         binding.switchLowRamBuffer.isChecked = prefs.getBoolean("pref_low_ram_audio_buffer", true)
         binding.switchLowRamBuffer.setOnCheckedChangeListener { _, isChecked ->
             prefs.edit().putBoolean("pref_low_ram_audio_buffer", isChecked).apply()
-            Toast.makeText(requireContext(), "Buffer setting will apply on next playback session", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Buffer setting will apply on next playback session", Toast.LENGTH_SHORT)
+                .show()
         }
 
         // 1. Volume Long-Press Skip
@@ -1363,13 +1407,16 @@ class DrawerFragment : Fragment() {
             val isAlbum = mode == ReplayGainMode.ALBUM
 
             binding.btnRgOff.setTextColor(if (isOff) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
-            binding.btnRgOff.backgroundTintList = ColorStateList.valueOf(if (isOff) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+            binding.btnRgOff.backgroundTintList =
+                ColorStateList.valueOf(if (isOff) Color.parseColor("#16261B") else Color.parseColor("#242731"))
 
             binding.btnRgTrack.setTextColor(if (isTrack) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
-            binding.btnRgTrack.backgroundTintList = ColorStateList.valueOf(if (isTrack) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+            binding.btnRgTrack.backgroundTintList =
+                ColorStateList.valueOf(if (isTrack) Color.parseColor("#16261B") else Color.parseColor("#242731"))
 
             binding.btnRgAlbum.setTextColor(if (isAlbum) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
-            binding.btnRgAlbum.backgroundTintList = ColorStateList.valueOf(if (isAlbum) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+            binding.btnRgAlbum.backgroundTintList =
+                ColorStateList.valueOf(if (isAlbum) Color.parseColor("#16261B") else Color.parseColor("#242731"))
         }
 
         updateReplayGainPills(app.audioEngine.replayGainMode)
@@ -1400,13 +1447,16 @@ class DrawerFragment : Fragment() {
             val isFade4s = mode == CrossfadeMode.CROSSFADE_4S
 
             binding.btnTransGapless.setTextColor(if (isGapless) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
-            binding.btnTransGapless.backgroundTintList = ColorStateList.valueOf(if (isGapless) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+            binding.btnTransGapless.backgroundTintList =
+                ColorStateList.valueOf(if (isGapless) Color.parseColor("#16261B") else Color.parseColor("#242731"))
 
             binding.btnTransFade2s.setTextColor(if (isFade2s) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
-            binding.btnTransFade2s.backgroundTintList = ColorStateList.valueOf(if (isFade2s) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+            binding.btnTransFade2s.backgroundTintList =
+                ColorStateList.valueOf(if (isFade2s) Color.parseColor("#16261B") else Color.parseColor("#242731"))
 
             binding.btnTransFade4s.setTextColor(if (isFade4s) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
-            binding.btnTransFade4s.backgroundTintList = ColorStateList.valueOf(if (isFade4s) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+            binding.btnTransFade4s.backgroundTintList =
+                ColorStateList.valueOf(if (isFade4s) Color.parseColor("#16261B") else Color.parseColor("#242731"))
         }
 
         updateCrossfadePills(app.audioEngine.crossfadeMode)
@@ -1441,16 +1491,20 @@ class DrawerFragment : Fragment() {
             val isType4 = formulation == AudioFxController.TapeFormulation.TYPE_IV_METAL
 
             binding.btnTapeType1.setTextColor(if (isType1) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
-            binding.btnTapeType1.backgroundTintList = ColorStateList.valueOf(if (isType1) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+            binding.btnTapeType1.backgroundTintList =
+                ColorStateList.valueOf(if (isType1) Color.parseColor("#16261B") else Color.parseColor("#242731"))
 
             binding.btnTapeType2.setTextColor(if (isType2) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
-            binding.btnTapeType2.backgroundTintList = ColorStateList.valueOf(if (isType2) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+            binding.btnTapeType2.backgroundTintList =
+                ColorStateList.valueOf(if (isType2) Color.parseColor("#16261B") else Color.parseColor("#242731"))
 
             binding.btnTapeType3.setTextColor(if (isType3) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
-            binding.btnTapeType3.backgroundTintList = ColorStateList.valueOf(if (isType3) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+            binding.btnTapeType3.backgroundTintList =
+                ColorStateList.valueOf(if (isType3) Color.parseColor("#16261B") else Color.parseColor("#242731"))
 
             binding.btnTapeType4.setTextColor(if (isType4) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
-            binding.btnTapeType4.backgroundTintList = ColorStateList.valueOf(if (isType4) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+            binding.btnTapeType4.backgroundTintList =
+                ColorStateList.valueOf(if (isType4) Color.parseColor("#16261B") else Color.parseColor("#242731"))
         }
 
         fun updateDolbyPills(@Suppress("UNUSED_PARAMETER") requested: AudioFxController.DolbyMode) {
@@ -1461,13 +1515,16 @@ class DrawerFragment : Fragment() {
             val isC = mode == AudioFxController.DolbyMode.DOLBY_C
 
             binding.btnDolbyOff.setTextColor(if (isOff) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
-            binding.btnDolbyOff.backgroundTintList = ColorStateList.valueOf(if (isOff) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+            binding.btnDolbyOff.backgroundTintList =
+                ColorStateList.valueOf(if (isOff) Color.parseColor("#16261B") else Color.parseColor("#242731"))
 
             binding.btnDolbyB.setTextColor(if (isB) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
-            binding.btnDolbyB.backgroundTintList = ColorStateList.valueOf(if (isB) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+            binding.btnDolbyB.backgroundTintList =
+                ColorStateList.valueOf(if (isB) Color.parseColor("#16261B") else Color.parseColor("#242731"))
 
             binding.btnDolbyC.setTextColor(if (isC) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
-            binding.btnDolbyC.backgroundTintList = ColorStateList.valueOf(if (isC) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+            binding.btnDolbyC.backgroundTintList =
+                ColorStateList.valueOf(if (isC) Color.parseColor("#16261B") else Color.parseColor("#242731"))
         }
 
         updateTapeBiasPills(app.audioEngine.audioFxController.currentTapeFormulation)
@@ -1532,19 +1589,26 @@ class DrawerFragment : Fragment() {
             val isCream = tone == com.hana.spindle.ui.eq.DualAnalogVuMeterView.BacklightTone.PARCHMENT
 
             binding.btnVuToneAmber.setTextColor(if (isAmber) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
-            binding.btnVuToneAmber.backgroundTintList = ColorStateList.valueOf(if (isAmber) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+            binding.btnVuToneAmber.backgroundTintList =
+                ColorStateList.valueOf(if (isAmber) Color.parseColor("#16261B") else Color.parseColor("#242731"))
 
             binding.btnVuToneCyan.setTextColor(if (isCyan) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
-            binding.btnVuToneCyan.backgroundTintList = ColorStateList.valueOf(if (isCyan) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+            binding.btnVuToneCyan.backgroundTintList =
+                ColorStateList.valueOf(if (isCyan) Color.parseColor("#16261B") else Color.parseColor("#242731"))
 
             binding.btnVuToneGreen.setTextColor(if (isGreen) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
-            binding.btnVuToneGreen.backgroundTintList = ColorStateList.valueOf(if (isGreen) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+            binding.btnVuToneGreen.backgroundTintList =
+                ColorStateList.valueOf(if (isGreen) Color.parseColor("#16261B") else Color.parseColor("#242731"))
 
             binding.btnVuToneCream.setTextColor(if (isCream) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
-            binding.btnVuToneCream.backgroundTintList = ColorStateList.valueOf(if (isCream) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+            binding.btnVuToneCream.backgroundTintList =
+                ColorStateList.valueOf(if (isCream) Color.parseColor("#16261B") else Color.parseColor("#242731"))
         }
 
-        val currentSavedToneName = prefs.getString("pref_vu_backlight_tone", com.hana.spindle.ui.eq.DualAnalogVuMeterView.BacklightTone.WARM_TUNGSTEN.name)
+        val currentSavedToneName = prefs.getString(
+            "pref_vu_backlight_tone",
+            com.hana.spindle.ui.eq.DualAnalogVuMeterView.BacklightTone.WARM_TUNGSTEN.name
+        )
         val initialTone = try {
             com.hana.spindle.ui.eq.DualAnalogVuMeterView.BacklightTone.valueOf(currentSavedToneName ?: "")
         } catch (_: Exception) {
@@ -1570,7 +1634,8 @@ class DrawerFragment : Fragment() {
         val isDark = theme.isDarkAppTheme
         val primary = theme.textPrimaryColor
         val secondary = theme.textSecondaryColor
-        val cardBg = if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#FAFAF9") else Color.parseColor("#171926")
+        val cardBg =
+            if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#FAFAF9") else Color.parseColor("#171926")
 
         binding.root.setBackgroundColor(theme.chassisColor)
         binding.tvMetroHubTitle.setTextColor(primary)
@@ -1588,7 +1653,11 @@ class DrawerFragment : Fragment() {
         // Propagate text color to AppListAdapter
         appAdapter.updateThemeColors(primary)
 
-        binding.tvBypassTitle.setTextColor(if (audioFxController.isBypassEnabled) (if (isEink) Color.BLACK else if (isDark) Color.parseColor("#00E676") else Color.parseColor("#059669")) else primary)
+        binding.tvBypassTitle.setTextColor(
+            if (audioFxController.isBypassEnabled) (if (isEink) Color.BLACK else if (isDark) Color.parseColor(
+                "#00E676"
+            ) else Color.parseColor("#059669")) else primary
+        )
         binding.tvBypassSub.setTextColor(secondary)
 
         // Propagate isEink to hardware EQ and meter components
@@ -1611,11 +1680,6 @@ class DrawerFragment : Fragment() {
         updateCardsRecursively(binding.root, cardBg, primary, secondary, isDark, isEink)
         val headerColor = if (isDark) Color.WHITE else Color.BLACK
         binding.tvMetroHubTitle.setTextColor(headerColor)
-        binding.tvDrawerHeaderTitle.setTextColor(headerColor)
-        binding.tvHeaderSoundDeck.setTextColor(headerColor)
-        binding.tvHeaderApps.setTextColor(headerColor)
-        binding.tvHeaderSettings.setTextColor(headerColor)
-        binding.btnBackToPlayer.setColorFilter(headerColor)
         selectTab(currentTabIndex)
         updateThemeButtonsVisual()
         val accent = if (isEink) Color.BLACK else theme.accentColor
@@ -1679,6 +1743,7 @@ class DrawerFragment : Fragment() {
         binding.switchImmersiveMode.setOnCheckedChangeListener { _, isChecked ->
             mainActivity.setImmersiveMode(isChecked)
         }
+
     }
 
     private fun setupDoubleTapSettings() {
@@ -1696,7 +1761,11 @@ class DrawerFragment : Fragment() {
                 }
                 startActivity(intent)
             } catch (e: Exception) {
-                Toast.makeText(requireContext(), "Open Settings > Display to configure native Tap to Wake", Toast.LENGTH_LONG).show()
+                Toast.makeText(
+                    requireContext(),
+                    "Open Settings > Display to configure native Tap to Wake",
+                    Toast.LENGTH_LONG
+                ).show()
             }
         }
     }
@@ -1843,7 +1912,8 @@ class DrawerFragment : Fragment() {
                 updateMusicPathDisplay(app)
                 binding.btnRebuildIndexCache.isEnabled = true
                 binding.progressScan.visibility = View.GONE
-                Toast.makeText(requireContext(), "Fast index cache (.spindle_catalog.bin) updated!", Toast.LENGTH_LONG).show()
+                Toast.makeText(requireContext(), "Fast index cache (.spindle_catalog.bin) updated!", Toast.LENGTH_LONG)
+                    .show()
             }
         }
 
@@ -1856,7 +1926,8 @@ class DrawerFragment : Fragment() {
 
         binding.btnFetchMissingLyrics.setOnClickListener {
             val dialog = DialogLyricsBulkFetcher {
-                Toast.makeText(requireContext(), "Synchronized lyrics library check complete", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Synchronized lyrics library check complete", Toast.LENGTH_SHORT)
+                    .show()
             }
             dialog.show(parentFragmentManager, "DialogLyricsBulkFetcher")
         }
@@ -2102,7 +2173,11 @@ class DrawerFragment : Fragment() {
                     setupRadioStationManager(app)
                     Toast.makeText(requireContext(), "Added station $callsign ($freq MHz)", Toast.LENGTH_SHORT).show()
                 } else {
-                    Toast.makeText(requireContext(), "Invalid station details. Please check frequency and URL.", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        requireContext(),
+                        "Invalid station details. Please check frequency and URL.",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             }
             .setNegativeButton(R.string.action_cancel, null)
@@ -2120,7 +2195,13 @@ class DrawerFragment : Fragment() {
                 metricsTracker.metrics.collectLatest { metrics ->
                     _binding?.let { b ->
                         b.tvMetricFormat.text = "${metrics.format.uppercase()} (${metrics.bitDepth}-bit)"
-                        b.tvMetricSampleRate.text = "${metrics.bitDepth}-bit / ${String.format(Locale.US, "%.1f", metrics.sampleRate / 1000f)} kHz"
+                        b.tvMetricSampleRate.text = "${metrics.bitDepth}-bit / ${
+                            String.format(
+                                Locale.US,
+                                "%.1f",
+                                metrics.sampleRate / 1000f
+                            )
+                        } kHz"
                         b.tvMetricBitrate.text = "${metrics.dynamicBitrateKbps} kbps dynamic"
                         b.tvMetricRoute.text = metrics.outputRoute
 
@@ -2140,7 +2221,9 @@ class DrawerFragment : Fragment() {
                                 }
                                 b.tvMetricBtBattery.text = "Battery: ${metrics.bluetoothBatteryPct}% ($batteryStatus)"
                                 b.tvMetricBtBattery.setTextColor(
-                                    if (isEink) Color.BLACK else if (metrics.bluetoothBatteryPct < 20) Color.parseColor("#EF4444") else Color.parseColor("#00E676")
+                                    if (isEink) Color.BLACK else if (metrics.bluetoothBatteryPct < 20) Color.parseColor(
+                                        "#EF4444"
+                                    ) else Color.parseColor("#00E676")
                                 )
                             } else {
                                 b.tvMetricBtBattery.text = "Battery: Telemetry not reported by device"
@@ -2159,7 +2242,8 @@ class DrawerFragment : Fragment() {
                         if (metrics.jackType != null) {
                             b.layoutJackTelemetry.visibility = View.VISIBLE
                             b.tvMetricJackType.text = metrics.jackType
-                            b.tvMetricJackCapabilities.text = metrics.jackCapabilities ?: "Hardware DAC • 16-32bit / up to 384kHz"
+                            b.tvMetricJackCapabilities.text =
+                                metrics.jackCapabilities ?: "Hardware DAC • 16-32bit / up to 384kHz"
                         } else {
                             b.layoutJackTelemetry.visibility = View.GONE
                         }
@@ -2179,7 +2263,8 @@ class DrawerFragment : Fragment() {
 
     private fun setupAboutGithub() {
         try {
-            binding.tvAboutVersion.text = "Spindle OS v${com.hana.spindle.BuildConfig.VERSION_NAME} (Audiophile Edition)"
+            binding.tvAboutVersion.text =
+                "Spindle OS v${com.hana.spindle.BuildConfig.VERSION_NAME} (Audiophile Edition)"
         } catch (e: Exception) {
             // fallback to layout default
         }
@@ -2190,7 +2275,11 @@ class DrawerFragment : Fragment() {
                 }
                 startActivity(intent)
             } catch (e: Exception) {
-                Toast.makeText(requireContext(), "Could not open browser: https://github.com/manaphassan/Spindle", Toast.LENGTH_LONG).show()
+                Toast.makeText(
+                    requireContext(),
+                    "Could not open browser: https://github.com/manaphassan/Spindle",
+                    Toast.LENGTH_LONG
+                ).show()
             }
         }
 
@@ -2201,7 +2290,8 @@ class DrawerFragment : Fragment() {
                 }
                 startActivity(intent)
             } catch (e: Exception) {
-                Toast.makeText(requireContext(), "Donate via PayPal: https://paypal.me/manaphassan", Toast.LENGTH_LONG).show()
+                Toast.makeText(requireContext(), "Donate via PayPal: https://paypal.me/manaphassan", Toast.LENGTH_LONG)
+                    .show()
             }
         }
     }
@@ -2238,7 +2328,8 @@ class DrawerFragment : Fragment() {
                     StudioFeature.LASER_NAMEPLATE_ENGRAVING
                 )
             ) {
-                Toast.makeText(requireContext(), getString(R.string.studio_nameplate_locked_prompt), Toast.LENGTH_LONG).show()
+                Toast.makeText(requireContext(), getString(R.string.studio_nameplate_locked_prompt), Toast.LENGTH_LONG)
+                    .show()
                 DialogStudioUnlock(requireContext()) {
                     updateBadge()
                 }.show()
@@ -2264,7 +2355,8 @@ class DrawerFragment : Fragment() {
                         .edit()
                         .putString("pref_custom_device_name", customName)
                         .apply()
-                    Toast.makeText(requireContext(), getString(R.string.studio_nameplate_saved), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), getString(R.string.studio_nameplate_saved), Toast.LENGTH_SHORT)
+                        .show()
                 }
                 .setNegativeButton(getString(R.string.action_close), null)
                 .setNeutralButton(getString(R.string.action_reset)) { _, _ ->
