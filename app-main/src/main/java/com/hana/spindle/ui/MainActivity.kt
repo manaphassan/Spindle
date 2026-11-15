@@ -61,6 +61,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (forwardToHomeInstanceIfNeeded()) return
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -137,6 +138,29 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * As the default home app, Spindle lives in the home task. Launching it from another app (the
+     * app list, a widget, `am start`) without the HOME category would otherwise create a second
+     * MainActivity in a regular task: two decks, two drawers, and the home copy bleeding through
+     * translucent dialogs. Hand such launches to the home task instead and close this copy.
+     */
+    private fun forwardToHomeInstanceIfNeeded(): Boolean {
+        if (intent?.hasCategory(Intent.CATEGORY_HOME) == true) return false
+        val homeIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+        val home = packageManager.resolveActivity(homeIntent, PackageManager.MATCH_DEFAULT_ONLY)?.activityInfo
+        if (home?.packageName != packageName || home.name != MainActivity::class.java.name) return false
+
+        val forward = Intent(homeIntent).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        intent?.extras?.let { forward.putExtras(it) }
+        // Finish first: while this copy is still alive it is the top-most MainActivity, and the
+        // system would hand the forwarded intent straight back to it.
+        finishAndRemoveTask()
+        startActivity(forward)
+        @Suppress("DEPRECATION")
+        overridePendingTransition(0, 0)
+        return true
+    }
+
     private fun handlePlaybackIntent(intent: Intent?) {
         val playPath = intent?.getStringExtra("play_path")
         if (!playPath.isNullOrBlank()) {
@@ -187,6 +211,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        if (!::binding.isInitialized) return
         if (isImmersiveModeEnabled) {
             applyImmersiveFlags()
         }
@@ -556,6 +581,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        if (!::binding.isInitialized) return // a copy that forwarded itself to the home task
         setIntent(intent)
         handlePlaybackIntent(intent)
         if (intent.getStringExtra("navigate") == "radio") {
