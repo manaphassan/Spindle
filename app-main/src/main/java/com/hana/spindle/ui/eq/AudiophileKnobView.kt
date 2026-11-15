@@ -47,6 +47,28 @@ class AudiophileKnobView @JvmOverloads constructor(
             invalidate()
         }
 
+    /** Pointer notch and lit calibration dots (deck style uses tangerine). */
+    var accentColor: Int = Color.parseColor("#00E676")
+        set(value) {
+            if (field != value) {
+                field = value
+                if (!isEink) {
+                    notchPaint.color = value; activeDotPaint.color = value
+                }
+                invalidate()
+            }
+        }
+
+    /** dB readout under the knob (deck style uses LCD butter). */
+    var readoutColor: Int = Color.parseColor("#00E676")
+        set(value) {
+            if (field != value) {
+                field = value
+                if (!isEink) valuePaint.color = value
+                invalidate()
+            }
+        }
+
     // Touch interaction
     private var lastTouchY = 0f
     private var isDragging = false
@@ -135,7 +157,7 @@ class AudiophileKnobView @JvmOverloads constructor(
         }
 
         notchPaint.apply {
-            color = Color.parseColor("#00E676") // Radiant mint emerald indicator line
+            color = accentColor
             style = Paint.Style.STROKE
             strokeWidth = 3.5f
             strokeCap = Paint.Cap.ROUND
@@ -147,7 +169,7 @@ class AudiophileKnobView @JvmOverloads constructor(
         }
 
         activeDotPaint.apply {
-            color = Color.parseColor("#00E676") // Active/center detent dot
+            color = accentColor
             style = Paint.Style.FILL
         }
 
@@ -159,7 +181,7 @@ class AudiophileKnobView @JvmOverloads constructor(
         }
 
         valuePaint.apply {
-            color = Color.parseColor("#00E676") // Emerald dB readout
+            color = readoutColor
             textSize = 18f
             typeface = Typeface.create(Typeface.MONOSPACE, Typeface.NORMAL)
             textAlign = Paint.Align.CENTER

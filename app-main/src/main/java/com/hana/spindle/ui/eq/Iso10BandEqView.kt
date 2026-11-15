@@ -93,11 +93,21 @@ class Iso10BandEqView @JvmOverloads constructor(
     // Palette
     private val trackColor = Color.parseColor("#1A1C23")
     private val trackZeroColor = Color.parseColor("#3F4452")
-    private val curveColor = Color.parseColor("#00E676") // Audiophile Emerald Glow
-    private val curveFillColorTop = Color.parseColor("#2600E676")
-    private val curveFillColorBottom = Color.parseColor("#0000E676")
+
+    /** Curve, thumb ring and active value colour. Green by default; deck style uses the LCD colour. */
+    var accentColor: Int = Color.parseColor("#00E676")
+        set(value) {
+            if (field != value) {
+                field = value
+                updateThemePaints()
+                invalidate()
+            }
+        }
+    private val curveColor get() = accentColor
+    private val curveFillColorTop get() = (accentColor and 0x00FFFFFF) or (0x26 shl 24)
+    private val curveFillColorBottom get() = accentColor and 0x00FFFFFF
     private val thumbCoreColor = Color.parseColor("#E4E4E7")
-    private val thumbBorderColor = Color.parseColor("#00E676")
+    private val thumbBorderColor get() = accentColor
     private val textMutedColor = Color.parseColor("#71717A")
     private val textActiveColor = Color.parseColor("#A1A1AA")
 

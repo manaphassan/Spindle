@@ -89,6 +89,14 @@ class DrawerFragment : Fragment() {
     private var currentTabIndex = PANEL_SOUND
     private var openSettingsPage = -1
 
+    // Walkman deck style: brushed chassis, SPINDLE band and FUNCTION switch around the pages.
+    private var isDeckStyle = false
+    private var deckColorway = com.hana.spindle.ui.cassette.WalkmanColorway.SILVER
+    private var chassisDrawable: com.hana.spindle.ui.cassette.WalkmanChassisDrawable? = null
+    private val deckStyleListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == com.hana.spindle.ui.cassette.WalkmanColorway.PREF_DECK_STYLE) applyDeckStyle()
+    }
+
     private companion object {
         const val PANEL_SOUND = 0
         const val PANEL_SETTINGS = 1
@@ -97,7 +105,11 @@ class DrawerFragment : Fragment() {
     }
 
     /** System Hub pivots are full pages: one panel per viewport width, no peek. */
-    private fun drawerPanelWidth(): Int = resources.displayMetrics.widthPixels
+    private fun drawerPanelWidth(): Int =
+        resources.displayMetrics.widthPixels - if (isDeckStyle) 2 * deckWindowInsetPx() else 0
+
+    /** Window margin plus frame thickness on each side of the panorama in deck style. */
+    private fun deckWindowInsetPx(): Int = ((12 + 6) * resources.displayMetrics.density).toInt()
 
     /** One entry of the Zune settings menu and the cards its page shows. */
     private class SettingsPage(val title: String, val summary: String, val cards: List<View>)
@@ -172,6 +184,10 @@ class DrawerFragment : Fragment() {
         recentAppsManager = RecentAppsManager(requireContext())
         audioManager = requireContext().getSystemService(Context.AUDIO_SERVICE) as? AudioManager
 
+        applyDeckStyle()
+        setupDeckHeader(app)
+        requireContext().getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+            .registerOnSharedPreferenceChangeListener(deckStyleListener)
         setupTabNavigation()
         setupDrawerPanorama()
         setupSettingsMenu()
@@ -258,6 +274,7 @@ class DrawerFragment : Fragment() {
         // Kinetic parallax title + active tab tracking
         binding.drawerPanoramaScrollView.setOnScrollChangeListener { _, scrollX, _, _, _ ->
             val panelWidth = drawerPanelWidth()
+            if (isDeckStyle) binding.systemDeckHeader.pagePosition = scrollX.toFloat() / panelWidth
             val activeIdx = ((scrollX + panelWidth / 2) / panelWidth).coerceIn(0, 2)
             if (activeIdx != currentTabIndex) {
                 currentTabIndex = activeIdx
@@ -351,6 +368,62 @@ class DrawerFragment : Fragment() {
         scrollToDrawerPanel(index)
     }
 
+    // =========================================================================
+    // WALKMAN DECK STYLE: chassis + band + FUNCTION switch around the same pages
+    // =========================================================================
+    private fun applyDeckStyle() {
+        val b = _binding ?: return
+        val style = requireContext().getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+            .getString(
+                com.hana.spindle.ui.cassette.WalkmanColorway.PREF_DECK_STYLE,
+                com.hana.spindle.ui.cassette.WalkmanColorway.DEFAULT_STYLE
+            )
+        val cw = com.hana.spindle.ui.cassette.WalkmanColorway.fromPref(style)
+        val deck = cw != null
+        val changed = deck != isDeckStyle || (cw != null && cw != deckColorway)
+        isDeckStyle = deck
+        cw?.let { deckColorway = it }
+
+        b.systemDeckHeader.visibility = if (deck) View.VISIBLE else View.GONE
+        b.systemDeckHeader.colorway = deckColorway
+        b.metroHeader.visibility = if (deck) View.GONE else View.VISIBLE
+        b.tabScrollView.visibility = if (deck) View.GONE else View.VISIBLE
+        b.root.setPadding(0, if (deck) 0 else (8 * resources.displayMetrics.density).toInt(), 0, 0)
+
+        val d = resources.displayMetrics.density
+        val pano = b.drawerPanoramaScrollView
+        val lp = pano.layoutParams as LinearLayout.LayoutParams
+        if (deck) {
+            val frame = (6 * d).toInt()
+            lp.setMargins((12 * d).toInt(), (6 * d).toInt(), (12 * d).toInt(), (12 * d).toInt())
+            pano.setPadding(frame, frame, frame, frame)
+            pano.clipToPadding = true
+            pano.background = deckWindowDrawable(deckColorway, d)
+        } else {
+            lp.setMargins(0, 0, 0, 0)
+            pano.setPadding(0, 0, 0, 0)
+            pano.clipToPadding = false
+            pano.background = null
+        }
+        pano.layoutParams = lp
+
+        if (changed && ::appAdapter.isInitialized) {
+            applyPanelWidths()
+            buildSettingsMenu()
+            applyDrawerTheme(themeManager.currentTheme.value)
+            refreshAccentPills()
+            pano.post { _binding?.drawerPanoramaScrollView?.scrollTo(currentTabIndex * drawerPanelWidth(), 0) }
+        }
+    }
+
+    /** Door frame with the smoked glass inset, same proportions as the tape deck's cassette door. */
+    private fun deckWindowDrawable(cw: com.hana.spindle.ui.cassette.WalkmanColorway, d: Float) =
+        android.graphics.drawable.LayerDrawable(
+            arrayOf(
+                android.graphics.drawable.GradientDrawable().apply { setColor(cw.doorFrame); cornerRadius = 10 * d },
+                android.graphics.drawable.GradientDrawable().apply { setColor(cw.glass); cornerRadius = 7 * d }
+            )
+        ).apply { (6 * d).toInt().let { setLayerInset(1, it, it, it, it) } }
 
     private fun applyPanelWidths() {
         val b = _binding ?: return
@@ -361,6 +434,26 @@ class DrawerFragment : Fragment() {
         b.drawerPanoramaScrollView.enableSnapping(w, PANEL_COUNT, 0)
     }
 
+    private fun setupDeckHeader(app: SpindleApp) {
+        binding.systemDeckHeader.labels = listOf("SOUND", "SETTINGS", "APPS")
+        binding.systemDeckHeader.onPageSelected = { index ->
+            app.audioEngine.foleyEngine.playSwitchSnap()
+            selectTab(index)
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                app.audioEngine.playbackState.collect { _binding?.systemDeckHeader?.isRunning = it.isPlaying }
+            }
+        }
+    }
+
+    /** Pages sit behind dark glass in deck style, so their content always uses dark-theme colours there. */
+    private fun contentTheme(requested: CassetteTheme): CassetteTheme =
+        if (isDeckStyle && (!requested.isDarkAppTheme || requested.id == CassetteTheme.MONOCHROME_EINK.id)) {
+            CassetteTheme.DARK
+        } else {
+            requested
+        }
 
     /** Preset name plus every other stage that colours the sound, so "FLAT" is never misleading. */
     private fun fxLabel(fx: AudioFxController): String {
@@ -384,11 +477,18 @@ class DrawerFragment : Fragment() {
         showSettingsMenu()
     }
 
-    /** Builds the Zune settings menu: one lowercase text entry per page. */
+    /** Builds the menu rows for the active style: Zune text entries, or the LCD menu in deck style. */
     private fun buildSettingsMenu() {
         val ctx = requireContext()
         val density = resources.displayMetrics.density
-        binding.settingsMenu.removeAllViews()
+        val menu = binding.settingsMenu
+        menu.removeAllViews()
+        if (isDeckStyle) {
+            buildLcdSettingsMenu(ctx, density)
+            styleSettingsTitle()
+            return
+        }
+        menu.showDividers = LinearLayout.SHOW_DIVIDER_NONE
         val primary = androidx.core.content.ContextCompat.getColor(ctx, R.color.text_primary)
         val secondary = androidx.core.content.ContextCompat.getColor(ctx, R.color.text_secondary)
         val ripple = android.util.TypedValue().also {
@@ -422,11 +522,133 @@ class DrawerFragment : Fragment() {
             })
             binding.settingsMenu.addView(row)
         }
+        styleSettingsTitle()
     }
 
+    /**
+     * DAP-style LCD menu: number, title and summary per 51dp row, chevron on the right.
+     * The row inverts (butter fill, dark print) while pressed or focused.
+     */
+    private fun buildLcdSettingsMenu(ctx: Context, density: Float) {
+        val cw = deckColorway
+        val dp = { v: Float -> (v * density).toInt() }
+        val mono = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+        val states = arrayOf(
+            intArrayOf(android.R.attr.state_pressed),
+            intArrayOf(android.R.attr.state_focused),
+            intArrayOf()
+        )
 
+        fun ink(normal: Int) = ColorStateList(states, intArrayOf(cw.glass, cw.glass, normal))
+        val menu = binding.settingsMenu
+        val pages = settingsPages()
 
-    private fun settingsTitleText(title: String) = "‹ $title"
+        menu.dividerDrawable = android.graphics.drawable.InsetDrawable(
+            android.graphics.drawable.GradientDrawable().apply {
+                setColor(ColorUtils.setAlphaComponent(cw.lcdSub, 31))
+                setSize(0, maxOf(1, dp(1f)))
+            }, dp(4f), 0, dp(4f), 0
+        )
+        menu.showDividers = LinearLayout.SHOW_DIVIDER_MIDDLE
+
+        menu.addView(LinearLayout(ctx).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(dp(8f), dp(10f), dp(8f), dp(8f))
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+            addView(TextView(ctx).apply {
+                text = "MENU"
+                typeface = mono
+                textSize = 9f
+                letterSpacing = 0.08f
+                setTextColor(cw.lcdSub)
+            }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+            addView(TextView(ctx).apply {
+                text = "${pages.size} SECTIONS"
+                typeface = mono
+                textSize = 9f
+                setTextColor(cw.lcdSub)
+            })
+        })
+
+        pages.forEachIndexed { index, page ->
+            val row = LinearLayout(ctx).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                minimumHeight = dp(51f)
+                setPadding(dp(8f), dp(6f), dp(8f), dp(6f))
+                background = android.graphics.drawable.StateListDrawable().apply {
+                    val lit = android.graphics.drawable.GradientDrawable().apply {
+                        setColor(cw.lcdText); cornerRadius = 3 * density
+                    }
+                    addState(intArrayOf(android.R.attr.state_pressed), lit)
+                    addState(intArrayOf(android.R.attr.state_focused), lit)
+                }
+                isClickable = true
+                isFocusable = true
+                contentDescription = "${page.title}. ${page.summary}"
+                setOnClickListener { openSettingsPage(index) }
+            }
+            row.addView(TextView(ctx).apply {
+                text = String.format(Locale.US, "%02d", index + 1)
+                typeface = mono
+                textSize = 9f
+                setTextColor(ink(cw.lcdSub))
+                isDuplicateParentStateEnabled = true
+            }, LinearLayout.LayoutParams(dp(26f), ViewGroup.LayoutParams.WRAP_CONTENT))
+            row.addView(LinearLayout(ctx).apply {
+                orientation = LinearLayout.VERTICAL
+                isDuplicateParentStateEnabled = true
+                addView(TextView(ctx).apply {
+                    text = page.title.uppercase(Locale.US)
+                    typeface = mono
+                    textSize = 13f
+                    letterSpacing = 0.03f
+                    includeFontPadding = false
+                    setTextColor(ink(cw.lcdText))
+                    isDuplicateParentStateEnabled = true
+                })
+                addView(TextView(ctx).apply {
+                    text = page.summary
+                    textSize = 10f
+                    maxLines = 1
+                    ellipsize = TextUtils.TruncateAt.END
+                    setPadding(0, dp(3f), 0, 0)
+                    setTextColor(ink(cw.lcdSub))
+                    isDuplicateParentStateEnabled = true
+                })
+            }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+            row.addView(TextView(ctx).apply {
+                text = "›"
+                textSize = 20f
+                typeface = mono
+                setPadding(dp(8f), 0, 0, 0)
+                setTextColor(ink(cw.lcdText))
+                isDuplicateParentStateEnabled = true
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+            })
+            menu.addView(row)
+        }
+    }
+
+    private var classicTitleTextSizePx = 0f
+
+    /** Sub-page title: Zune "‹ display", or "‹ DISPLAY" in LCD print in deck style. */
+    private fun styleSettingsTitle() {
+        val title = binding.tvSettingsPageTitle
+        if (classicTitleTextSizePx == 0f) classicTitleTextSizePx = title.textSize
+        if (isDeckStyle) {
+            title.typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+            title.textSize = 14f
+            title.setTextColor(deckColorway.lcdText)
+        } else {
+            title.typeface = Typeface.create("sans-serif-light", Typeface.NORMAL)
+            title.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, classicTitleTextSizePx)
+        }
+        if (openSettingsPage >= 0) title.text = settingsTitleText(settingsPages()[openSettingsPage].title)
+    }
+
+    private fun settingsTitleText(title: String) =
+        if (isDeckStyle) "‹ ${title.uppercase(Locale.US)}" else "‹ $title"
 
     private fun showSettingsMenu() {
         openSettingsPage = -1
@@ -564,6 +786,142 @@ class DrawerFragment : Fragment() {
         appAdapter.submitList(filtered)
     }
 
+    // ---- Accent colours: emerald in Classic, LCD butter / tangerine in deck style ----------------
+
+    private val classicAccent = Color.parseColor("#00E676")
+    private val classicAccentBg = Color.parseColor("#16261B")
+    private val tangerine = Color.parseColor("#F97316")
+
+    /** Re-run whenever the deck style changes so selection pills pick up the new accent. */
+    private val pillRefreshers = mutableListOf<() -> Unit>()
+
+    /** Text of a selected pill / live readout. */
+    private fun pillOnText(): Int = if (isDeckStyle) deckColorway.lcdText else classicAccent
+
+    /** Background of a selected pill: the accent faintly lit over the panel recess. */
+    private fun pillOnBg(): Int =
+        if (isDeckStyle) ColorUtils.blendARGB(deckColorway.recess, deckColorway.lcdText, 0.14f) else classicAccentBg
+
+    /** Sound panel controls drawn in the accent: knobs, EQ, curve, sliders and live readouts. */
+    private fun styleSoundPanel() {
+        val b = _binding ?: return
+        val readout = pillOnText()
+        val pointer = if (isDeckStyle) tangerine else classicAccent
+        listOf(b.knobLow, b.knobMid, b.knobHi, b.knobFilter).forEach {
+            it.accentColor = pointer
+            it.readoutColor = readout
+        }
+        b.iso10BandEqView.accentColor = readout
+        b.biquadVisualizerView.accentColor = readout
+        b.btnFx.setTextColor(readout)
+        b.btnFx.backgroundTintList = ColorStateList.valueOf(pillOnBg())
+        b.tvVolumeLevel.setTextColor(readout)
+        b.tvCrossfeedLevel.setTextColor(readout)
+        listOf(b.seekMasterVolume, b.seekCrossfeed).forEach {
+            it.progressTintList = ColorStateList.valueOf(readout)
+            it.thumbTintList = ColorStateList.valueOf(pointer)
+        }
+    }
+
+    /**
+     * Re-runs the selection pills so they pick up the new accent. Only needed when the deck
+     * style changes. Some pill updaters also trigger a full EQ sync, so the sync is held back
+     * and run once at the end.
+     */
+    private fun refreshAccentPills() {
+        val sync = syncAllEqControlsAction
+        syncAllEqControlsAction = null
+        try {
+            pillRefreshers.forEach { it() }
+        } finally {
+            syncAllEqControlsAction = sync
+        }
+        sync?.invoke()
+    }
+
+    // ---- Section widgets (switches, sliders, panels, labels) in deck style ----------------------
+
+    /** Original colours of every widget restyled for deck style, so Classic gets them back exactly. */
+    private val deckOriginals = HashMap<View, Any>()
+
+    private class TintPair(val first: ColorStateList?, val second: ColorStateList?)
+
+    /** Roots whose contents follow the deck style. The LCD menu is excluded; it is built per style. */
+    private fun deckWidgetRoots(b: FragmentDrawerBinding): List<View> =
+        listOf(b.panelSoundDeck, b.scrollSettingsContent)
+
+    private fun restoreDeckWidgets() {
+        for ((view, original) in deckOriginals) {
+            when {
+                view is androidx.appcompat.widget.SwitchCompat && original is TintPair -> {
+                    view.thumbTintList = original.first; view.trackTintList = original.second
+                }
+
+                view is SeekBar && original is TintPair -> {
+                    view.progressTintList = original.first; view.thumbTintList = original.second
+                }
+
+                view is TextView && original is ColorStateList -> view.setTextColor(original)
+            }
+        }
+        deckOriginals.clear()
+    }
+
+    private fun styleDeckWidgets() {
+        val b = _binding ?: return
+        val cw = deckColorway
+        val states = arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf())
+        val thumb = ColorStateList(states, intArrayOf(cw.lcdText, ColorUtils.blendARGB(cw.glass, cw.lcdSub, 0.55f)))
+        val track = ColorStateList(
+            states,
+            intArrayOf(ColorUtils.setAlphaComponent(cw.lcdText, 115), ColorUtils.blendARGB(cw.glass, cw.lcdSub, 0.22f))
+        )
+        val panel = ColorUtils.blendARGB(cw.glass, cw.lcdSub, 0.07f)
+
+        fun visit(v: View) {
+            if (v === b.settingsMenu) return
+            when (v) {
+                is androidx.cardview.widget.CardView -> v.setCardBackgroundColor(panel)
+                is androidx.appcompat.widget.SwitchCompat -> {
+                    deckOriginals.getOrPut(v) { TintPair(v.thumbTintList, v.trackTintList) }
+                    v.thumbTintList = thumb
+                    v.trackTintList = track
+                }
+
+                is SeekBar -> {
+                    deckOriginals.getOrPut(v) { TintPair(v.progressTintList, v.thumbTintList) }
+                    v.progressTintList = ColorStateList.valueOf(cw.lcdText)
+                    v.thumbTintList = ColorStateList.valueOf(tangerine)
+                }
+
+                is TextView -> if (isSectionLabel(v)) {
+                    deckOriginals.getOrPut(v) { v.textColors }
+                    v.setTextColor(cw.lcdSub)
+                }
+            }
+            if (v is ViewGroup) for (i in 0 until v.childCount) visit(v.getChildAt(i))
+        }
+        deckWidgetRoots(b).forEach { visit(it) }
+    }
+
+    /** Small grey monospace captions ("DAP HARDWARE & AUDIO ENGINE"); not buttons, pills or readouts. */
+    private fun isSectionLabel(v: TextView): Boolean {
+        if (v.isClickable || v is Button || v is EditText) return false
+        if (!isMonospace(v)) return false
+        val c = deckOriginals[v] as? ColorStateList
+        val color = c?.defaultColor ?: v.currentTextColor
+        val r = Color.red(color)
+        val g = Color.green(color)
+        val bl = Color.blue(color)
+        val neutral = kotlin.math.abs(r - g) < 25 && kotlin.math.abs(g - bl) < 25
+        val brightness = (r * 299 + g * 587 + bl * 114) / 1000
+        return neutral && brightness in 80..190
+    }
+
+    private fun isMonospace(v: TextView): Boolean {
+        val p = v.paint
+        return p.measureText("iiii") == p.measureText("MMMM")
+    }
 
 
     private fun reloadApps() {
@@ -729,10 +1087,10 @@ class DrawerFragment : Fragment() {
         fun updateEqModeVisual(isParametric: Boolean) {
             binding.btnEqMode.text = if (isParametric) "PARAMETRIC" else "GRAPHIC"
             binding.btnEqMode.setTextColor(
-                Color.parseColor(if (isParametric) "#00E676" else "#38BDF8")
+                if (isParametric) pillOnText() else Color.parseColor("#38BDF8")
             )
             binding.btnEqMode.backgroundTintList = ColorStateList.valueOf(
-                Color.parseColor(if (isParametric) "#16261B" else "#1C1E26")
+                if (isParametric) pillOnBg() else Color.parseColor("#1C1E26")
             )
             binding.iso10BandEqView.isParametricMode = isParametric
         }
@@ -841,9 +1199,9 @@ class DrawerFragment : Fragment() {
                             ignoreCase = true
                         )) ||
                         (name.equals("FLAT", ignoreCase = true) && currentName.equals("Flat", ignoreCase = true))
-                btn.setTextColor(if (isSelected) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+                btn.setTextColor(if (isSelected) pillOnText() else Color.parseColor("#A1A1AA"))
                 btn.backgroundTintList = ColorStateList.valueOf(
-                    if (isSelected) Color.parseColor("#16261B") else Color.parseColor("#181A20")
+                    if (isSelected) pillOnBg() else Color.parseColor("#181A20")
                 )
             }
 
@@ -862,9 +1220,9 @@ class DrawerFragment : Fragment() {
                 val displayName = if (preset.name.length > 18) preset.name.take(16) + "…" else preset.name
                 pill.text = displayName.uppercase()
                 pill.tag = preset.name
-                pill.setTextColor(if (isSelected) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+                pill.setTextColor(if (isSelected) pillOnText() else Color.parseColor("#A1A1AA"))
                 pill.backgroundTintList = ColorStateList.valueOf(
-                    if (isSelected) Color.parseColor("#16261B") else Color.parseColor("#181A20")
+                    if (isSelected) pillOnBg() else Color.parseColor("#181A20")
                 )
                 pill.setOnClickListener {
                     if (fxController.isLocked) {
@@ -1222,7 +1580,7 @@ class DrawerFragment : Fragment() {
                 b.tvEqHeadroom.setTextColor(Color.parseColor("#FFB74D")) // Amber warning/protection
             } else {
                 b.tvEqHeadroom.text = "0.0 dB HEADROOM"
-                b.tvEqHeadroom.setTextColor(Color.parseColor("#00E676")) // Safe green
+                b.tvEqHeadroom.setTextColor(pillOnText()) // Safe
             }
         }
     }
@@ -1500,20 +1858,21 @@ class DrawerFragment : Fragment() {
             val isTrack = mode == ReplayGainMode.TRACK
             val isAlbum = mode == ReplayGainMode.ALBUM
 
-            binding.btnRgOff.setTextColor(if (isOff) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnRgOff.setTextColor(if (isOff) pillOnText() else Color.parseColor("#A1A1AA"))
             binding.btnRgOff.backgroundTintList =
-                ColorStateList.valueOf(if (isOff) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+                ColorStateList.valueOf(if (isOff) pillOnBg() else Color.parseColor("#242731"))
 
-            binding.btnRgTrack.setTextColor(if (isTrack) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnRgTrack.setTextColor(if (isTrack) pillOnText() else Color.parseColor("#A1A1AA"))
             binding.btnRgTrack.backgroundTintList =
-                ColorStateList.valueOf(if (isTrack) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+                ColorStateList.valueOf(if (isTrack) pillOnBg() else Color.parseColor("#242731"))
 
-            binding.btnRgAlbum.setTextColor(if (isAlbum) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnRgAlbum.setTextColor(if (isAlbum) pillOnText() else Color.parseColor("#A1A1AA"))
             binding.btnRgAlbum.backgroundTintList =
-                ColorStateList.valueOf(if (isAlbum) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+                ColorStateList.valueOf(if (isAlbum) pillOnBg() else Color.parseColor("#242731"))
         }
 
         updateReplayGainPills(app.audioEngine.replayGainMode)
+        pillRefreshers += { updateReplayGainPills(app.audioEngine.replayGainMode) }
 
         binding.btnRgOff.setOnClickListener {
             app.audioEngine.setReplayGainMode(ReplayGainMode.OFF)
@@ -1540,20 +1899,21 @@ class DrawerFragment : Fragment() {
             val isFade2s = mode == CrossfadeMode.CROSSFADE_2S
             val isFade4s = mode == CrossfadeMode.CROSSFADE_4S
 
-            binding.btnTransGapless.setTextColor(if (isGapless) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnTransGapless.setTextColor(if (isGapless) pillOnText() else Color.parseColor("#A1A1AA"))
             binding.btnTransGapless.backgroundTintList =
-                ColorStateList.valueOf(if (isGapless) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+                ColorStateList.valueOf(if (isGapless) pillOnBg() else Color.parseColor("#242731"))
 
-            binding.btnTransFade2s.setTextColor(if (isFade2s) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnTransFade2s.setTextColor(if (isFade2s) pillOnText() else Color.parseColor("#A1A1AA"))
             binding.btnTransFade2s.backgroundTintList =
-                ColorStateList.valueOf(if (isFade2s) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+                ColorStateList.valueOf(if (isFade2s) pillOnBg() else Color.parseColor("#242731"))
 
-            binding.btnTransFade4s.setTextColor(if (isFade4s) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnTransFade4s.setTextColor(if (isFade4s) pillOnText() else Color.parseColor("#A1A1AA"))
             binding.btnTransFade4s.backgroundTintList =
-                ColorStateList.valueOf(if (isFade4s) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+                ColorStateList.valueOf(if (isFade4s) pillOnBg() else Color.parseColor("#242731"))
         }
 
         updateCrossfadePills(app.audioEngine.crossfadeMode)
+        pillRefreshers += { updateCrossfadePills(app.audioEngine.crossfadeMode) }
 
         binding.btnTransGapless.setOnClickListener {
             app.audioEngine.setCrossfadeMode(CrossfadeMode.GAPLESS)
@@ -1584,21 +1944,21 @@ class DrawerFragment : Fragment() {
             val isType3 = formulation == AudioFxController.TapeFormulation.TYPE_III_FERRICHROME
             val isType4 = formulation == AudioFxController.TapeFormulation.TYPE_IV_METAL
 
-            binding.btnTapeType1.setTextColor(if (isType1) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnTapeType1.setTextColor(if (isType1) pillOnText() else Color.parseColor("#A1A1AA"))
             binding.btnTapeType1.backgroundTintList =
-                ColorStateList.valueOf(if (isType1) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+                ColorStateList.valueOf(if (isType1) pillOnBg() else Color.parseColor("#242731"))
 
-            binding.btnTapeType2.setTextColor(if (isType2) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnTapeType2.setTextColor(if (isType2) pillOnText() else Color.parseColor("#A1A1AA"))
             binding.btnTapeType2.backgroundTintList =
-                ColorStateList.valueOf(if (isType2) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+                ColorStateList.valueOf(if (isType2) pillOnBg() else Color.parseColor("#242731"))
 
-            binding.btnTapeType3.setTextColor(if (isType3) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnTapeType3.setTextColor(if (isType3) pillOnText() else Color.parseColor("#A1A1AA"))
             binding.btnTapeType3.backgroundTintList =
-                ColorStateList.valueOf(if (isType3) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+                ColorStateList.valueOf(if (isType3) pillOnBg() else Color.parseColor("#242731"))
 
-            binding.btnTapeType4.setTextColor(if (isType4) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnTapeType4.setTextColor(if (isType4) pillOnText() else Color.parseColor("#A1A1AA"))
             binding.btnTapeType4.backgroundTintList =
-                ColorStateList.valueOf(if (isType4) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+                ColorStateList.valueOf(if (isType4) pillOnBg() else Color.parseColor("#242731"))
         }
 
         fun updateDolbyPills(@Suppress("UNUSED_PARAMETER") requested: AudioFxController.DolbyMode) {
@@ -1608,21 +1968,25 @@ class DrawerFragment : Fragment() {
             val isB = mode == AudioFxController.DolbyMode.DOLBY_B
             val isC = mode == AudioFxController.DolbyMode.DOLBY_C
 
-            binding.btnDolbyOff.setTextColor(if (isOff) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnDolbyOff.setTextColor(if (isOff) pillOnText() else Color.parseColor("#A1A1AA"))
             binding.btnDolbyOff.backgroundTintList =
-                ColorStateList.valueOf(if (isOff) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+                ColorStateList.valueOf(if (isOff) pillOnBg() else Color.parseColor("#242731"))
 
-            binding.btnDolbyB.setTextColor(if (isB) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnDolbyB.setTextColor(if (isB) pillOnText() else Color.parseColor("#A1A1AA"))
             binding.btnDolbyB.backgroundTintList =
-                ColorStateList.valueOf(if (isB) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+                ColorStateList.valueOf(if (isB) pillOnBg() else Color.parseColor("#242731"))
 
-            binding.btnDolbyC.setTextColor(if (isC) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnDolbyC.setTextColor(if (isC) pillOnText() else Color.parseColor("#A1A1AA"))
             binding.btnDolbyC.backgroundTintList =
-                ColorStateList.valueOf(if (isC) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+                ColorStateList.valueOf(if (isC) pillOnBg() else Color.parseColor("#242731"))
         }
 
         updateTapeBiasPills(app.audioEngine.audioFxController.currentTapeFormulation)
         updateDolbyPills(app.audioEngine.audioFxController.currentDolbyMode)
+        pillRefreshers += {
+            updateTapeBiasPills(app.audioEngine.audioFxController.currentTapeFormulation)
+            updateDolbyPills(app.audioEngine.audioFxController.currentDolbyMode)
+        }
 
         binding.btnTapeType1.setOnClickListener {
             app.audioEngine.setTapeFormulation(AudioFxController.TapeFormulation.TYPE_I_NORMAL)
@@ -1682,21 +2046,21 @@ class DrawerFragment : Fragment() {
             val isGreen = tone == com.hana.spindle.ui.eq.DualAnalogVuMeterView.BacklightTone.STUDIO_MINT
             val isCream = tone == com.hana.spindle.ui.eq.DualAnalogVuMeterView.BacklightTone.PARCHMENT
 
-            binding.btnVuToneAmber.setTextColor(if (isAmber) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnVuToneAmber.setTextColor(if (isAmber) pillOnText() else Color.parseColor("#A1A1AA"))
             binding.btnVuToneAmber.backgroundTintList =
-                ColorStateList.valueOf(if (isAmber) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+                ColorStateList.valueOf(if (isAmber) pillOnBg() else Color.parseColor("#242731"))
 
-            binding.btnVuToneCyan.setTextColor(if (isCyan) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnVuToneCyan.setTextColor(if (isCyan) pillOnText() else Color.parseColor("#A1A1AA"))
             binding.btnVuToneCyan.backgroundTintList =
-                ColorStateList.valueOf(if (isCyan) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+                ColorStateList.valueOf(if (isCyan) pillOnBg() else Color.parseColor("#242731"))
 
-            binding.btnVuToneGreen.setTextColor(if (isGreen) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnVuToneGreen.setTextColor(if (isGreen) pillOnText() else Color.parseColor("#A1A1AA"))
             binding.btnVuToneGreen.backgroundTintList =
-                ColorStateList.valueOf(if (isGreen) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+                ColorStateList.valueOf(if (isGreen) pillOnBg() else Color.parseColor("#242731"))
 
-            binding.btnVuToneCream.setTextColor(if (isCream) Color.parseColor("#00E676") else Color.parseColor("#A1A1AA"))
+            binding.btnVuToneCream.setTextColor(if (isCream) pillOnText() else Color.parseColor("#A1A1AA"))
             binding.btnVuToneCream.backgroundTintList =
-                ColorStateList.valueOf(if (isCream) Color.parseColor("#16261B") else Color.parseColor("#242731"))
+                ColorStateList.valueOf(if (isCream) pillOnBg() else Color.parseColor("#242731"))
         }
 
         val currentSavedToneName = prefs.getString(
@@ -1709,6 +2073,13 @@ class DrawerFragment : Fragment() {
             com.hana.spindle.ui.eq.DualAnalogVuMeterView.BacklightTone.WARM_TUNGSTEN
         }
         updateVuTonePills(initialTone)
+        pillRefreshers += {
+            val name = prefs.getString("pref_vu_backlight_tone", initialTone.name)
+            updateVuTonePills(
+                com.hana.spindle.ui.eq.DualAnalogVuMeterView.BacklightTone.values().firstOrNull { it.name == name }
+                    ?: initialTone
+            )
+        }
 
         fun selectVuTone(tone: com.hana.spindle.ui.eq.DualAnalogVuMeterView.BacklightTone) {
             prefs.edit().putString("pref_vu_backlight_tone", tone.name).apply()
@@ -1723,7 +2094,9 @@ class DrawerFragment : Fragment() {
         binding.btnVuToneCream.setOnClickListener { selectVuTone(com.hana.spindle.ui.eq.DualAnalogVuMeterView.BacklightTone.PARCHMENT) }
     }
 
-    private fun applyDrawerTheme(theme: CassetteTheme) {
+    private fun applyDrawerTheme(requested: CassetteTheme) {
+        restoreDeckWidgets()
+        val theme = contentTheme(requested)
         val isEink = (theme.id == CassetteTheme.MONOCHROME_EINK.id)
         val isDark = theme.isDarkAppTheme
         val primary = theme.textPrimaryColor
@@ -1731,7 +2104,14 @@ class DrawerFragment : Fragment() {
         val cardBg =
             if (isEink) Color.WHITE else if (!isDark) Color.parseColor("#FAFAF9") else Color.parseColor("#171926")
 
-        binding.root.setBackgroundColor(theme.chassisColor)
+        if (isDeckStyle) {
+            val chassis = chassisDrawable?.takeIf { it.colorway == deckColorway }
+                ?: com.hana.spindle.ui.cassette.WalkmanChassisDrawable(deckColorway, resources.displayMetrics.density)
+                    .also { chassisDrawable?.release(); chassisDrawable = it }
+            binding.root.background = chassis
+        } else {
+            binding.root.setBackgroundColor(theme.chassisColor)
+        }
         binding.tvMetroHubTitle.setTextColor(primary)
 
         // Search Bar adaptation
@@ -1780,6 +2160,9 @@ class DrawerFragment : Fragment() {
         val accent = if (isEink) Color.BLACK else theme.accentColor
         binding.alphabetIndexView.updateTheme(secondary, accent)
         appAdapter.updateThemeColors(primary)
+        styleSettingsTitle()
+        styleSoundPanel()
+        if (isDeckStyle) styleDeckWidgets()
     }
 
     private fun updateCardsRecursively(
@@ -1838,7 +2221,37 @@ class DrawerFragment : Fragment() {
         binding.switchImmersiveMode.setOnCheckedChangeListener { _, isChecked ->
             mainActivity.setImmersiveMode(isChecked)
         }
+        setupDeckStyleSelector()
+    }
 
+    private fun setupDeckStyleSelector() {
+        val prefs = requireContext().getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+        val styles = com.hana.spindle.ui.cassette.WalkmanColorway.values().map { it.prefValue } +
+                com.hana.spindle.ui.cassette.WalkmanColorway.STYLE_CLASSIC
+
+        fun label(style: String?) = com.hana.spindle.ui.cassette.WalkmanColorway.fromPref(style)?.displayName
+            ?: "CLASSIC VERTICAL DECK"
+
+        val key = com.hana.spindle.ui.cassette.WalkmanColorway.PREF_DECK_STYLE
+        val default = com.hana.spindle.ui.cassette.WalkmanColorway.DEFAULT_STYLE
+
+        // Cassette shell models only restyle the classic deck; the Walkman deck has its own colorways.
+        fun syncShellModels(style: String?) {
+            val isClassic = com.hana.spindle.ui.cassette.WalkmanColorway.fromPref(style) == null
+            binding.tvShellModelsLabel.visibility = if (isClassic) View.VISIBLE else View.GONE
+            binding.shellModelsScroll.visibility = if (isClassic) View.VISIBLE else View.GONE
+        }
+
+        binding.btnDeckStyle.text = label(prefs.getString(key, default))
+        syncShellModels(prefs.getString(key, default))
+        binding.btnDeckStyle.setOnClickListener {
+            val current = prefs.getString(key, default)
+            val next = styles[(styles.indexOf(current).coerceAtLeast(0) + 1) % styles.size]
+            prefs.edit().putString(key, next).apply()
+            binding.btnDeckStyle.text = label(next)
+            syncShellModels(next)
+            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+        }
     }
 
     private fun setupDoubleTapSettings() {
@@ -2467,6 +2880,11 @@ class DrawerFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        pillRefreshers.clear()
+        requireContext().getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
+            .unregisterOnSharedPreferenceChangeListener(deckStyleListener)
+        chassisDrawable?.release()
+        chassisDrawable = null
         _binding = null
     }
 }

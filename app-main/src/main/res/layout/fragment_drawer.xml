@@ -32,6 +32,12 @@
             android:textAllCaps="true" />
     </RelativeLayout>
 
+    <!-- Walkman deck style: SPINDLE band + FUNCTION switch, replacing the Zune header and pivots -->
+    <com.hana.spindle.ui.SystemDeckHeaderView
+        android:id="@+id/systemDeckHeader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
 
     <!-- TOP 3-TAB MINIMALIST ZUNE PIVOT -->
     <HorizontalScrollView
@@ -1398,6 +1404,7 @@
 
                         <!-- Vintage Cassette Models Row -->
                         <TextView
+                            android:id="@+id/tvShellModelsLabel"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Cassette Shell Models"
@@ -1408,6 +1415,7 @@
                             android:layout_marginBottom="6dp" />
 
                         <HorizontalScrollView
+                            android:id="@+id/shellModelsScroll"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:scrollbars="none">
@@ -1595,6 +1603,43 @@
                                 android:layout_height="wrap_content"
                                 android:checked="true" />
                         </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="#1E2026"
+                            android:layout_marginVertical="14dp" />
+
+                        <!-- Home deck style: Walkman colorways or the classic vertical deck -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Home Deck Style"
+                            android:textColor="@color/white"
+                            android:textStyle="bold"
+                            android:textSize="13.5sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Tap to switch between the Walkman faceplates and the classic vertical deck."
+                            android:textColor="#A1A1AA"
+                            android:textSize="11sp"
+                            android:layout_marginTop="2dp"
+                            android:layout_marginBottom="8dp" />
+
+                        <Button
+                            android:id="@+id/btnDeckStyle"
+                            android:layout_width="match_parent"
+                            android:layout_height="48dp"
+                            android:text="WALKMAN · SILVER '81"
+                            android:textColor="@color/white"
+                            android:textSize="12sp"
+                            android:textStyle="bold"
+                            android:backgroundTint="#242731"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            app:cornerRadius="8dp" />
 
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
