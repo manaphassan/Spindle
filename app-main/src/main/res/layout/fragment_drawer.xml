@@ -1427,10 +1427,10 @@
                                 android:orientation="horizontal">
 
                                 <Button
-                                    android:id="@+id/btnThemeMetalXr"
+                                    android:id="@+id/btnThemePureMetal"
                                     android:layout_width="wrap_content"
                                     android:layout_height="38dp"
-                                    android:text="METAL-XR"
+                                    android:text="@string/shell_pure_metal"
                                     android:textColor="#EF4444"
                                     android:textSize="9.5sp"
                                     android:textStyle="bold"
@@ -1442,10 +1442,10 @@
                                     app:cornerRadius="8dp" />
 
                                 <Button
-                                    android:id="@+id/btnThemeTdk"
+                                    android:id="@+id/btnThemeHighBias"
                                     android:layout_width="wrap_content"
                                     android:layout_height="38dp"
-                                    android:text="TDK SA-90"
+                                    android:text="@string/shell_high_bias"
                                     android:textColor="#FDE68A"
                                     android:textSize="9.5sp"
                                     android:textStyle="bold"
@@ -1457,10 +1457,10 @@
                                     app:cornerRadius="8dp" />
 
                                 <Button
-                                    android:id="@+id/btnThemeMaxell"
+                                    android:id="@+id/btnThemeAmberGold"
                                     android:layout_width="wrap_content"
                                     android:layout_height="38dp"
-                                    android:text="MAXELL XL-II"
+                                    android:text="@string/shell_amber_gold"
                                     android:textColor="#F59E0B"
                                     android:textSize="9.5sp"
                                     android:textStyle="bold"
@@ -1472,10 +1472,10 @@
                                     app:cornerRadius="8dp" />
 
                                 <Button
-                                    android:id="@+id/btnThemeBasf"
+                                    android:id="@+id/btnThemeChrome"
                                     android:layout_width="wrap_content"
                                     android:layout_height="38dp"
-                                    android:text="BASF CHR"
+                                    android:text="@string/shell_chrome"
                                     android:textColor="#FACC15"
                                     android:textSize="9.5sp"
                                     android:textStyle="bold"
@@ -1519,7 +1519,7 @@
                                     android:id="@+id/btnThemeRedNormal"
                                     android:layout_width="wrap_content"
                                     android:layout_height="38dp"
-                                    android:text="RED NORMAL"
+                                    android:text="@string/shell_red_normal"
                                     android:textColor="#EF4444"
                                     android:textSize="9.5sp"
                                     android:textStyle="bold"
@@ -1531,10 +1531,10 @@
                                     app:cornerRadius="8dp" />
 
                                 <Button
-                                    android:id="@+id/btnThemeDenonHd"
+                                    android:id="@+id/btnThemeGoldHigh"
                                     android:layout_width="wrap_content"
                                     android:layout_height="38dp"
-                                    android:text="DENON HD8"
+                                    android:text="@string/shell_gold_high"
                                     android:textColor="#FBBF24"
                                     android:textSize="9.5sp"
                                     android:textStyle="bold"

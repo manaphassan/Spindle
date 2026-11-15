@@ -182,7 +182,7 @@ class AudioDspAndFoleyTest {
         assertTrue("Type III must have rich bass punch", fx.isoBandsGainDb[0] >= 1.5f)
         assertTrue("Type III must have extended top-end air", fx.isoBandsGainDb[8] >= 0.5f)
 
-        // Switch to Type IV Metal (Extralloy Metal-XR): extended high-frequency response
+        // Switch to Type IV Metal: extended high-frequency response
         fx.setTapeFormulation(AudioFxController.TapeFormulation.TYPE_IV_METAL)
         assertEquals(AudioFxController.TapeFormulation.TYPE_IV_METAL, fx.currentTapeFormulation)
         assertTrue("Type IV must extend top-end air", fx.isoBandsGainDb[9] > 1.0f)
@@ -371,10 +371,10 @@ class AudioDspAndFoleyTest {
         assertEquals("theme_red_normal_type1", redNormal.id)
         assertTrue(allPresets.contains(redNormal))
 
-        val denonHd = com.hana.spindle.theme.CassetteTheme.DENON_HD8_100
-        assertEquals("Denon HD8 100", denonHd.name)
-        assertEquals("theme_denon_hd8_100", denonHd.id)
-        assertTrue(allPresets.contains(denonHd))
+        val goldHigh = com.hana.spindle.theme.CassetteTheme.GOLD_HIGH_TYPE2
+        assertEquals("Gold High Position", goldHigh.name)
+        assertEquals("theme_gold_high_type2", goldHigh.id)
+        assertTrue(allPresets.contains(goldHigh))
     }
 
     @Test

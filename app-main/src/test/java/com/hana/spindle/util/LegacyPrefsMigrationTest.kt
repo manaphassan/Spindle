@@ -34,17 +34,24 @@ class LegacyPrefsMigrationTest {
     }
 
     @Test
+    fun brandedShellIdsAreRenamed() {
+        assertEquals("theme_pure_metal_type4", LegacyPrefsMigration.themeId("theme_metal_xr_type4"))
+        assertEquals("theme_gold_high_type2", LegacyPrefsMigration.themeId("theme_denon_hd8_100"))
+        assertEquals("theme_dark", LegacyPrefsMigration.themeId("theme_dark"))
+    }
+
+    @Test
     fun currentValuesAreLeftAlone() {
         val app = MapPrefs()
         val themes = MapPrefs()
         app.edit().putString("pref_deck_style", "faceplate_silver").putBoolean("pref_hold_lock_keys", true).apply()
-        themes.edit().putString("selected_theme_id", "theme_metal_xr").apply()
+        themes.edit().putString("selected_theme_id", "theme_dark").apply()
 
         LegacyPrefsMigration.migrate(app, themes)
 
         assertEquals("faceplate_silver", app.getString("pref_deck_style", null))
         assertTrue(app.getBoolean("pref_hold_lock_keys", false))
-        assertEquals("theme_metal_xr", themes.getString("selected_theme_id", null))
+        assertEquals("theme_dark", themes.getString("selected_theme_id", null))
     }
 
     /** Minimal in-memory SharedPreferences. */

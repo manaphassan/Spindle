@@ -24,7 +24,7 @@ import kotlin.math.ceil
 /**
  * Custom Hardware-accelerated View recreating an authentic folded paper Cassette J-Card.
  * Displays:
- * 1. Classic jewel case spine fold (Album, Artist, Tape model e.g. EXTRALLOY METAL-XR 90, C-90).
+ * 1. Classic jewel case spine fold (Album, Artist, Tape model e.g. PURE METAL 90, C-90).
  * 2. Booklet fold (Cover Art thumbnail, FLAC / Bit-perfect specs, production notes).
  * 3. Side A / Side B dual-column track listing with A01/B01 numbering, active track indicator,
  *    and direct touch-to-play interaction.
@@ -144,13 +144,13 @@ class JCardLinerView @JvmOverloads constructor(
         tvJCardArtist.setTextColor(theme.accentColor)
         btnManageQueue.setTextColor(theme.accentColor)
 
-        val isMetalXr = (theme.id == CassetteTheme.METAL_XR_TYPE4.id || theme.name.contains("Metal-XR", ignoreCase = true))
+        val isPureMetal = theme.id == CassetteTheme.PURE_METAL_TYPE4.id
         val isRedNormal = theme.id == CassetteTheme.RED_NORMAL_TYPE1.id
-        val isDenon = (theme.id == CassetteTheme.DENON_HD8_100.id || theme.name.contains("Denon", ignoreCase = true))
+        val isGoldHigh = (theme.id == CassetteTheme.GOLD_HIGH_TYPE2.id)
         val tapeModelName = when {
-            isMetalXr -> "EXTRALLOY METAL-XR 90 • TYPE IV"
+            isPureMetal -> "PURE METAL 90 • TYPE IV"
             isRedNormal -> "RED NORMAL 90 • TYPE I NORMAL BIAS 120µs"
-            isDenon -> "DENON HD8 100 • TYPE II HIGH POSITION 70µs"
+            isGoldHigh -> "GOLD HIGH 100 • TYPE II HIGH POSITION 70µs"
             else -> "${theme.name.uppercase()} • C-90"
         }
         tvSpineTapeModel.text = tapeModelName

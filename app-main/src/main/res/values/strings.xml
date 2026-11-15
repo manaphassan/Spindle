@@ -220,4 +220,10 @@
     <string name="settings_deck_style_title">Home Deck Style</string>
     <string name="settings_deck_style_desc">Tap to switch between the faceplate decks and the classic vertical deck.</string>
     <string name="settings_hold_lock_title">HOLD Switch Lock</string>
+    <string name="shell_pure_metal" translatable="false">PURE METAL</string>
+    <string name="shell_high_bias" translatable="false">HIGH BIAS</string>
+    <string name="shell_amber_gold" translatable="false">AMBER GOLD</string>
+    <string name="shell_chrome" translatable="false">CHROME</string>
+    <string name="shell_gold_high" translatable="false">GOLD HIGH</string>
+    <string name="shell_red_normal" translatable="false">RED NORMAL</string>
 </resources>

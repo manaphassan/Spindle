@@ -128,7 +128,7 @@ data class CassetteTheme(
         )
 
         // 4. Type II High-Bias 90 (High Position)
-        val TDK_SA_90 = CassetteTheme(
+        val TYPE2_HIGH_BIAS = CassetteTheme(
             id = "theme_type2_highbias",
             name = "Type II High-Bias",
             subtitle = "Smoked Graphite & Gold Foil",
@@ -154,7 +154,7 @@ data class CassetteTheme(
         )
 
         // 5. Type II Amber Gold 90 (High Epitaxial)
-        val MAXELL_XLII = CassetteTheme(
+        val TYPE2_AMBER_GOLD = CassetteTheme(
             id = "theme_type2_ambergold",
             name = "Type II Amber Gold",
             subtitle = "Amber Smoked & Dual Gold Spools",
@@ -179,8 +179,8 @@ data class CassetteTheme(
             isDarkAppTheme = true
         )
 
-        // 6. Type II Anthracite Chrome (Chromdioxid Extra)
-        val BASF_CHROME = CassetteTheme(
+        // 6. Type II Anthracite Chrome (chromium dioxide)
+        val TYPE2_ANTHRACITE_CHROME = CassetteTheme(
             id = "theme_type2_chrome",
             name = "Anthracite Chrome",
             subtitle = "Matte Anthracite & Hazard Yellow",
@@ -231,11 +231,11 @@ data class CassetteTheme(
             isDarkAppTheme = true
         )
 
-        // 8. Metal-XR (Flagship 1990s Type IV Metal Position)
-        val METAL_XR_TYPE4 = CassetteTheme(
-            id = "theme_metal_xr_type4",
-            name = "Metal-XR Type IV",
-            subtitle = "Extralloy Pure Metal • 70µs Type IV",
+        // 8. Pure Metal (flagship 1990s Type IV metal position)
+        val PURE_METAL_TYPE4 = CassetteTheme(
+            id = "theme_pure_metal_type4",
+            name = "Pure Metal Type IV",
+            subtitle = "Pure Metal Particle • 70µs Type IV",
             chassisStyle = ChassisStyle.VERTICAL_DECK,
             chassisColor = Color.parseColor("#18191E"), // Dark Titanium / Anthracite Slate
             diagonalBezelColor = Color.parseColor("#121316"),
@@ -252,7 +252,7 @@ data class CassetteTheme(
             labelAccentColor = Color.parseColor("#EF4444"), // Red Accent Stripe
             windowTint = Color.argb(30, 240, 240, 245), // Clear Prismatic Window
             reelHubColor = Color.parseColor("#F5F5F5"), // Precision White Hubs
-            tapeRibbonColor = Color.parseColor("#0A0B0C"), // Pure Extralloy Metal Particle Jet-Black Tape
+            tapeRibbonColor = Color.parseColor("#0A0B0C"), // Pure metal particle jet-black tape
             vfdGlowColor = Color.parseColor("#EF4444"),
             isDarkAppTheme = true
         )
@@ -309,10 +309,10 @@ data class CassetteTheme(
             isDarkAppTheme = true
         )
 
-        // 11. Denon HD8 100 (High-End Audiophile Metal-in-High Position)
-        val DENON_HD8_100 = CassetteTheme(
-            id = "theme_denon_hd8_100",
-            name = "Denon HD8 100",
+        // 11. Gold High Position (audiophile metal-in-high position)
+        val GOLD_HIGH_TYPE2 = CassetteTheme(
+            id = "theme_gold_high_type2",
+            name = "Gold High Position",
             subtitle = "High-Position Metal • 70µs Gold Foil",
             chassisStyle = ChassisStyle.VERTICAL_DECK,
             chassisColor = Color.parseColor("#141318"),
@@ -390,29 +390,29 @@ data class CassetteTheme(
 
         // All Curated Theme Presets
         val ALL_PRESETS = listOf(
-            METAL_XR_TYPE4,
+            PURE_METAL_TYPE4,
             DARK,
             LIGHT,
             MONOCHROME_EINK,
-            TDK_SA_90,
-            MAXELL_XLII,
-            BASF_CHROME,
+            TYPE2_HIGH_BIAS,
+            TYPE2_AMBER_GOLD,
+            TYPE2_ANTHRACITE_CHROME,
             SKELETON_REEL,
             REEL_TO_REEL_STUDIO,
             RED_NORMAL_TYPE1,
             FERRICHROME_TYPE3,
-            DENON_HD8_100,
+            GOLD_HIGH_TYPE2,
             METAL_81_RED
         )
 
         // Backward compatibility aliases for legacy references
-        val VERTICAL_STUDIO_DECK = METAL_XR_TYPE4
+        val VERTICAL_STUDIO_DECK = PURE_METAL_TYPE4
         val VAPORWAVE_80S = LIGHT
         val METAL_81_RED_HERO = METAL_81_RED
         val TYPE_I_NORMAL = RED_NORMAL_TYPE1
-        val TYPE_II_CHROME = TDK_SA_90
+        val TYPE_II_CHROME = TYPE2_HIGH_BIAS
         val TYPE_III_FERRICHROME = FERRICHROME_TYPE3
-        val TYPE_IV_METAL = METAL_XR_TYPE4
+        val TYPE_IV_METAL = PURE_METAL_TYPE4
         val ALBUM_ADAPTIVE = DARK
     }
 }

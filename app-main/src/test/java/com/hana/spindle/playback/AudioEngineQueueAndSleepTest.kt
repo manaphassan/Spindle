@@ -192,21 +192,21 @@ class AudioEngineQueueAndSleepTest {
         val ids = presets.map { it.id }
         assertEquals(ids.distinct().size, ids.size)
 
-        val metalXr = presets.find { it.id == com.hana.spindle.theme.CassetteTheme.METAL_XR_TYPE4.id }
-        assertTrue(metalXr != null)
-        assertEquals("Metal-XR Type IV", metalXr!!.name)
+        val pureMetal = presets.find { it.id == com.hana.spindle.theme.CassetteTheme.PURE_METAL_TYPE4.id }
+        assertTrue(pureMetal != null)
+        assertEquals("Pure Metal Type IV", pureMetal!!.name)
 
-        val tdk = presets.find { it.id == com.hana.spindle.theme.CassetteTheme.TDK_SA_90.id }
-        assertTrue(tdk != null)
-        assertEquals("Type II High-Bias", tdk!!.name)
+        val highBias = presets.find { it.id == com.hana.spindle.theme.CassetteTheme.TYPE2_HIGH_BIAS.id }
+        assertTrue(highBias != null)
+        assertEquals("Type II High-Bias", highBias!!.name)
 
-        val maxell = presets.find { it.id == com.hana.spindle.theme.CassetteTheme.MAXELL_XLII.id }
-        assertTrue(maxell != null)
-        assertEquals("Type II Amber Gold", maxell!!.name)
+        val amberGold = presets.find { it.id == com.hana.spindle.theme.CassetteTheme.TYPE2_AMBER_GOLD.id }
+        assertTrue(amberGold != null)
+        assertEquals("Type II Amber Gold", amberGold!!.name)
 
-        val basf = presets.find { it.id == com.hana.spindle.theme.CassetteTheme.BASF_CHROME.id }
-        assertTrue(basf != null)
-        assertEquals("Anthracite Chrome", basf!!.name)
+        val chrome = presets.find { it.id == com.hana.spindle.theme.CassetteTheme.TYPE2_ANTHRACITE_CHROME.id }
+        assertTrue(chrome != null)
+        assertEquals("Anthracite Chrome", chrome!!.name)
 
         val skeleton = presets.find { it.id == com.hana.spindle.theme.CassetteTheme.SKELETON_REEL.id }
         assertTrue(skeleton != null)
