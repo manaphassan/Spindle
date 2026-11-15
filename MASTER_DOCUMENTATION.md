@@ -2,7 +2,7 @@
 **Product Name:** Spindle (Audiophile DAP Launcher)  
 **Package Name:** `com.hana.spindle`  
 **Hero Hardware Inspiration:** Classic 1980s Japanese Portable Cassette Decks & Modern Minimalist Audiophile Gear  
-**Version:** 1.7.0-STUDIO (current stable release, published 2026-11-16, `versionCode` 9)  
+**Version:** 1.7.1-STUDIO (current stable release, published 2026-11-16, `versionCode` 10)  
 **Author / Art Director & Lead Systems Architect:** Spindle Core Team  
 **Platform Target:** Android 8.0 (API 26) through Android 14/15 (API 34/35)  
 **Primary Hardware Targets:** Ultra-low-resource Android DAPs, Compact Smartphones with Hardware DACs, and E-Ink DAPs  
@@ -279,7 +279,7 @@ In faceplate styles these pages sit inside the System Deck drawer (§2.9).
 
 ### 3.5 Native DSD / DSF 1-Bit Bitstream & 32-Tap LUT FIR Decimator (`DsfExtractor.kt`)
 1. **Direct Stream Digital (DSD64) Architecture**:
-   - Sony DSD Stream File (`.dsf`) and DSD Interchange File Format (`.dff`) audio stores 1-bit Delta-Sigma modulated bitstreams at $2.8224\text{ MHz}$ ($64 \times 44.1\text{ kHz}$).
+   - DSD Stream File (`.dsf`) and DSD Interchange File Format (`.dff`) audio stores 1-bit Delta-Sigma modulated bitstreams at $2.8224\text{ MHz}$ ($64 \times 44.1\text{ kHz}$).
    - Android standard `AudioTrack` lacks direct 1-bit native DSD HAL support on non-proprietary USB DAC paths.
 2. **Precalculated 32-Tap Hann-Windowed LUT FIR Decimation Engine**:
    - Decimates high-frequency 1-bit bitstream down by factor $M = 32$ to studio-quality 24-bit $88.2\text{ kHz}$ linear PCM (`C.ENCODING_PCM_24BIT`), preserving high-frequency air up to $44.1\text{ kHz}$ while heavily suppressing delta-sigma ultrasonic quantization noise above $50\text{ kHz}$.
@@ -290,7 +290,7 @@ In faceplate styles these pages sit inside the System Deck drawer (§2.9).
      $$S_{24} = \text{round}(S_{\text{norm}} \cdot 8388607.0)$$
    - Verified CPU overhead is $<1\%$ on quad-core ARM Cortex-A53 processors.
 3. **Fast Stream Header Parsing (`TagParser.parseDsfStreamInfo`)**:
-   - Parses Sony DSF `'DSD '`, `'fmt '`, and `'data'` chunks, resolving sample rates ($2.8224\text{ MHz}$ / $5.6448\text{ MHz}$), channels (1 to 8), and bitstream duration.
+   - Parses DSF `'DSD '`, `'fmt '`, and `'data'` chunks, resolving sample rates ($2.8224\text{ MHz}$ / $5.6448\text{ MHz}$), channels (1 to 8), and bitstream duration.
 4. **Optional DoP Output**: when DSD over PCM is enabled and a verified bit-perfect mixer path is negotiated, `DsfExtractor` emits DoP frames instead of decimated PCM (§3.10).
 
 ### 3.6 Parametric Equalizer (PEQ) Architecture & Reference AutoEQ Workshop
@@ -560,7 +560,7 @@ Spindle is maintained across two targeted build modules to optimize for modern a
      Procedural Foley      Type IV Foil          Queue Drawer          Headphone AutoEQ       Cross-Platform
 ```
 
-**Current stable release:** v1.7.0-STUDIO, published 2026-11-16 (§8.7).
+**Current stable release:** v1.7.1-STUDIO, published 2026-11-16 (§8.7, maintenance update on v1.7.0).
 
 ### 8.1 v1.2.0-RELEASE (Flagship Base Stable)
 * **Flagship Cassette Deck**: Centered acrylic spindle window with kinetic differential spool physics ($v = 4.7625\text{ cm/s}$).
@@ -612,6 +612,7 @@ Spindle is maintained across two targeted build modules to optimize for modern a
 
 ### 8.7 v1.7.0-STUDIO (Current Stable Release — Audiophile Engine & Extended Format Expansion)
 * **Release Status**: Stable, published 2026-11-16 as tag `v1.7.0-STUDIO` (`versionCode` 9, `versionName` `1.7.0-STUDIO`). Signed with the same release key as v1.6.0, so it updates existing installs in place (per `RELEASE_NOTES_v1.7.0-STUDIO.md`).
+* **v1.7.1-STUDIO maintenance update** (`versionCode` 10, current): removes third-party product names from the UI, code and stored settings. Deck styles are `faceplate_silver` / `faceplate_black`, the hold setting is `pref_hold_lock_keys`, and two shells became Red Normal Type I and Ferrichrome Type III. `util/LegacyPrefsMigration.kt` rewrites the old keys and values on first launch (`SpindleApp.onCreate`). Also re-applies the ViewPager2 depth transform on page selection and window focus, so pages are never left shrunk after waking.
 * **Bit-Perfect 32-Bit Float PCM Pipeline (`ENCODING_PCM_FLOAT`)**:
   - Direct 32-bit single-precision floating-point output routing to Android HAL / `AudioTrack`.
   - $+140\text{ dB}$ internal processing dynamic headroom preventing digital clipping and quantization degradation during aggressive tone sculpting.
@@ -622,7 +623,7 @@ Spindle is maintained across two targeted build modules to optimize for modern a
   - Full IFF `FORM`, `COMM`, and `SSND` demuxing within Media3.
   - 80-bit IEEE 754 extended precision float parser with unsigned 64-bit mantissa arithmetic, resolving sample rates up to $384\text{ kHz}$.
 * **Native DSD / DSF 1-Bit Bitstream & 32-Tap LUT FIR Decimator (`DsfExtractor.kt`)**:
-  - Direct playback of Sony `.dsf` and `.dff` 1-bit Delta-Sigma audio ($2.8224\text{ MHz}$ DSD64).
+  - Direct playback of `.dsf` and `.dff` 1-bit Delta-Sigma audio ($2.8224\text{ MHz}$ DSD64).
   - 32-tap Hann-windowed FIR decimation to 24-bit $88.2\text{ kHz}$ linear PCM.
   - Four 256-float look-up tables (`LUT_STAGE_0..3`, 4 KB cache) delivering $<1\%$ CPU load on quad-core Cortex-A53 processors.
 * **Parametric Equalizer (PEQ) & Reference AutoEQ Headphone Profile Matrix**:

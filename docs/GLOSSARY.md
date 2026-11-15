@@ -1,7 +1,7 @@
 # Spindle — Canonical Glossary & Terminology Authority
 
 **Author:** HaNa Innovation Architecture Board  
-**Status:** Active Canonical Specification (v1.1, updated for v1.7.0-STUDIO)  
+**Status:** Active Canonical Specification (v1.2, updated for v1.7.1-STUDIO)  
 **Scope:** `core`, `app-main` (Spindle Standard), `app-lite` (Spindle Lite), documentation, UI strings, and marketing.
 
 ---
@@ -25,7 +25,7 @@ Historical drift across data layers, UI copy, DSP code, and documentation is per
 | **Deck Visual Theme** | **Chassis** or **Skin** | `ChassisTheme`, `ChassisStyle`, `Metal81ChassisView` | Cassette Theme, Deck Theme, App Theme | The skeuomorphic hardware rendering and mechanical cassette styling. "App Theme" is reserved exclusively for the system Light/Dark mode. |
 | **Audio Engine Output** | **Hi-Res Passthrough** | `OutputRoutingMode.HI_RES_PASSTHROUGH` | Bit-Perfect, Direct ALSA (unverified) | Audio playback routed at native resolution through hardware HAL. Reserve "Bit-Perfect" only for a platform-verified bit-perfect mixer path (`BitPerfectMixerController`, Android 14+) with no DSP active; otherwise say "Direct · No DSP". |
 | **Tape Formulation Preset** | **Formulation** | `TapeFormulation` | Tape Type, Cassette Type | Magnetic tape formulation emulation: FLAT reference (default, no tape curve), Type I Normal (Ferric $\text{Fe}_2\text{O}_3$), Type II High ($\text{CrO}_2$), Type III Ferrichrome, Type IV Metal. |
-| **Home Deck Look** | **Deck Style** | `pref_deck_style` (`walkman_silver`, `walkman_black`, `classic`) | Skin, Theme, Mode | Which deck the player, radio and drawer render: the **faceplate deck** (Silver '81 / Pro Black colorways) or the **classic** vertical deck. Independent of Chassis, Skin and Theme. |
+| **Home Deck Look** | **Deck Style** | `pref_deck_style` (`faceplate_silver`, `faceplate_black`, `classic`) | Skin, Theme, Mode | Which deck the player, radio and drawer render: the **faceplate deck** (Silver '81 / Pro Black colorways) or the **classic** vertical deck. Independent of Chassis, Skin and Theme. |
 | **Drawer (deck style)** | **System Deck** | `SystemDeckHeaderView` | System Hub header, faceplate drawer | The drawer chrome in faceplate deck style: SPINDLE band, RUN lamp and FUNCTION switch (Sound / Settings / Apps). |
 | **Signal untouched lamp** | **DIRECT** | `AudioFxController.isTonallyFlat` | Bypass, Pure | Lamp on the faceplate deck, lit only when no EQ curve, saturation, bass boost, crossfeed or software PEQ alters the sound. |
 

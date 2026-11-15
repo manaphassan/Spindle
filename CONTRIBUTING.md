@@ -70,11 +70,14 @@ Spindle respects third-party intellectual property.
 1. **Never use third-party trademarks** (including "Sony", "Walkman", "WM-2", "Walkman Cassette", "SoundAlive") anywhere in the repository, including code comments, XML layout IDs, drawable assets, test fixtures, and documentation.
 2. Pre-commit check:
    ```bash
-   git grep -in "walkman"
-   git grep -in "sony"
+   git grep -in "walkman" -- . ':!RELEASE_NOTES_*' ':!REMEDIATION_PLAN.md' ':!app-main/lint-baseline.xml'
+   git grep -inw "sony" -- . ':!RELEASE_NOTES_*' ':!REMEDIATION_PLAN.md' ':!app-main/lint-baseline.xml'
    git grep -in "wm-2"
    ```
-   All checks must return zero matches (outside historical changelogs).
+   All checks must return zero matches, except:
+   - **Historical text:** past release notes, the remediation plan and the lint baseline.
+   - **Settings migration:** `util/LegacyPrefsMigration.kt` and its test keep the pre-v1.7.1 preference keys and values so existing users' settings carry over. Never write those strings anywhere new.
+   - **Device identification and EQ targets:** naming the maker of a connected USB DAC (`UsbDacManager`), a device's hardware keys, or the headphone model an EQ compensation curve targets (`UserEqPresetManager`) is factual identification, not branding.
 
 ---
 
@@ -101,7 +104,7 @@ Before opening a pull request or merging changes:
   - Notes come from `RELEASE_NOTES_<tag>.md` if present, otherwise they are generated.
   - Artifacts, `SHA256SUMS.txt` and the GitHub Release are produced by the workflow. Never commit binaries.
 - **Required repository secrets** (Settings → Secrets and variables → Actions): `SIGNING_KEYSTORE_BASE64` (`base64 -w0 spindle-release.jks`), `SIGNING_STORE_PASSWORD`, `SIGNING_KEY_ALIAS`, `SIGNING_KEY_PASSWORD`. The release job refuses to run without them and rejects debug-signed APKs.
-  - **Current state:** these secrets are not set, so a tag push fails at "Require signing secrets" before building. v1.7.0-STUDIO was built and published from a maintainer machine instead:
+  - **Current state:** these secrets are not set, so a tag push fails at "Require signing secrets" before building. Standard releases since v1.7.0 are built and published from a maintainer machine instead:
     1. `./gradlew :app-main:assembleRelease :app-main:bundleRelease` with a local `keystore.properties` (never committed).
     2. `apksigner verify --print-certs` must show the HaNa Innovation certificate (SHA-256 `0c16968e…a7dc2`, same as v1.6.0), never "Android Debug".
     3. Smoke-test the minified release APK on a device (launch, play, VU meter).
