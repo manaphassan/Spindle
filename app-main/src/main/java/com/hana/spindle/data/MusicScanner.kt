@@ -98,7 +98,8 @@ class MusicScanner(
                     trackDao.insertTracks(mediaStoreTracks)
                     totalFound += mediaStoreTracks.size
                     Log.d(TAG, "Phase 1: Loaded ${mediaStoreTracks.size} tracks from MediaStore")
-                    _progress.value = ScanProgress(isScanning = true, tracksFound = totalFound, currentPath = "MediaStore indexed")
+                    _progress.value =
+                        ScanProgress(isScanning = true, tracksFound = totalFound, currentPath = "MediaStore indexed")
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error in Phase 1 MediaStore scan", e)
@@ -188,6 +189,27 @@ class MusicScanner(
     }
 
     /**
+     * Removes library entries whose audio file no longer exists (e.g. after an SD card swap).
+     * Playlist links to those tracks go with them (foreign-key cascade). Returns the number removed.
+     */
+    suspend fun pruneMissingTracks(): Int = withContext(Dispatchers.IO) {
+        val tracks = trackDao.getAllTracks().firstOrNull() ?: return@withContext 0
+        var removed = 0
+        for (track in tracks) {
+            if (!File(CueSheetParser.getAudioFilePath(track.path)).exists()) {
+                try {
+                    trackDao.deleteByPath(track.path)
+                    removed++
+                } catch (e: Exception) {
+                    Log.w(TAG, "Could not remove missing track ${track.path}", e)
+                }
+            }
+        }
+        Log.d(TAG, "Pruned $removed missing tracks")
+        removed
+    }
+
+    /**
      * Pre-generates 300x300 downsampled WebP thumbnails for all albums in the library.
      * Uses cooperative multitasking (yield) so UI rendering and audio playback are not starved.
      */
@@ -213,7 +235,8 @@ class MusicScanner(
                         album = album.album,
                         artist = album.artist
                     )
-                } catch (_: Exception) {}
+                } catch (_: Exception) {
+                }
                 kotlinx.coroutines.yield()
             }
             Log.d(TAG, "Background album artwork pre-caching finished.")
@@ -369,7 +392,8 @@ class MusicScanner(
         for (audioPath in referencedAudioPaths) {
             try {
                 trackDao.deleteByPath(audioPath)
-            } catch (ignored: Exception) {}
+            } catch (ignored: Exception) {
+            }
         }
 
         // 2. Process subdirectories and audio tracks (with embedded CUE support)
@@ -397,7 +421,10 @@ class MusicScanner(
 
                     if (embeddedCueTracks.isNotEmpty()) {
                         referencedAudioPaths.add(file.absolutePath)
-                        try { trackDao.deleteByPath(file.absolutePath) } catch (ignored: Exception) {}
+                        try {
+                            trackDao.deleteByPath(file.absolutePath)
+                        } catch (ignored: Exception) {
+                        }
 
                         val audioInfo = TagParser.parseTrack(file)
                         for (cueTrack in embeddedCueTracks) {
@@ -482,7 +509,10 @@ class MusicScanner(
         }
 
         for (audioPath in referencedAudioPaths) {
-            try { trackDao.deleteByPath(audioPath) } catch (ignored: Exception) {}
+            try {
+                trackDao.deleteByPath(audioPath)
+            } catch (ignored: Exception) {
+            }
         }
 
         // 2. Check modified subdirectories and audio tracks
@@ -507,7 +537,10 @@ class MusicScanner(
                     }
 
                     if (embeddedCueTracks.isNotEmpty()) {
-                        try { trackDao.deleteByPath(file.absolutePath) } catch (ignored: Exception) {}
+                        try {
+                            trackDao.deleteByPath(file.absolutePath)
+                        } catch (ignored: Exception) {
+                        }
                         val audioInfo = TagParser.parseTrack(file)
                         for (cueTrack in embeddedCueTracks) {
                             val entity = cueTrack.toTrackEntity(
@@ -585,7 +618,7 @@ class MusicScanner(
             val candidatePath = candidate.canonicalPath
             val hasAncestor = filteredRoots.any { root ->
                 candidatePath == root.canonicalPath ||
-                candidatePath.startsWith(root.canonicalPath + File.separator)
+                        candidatePath.startsWith(root.canonicalPath + File.separator)
             }
             if (!hasAncestor) {
                 filteredRoots.add(candidate)

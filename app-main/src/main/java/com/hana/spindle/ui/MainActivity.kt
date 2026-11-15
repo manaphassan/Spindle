@@ -19,6 +19,7 @@ import java.util.Date
 import java.util.Locale
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.hana.spindle.R
 import com.hana.spindle.SpindleApp
@@ -92,6 +93,48 @@ class MainActivity : AppCompatActivity() {
         }
         handlePlaybackIntent(intent)
         checkAndRequestStoragePermissions(app)
+        setupMissingTrackPrompt(app)
+    }
+
+    private var missingTrackDialog: android.app.AlertDialog? = null
+
+    /**
+     * When a track's file has vanished (usually an SD card swap), offer to drop the stale entries
+     * and reindex whatever storage is mounted now. One prompt at a time, even if several fail.
+     */
+    @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+    private fun setupMissingTrackPrompt(app: SpindleApp) {
+        lifecycleScope.launch {
+            repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+                app.audioEngine.missingTrackEvents.collect { event ->
+                    if (missingTrackDialog?.isShowing == true || app.musicScanner.progress.value.isScanning) {
+                        return@collect
+                    }
+                    missingTrackDialog = android.app.AlertDialog.Builder(this@MainActivity)
+                        .setTitle(R.string.missing_track_title)
+                        .setMessage(getString(R.string.missing_track_message, event.title))
+                        .setPositiveButton(R.string.missing_track_rescan) { _, _ -> rescanLibrary(app) }
+                        .setNegativeButton(R.string.missing_track_later, null)
+                        .show()
+                }
+            }
+        }
+    }
+
+    @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+    private fun rescanLibrary(app: SpindleApp) {
+        Toast.makeText(this, R.string.missing_track_scanning, Toast.LENGTH_SHORT).show()
+        lifecycleScope.launch {
+            val removed = app.musicScanner.pruneMissingTracks()
+            app.musicScanner.scanAll()
+            app.audioEngine.unloadMissingTrack()
+            val count = app.database.trackDao().getTrackCount()
+            Toast.makeText(
+                this@MainActivity,
+                getString(R.string.missing_track_done, count, removed),
+                Toast.LENGTH_LONG
+            ).show()
+        }
     }
 
     private fun handlePlaybackIntent(intent: Intent?) {
@@ -128,17 +171,17 @@ class MainActivity : AppCompatActivity() {
         if (isImmersiveModeEnabled) {
             @Suppress("DEPRECATION")
             window.decorView.systemUiVisibility = (
-                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                or View.SYSTEM_UI_FLAG_FULLSCREEN
-                or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-            )
+                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                            or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                            or View.SYSTEM_UI_FLAG_FULLSCREEN
+                            or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                    )
         } else {
             @Suppress("DEPRECATION")
             window.decorView.systemUiVisibility = (
-                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                or View.SYSTEM_UI_FLAG_VISIBLE
-            )
+                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                            or View.SYSTEM_UI_FLAG_VISIBLE
+                    )
         }
     }
 
@@ -196,18 +239,21 @@ class MainActivity : AppCompatActivity() {
                 position < -1 -> {
                     page.alpha = 0f
                 }
+
                 position <= 0 -> {
                     page.alpha = 1f + position * 0.25f
                     val scaleFactor = 0.96f + (1 - kotlin.math.abs(position)) * 0.04f
                     page.scaleX = scaleFactor
                     page.scaleY = scaleFactor
                 }
+
                 position <= 1 -> {
                     page.alpha = 1f - position * 0.25f
                     val scaleFactor = 0.96f + (1 - kotlin.math.abs(position)) * 0.04f
                     page.scaleX = scaleFactor
                     page.scaleY = scaleFactor
                 }
+
                 else -> {
                     page.alpha = 0f
                 }
@@ -239,6 +285,7 @@ class MainActivity : AppCompatActivity() {
                 exitAmbientWake()
                 return true
             }
+
             override fun onDown(e: MotionEvent): Boolean = true
         })
 
@@ -295,7 +342,8 @@ class MainActivity : AppCompatActivity() {
 
     fun exitAmbientWake() {
         val lp = window.attributes
-        lp.screenBrightness = if (previousBrightness >= 0f) previousBrightness else WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+        lp.screenBrightness =
+            if (previousBrightness >= 0f) previousBrightness else WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
         window.attributes = lp
 
         binding.ambientOverlayContainer.animate()
@@ -405,11 +453,17 @@ class MainActivity : AppCompatActivity() {
             .start()
 
         supportFragmentManager.beginTransaction()
-            .replace(R.id.catalogContainer, VaultFragment.newInstance(openNowPlaying = openNowPlaying, initialTab = tab))
+            .replace(
+                R.id.catalogContainer,
+                VaultFragment.newInstance(openNowPlaying = openNowPlaying, initialTab = tab)
+            )
             .commitAllowingStateLoss()
     }
 
-    @Deprecated("Use navigateToVault in accordance with canonical glossary", ReplaceWith("navigateToVault(openNowPlaying, tab)"))
+    @Deprecated(
+        "Use navigateToVault in accordance with canonical glossary",
+        ReplaceWith("navigateToVault(openNowPlaying, tab)")
+    )
     fun navigateToCatalog(openNowPlaying: Boolean = false, tab: Int = -1) = navigateToVault(openNowPlaying, tab)
 
     fun navigateToRadio() {
@@ -446,13 +500,21 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
                 permissionsToRequest.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
             }
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.BLUETOOTH_CONNECT
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
                 permissionsToRequest.add(Manifest.permission.BLUETOOTH_CONNECT)
             }
         }
@@ -513,7 +575,6 @@ class MainActivity : AppCompatActivity() {
         // Ensure pressing hardware/software Home button always brings user to Cassette Player
         navigateToPlayer()
     }
-
 
 
     override fun onKeyDown(keyCode: Int, event: android.view.KeyEvent?): Boolean {

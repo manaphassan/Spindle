@@ -207,4 +207,10 @@
     <string name="a11y_deck_playing">Now playing: %1$s by %2$s, %3$s</string>
     <string name="a11y_deck_paused">Paused: %1$s by %2$s, %3$s</string>
     <string name="a11y_deck_empty">Cassette deck, no track loaded</string>
+    <string name="missing_track_title">Track not found</string>
+    <string name="missing_track_message">“%1$s” is no longer on this device. The SD card may have been removed or swapped.\n\nRescan the library to remove missing tracks and index the music that is there now?</string>
+    <string name="missing_track_rescan">RESCAN LIBRARY</string>
+    <string name="missing_track_later">NOT NOW</string>
+    <string name="missing_track_scanning">Rescanning library…</string>
+    <string name="missing_track_done">Library updated. Missing tracks removed: %2$d. Tracks indexed: %1$d.</string>
 </resources>
