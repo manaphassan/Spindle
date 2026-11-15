@@ -13,7 +13,7 @@ import android.graphics.Typeface
 import android.text.TextPaint
 import android.text.TextUtils
 import com.hana.spindle.playback.AnalogFmEngine
-import com.hana.spindle.ui.cassette.WalkmanColorway
+import com.hana.spindle.ui.cassette.FaceplateColorway
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.cos
@@ -46,7 +46,7 @@ internal object RadioDeckGeometry {
 
 /** Per-frame inputs that are not part of [RadioDeckModel] (touch feedback, drag preview). */
 internal class RadioDeckRenderState {
-    var colorway = WalkmanColorway.SILVER
+    var colorway = FaceplateColorway.SILVER
     var model = RadioDeckModel()
     var frequency = 88.5f
     var wheelPhase = 0f
@@ -134,14 +134,14 @@ internal class RadioDeckPainter {
     }
 
     private var wheelShader: Shader? = null
-    private var wheelShaderFor: WalkmanColorway? = null
+    private var wheelShaderFor: FaceplateColorway? = null
 
     private var freqTextFor = Float.NaN
     private var freqText = ""
     private var lineFor: String? = null
     private var lineShown: CharSequence = ""
 
-    fun buildStatic(width: Int, height: Int, s: Float, ox: Float, oy: Float, cw: WalkmanColorway): Bitmap {
+    fun buildStatic(width: Int, height: Int, s: Float, ox: Float, oy: Float, cw: FaceplateColorway): Bitmap {
         val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val c = Canvas(bmp)
 
@@ -203,7 +203,7 @@ internal class RadioDeckPainter {
         return bmp
     }
 
-    private fun drawDialScale(c: Canvas, cw: WalkmanColorway) {
+    private fun drawDialScale(c: Canvas, cw: FaceplateColorway) {
         val d = RadioDeckGeometry.dial
         fill.color = DIAL_BG
         c.drawRoundRect(d, 3f, 3f, fill)
@@ -255,7 +255,7 @@ internal class RadioDeckPainter {
         drawText(c, m.hint, 180f, 586f, cw.hint, Paint.Align.CENTER)
     }
 
-    private fun drawWindow(c: Canvas, cw: WalkmanColorway, m: RadioDeckModel, freq: Float) {
+    private fun drawWindow(c: Canvas, cw: FaceplateColorway, m: RadioDeckModel, freq: Float) {
         c.save()
         c.clipRect(RadioDeckGeometry.dial)
 
@@ -305,7 +305,7 @@ internal class RadioDeckPainter {
         c.drawPath(glare, fill)
     }
 
-    private fun drawLcd(c: Canvas, cw: WalkmanColorway, m: RadioDeckModel, freq: Float) {
+    private fun drawLcd(c: Canvas, cw: FaceplateColorway, m: RadioDeckModel, freq: Float) {
         val lit = cw.lcdText
         val off = cw.ledOff
         c.save()
@@ -367,7 +367,7 @@ internal class RadioDeckPainter {
         c.restore()
     }
 
-    private fun drawTuningRow(c: Canvas, cw: WalkmanColorway, m: RadioDeckModel, st: RadioDeckRenderState) {
+    private fun drawTuningRow(c: Canvas, cw: FaceplateColorway, m: RadioDeckModel, st: RadioDeckRenderState) {
         if (m.fmDead) c.saveLayerAlpha(0f, 282f, 360f, 337f, DIM_ALPHA)
         drawText(c, "SEEK", 36f, 293f, cw.print, Paint.Align.CENTER)
         drawText(c, "TUNING", 180f, 293f, cw.print, Paint.Align.CENTER)
@@ -409,7 +409,7 @@ internal class RadioDeckPainter {
         if (m.fmDead) c.restore()
     }
 
-    private fun drawSeekButton(c: Canvas, cw: WalkmanColorway, cx: Float, dir: Float, pressed: Boolean) {
+    private fun drawSeekButton(c: Canvas, cw: FaceplateColorway, cx: Float, dir: Float, pressed: Boolean) {
         fill.color = if (pressed) cw.keyFront else cw.keyTop
         c.drawCircle(cx, 314f, 13f, fill)
         stroke.color = cw.keyFront; stroke.strokeWidth = 1.5f
@@ -425,7 +425,7 @@ internal class RadioDeckPainter {
         c.drawPath(glyph, fill)
     }
 
-    private fun drawMeter(c: Canvas, cw: WalkmanColorway, mt: RadioDeckModel.Meter) {
+    private fun drawMeter(c: Canvas, cw: FaceplateColorway, mt: RadioDeckModel.Meter) {
         meterText.textAlign = Paint.Align.CENTER
         meterText.textSize = 7f
         meterText.color = cw.lcdSub
@@ -474,7 +474,7 @@ internal class RadioDeckPainter {
         c.drawRoundRect(r, 1f, 1f, fill)
     }
 
-    private fun drawSwitches(c: Canvas, cw: WalkmanColorway, m: RadioDeckModel) {
+    private fun drawSwitches(c: Canvas, cw: FaceplateColorway, m: RadioDeckModel) {
         drawKnob(c, cw, 16f, 140f, BAND_STOPS, if (m.isNet) 1 else 0)
 
         val modeDim = m.isNet || m.fmDead
@@ -491,7 +491,7 @@ internal class RadioDeckPainter {
         drawLamp(c, 326f, 432f, 3.5f, m.lampOn)
     }
 
-    private fun drawKnob(c: Canvas, cw: WalkmanColorway, x: Float, w: Float, stops: Array<String>, active: Int) {
+    private fun drawKnob(c: Canvas, cw: FaceplateColorway, x: Float, w: Float, stops: Array<String>, active: Int) {
         val step = w / stops.size
         for (i in stops.indices) {
             val p = if (i == active) printActive.apply { color = cw.print } else printInactive.apply {
@@ -521,7 +521,7 @@ internal class RadioDeckPainter {
         c.drawCircle(x, y, radius, fill)
     }
 
-    private fun drawKeys(c: Canvas, cw: WalkmanColorway, m: RadioDeckModel, pressed: Int) {
+    private fun drawKeys(c: Canvas, cw: FaceplateColorway, m: RadioDeckModel, pressed: Int) {
         val w = RadioDeckGeometry.KEY_W
         for (i in 0 until RadioDeckGeometry.KEY_COUNT) {
             val x = RadioDeckGeometry.keyLeft(i)

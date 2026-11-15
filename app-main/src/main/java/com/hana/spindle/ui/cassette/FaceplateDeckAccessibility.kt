@@ -7,10 +7,10 @@ import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.customview.widget.ExploreByTouchHelper
 
 /**
- * Exposes the Canvas-drawn keys, switches, cassette and meter of [WalkmanDeckView]
+ * Exposes the Canvas-drawn keys, switches, cassette and meter of [FaceplateDeckView]
  * to TalkBack and switch access as individual virtual views.
  */
-internal class WalkmanDeckAccessibility(private val deck: WalkmanDeckView) : ExploreByTouchHelper(deck) {
+internal class FaceplateDeckAccessibility(private val deck: FaceplateDeckView) : ExploreByTouchHelper(deck) {
 
     private val boundsF = RectF()
     private val bounds = Rect()
@@ -21,7 +21,7 @@ internal class WalkmanDeckAccessibility(private val deck: WalkmanDeckView) : Exp
     }
 
     override fun getVisibleVirtualViews(virtualViewIds: MutableList<Int>) {
-        for (id in 0 until WalkmanDeckView.ID_COUNT) virtualViewIds.add(id)
+        for (id in 0 until FaceplateDeckView.ID_COUNT) virtualViewIds.add(id)
     }
 
     override fun onPopulateNodeForVirtualView(virtualViewId: Int, node: AccessibilityNodeInfoCompat) {
@@ -32,7 +32,7 @@ internal class WalkmanDeckAccessibility(private val deck: WalkmanDeckView) : Exp
         node.className = android.widget.Button::class.java.name
         node.isClickable = true
         node.addAction(AccessibilityNodeInfoCompat.ACTION_CLICK)
-        if (virtualViewId == WalkmanDeckView.KEY_EJECT || virtualViewId == WalkmanDeckView.ID_TAPE) {
+        if (virtualViewId == FaceplateDeckView.KEY_EJECT || virtualViewId == FaceplateDeckView.ID_TAPE) {
             node.isLongClickable = true
             node.addAction(AccessibilityNodeInfoCompat.ACTION_LONG_CLICK)
         }

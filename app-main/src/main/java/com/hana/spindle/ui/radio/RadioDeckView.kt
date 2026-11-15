@@ -13,15 +13,15 @@ import android.view.View
 import android.view.ViewConfiguration
 import androidx.core.view.ViewCompat
 import com.hana.spindle.playback.AnalogFmEngine
-import com.hana.spindle.ui.cassette.WalkmanColorway
+import com.hana.spindle.ui.cassette.FaceplateColorway
 import java.util.Locale
 import kotlin.math.abs
 
 /**
- * Walkman-style radio page: slide-rule dial and LCD behind the smoked door, SEEK buttons
+ * Faceplate radio page: slide-rule dial and LCD behind the smoked door, SEEK buttons
  * around a knurled tuning wheel, SIG / centre-zero TUNE meter, BAND and MODE slide switches
  * with a STEREO lamp, and four latching preset keys plus SCAN. Pairs with the tape deck's
- * [com.hana.spindle.ui.cassette.WalkmanDeckView] and shares its colorways.
+ * [com.hana.spindle.ui.cassette.FaceplateDeckView] and shares its colorways.
  *
  * The view holds no radio logic: [RadioFragment] pushes a [RadioDeckModel] and reacts to callbacks.
  */
@@ -56,7 +56,7 @@ class RadioDeckView @JvmOverloads constructor(
     private val maxFreq = AnalogFmEngine.MAX_FREQ
     private val step = AnalogFmEngine.STEP_MHZ
 
-    var colorway: WalkmanColorway
+    var colorway: FaceplateColorway
         get() = render.colorway
         set(value) {
             if (render.colorway == value) return
@@ -93,7 +93,7 @@ class RadioDeckView @JvmOverloads constructor(
     init {
         isClickable = true
         isFocusable = true
-        contentDescription = "Walkman radio tuner"
+        contentDescription = "Radio tuner"
         ViewCompat.setAccessibilityDelegate(this, accessibility)
     }
 

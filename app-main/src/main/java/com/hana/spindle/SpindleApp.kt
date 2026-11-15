@@ -60,6 +60,8 @@ class SpindleApp : Application() {
     override fun onCreate() {
         super.onCreate()
         instance = this
+        // Before anything reads settings: carry over keys and values renamed in v1.7.1.
+        com.hana.spindle.util.LegacyPrefsMigration.migrate(this)
         createNotificationChannel()
     }
 

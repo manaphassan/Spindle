@@ -15,12 +15,12 @@ import android.view.View
 import androidx.core.view.ViewCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.customview.widget.ExploreByTouchHelper
-import com.hana.spindle.ui.cassette.WalkmanColorway
+import com.hana.spindle.ui.cassette.FaceplateColorway
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
 /**
- * Walkman-style header for the System page: the SPINDLE band with a RUN lamp, and a
+ * Faceplate-style header for the System page: the SPINDLE band with a RUN lamp, and a
  * FUNCTION slide switch (SOUND / SETTINGS / APPS) that replaces the Zune pivot strip.
  * The knob tracks [pagePosition] so it slides along while the panorama is swiped.
  *
@@ -48,7 +48,7 @@ class SystemDeckHeaderView @JvmOverloads constructor(
             field = value; invalidate(); accessibility.invalidateRoot()
         }
 
-    var colorway: WalkmanColorway = WalkmanColorway.SILVER
+    var colorway: FaceplateColorway = FaceplateColorway.SILVER
         set(value) {
             if (field != value) {
                 field = value; invalidate()

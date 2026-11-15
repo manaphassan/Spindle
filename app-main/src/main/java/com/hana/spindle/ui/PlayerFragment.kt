@@ -58,11 +58,11 @@ class PlayerFragment : Fragment() {
     private var currentAlbumCoverBitmap: Bitmap? = null
     private var currentFormatString: String = ""
     private var spoolFoleyStreamId = 0
-    private var isWalkmanStyle = true
+    private var isFaceplateStyle = true
     private val vuLevels = FloatArray(4)
 
     private val deckStyleListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-        if (key == com.hana.spindle.ui.cassette.WalkmanColorway.PREF_DECK_STYLE) applyDeckStyle()
+        if (key == com.hana.spindle.ui.cassette.FaceplateColorway.PREF_DECK_STYLE) applyDeckStyle()
     }
 
     // Battery Receiver for Metal-81 Hardware LED
@@ -104,7 +104,7 @@ class PlayerFragment : Fragment() {
         setupThemeObservation()
         setupAudioPlaybackObservation(app)
         setupControls()
-        setupWalkmanControls()
+        setupFaceplateControls()
         setupCassetteFlip()
         applyDeckStyle()
         requireContext().getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
@@ -148,24 +148,24 @@ class PlayerFragment : Fragment() {
         }
     }
 
-    /** Shows the Walkman deck or the classic vertical deck according to the saved deck style. */
+    /** Shows the faceplate deck or the classic vertical deck according to the saved deck style. */
     private fun applyDeckStyle() {
         val b = _binding ?: return
         val style = requireContext().getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
             .getString(
-                com.hana.spindle.ui.cassette.WalkmanColorway.PREF_DECK_STYLE,
-                com.hana.spindle.ui.cassette.WalkmanColorway.DEFAULT_STYLE
+                com.hana.spindle.ui.cassette.FaceplateColorway.PREF_DECK_STYLE,
+                com.hana.spindle.ui.cassette.FaceplateColorway.DEFAULT_STYLE
             )
-        val colorway = com.hana.spindle.ui.cassette.WalkmanColorway.fromPref(style)
-        isWalkmanStyle = colorway != null
-        colorway?.let { b.walkmanDeckView.colorway = it }
+        val colorway = com.hana.spindle.ui.cassette.FaceplateColorway.fromPref(style)
+        isFaceplateStyle = colorway != null
+        colorway?.let { b.faceplateDeckView.colorway = it }
         if (!isJCardVisible) {
-            b.walkmanDeckView.visibility = if (isWalkmanStyle) View.VISIBLE else View.GONE
-            b.verticalDeckView.visibility = if (isWalkmanStyle) View.GONE else View.VISIBLE
+            b.faceplateDeckView.visibility = if (isFaceplateStyle) View.VISIBLE else View.GONE
+            b.verticalDeckView.visibility = if (isFaceplateStyle) View.GONE else View.VISIBLE
         }
     }
 
-    private fun activeDeckView(): View = if (isWalkmanStyle) binding.walkmanDeckView else binding.verticalDeckView
+    private fun activeDeckView(): View = if (isFaceplateStyle) binding.faceplateDeckView else binding.verticalDeckView
 
     override fun onResume() {
         super.onResume()
@@ -218,7 +218,7 @@ class PlayerFragment : Fragment() {
             b.verticalDeckView.dolbyMode = audioEngine.audioFxController.currentDolbyMode
             b.verticalCassetteView.isPlaying = state.isPlaying
             b.verticalCassetteView.progress = state.progress
-            syncWalkmanDeck(state)
+            syncFaceplateDeck(state)
 
             // Screen-reader summary of the deck (the canvas views expose nothing on their own)
             val a11yTrack = state.currentTrack
@@ -265,7 +265,7 @@ class PlayerFragment : Fragment() {
                     val coverBitmap = app.imageLoader.loadCover(song.path, 160, 160, song.album, song.artist)
                     currentAlbumCoverBitmap = coverBitmap
                     _binding?.verticalDeckView?.albumArtBitmap = coverBitmap
-                    _binding?.walkmanDeckView?.albumArtBitmap = coverBitmap
+                    _binding?.faceplateDeckView?.albumArtBitmap = coverBitmap
                     val accentColor = app.imageLoader.extractAccentColor(song.path)
                     _binding?.verticalDeckView?.setCoverAccentColor(accentColor)
 
@@ -295,7 +295,7 @@ class PlayerFragment : Fragment() {
                 b.verticalDeckView.durationMs = 0L
                 b.verticalDeckView.audioFormat = ""
                 b.verticalDeckView.albumArtBitmap = null
-                b.walkmanDeckView.albumArtBitmap = null
+                b.faceplateDeckView.albumArtBitmap = null
                 b.verticalDeckView.androidVersionText = com.hana.spindle.util.DeviceUtils.getAndroidVersionString()
                 b.verticalCassetteView.trackTitle = hardwareName
                 b.verticalCassetteView.artistName = ""
@@ -326,8 +326,8 @@ class PlayerFragment : Fragment() {
         }
     }
 
-    private fun syncWalkmanDeck(state: com.hana.spindle.playback.PlaybackState) {
-        val deck = _binding?.walkmanDeckView ?: return
+    private fun syncFaceplateDeck(state: com.hana.spindle.playback.PlaybackState) {
+        val deck = _binding?.faceplateDeckView ?: return
         val fx = audioEngine.audioFxController
         deck.isPlaying = state.isPlaying
         deck.progress = state.progress
@@ -342,8 +342,8 @@ class PlayerFragment : Fragment() {
             deck.trackKey = song.path
             deck.trackTitle = song.title
             deck.trackSubtitle = listOf(song.artist, song.album).filter { it.isNotBlank() }.joinToString(" · ")
-            deck.formatLine = walkmanFormatLine(song)
-            deck.rateLine = walkmanRateLine(song)
+            deck.formatLine = faceplateFormatLine(song)
+            deck.rateLine = faceplateRateLine(song)
         } else {
             deck.trackKey = null
             deck.trackTitle = com.hana.spindle.util.DeviceUtils.getHardwareDeviceName()
@@ -353,12 +353,12 @@ class PlayerFragment : Fragment() {
         }
     }
 
-    private fun walkmanFormatLine(song: TrackEntity): String {
+    private fun faceplateFormatLine(song: TrackEntity): String {
         val format = song.fileFormat.uppercase(Locale.US)
         return if (song.bitrateKbps > 0 && isLossyFormat(format)) "$format · ${song.bitrateKbps} kbps" else format
     }
 
-    private fun walkmanRateLine(song: TrackEntity): String {
+    private fun faceplateRateLine(song: TrackEntity): String {
         if (song.sampleRate <= 0) return ""
         val kHz = if (song.sampleRate % 1000 == 0) "${song.sampleRate / 1000}" else String.format(
             Locale.US,
@@ -626,8 +626,8 @@ class PlayerFragment : Fragment() {
     }
 
     @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
-    private fun setupWalkmanControls() {
-        val deck = binding.walkmanDeckView
+    private fun setupFaceplateControls() {
+        val deck = binding.faceplateDeckView
         deck.levelProvider = { out -> audioEngine.outputLevelMeter.read(40L, out) }
         // PLAY reuses the classic deck's handler (starts the library when no tape is loaded).
         deck.onPlayClicked = { binding.verticalDeckView.onPlayClicked?.invoke() }

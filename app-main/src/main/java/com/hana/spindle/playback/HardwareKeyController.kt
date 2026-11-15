@@ -48,10 +48,10 @@ class HardwareKeyController(
     ): Boolean {
         val prefs = context.getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
 
-        // 0. Walkman Physical HOLD Switch Interception (§Hardware Matrix)
+        // 0. Physical HOLD Switch Interception (§Hardware Matrix)
         if (keyCode == KeyEvent.KEYCODE_SCROLL_LOCK || keyCode == 301 /* KEYCODE_HOLD */) {
             isHoldSwitchEngaged = !isHoldSwitchEngaged
-            val msg = if (isHoldSwitchEngaged) "Walkman HOLD: ON 🔒" else "Walkman HOLD: OFF 🔓"
+            val msg = if (isHoldSwitchEngaged) "HOLD: ON 🔒" else "HOLD: OFF 🔓"
             try {
                 Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
             } catch (_: Throwable) {
@@ -60,7 +60,7 @@ class HardwareKeyController(
             return true
         }
 
-        if (isHoldSwitchEngaged && prefs.getBoolean("pref_walkman_hold_lock_keys", true)) {
+        if (isHoldSwitchEngaged && prefs.getBoolean(com.hana.spindle.util.LegacyPrefsMigration.PREF_HOLD_LOCK, true)) {
             // Physical keys locked by hardware HOLD switch
             return true
         }
@@ -382,7 +382,7 @@ class HardwareKeyController(
         }
 
         // Block key up if HOLD switch is active
-        if (isHoldSwitchEngaged && prefs.getBoolean("pref_walkman_hold_lock_keys", true)) {
+        if (isHoldSwitchEngaged && prefs.getBoolean(com.hana.spindle.util.LegacyPrefsMigration.PREF_HOLD_LOCK, true)) {
             return true
         }
 

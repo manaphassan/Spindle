@@ -276,11 +276,11 @@ class HardwareKeyControllerTest {
     }
 
     // =========================================================================
-    // 7. WALKMAN HOLD SWITCH & ROTARY JOG DIAL TESTS
+    // 7. HOLD SWITCH & ROTARY JOG DIAL TESTS
     // =========================================================================
 
     @Test
-    fun testWalkmanHoldSwitch_locksKeysWhenActive() {
+    fun testHoldSwitch_locksKeysWhenActive() {
         val controller = HardwareKeyController()
 
         // 1. Initially HOLD is OFF
@@ -292,7 +292,7 @@ class HardwareKeyControllerTest {
         assertTrue("Hold switch is now ON", controller.isHoldSwitchEngaged)
 
         // 3. When HOLD is ON, hardware media transport buttons must be blocked
-        fakePrefs.edit().putBoolean("pref_walkman_hold_lock_keys", true).apply()
+        fakePrefs.edit().putBoolean("pref_hold_lock_keys", true).apply()
         val nextHandled = controller.onKeyDown(KeyEvent.KEYCODE_MEDIA_NEXT, null, fakeContext, fakeTransport)
         assertTrue("Blocked key event is consumed", nextHandled)
         assertEquals("Transport method should NOT be invoked while HOLD is active", 0, fakeTransport.nextCount)

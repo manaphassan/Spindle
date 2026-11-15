@@ -2,6 +2,7 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -32,7 +33,7 @@
             android:textAllCaps="true" />
     </RelativeLayout>
 
-    <!-- Walkman deck style: SPINDLE band + FUNCTION switch, replacing the Zune header and pivots -->
+    <!-- Faceplate deck style: SPINDLE band + FUNCTION switch, replacing the Zune header and pivots -->
     <com.hana.spindle.ui.SystemDeckHeaderView
         android:id="@+id/systemDeckHeader"
         android:layout_width="match_parent"
@@ -1515,10 +1516,10 @@
                                     app:cornerRadius="8dp" />
 
                                 <Button
-                                    android:id="@+id/btnThemeSonyHf"
+                                    android:id="@+id/btnThemeRedNormal"
                                     android:layout_width="wrap_content"
                                     android:layout_height="38dp"
-                                    android:text="SONY HF"
+                                    android:text="RED NORMAL"
                                     android:textColor="#EF4444"
                                     android:textSize="9.5sp"
                                     android:textStyle="bold"
@@ -1610,11 +1611,11 @@
                             android:background="#1E2026"
                             android:layout_marginVertical="14dp" />
 
-                        <!-- Home deck style: Walkman colorways or the classic vertical deck -->
+                        <!-- Home deck style: faceplate colorways or the classic vertical deck -->
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Home Deck Style"
+                            android:text="@string/settings_deck_style_title"
                             android:textColor="@color/white"
                             android:textStyle="bold"
                             android:textSize="13.5sp" />
@@ -1622,7 +1623,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Tap to switch between the Walkman faceplates and the classic vertical deck."
+                            android:text="@string/settings_deck_style_desc"
                             android:textColor="#A1A1AA"
                             android:textSize="11sp"
                             android:layout_marginTop="2dp"
@@ -1632,7 +1633,7 @@
                             android:id="@+id/btnDeckStyle"
                             android:layout_width="match_parent"
                             android:layout_height="48dp"
-                            android:text="WALKMAN · SILVER '81"
+                            tools:text="FACEPLATE · SILVER '81"
                             android:textColor="@color/white"
                             android:textSize="12sp"
                             android:textStyle="bold"
@@ -1808,7 +1809,7 @@
                             android:background="#1E2026"
                             android:layout_marginVertical="12dp" />
 
-                        <!-- Walkman HOLD Switch Lock -->
+                        <!-- HOLD Switch Lock -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -1824,7 +1825,7 @@
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Walkman HOLD Switch Lock"
+                                    android:text="@string/settings_hold_lock_title"
                                     android:textColor="@color/white"
                                     android:textStyle="bold"
                                     android:textSize="13.5sp" />
@@ -1839,7 +1840,7 @@
                             </LinearLayout>
 
                             <androidx.appcompat.widget.SwitchCompat
-                                android:id="@+id/switchWalkmanHold"
+                                android:id="@+id/switchHoldLock"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:checked="true" />

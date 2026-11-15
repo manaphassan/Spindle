@@ -47,7 +47,7 @@ class AlphabetIndexView @JvmOverloads constructor(
     var onTouchActiveChanged: ((Boolean) -> Unit)? = null
 
     /**
-     * Walkman deck style: letters in LCD print, and a tangerine dial needle (like the radio's)
+     * Faceplate deck style: letters in LCD print, and a tangerine dial needle (like the radio's)
      * instead of the capsule. At rest the needle marks [currentLetterIndex].
      */
     var deckStyle: Boolean = false

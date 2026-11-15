@@ -145,11 +145,11 @@ class JCardLinerView @JvmOverloads constructor(
         btnManageQueue.setTextColor(theme.accentColor)
 
         val isMetalXr = (theme.id == CassetteTheme.METAL_XR_TYPE4.id || theme.name.contains("Metal-XR", ignoreCase = true))
-        val isSonyHf = (theme.id == CassetteTheme.SONY_HF_90.id || theme.name.contains("Sony HF", ignoreCase = true))
+        val isRedNormal = theme.id == CassetteTheme.RED_NORMAL_TYPE1.id
         val isDenon = (theme.id == CassetteTheme.DENON_HD8_100.id || theme.name.contains("Denon", ignoreCase = true))
         val tapeModelName = when {
             isMetalXr -> "EXTRALLOY METAL-XR 90 • TYPE IV"
-            isSonyHf -> "SONY HF 90 • TYPE I NORMAL BIAS 120µs"
+            isRedNormal -> "RED NORMAL 90 • TYPE I NORMAL BIAS 120µs"
             isDenon -> "DENON HD8 100 • TYPE II HIGH POSITION 70µs"
             else -> "${theme.name.uppercase()} • C-90"
         }

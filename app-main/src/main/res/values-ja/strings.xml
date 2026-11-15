@@ -41,4 +41,7 @@
     <string name="missing_card_message">「%1$s」は、現在挿入されていないSDカードにあります。再生するにはカードを挿入してください。\n\nそのカードをもう使わない場合は、ライブラリからトラックを削除できます。プレイリストからも削除されます。</string>
     <string name="missing_card_keep">トラックを残す</string>
     <string name="missing_card_remove">ライブラリから削除</string>
+    <string name="settings_deck_style_title">ホームデッキのスタイル</string>
+    <string name="settings_deck_style_desc">タップでフェイスプレートデッキとクラシック縦型デッキを切り替えます。</string>
+    <string name="settings_hold_lock_title">HOLDスイッチロック</string>
 </resources>

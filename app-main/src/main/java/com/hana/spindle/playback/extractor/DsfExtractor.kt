@@ -19,7 +19,7 @@ import kotlin.math.min
  * Native, audiophile-grade Direct Stream Digital (DSF / DSD) Extractor & Decimator for AndroidX Media3.
  *
  * Implements:
- * - Chunk demuxing for Sony DSF: 'DSD ', 'fmt ', 'data' chunks.
+ * - Chunk demuxing for DSF: 'DSD ', 'fmt ', 'data' chunks.
  * - Sniffing support for Philips DSDIFF ('FRM8' / 'DSD ').
  * - Ultra-fast, zero-allocation 32-tap Hann-windowed FIR decimation filter:
  *   Decimates 1-bit 2.8224 MHz DSD64 (or 5.6448 MHz DSD128) into pristine 24-bit 88.2 kHz PCM.

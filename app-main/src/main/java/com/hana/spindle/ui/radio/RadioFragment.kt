@@ -28,7 +28,7 @@ import com.hana.spindle.databinding.FragmentRadioBinding
 import com.hana.spindle.playback.AnalogFmEngine
 import com.hana.spindle.playback.RadioStreamEngine
 import com.hana.spindle.theme.CassetteTheme
-import com.hana.spindle.ui.cassette.WalkmanColorway
+import com.hana.spindle.ui.cassette.FaceplateColorway
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -84,7 +84,7 @@ class RadioFragment : Fragment() {
     private var networkCallback: ConnectivityManager.NetworkCallback? = null
     private var audioPulseJob: Job? = null
 
-    // Walkman radio deck. Shown when the shared deck style is a Walkman colorway.
+    // Faceplate radio deck. Shown when the shared deck style is a faceplate colorway.
     private var isDeckStyle = false
 
     /** Deck style only: FM is selected but no wired headset is plugged in to act as the antenna. */
@@ -94,7 +94,7 @@ class RadioFragment : Fragment() {
     private var linkLevel = 1f
     private val deckSyncRunnable = Runnable { syncDeck() }
     private val deckStyleListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-        if (key == WalkmanColorway.PREF_DECK_STYLE) applyDeckStyle()
+        if (key == FaceplateColorway.PREF_DECK_STYLE) applyDeckStyle()
     }
 
     private val foley get() = (activity?.application as? SpindleApp)?.audioEngine?.foleyEngine
@@ -1024,14 +1024,14 @@ class RadioFragment : Fragment() {
         }
     }
 
-    // ---- Walkman radio deck ---------------------------------------------------------------
+    // ---- Faceplate radio deck ---------------------------------------------------------------
 
-    /** Shows the Walkman radio deck or the classic tuner, following the shared tape-deck style. */
+    /** Shows the Faceplate radio deck or the classic tuner, following the shared tape-deck style. */
     private fun applyDeckStyle() {
         val b = _binding ?: return
         val style = requireContext().getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
-            .getString(WalkmanColorway.PREF_DECK_STYLE, WalkmanColorway.DEFAULT_STYLE)
-        val colorway = WalkmanColorway.fromPref(style)
+            .getString(FaceplateColorway.PREF_DECK_STYLE, FaceplateColorway.DEFAULT_STYLE)
+        val colorway = FaceplateColorway.fromPref(style)
         val wasDeck = isDeckStyle
         isDeckStyle = colorway != null
         colorway?.let { b.radioDeckView.colorway = it }

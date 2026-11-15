@@ -21,7 +21,9 @@ class ThemeManager(context: Context) {
                 .apply()
             return CassetteTheme.METAL_XR_TYPE4
         }
-        val savedId = prefs.getString("selected_theme_id", CassetteTheme.METAL_XR_TYPE4.id)
+        val savedId = com.hana.spindle.util.LegacyPrefsMigration.themeId(
+            prefs.getString("selected_theme_id", CassetteTheme.METAL_XR_TYPE4.id)
+        )
         return CassetteTheme.ALL_PRESETS.find { it.id == savedId } ?: CassetteTheme.METAL_XR_TYPE4
     }
 

@@ -21,12 +21,12 @@ import kotlin.math.log10
 import kotlin.math.max
 
 /**
- * Walkman-style home deck: horizontal cassette behind a smoked door, mechanical
+ * Faceplate home deck: horizontal cassette behind a smoked door, mechanical
  * counter, real L/R peak meter, honest TAPE EQ / DOLBY NR slide switches with a
  * DIRECT lamp, and five piano keys. The previous [VerticalDeckView] is kept intact
  * and selectable as the "Classic" deck style.
  */
-class WalkmanDeckView @JvmOverloads constructor(
+class FaceplateDeckView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
@@ -63,9 +63,9 @@ class WalkmanDeckView @JvmOverloads constructor(
         )
     }
 
-    internal val state = WalkmanDeckState()
-    private val cassettePainter = WalkmanCassettePainter()
-    private val faceplatePainter = WalkmanFaceplatePainter()
+    internal val state = FaceplateDeckState()
+    private val cassettePainter = FaceplateCassettePainter()
+    private val faceplatePainter = FaceplateBodyPainter()
     private var staticLayer: Bitmap? = null
     internal var fitScale = 1f
         private set
@@ -91,11 +91,11 @@ class WalkmanDeckView @JvmOverloads constructor(
     private var clipUntilL = 0L
     private var clipUntilR = 0L
 
-    private val accessibility = WalkmanDeckAccessibility(this)
+    private val accessibility = FaceplateDeckAccessibility(this)
 
     // ---- Public state -------------------------------------------------------------
 
-    var colorway: WalkmanColorway
+    var colorway: FaceplateColorway
         get() = state.colorway
         set(value) {
             if (state.colorway == value) return
@@ -229,7 +229,7 @@ class WalkmanDeckView @JvmOverloads constructor(
     init {
         isClickable = true
         isFocusable = true
-        contentDescription = "Walkman cassette deck"
+        contentDescription = "Cassette deck"
         ViewCompat.setAccessibilityDelegate(this, accessibility)
     }
 
@@ -237,9 +237,9 @@ class WalkmanDeckView @JvmOverloads constructor(
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-        fitScale = minOf(w / WalkmanGeometry.DESIGN_W, h / WalkmanGeometry.DESIGN_H)
-        offsetX = (w - WalkmanGeometry.DESIGN_W * fitScale) / 2f
-        offsetY = (h - WalkmanGeometry.DESIGN_H * fitScale) / 2f
+        fitScale = minOf(w / FaceplateGeometry.DESIGN_W, h / FaceplateGeometry.DESIGN_H)
+        offsetX = (w - FaceplateGeometry.DESIGN_W * fitScale) / 2f
+        offsetY = (h - FaceplateGeometry.DESIGN_H * fitScale) / 2f
         rebuildStaticLayer()
     }
 
@@ -332,7 +332,7 @@ class WalkmanDeckView @JvmOverloads constructor(
 
     private fun litSegments(db: Float): Int {
         var n = 0
-        for (threshold in WalkmanFaceplatePainter.METER_DB) if (db >= threshold) n++ else break
+        for (threshold in FaceplateBodyPainter.METER_DB) if (db >= threshold) n++ else break
         return n
     }
 
@@ -385,29 +385,29 @@ class WalkmanDeckView @JvmOverloads constructor(
     internal fun hitTest(xPx: Float, yPx: Float): Int {
         val x = (xPx - offsetX) / fitScale
         val y = (yPx - offsetY) / fitScale
-        for (i in 0 until WalkmanGeometry.KEY_COUNT) {
-            if (WalkmanGeometry.keyHit(i, hitRect).contains(x, y)) return ID_KEY_FIRST + i
+        for (i in 0 until FaceplateGeometry.KEY_COUNT) {
+            if (FaceplateGeometry.keyHit(i, hitRect).contains(x, y)) return ID_KEY_FIRST + i
         }
         return when {
-            WalkmanGeometry.glass.contains(x, y) -> ID_CASSETTE
-            WalkmanGeometry.reset.contains(x, y) -> ID_RESET
-            WalkmanGeometry.reverse.contains(x, y) -> ID_REVERSE
-            WalkmanGeometry.tapeSwitch.contains(x, y) -> ID_TAPE
-            WalkmanGeometry.dolbySwitch.contains(x, y) -> ID_DOLBY
-            WalkmanGeometry.meter.contains(x, y) -> ID_METER
+            FaceplateGeometry.glass.contains(x, y) -> ID_CASSETTE
+            FaceplateGeometry.reset.contains(x, y) -> ID_RESET
+            FaceplateGeometry.reverse.contains(x, y) -> ID_REVERSE
+            FaceplateGeometry.tapeSwitch.contains(x, y) -> ID_TAPE
+            FaceplateGeometry.dolbySwitch.contains(x, y) -> ID_DOLBY
+            FaceplateGeometry.meter.contains(x, y) -> ID_METER
             else -> -1
         }
     }
 
     internal fun designBounds(id: Int, out: RectF): RectF {
         when (id) {
-            in ID_KEY_FIRST until ID_KEY_FIRST + WalkmanGeometry.KEY_COUNT -> WalkmanGeometry.keyHit(id, out)
-            ID_CASSETTE -> out.set(WalkmanGeometry.glass)
-            ID_RESET -> out.set(WalkmanGeometry.reset)
-            ID_REVERSE -> out.set(WalkmanGeometry.reverse)
-            ID_TAPE -> out.set(WalkmanGeometry.tapeSwitch)
-            ID_DOLBY -> out.set(WalkmanGeometry.dolbySwitch)
-            else -> out.set(WalkmanGeometry.meter)
+            in ID_KEY_FIRST until ID_KEY_FIRST + FaceplateGeometry.KEY_COUNT -> FaceplateGeometry.keyHit(id, out)
+            ID_CASSETTE -> out.set(FaceplateGeometry.glass)
+            ID_RESET -> out.set(FaceplateGeometry.reset)
+            ID_REVERSE -> out.set(FaceplateGeometry.reverse)
+            ID_TAPE -> out.set(FaceplateGeometry.tapeSwitch)
+            ID_DOLBY -> out.set(FaceplateGeometry.dolbySwitch)
+            else -> out.set(FaceplateGeometry.meter)
         }
         out.set(
             out.left * fitScale + offsetX, out.top * fitScale + offsetY,
@@ -431,8 +431,8 @@ class WalkmanDeckView @JvmOverloads constructor(
         } minutes ${state.counterDigits.substring(2)} seconds. Reset counter"
 
         ID_REVERSE -> "Auto reverse ${state.reverseLabel.lowercase(Locale.US)}"
-        ID_TAPE -> "Tape EQ ${WalkmanFaceplatePainter.TAPE_STOPS[state.tapeIndex]}"
-        ID_DOLBY -> "Dolby noise reduction ${WalkmanFaceplatePainter.DOLBY_STOPS[state.dolbyIndex]}"
+        ID_TAPE -> "Tape EQ ${FaceplateBodyPainter.TAPE_STOPS[state.tapeIndex]}"
+        ID_DOLBY -> "Dolby noise reduction ${FaceplateBodyPainter.DOLBY_STOPS[state.dolbyIndex]}"
         else -> "Level meter. Opens the VU meters"
     }
 
@@ -680,11 +680,11 @@ class WalkmanDeckView @JvmOverloads constructor(
     private fun previewSwitch(xPx: Float) {
         val x = (xPx - offsetX) / fitScale
         if (draggingSwitch == ID_TAPE) {
-            val r = WalkmanGeometry.tapeSwitch
+            val r = FaceplateGeometry.tapeSwitch
             val idx = ((x - r.left) / (r.width() / TAPE_ORDER.size)).toInt().coerceIn(0, TAPE_ORDER.size - 1)
             if (idx != state.tapeIndex) applyTapeIndex(idx)
         } else {
-            val r = WalkmanGeometry.dolbySwitch
+            val r = FaceplateGeometry.dolbySwitch
             val idx = ((x - r.left) / (r.width() / DOLBY_ORDER.size)).toInt().coerceIn(0, DOLBY_ORDER.size - 1)
             if (idx != state.dolbyIndex) {
                 state.dolbyIndex = idx; invalidate()

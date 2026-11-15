@@ -366,10 +366,10 @@ class AudioDspAndFoleyTest {
         val allPresets = com.hana.spindle.theme.CassetteTheme.ALL_PRESETS
         assertTrue(allPresets.size >= 11)
 
-        val sonyHf = com.hana.spindle.theme.CassetteTheme.SONY_HF_90
-        assertEquals("Sony HF 90", sonyHf.name)
-        assertEquals("theme_sony_hf_90", sonyHf.id)
-        assertTrue(allPresets.contains(sonyHf))
+        val redNormal = com.hana.spindle.theme.CassetteTheme.RED_NORMAL_TYPE1
+        assertEquals("Red Normal Type I", redNormal.name)
+        assertEquals("theme_red_normal_type1", redNormal.id)
+        assertTrue(allPresets.contains(redNormal))
 
         val denonHd = com.hana.spindle.theme.CassetteTheme.DENON_HD8_100
         assertEquals("Denon HD8 100", denonHd.name)

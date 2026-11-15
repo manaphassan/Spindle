@@ -89,12 +89,12 @@ class DrawerFragment : Fragment() {
     private var currentTabIndex = PANEL_SOUND
     private var openSettingsPage = -1
 
-    // Walkman deck style: brushed chassis, SPINDLE band and FUNCTION switch around the pages.
+    // Faceplate deck style: brushed chassis, SPINDLE band and FUNCTION switch around the pages.
     private var isDeckStyle = false
-    private var deckColorway = com.hana.spindle.ui.cassette.WalkmanColorway.SILVER
-    private var chassisDrawable: com.hana.spindle.ui.cassette.WalkmanChassisDrawable? = null
+    private var deckColorway = com.hana.spindle.ui.cassette.FaceplateColorway.SILVER
+    private var chassisDrawable: com.hana.spindle.ui.cassette.FaceplateChassisDrawable? = null
     private val deckStyleListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-        if (key == com.hana.spindle.ui.cassette.WalkmanColorway.PREF_DECK_STYLE) applyDeckStyle()
+        if (key == com.hana.spindle.ui.cassette.FaceplateColorway.PREF_DECK_STYLE) applyDeckStyle()
     }
 
     private companion object {
@@ -369,16 +369,16 @@ class DrawerFragment : Fragment() {
     }
 
     // =========================================================================
-    // WALKMAN DECK STYLE: chassis + band + FUNCTION switch around the same pages
+    // FACEPLATE DECK STYLE: chassis + band + FUNCTION switch around the same pages
     // =========================================================================
     private fun applyDeckStyle() {
         val b = _binding ?: return
         val style = requireContext().getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
             .getString(
-                com.hana.spindle.ui.cassette.WalkmanColorway.PREF_DECK_STYLE,
-                com.hana.spindle.ui.cassette.WalkmanColorway.DEFAULT_STYLE
+                com.hana.spindle.ui.cassette.FaceplateColorway.PREF_DECK_STYLE,
+                com.hana.spindle.ui.cassette.FaceplateColorway.DEFAULT_STYLE
             )
-        val cw = com.hana.spindle.ui.cassette.WalkmanColorway.fromPref(style)
+        val cw = com.hana.spindle.ui.cassette.FaceplateColorway.fromPref(style)
         val deck = cw != null
         val changed = deck != isDeckStyle || (cw != null && cw != deckColorway)
         isDeckStyle = deck
@@ -417,7 +417,7 @@ class DrawerFragment : Fragment() {
     }
 
     /** Door frame with the smoked glass inset, same proportions as the tape deck's cassette door. */
-    private fun deckWindowDrawable(cw: com.hana.spindle.ui.cassette.WalkmanColorway, d: Float) =
+    private fun deckWindowDrawable(cw: com.hana.spindle.ui.cassette.FaceplateColorway, d: Float) =
         android.graphics.drawable.LayerDrawable(
             arrayOf(
                 android.graphics.drawable.GradientDrawable().apply { setColor(cw.doorFrame); cornerRadius = 10 * d },
@@ -1719,7 +1719,7 @@ class DrawerFragment : Fragment() {
             }
             switchTheme(CassetteTheme.REEL_TO_REEL_STUDIO)
         }
-        binding.btnThemeSonyHf.setOnClickListener { switchTheme(CassetteTheme.SONY_HF_90) }
+        binding.btnThemeRedNormal.setOnClickListener { switchTheme(CassetteTheme.RED_NORMAL_TYPE1) }
         binding.btnThemeDenonHd.setOnClickListener { switchTheme(CassetteTheme.DENON_HD8_100) }
         binding.btnThemeMetal81.setOnClickListener { switchTheme(CassetteTheme.METAL_81_RED) }
     }
@@ -1750,8 +1750,8 @@ class DrawerFragment : Fragment() {
             if (curId == CassetteTheme.REEL_TO_REEL_STUDIO.id) activeColor else ColorStateList.valueOf(
                 Color.parseColor("#241B14")
             )
-        binding.btnThemeSonyHf.backgroundTintList =
-            if (curId == CassetteTheme.SONY_HF_90.id) activeColor else ColorStateList.valueOf(Color.parseColor("#181A20"))
+        binding.btnThemeRedNormal.backgroundTintList =
+            if (curId == CassetteTheme.RED_NORMAL_TYPE1.id) activeColor else ColorStateList.valueOf(Color.parseColor("#181A20"))
         binding.btnThemeDenonHd.backgroundTintList =
             if (curId == CassetteTheme.DENON_HD8_100.id) activeColor else ColorStateList.valueOf(Color.parseColor("#141318"))
         binding.btnThemeMetal81.backgroundTintList =
@@ -1790,10 +1790,10 @@ class DrawerFragment : Fragment() {
             Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
         }
 
-        // 0d. Walkman Physical HOLD Switch Lock
-        binding.switchWalkmanHold.isChecked = prefs.getBoolean("pref_walkman_hold_lock_keys", true)
-        binding.switchWalkmanHold.setOnCheckedChangeListener { _, isChecked ->
-            prefs.edit().putBoolean("pref_walkman_hold_lock_keys", isChecked).apply()
+        // 0d. Physical HOLD Switch Lock
+        binding.switchHoldLock.isChecked = prefs.getBoolean(com.hana.spindle.util.LegacyPrefsMigration.PREF_HOLD_LOCK, true)
+        binding.switchHoldLock.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean(com.hana.spindle.util.LegacyPrefsMigration.PREF_HOLD_LOCK, isChecked).apply()
         }
 
         // 0e. MicroSD Low-RAM Buffer Tuning
@@ -2238,7 +2238,7 @@ class DrawerFragment : Fragment() {
 
         if (isDeckStyle) {
             val chassis = chassisDrawable?.takeIf { it.colorway == deckColorway }
-                ?: com.hana.spindle.ui.cassette.WalkmanChassisDrawable(deckColorway, resources.displayMetrics.density)
+                ?: com.hana.spindle.ui.cassette.FaceplateChassisDrawable(deckColorway, resources.displayMetrics.density)
                     .also { chassisDrawable?.release(); chassisDrawable = it }
             binding.root.background = chassis
         } else {
@@ -2359,18 +2359,18 @@ class DrawerFragment : Fragment() {
 
     private fun setupDeckStyleSelector() {
         val prefs = requireContext().getSharedPreferences("spindle_prefs", Context.MODE_PRIVATE)
-        val styles = com.hana.spindle.ui.cassette.WalkmanColorway.values().map { it.prefValue } +
-                com.hana.spindle.ui.cassette.WalkmanColorway.STYLE_CLASSIC
+        val styles = com.hana.spindle.ui.cassette.FaceplateColorway.values().map { it.prefValue } +
+                com.hana.spindle.ui.cassette.FaceplateColorway.STYLE_CLASSIC
 
-        fun label(style: String?) = com.hana.spindle.ui.cassette.WalkmanColorway.fromPref(style)?.displayName
+        fun label(style: String?) = com.hana.spindle.ui.cassette.FaceplateColorway.fromPref(style)?.displayName
             ?: "CLASSIC VERTICAL DECK"
 
-        val key = com.hana.spindle.ui.cassette.WalkmanColorway.PREF_DECK_STYLE
-        val default = com.hana.spindle.ui.cassette.WalkmanColorway.DEFAULT_STYLE
+        val key = com.hana.spindle.ui.cassette.FaceplateColorway.PREF_DECK_STYLE
+        val default = com.hana.spindle.ui.cassette.FaceplateColorway.DEFAULT_STYLE
 
-        // Cassette shell models only restyle the classic deck; the Walkman deck has its own colorways.
+        // Cassette shell models only restyle the classic deck; the faceplate deck has its own colorways.
         fun syncShellModels(style: String?) {
-            val isClassic = com.hana.spindle.ui.cassette.WalkmanColorway.fromPref(style) == null
+            val isClassic = com.hana.spindle.ui.cassette.FaceplateColorway.fromPref(style) == null
             binding.tvShellModelsLabel.visibility = if (isClassic) View.VISIBLE else View.GONE
             binding.shellModelsScroll.visibility = if (isClassic) View.VISIBLE else View.GONE
         }
