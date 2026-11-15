@@ -1,0 +1,70 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Spindle · Radio deck · art direction board</title>
+<style>
+  html,body{margin:0;background:#1A1B22;color:#FAFAF9;font-family:"Segoe UI","Selawik",Arial,sans-serif}
+  .wrap{display:flex;gap:40px;padding:36px 40px;align-items:flex-start}
+  h1{font-weight:300;font-size:44px;margin:0 0 4px;letter-spacing:-0.5px}
+  .sub{color:#B0B4CE;font-size:14px;margin-bottom:28px}
+  .col h2{font-weight:300;font-size:26px;margin:14px 0 2px;text-transform:lowercase}
+  .col p{color:#B0B4CE;font-size:13px;margin:0;max-width:360px}
+  .phone{border-radius:22px;overflow:hidden;box-shadow:0 18px 40px rgba(0,0,0,.5);width:360px}
+  .notes{max-width:340px}
+  .notes h3{font-weight:300;font-size:22px;margin:0 0 10px;text-transform:lowercase}
+  .notes ol{margin:0;padding-left:20px;color:#D4D6E2;font-size:13px;line-height:1.5}
+  .notes li{margin-bottom:8px}
+  .notes b{color:#FAFAF9}
+  .tag{display:inline-block;font-size:11px;letter-spacing:1px;padding:2px 6px;border:1px solid #F97316;color:#F97316;border-radius:3px;margin-left:6px}
+</style>
+</head>
+<body>
+<div style="padding:32px 40px 0">
+  <h1>radio deck</h1>
+  <div class="sub">Spindle radio page · art-direction mockup · 360×640dp (SO-02J) · companion to walkman faceplate · not implemented</div>
+</div>
+<div class="wrap">
+  <div class="col"><div class="phone" id="a"></div><h2>a · silver '81 · fm</h2><p>Tuned to 98.6, stereo pilot locked, preset 3 latched.</p></div>
+  <div class="col"><div class="phone" id="b"></div><h2>b · pro black · net</h2><p>Same layout in stream mode. FM-only controls dim; meters switch to buffer and link.</p></div>
+  <div class="notes">
+    <h3>what changes</h3>
+    <ol>
+      <li><b>Same machine, tuner section.</b> Chassis, header band, switch and key geometry match the tape deck. Swiping to radio should feel like the same device, not a different app.</li>
+      <li><b>Slide-rule dial.</b> A linear 87.5–108 MHz scale with the four carrier stations marked by callsign. The tangerine needle and active-station marker are the only accents in the window. Drag the dial to tune.</li>
+      <li><b>The LCD shows real state.</b> Big frequency on ghost segments, preset slot, STEREO/MONO indicator, and the RDS line, all fed by <code>onSignalChanged</code>.<span class="tag">P0</span></li>
+      <li><b>Thumbwheel tuning.</b> 0.1 MHz detents with a haptic tick on each step. SEEK buttons jump between carriers (existing skip behaviour).</li>
+      <li><b>SIG + centre-zero TUNE meter.</b> Driven by <code>getSignalStrength</code> and <code>getCarrierDeviation</code>. When the centre pair lights, the station is locked. No fake animation.<span class="tag">P0</span></li>
+      <li><b>Visible switches.</b> BAND FM/NET replaces the mode toggle. MODE AUTO/MONO maps to <code>isForceMono</code>. The emerald STEREO lamp lights only on a real pilot.<span class="tag">P0</span></li>
+      <li><b>Preset piano keys.</b> 4 latching 62×70dp keys plus SCAN, the same targets as the transport. Tap tunes, hold stores (unchanged behaviour).</li>
+      <li><b>NET keeps the layout.</b> Streams sit at their nominal frequency on the dial. FM-only controls dim instead of disappearing, so nothing jumps.</li>
+      <li><b>No antenna, no FM.</b> When the headset is unplugged, the LCD shows <b>NO ANT</b> and the needle parks (see d).</li>
+    </ol>
+  </div>
+</div>
+<div class="wrap" style="padding-top:8px">
+  <div class="col"><div class="phone" id="c"></div><h2>c · scanning</h2><p>Silver, mid-sweep at 95.7. SCAN latched, presets released, needle trails as it climbs.</p></div>
+  <div class="col"><div class="phone" id="d"></div><h2>d · no antenna</h2><p>Pro black, headset unplugged. FM controls dim, the needle parks grey, and the LCD says why.</p></div>
+  <div class="notes">
+    <h3>states</h3>
+    <ol>
+      <li><b>SCAN latches like a key.</b> While sweeping, SCAN stays pressed in tangerine and the presets release. Tap again to stop. This replaces the <code>[SCAN]</code>/<code>[STOP]</code> text label.</li>
+      <li><b>The sweep is visible.</b> The needle leaves a short trail on the dial and the LCD counts up 0.1 MHz every 60 ms, the same rate <code>startScan</code> already uses.</li>
+      <li><b>The lock threshold is on the meter.</b> A tangerine tick on the SIG row marks the 0.68 lock level, so you can see the scan is about to stop before it does.<span class="tag">P0</span></li>
+      <li><b>Unplugged is a state, not a toast.</b> A coral <b>NO ANT</b> badge, a dimmed frequency, a grey parked needle, and a plain line explaining that the headphone cable is the antenna. The ON AIR lamp goes dark.<span class="tag">P0</span></li>
+      <li><b>Only dead controls dim.</b> The tuning wheel, MODE, presets and SCAN dim. BAND stays live so NET is one slide away.</li>
+      <li><b>Behaviour decision needed.</b> The code today flips to NET by itself on unplug. This mockup stays on FM and explains why, and the user chooses NET. Either way works; the state just needs a screen.</li>
+    </ol>
+  </div>
+</div>
+<script src="../walkman-faceplate/palettes.js"></script>
+<script src="tuner.js"></script>
+<script src="radio.js"></script>
+<script>
+  document.getElementById("a").innerHTML = renderRadioDeck("a", "fm");
+  document.getElementById("b").innerHTML = renderRadioDeck("b", "net");
+  document.getElementById("c").innerHTML = renderRadioDeck("a", "scan");
+  document.getElementById("d").innerHTML = renderRadioDeck("b", "noant");
+</script>
+</body>
+</html>

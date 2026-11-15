@@ -1,0 +1,53 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Spindle · System deck · art direction board</title>
+<style>
+  html,body{margin:0;background:#1A1B22;color:#FAFAF9;font-family:"Segoe UI","Selawik",Arial,sans-serif}
+  .wrap{display:flex;gap:36px;padding:36px 40px;align-items:flex-start}
+  h1{font-weight:300;font-size:44px;margin:0 0 4px;letter-spacing:-0.5px}
+  .sub{color:#B0B4CE;font-size:14px;margin-bottom:28px}
+  .col h2{font-weight:300;font-size:26px;margin:14px 0 2px;text-transform:lowercase}
+  .col p{color:#B0B4CE;font-size:13px;margin:0;max-width:360px}
+  .phone{border-radius:22px;overflow:hidden;box-shadow:0 18px 40px rgba(0,0,0,.5);width:360px}
+  .notes{max-width:330px}
+  .notes h3{font-weight:300;font-size:22px;margin:0 0 10px;text-transform:lowercase}
+  .notes ol{margin:0;padding-left:20px;color:#D4D6E2;font-size:13px;line-height:1.5}
+  .notes li{margin-bottom:8px}
+  .notes b{color:#FAFAF9}
+  .tag{display:inline-block;font-size:11px;letter-spacing:1px;padding:2px 6px;border:1px solid #F97316;color:#F97316;border-radius:3px;margin-left:6px}
+</style>
+</head>
+<body>
+<div style="padding:32px 40px 0">
+  <h1>system deck</h1>
+  <div class="sub">Spindle system page · art-direction mockup · 360×640dp (SO-02J) · companion to walkman faceplate and radio deck · not implemented</div>
+</div>
+<div class="wrap">
+  <div class="col"><div class="phone" id="a"></div><h2>a · sound</h2><p>Silver. Response curve in the window; EQ faders, tone knobs and switches on the chassis.</p></div>
+  <div class="col"><div class="phone" id="b"></div><h2>b · settings</h2><p>Silver. DAP-style LCD menu, first row selected.</p></div>
+  <div class="col"><div class="phone" id="c"></div><h2>c · apps</h2><p>Pro black. App list in the window, A–Z rail with a dial-style needle.</p></div>
+  <div class="notes">
+    <h3>what changes</h3>
+    <ol>
+      <li><b>Third panel of the same machine.</b> Same band, brushed body, smoked window and switch skin as the tape and radio decks. Only shown when the deck style is a Walkman colorway; Classic keeps the Zune pages.</li>
+      <li><b>FUNCTION switch replaces the rotating pivot.</b> SOUND · SETTINGS · APPS stay in fixed positions (the new order) and the knob shows where you are. Swiping between them still works.</li>
+      <li><b>Sound: display vs controls.</b> The response curve and FX chain are read-outs, so they sit in the window. Things you touch (10 faders, LOW/MID/HI/FILTER, volume, BYPASS/SATURATION/CROSSFEED) are hardware on the chassis. Same controls, same data.</li>
+      <li><b>No duplicate tape switches.</b> TAPE EQ and DOLBY NR already live on the tape deck, so the sound page doesn't repeat them.</li>
+      <li><b>Settings is an LCD menu.</b> 51dp rows, number, title and summary; the selected row inverts. Sub-pages open in the same window with BACK returning to the menu.</li>
+      <li><b>Apps in the window.</b> Search on an LCD strip, A–Z as a real key, and a letter rail with the radio's tangerine needle.</li>
+      <li><b>Contrast holds.</b> Butter on glass, print on silver and stone on black all clear WCAG AA at these sizes.<span class="tag">P0</span></li>
+      <li><b>Scope.</b> Sound needs the EQ, knob and VU views recoloured from green to the colorway; the rest is reskinning existing layouts. Lower sound sections (VU, curves, presets) scroll inside the page.</li>
+    </ol>
+  </div>
+</div>
+<script src="../walkman-faceplate/palettes.js"></script>
+<script src="system.js"></script>
+<script>
+  document.getElementById("a").innerHTML = renderSystemDeck("a", "sound");
+  document.getElementById("b").innerHTML = renderSystemDeck("a", "settings");
+  document.getElementById("c").innerHTML = renderSystemDeck("b", "apps");
+</script>
+</body>
+</html>
