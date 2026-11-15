@@ -172,7 +172,7 @@ class MainActivity : AppCompatActivity() {
                     if (track != null) {
                         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                             app.audioEngine.playTrack(track)
-                            binding.viewPager.setCurrentItem(1, false)
+                            jumpToPage(1)
                         }
                     } else {
                         android.util.Log.e("MainActivity", "Failed to parse track: $playPath")
@@ -410,7 +410,7 @@ class MainActivity : AppCompatActivity() {
 
     fun navigateToPlayer() {
         binding.viewPager.isUserInputEnabled = true
-        binding.viewPager.setCurrentItem(1, false)
+        jumpToPage(1)
         syncPlayerFragmentState()
         if (binding.catalogContainer.visibility == View.VISIBLE) {
             binding.catalogContainer.animate()
@@ -498,7 +498,7 @@ class MainActivity : AppCompatActivity() {
             supportFragmentManager.beginTransaction().remove(frag).commitAllowingStateLoss()
         }
         binding.viewPager.isUserInputEnabled = true
-        binding.viewPager.setCurrentItem(0, false)
+        jumpToPage(0)
     }
 
     fun navigateToDrawer() {
@@ -508,7 +508,17 @@ class MainActivity : AppCompatActivity() {
             supportFragmentManager.beginTransaction().remove(frag).commitAllowingStateLoss()
         }
         binding.viewPager.isUserInputEnabled = true
-        binding.viewPager.setCurrentItem(2, false)
+        jumpToPage(2)
+    }
+
+    /**
+     * Instant page switch. The depth transformer only runs on scroll callbacks, and a jump can
+     * leave the new page with the 0.96x / 75% alpha it had while off-screen, so the whole screen
+     * looks shrunk and dimmed. Re-run the transformer once the jump has been laid out.
+     */
+    private fun jumpToPage(index: Int) {
+        binding.viewPager.setCurrentItem(index, false)
+        binding.viewPager.post { binding.viewPager.requestTransform() }
     }
 
     private fun checkAndRequestStoragePermissions(app: SpindleApp) {
